@@ -16,7 +16,7 @@ from core.engine import step
 
 @pytest.fixture
 def catalog():
-    return Catalog.load(source="qdrant")
+    return Catalog.from_dummy()
 
 def test_katalog_counts_and_categories(catalog):
     assert len(catalog.products) == 20

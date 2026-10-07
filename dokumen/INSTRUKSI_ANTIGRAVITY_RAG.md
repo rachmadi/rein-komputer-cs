@@ -181,3 +181,6 @@ Target: akurasi top-1 ≥ 90% pada daftar ini. Jika tidak tercapai, laporkan keg
 3. Tes pada Fase 7 lolos (retrieval top-1 ≥ 90%) dan regresi tidak ada.
 4. Ingestion idempoten dan mudah diulang; dokumentasi diperbarui.
 5. Telegram dan Flutter web tetap bekerja tanpa perubahan pada kontrak `/api/chat`.
+
+## Ollama Optimization
+Untuk mencegah evict bolak-balik antara model LLM (gemma4) dan model embedding (bge-m3), sangat disarankan mengatur variabel environment \OLLAMA_MAX_LOADED_MODELS=2\ (atau lebih tinggi) dan \OLLAMA_NUM_PARALLEL\ sesuai memori VRAM Anda.

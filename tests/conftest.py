@@ -1,4 +1,9 @@
 import os
+os.environ["DB_PATH"] = "data/test_catalog.db"
+import shutil
+if os.path.exists("data/catalog.db"):
+    shutil.copy("data/catalog.db", "data/test_catalog.db")
+import os
 import pytest
 from core import db
 

@@ -711,7 +711,10 @@ class Catalog:
         return cls(records)
 
     @classmethod
-    def from_db(cls, db_path: str = "data/catalog.db") -> Catalog:
+    def from_db(cls, db_path: str | None = None) -> Catalog:
+        if db_path is None:
+            import os
+            db_path = os.getenv("DB_PATH", "data/catalog.db")
         from core.db import get_all_products
         records = get_all_products(db_path=db_path)
         if not records:

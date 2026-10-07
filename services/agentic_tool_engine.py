@@ -49,6 +49,10 @@ def has_tag(product: dict, tag_str: str) -> bool:
 
 def _match_legacy_query(p: dict, q: str) -> bool:
     q = q.lower()
+    brands = ["acer", "asus", "lenovo", "hp", "nitro", "vivobook", "tuf", "ideapad", "legion", "macbook", "apple", "rog"]
+    for b in brands:
+        if b in q and b in p["nama"].lower():
+            return True
     return q in p["nama"].lower() or q in p.get("kategori", "").lower() or q in str(p.get("tags", "")).lower()
 
 def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None, int, dict]:
@@ -117,11 +121,11 @@ def should_skip_rag(text: str, catalog: Catalog) -> bool:
     for p in catalog.products:
         if p["kode"].lower() in t: return True
     for b in brands:
-        if b in t and "buat" not in t and "untuk" not in t and "kebutuhan" not in t:
+        if re.search(r"\b" + b + r"\b", t) and "buat" not in t and "untuk" not in t and "kebutuhan" not in t:
             return True
     return False
 
-def check_fast_path(text: str, catalog: Catalog) -> tuple[bool, str, dict]:
+def check_fast_path(text: str, catalog: Catalog, previous_lowest_price: int | None = None) -> tuple[bool, str, dict]:
     t = text.lower().strip()
     greetings = ["halo", "hi", "hai", "p", "terima kasih", "makasih", "apa kabar"]
     if any(t == k or t.startswith(k + " ") for k in greetings):
@@ -129,10 +133,17 @@ def check_fast_path(text: str, catalog: Catalog) -> tuple[bool, str, dict]:
         
     brands = ["acer", "asus", "lenovo", "hp", "nitro", "vivobook", "tuf", "ideapad", "legion", "macbook", "apple", "rog"]
     has_brand = any(b in f" {t} " for b in brands)
-    is_pure_query = (has_brand or "laptop" in t or "komputer" in t or "pc" in t) and "buat" not in t and "untuk" not in t and "kebutuhan" not in t
+    
+    narrowing_keywords = ["lebih murah", "yang lain", "yang asus", "yang ssd", "yang ram", "kalo", "kalau", "aja"]
+    is_narrowing = any(k in t for k in narrowing_keywords)
+    
+    is_pure_query = (has_brand or "laptop" in t or "komputer" in t or "pc" in t or is_narrowing) and "buat" not in t and "untuk" not in t and "kebutuhan" not in t
     
     if is_pure_query:
-        return True, "Berikut hasil pencarian dari katalog kami:", {"name": "search_catalog", "args": {"query": text}}
+        args = {"query": text}
+        if "lebih murah" in t or "yang murah" in t:
+            args["max_harga"] = (previous_lowest_price - 1) if previous_lowest_price else 10000000
+        return True, "Berikut hasil pencarian dari katalog kami:", {"name": "search_catalog", "args": args}
         
     return False, "", {}
 
@@ -210,11 +221,12 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             passed, reason, penalty, report = apply_filters(p, filters_to_apply)
             
             if query:
-                if not explicit_cat and not _match_legacy_query(p, query):
+                if not _match_legacy_query(p, query):
                     if "gaming" in query and not has_tag(p, "gaming"): continue
                     if "desain" in query and not has_tag(p, "desain"): continue
                     if "murah" in query and p_price > 10000000: continue
                     if "144hz" in query and p.get("refresh_hz", 60) < 144: continue
+                    continue
                     
             score = 50 + penalty
             if p["kode"] not in session_offered: score += 15
@@ -255,9 +267,17 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
         res_str = f"{info_profil}\n"
         for idx, p in enumerate(top_prods):
             mr = p.get("match_report", {})
+            fails = mr.get("tidak_terpenuhi", [])
             unk = mr.get('tidak_diketahui', [])
+            
+            icon = "✅" if not fails else "⚠️"
+            if len(fails) >= 2 or ("alasan_gagal" in p and "Belum memenuhi minimum" in str(p.get("alasan_gagal", ""))):
+                icon = "❌"
+            if p.get("alasan_gagal") == "VRAM belum tercantum, mohon konfirmasi ke staf":
+                icon = "⚠️"
+                
             unk_str = f"\n  (Tidak Diketahui: {', '.join(unk)})" if unk else ""
-            res_str += f"{idx+1}. **{p['nama']}** | Rp{p.get('harga_idr',0):,}\n  Spesifikasi: {p.get('cpu')} | {p.get('gpu')} | {p.get('ram')} | {p.get('storage')}{unk_str}\n\n"
+            res_str += f"{icon} {idx+1}. **{p['nama']}** | Rp{p.get('harga_idr',0):,}\n  Spesifikasi: {p.get('cpu')} | {p.get('gpu')} | {p.get('ram')} | {p.get('storage')}{unk_str}\n\n"
         return res_str, top_prods, explicit_cat, profil_id
         
     return json.dumps({"status": "error", "message": f"Tool '{name}' tidak dikenal."}), [], None, None
@@ -274,6 +294,7 @@ def run_agentic_tool(
     current_category: str | None = None,
     current_offered_products: list[str] | None = None,
     active_profile_id: str | None = None,
+    previous_lowest_price: int | None = None,
     model: str = "gemma4:e4b",
     url: str = "http://localhost:11434"
 ) -> dict:
@@ -283,7 +304,7 @@ def run_agentic_tool(
     t_llm2 = 0.0
     
     # 1. Jalur Cepat (Fast Path)
-    is_fast, fast_reply, fast_tool = check_fast_path(user_text, catalog)
+    is_fast, fast_reply, fast_tool = check_fast_path(user_text, catalog, previous_lowest_price)
     if is_fast:
         t_llm1 = 0
         ans_str = ""
@@ -335,6 +356,12 @@ def run_agentic_tool(
         
     t_llm1 = time.time() - t0_llm1
     msg = res_data.get("message", {})
+    
+    if not msg.get("tool_calls"):
+        ut_lower = user_text.lower()
+        if "laptop" in ut_lower or "buat" in ut_lower or "kebutuhan" in ut_lower or "untuk" in ut_lower:
+            msg["tool_calls"] = [{"function": {"name": "search_catalog", "arguments": {"kebutuhan": user_text}}}]
+
     messages.append(msg)
     
     prods = []

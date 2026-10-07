@@ -4,7 +4,8 @@ import re
 from typing import Any
 from core.catalog import Catalog, infer_tags_from_specs, derive_tags, normalize
 
-DB_PATH = "data/catalog.db"
+import os
+DB_PATH = os.getenv("DB_PATH", "data/catalog.db")
 
 def init_db(db_path: str = DB_PATH):
     import os

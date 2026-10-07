@@ -29,7 +29,7 @@ def get_active_catalog() -> Catalog:
 
 def reload_catalog() -> Catalog:
     global _cached_catalog
-    _cached_catalog = Catalog.from_db(os.getenv("DB_PATH", "data/catalog.db"))
+    _cached_catalog = Catalog.from_db()
     return _cached_catalog
 
 def format_product_text(p: dict) -> str:

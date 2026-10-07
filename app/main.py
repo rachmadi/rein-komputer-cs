@@ -87,6 +87,9 @@ class ProductPayload(BaseModel):
     image_url: str | None = Field(None, description="URL gambar produk")
     is_accessory: bool = Field(False, description="Apakah produk merupakan aksesori")
     sync_qdrant: bool = Field(True, description="Otomatis buat embedding dan simpan ke Qdrant")
+    gpu_dedicated: int | None = Field(None, description="0 untuk iGPU, 1 untuk Dedicated")
+    vram_gb: int | None = Field(None, description="VRAM dalam GB")
+    cpu_tier: int | None = Field(None, description="Tingkatan CPU")
 
 class ChatRequest(BaseModel):
     session_id: str = Field(..., description="ID sesi unik pelanggan (dari browser)")
@@ -163,8 +166,13 @@ def api_get_product(kode: str, current_admin: str = Depends(get_current_admin)):
 @app.post("/api/admin/products")
 def api_save_product(payload: ProductPayload, current_admin: str = Depends(get_current_admin)):
     data = payload.model_dump()
+    if data.get('gpu_dedicated') == 1 and (data.get('vram_gb') is None or str(data.get('vram_gb')).strip() == ''):
+        raise HTTPException(status_code=400, detail='Produk dengan GPU Dedicated wajib mencantumkan kapasitas VRAM')
     sync_q = data.pop("sync_qdrant", True)
-    saved, q_synced = upsert_product(data, sync_qdrant=sync_q)
+    try:
+        saved, q_synced = upsert_product(data, sync_qdrant=sync_q)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {
         "success": True,
         "product": saved,
