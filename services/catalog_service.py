@@ -29,7 +29,7 @@ def get_active_catalog() -> Catalog:
 
 def reload_catalog() -> Catalog:
     global _cached_catalog
-    _cached_catalog = Catalog.from_db()
+    _cached_catalog = Catalog.from_db(os.getenv("DB_PATH", "data/catalog.db"))
     return _cached_catalog
 
 def format_product_text(p: dict) -> str:
@@ -173,14 +173,18 @@ def upsert_product(data: dict, sync_qdrant: bool = True) -> tuple[dict, bool]:
     data["has_hdd"] = hdd
     data["gpu_dedicated"] = ded
     data["gpu_class"] = cls
-    data["vram_gb"] = vram
+    data['vram_gb'] = vram
+
+    if ded == 1 and vram is None:
+        raise ValueError('Produk dengan GPU Dedicated wajib mencantumkan kapasitas VRAM')
     data["screen_inch"] = inch
     data["refresh_hz"] = hz
     data["panel"] = panel
     data["srgb_pct"] = srgb
     data["tags"] = tags_from_raw(data.get("raw_data", ""), data.get("usage_text", ""))
     
-    saved = save_product(data)
+    save_product(data['kode'], data)
+    saved = data
     reload_catalog()
     
     qdrant_synced = False

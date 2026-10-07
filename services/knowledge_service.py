@@ -69,7 +69,7 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
                 "profil_id": profil_id,
                 "nama": payload_data.get("judul"),
                 "ringkasan": payload_data.get("text"),
-                "score": p.get("score", 0)
+                "score": p.get("score", 0), "tipe": payload_data.get("tipe")
             })
             
         # Delta Rule

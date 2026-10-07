@@ -155,6 +155,10 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             reqs = get_usage_requirements(kebutuhan)
             pls = reqs.get("profil", [])
             if pls:
+                if pls[0].get("tipe") == "di_luar_topik":
+                    import os
+                    contact = os.getenv("TOKO_CONTACT", "0812-3456-7890 (WhatsApp)")
+                    return f"Maaf, pertanyaan Anda di luar konteks rekomendasi spesifikasi. Silakan hubungi staf toko kami di {contact}.", [], explicit_cat, pls[0]["profil_id"]
                 if len(pls) == 1:
                     profil_id = pls[0]["profil_id"]
                 elif len(pls) >= 2:
