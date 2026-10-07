@@ -86,7 +86,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_text = update.message.text.strip()
 
     # Tampilkan indikasi "typing..."
-    await context.bot.send_chat_action(chat_id=chat_id, action="typing")
+    async def keep_typing():
+        try:
+            while True:
+                await context.bot.send_chat_action(chat_id=chat_id, action="typing")
+                await asyncio.sleep(4.5)
+        except asyncio.CancelledError:
+            pass
+
+    typing_task = asyncio.create_task(keep_typing())
 
     try:
         res = await asyncio.to_thread(process_chat_message, 
