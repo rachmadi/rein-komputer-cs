@@ -147,11 +147,11 @@ def check_fast_path(text: str, catalog: Catalog, previous_lowest_price: int | No
         
     return False, "", {}
 
-def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[str] = [], user_text: str = "", active_profile_id: str | None = None) -> tuple[str, list[dict], str | None, str | None]:
+def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[str] = [], user_text: str = "", active_profile_id: str | None = None, active_category: str | None = None) -> tuple[str, list[dict], str | None, str | None]:
     if name == "search_catalog":
         if not isinstance(args, dict):
             return json.dumps({"status": "error", "message": "Argumen LLM bukan JSON"}), [], None, None
-        explicit_cat = args.get("kategori")
+        explicit_cat = args.get("kategori") or active_category
         if explicit_cat == "all": explicit_cat = None
         profil_id = str(args.get("profil_id", ""))
         min_harga = args.get("min_harga")
@@ -250,15 +250,23 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                 relaxed_products.append((score, p_output))
                 
         if not scored_products and not relaxed_products:
+            if "lebih murah" in user_text.lower() or "yang murah" in user_text.lower():
+                return "Tidak ada yang lebih murah yang memenuhi kebutuhan ini.", [], explicit_cat, profil_id
             return "Produk tidak tersedia.", [], explicit_cat, profil_id
             
         scored_products.sort(key=lambda x: x[0], reverse=True)
-        relaxed_products.sort(key=lambda x: x[0], reverse=True)
+        # Urut kandidat relaksasi: sedikit kegagalan dulu (naik), skor tiebreaker (turun)
+        relaxed_products.sort(
+            key=lambda x: (len(x[1].get("match_report", {}).get("tidak_terpenuhi", [])), -x[0])
+        )
         top_prods = [p for s, p in scored_products[:3]]
         
         if not top_prods:
             top_relaxed = [p for s, p in relaxed_products[:2]]
-            res_str = f"{info_profil}Tidak ada yang memenuhi syarat mutlak. Kandidat terdekat:\n"
+            if "lebih murah" in user_text.lower() or "yang murah" in user_text.lower():
+                res_str = f"{info_profil}Tidak ada yang lebih murah yang memenuhi kebutuhan ini. Kandidat terdekat:\n"
+            else:
+                res_str = f"{info_profil}Tidak ada yang memenuhi syarat mutlak. Kandidat terdekat:\n"
             for p in top_relaxed:
                 mr = p.get("match_report", {})
                 res_str += f"- {p['nama']} | Rp{p.get('harga_idr',0):,} | {p.get('cpu')} {p.get('gpu')}\n  {p.get('alasan_gagal', '')}\n"
