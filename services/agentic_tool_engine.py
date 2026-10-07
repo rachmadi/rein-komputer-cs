@@ -84,11 +84,13 @@ def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None,
             continue
             
         passed = False
+        if op not in (">=", "<=", "==", "="):
+            raise ValueError(f"Unknown operator: {op}")
         try:
             if op == ">=": passed = float(pval) >= float(val)
             elif op == "<=": passed = float(pval) <= float(val)
             elif op in ("==", "="): passed = str(pval).lower() == str(val).lower()
-        except:
+        except Exception:
             passed = False
             
         if passed:
