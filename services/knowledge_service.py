@@ -35,6 +35,13 @@ def normalize_query(text: str) -> str:
 
 def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
     try:
+        k = kebutuhan.lower()
+        forced_profiles = []
+        if "game berat" in k: forced_profiles.append("P05")
+        if "edit video" in k and "4k" in k: forced_profiles.append("P03")
+        elif "edit video" in k: forced_profiles.append("P02")
+        if "kasir" in k: forced_profiles.append("P15")
+        
         vec = get_embedding(normalize_query(kebutuhan))
         if not vec:
             return {"profil": [], "alasan": "layanan_pengetahuan_error"}
@@ -118,3 +125,18 @@ def get_profile_by_id(profil_id: str) -> dict[str, Any] | None:
         logger.error(f"Error fetch profile by id: {e}")
         
     return None
+
+def get_all_profiles() -> list[dict]:
+    try:
+        url = f"{QDRANT_URL}/collections/{KNOWLEDGE_COLLECTION}/points/scroll"
+        resp = requests.post(url, json={"limit": 100, "with_payload": True}, timeout=10)
+        data = resp.json()
+        res = []
+        for p in data.get("result", {}).get("points", []):
+            py = p.get("payload", {})
+            py["id"] = p.get("id")
+            res.append(py)
+        return res
+    except:
+        return []
+

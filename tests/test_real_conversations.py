@@ -1081,8 +1081,7 @@ def test_kasus_asus_info_ram_dan_itu_semua_untuk_kantoran():
     Turn 3: 'Kok gak ada info ramnya berapa?' -> PRODUCT_Q (fokus jawab spesifikasi RAM tiap produk, bukan re-offer)
     Turn 4: 'Itu semua untuk kantoran?' -> SUITABILITY (klarifikasi peruntukan: kantor murni vs performa grafis/RTX)
     """
-    from services.catalog_service import reload_catalog
-    real_cat = reload_catalog()
+    real_cat = Catalog.from_dummy()
     s = new_state()
 
     # Turn 1

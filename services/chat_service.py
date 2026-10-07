@@ -178,6 +178,8 @@ def process_chat_message(
             catalog=catalog,
             current_category=state.get("category"),
             current_offered_products=state.get("offered_products"),
+            active_profile_id=state.get("active_profile"),
+            previous_lowest_price=state.get("lowest_price"),
             model=active_model
         )
         reply = tool_res["reply"]

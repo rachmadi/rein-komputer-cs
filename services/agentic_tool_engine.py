@@ -332,14 +332,47 @@ def run_agentic_tool(
         prof = None
         if fast_tool:
             t0 = time.time()
-            ans_str, prods, cat, prof = execute_tool(fast_tool["name"], fast_tool["args"], catalog, current_offered_products or [], user_text, active_profile_id)
+            ans_str, prods, cat, prof = execute_tool(fast_tool["name"], fast_tool["args"], catalog, current_offered_products or [], user_text, active_profile_id, current_category)
             t_tool = time.time() - t0
         t_llm2 = 0
         final_reply = fast_reply + "\n\n" + ans_str if ans_str else fast_reply
         total = time.time() - t_start
         metrics = {"llm1": t_llm1, "tool": t_tool, "llm2": t_llm2, "total": total}
         logger.info(f"[PERF] FastPath total={total:.2f}s")
-        return {"reply": final_reply.strip(), "products": prods, "category": cat, "route": "FAST_AGENTIC", "active_profile_id": prof, "metrics": metrics}
+        return {"reply": final_reply.strip(), "products": prods, "category": cat or current_category, "route": "FAST_AGENTIC", "active_profile_id": prof or active_profile_id, "metrics": metrics}
+
+    # 1.5 Pangkas LLM-1 untuk peruntukan (jika BYPASS_LLM1_ON_RAG aktif dan retrieval lolos ambang)
+    if BYPASS_LLM1_ON_RAG and not should_skip_rag(user_text, catalog):
+        from services.knowledge_service import get_usage_requirements
+        reqs = get_usage_requirements(user_text)
+        pls = reqs.get("profil", [])
+        if pls and pls[0].get("tipe") != "di_luar_topik":
+            p_ids = [p["profil_id"] for p in pls]
+            prof_arg = ",".join(p_ids)
+            t0_tool = time.time()
+            ans_str, prods, cat, new_profile_id = execute_tool(
+                "search_catalog",
+                {"profil_id": prof_arg, "kategori": current_category},
+                catalog,
+                current_offered_products or [],
+                user_text,
+                active_profile_id
+            )
+            t_tool = time.time() - t0_tool
+            total = time.time() - t_start
+            intro = "Berikut adalah rekomendasi produk yang cocok untuk kebutuhan Anda:"
+            final_reply = intro + "\n\n" + ans_str if ans_str else intro
+            metrics = {"llm1": 0.0, "tool": t_tool, "llm2": 0.0, "total": total, "bypassed": True}
+            logger.info(f"[PERF] Bypassed LLM-1 on RAG total={total:.2f}s")
+            return {
+                "reply": final_reply.strip(),
+                "products": prods,
+                "category": cat,
+                "route": "FAST_AGENTIC",
+                "tool_calls": [{"name": "search_catalog", "args": {"profil_id": prof_arg}}],
+                "active_profile_id": new_profile_id,
+                "metrics": metrics
+            }
 
     # 2. Persiapan Prompt LLM
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]

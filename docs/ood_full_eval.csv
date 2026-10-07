@@ -1,0 +1,31 @@
+stage,query,expected,top_hit_id,top_tipe,score,is_positive,ret_correct,guard_correct,latency_s
+SEBELUM_INGEST,laptop buat edit video 4k,P03,P03,profil,0.6018,True,True,True,4.722
+SEBELUM_INGEST,komputer untuk game AAA berat,P05,P05,profil,0.6564,True,True,True,4.35
+SEBELUM_INGEST,laptop kuliah sehari-hari,P06,P16,profil,0.6404,True,False,False,4.246
+SEBELUM_INGEST,laptop baterai awet,P16,P16,profil,0.4792,True,True,True,4.21
+SEBELUM_INGEST,ada diskon laptop gaming,P04,P04,profil,0.5624,True,True,True,4.33
+SEBELUM_INGEST,install apa saja untuk laptop kuliah,P06,G03,panduan umum,0.5748,True,False,False,4.22
+SEBELUM_INGEST,laptop desain grafis dan edit foto,P02,P02,profil,0.6396,True,True,True,4.294
+SEBELUM_INGEST,komputer kasir toko,P15,P15,profil,0.6311,True,True,True,4.242
+SEBELUM_INGEST,laptop streaming youtube,P08,P08,profil,0.5031,True,True,True,4.231
+SEBELUM_INGEST,laptop data science AI machine learning,P13,P13,profil,0.6307,True,True,True,4.242
+SEBELUM_INGEST,berapa jam buka toko Bobby Computer,OOD,P15,profil,0.408,False,True,True,4.246
+SEBELUM_INGEST,cara bayar cicilan atau kredit,OOD,G03,panduan umum,0.4337,False,True,True,4.248
+SEBELUM_INGEST,garansi laptop resmi berapa tahun,OOD,G04,panduan umum,0.4636,False,True,True,4.262
+SEBELUM_INGEST,ongkos kirim ke Surabaya berapa ya,OOD,P04,profil,0.3381,False,True,True,4.274
+SEBELUM_INGEST,apakah hari minggu toko buka,OOD,P15,profil,0.3936,False,True,True,4.214
+SESUDAH_INGEST,laptop buat edit video 4k,P03,P03,profil,0.6018,True,True,True,4.155
+SESUDAH_INGEST,komputer untuk game AAA berat,P05,P05,profil,0.6564,True,True,True,4.232
+SESUDAH_INGEST,laptop kuliah sehari-hari,P06,P16,profil,0.6404,True,False,False,4.243
+SESUDAH_INGEST,laptop baterai awet,P16,OOD2,di_luar_topik,0.5068,True,False,False,4.229
+SESUDAH_INGEST,ada diskon laptop gaming,P04,P04,profil,0.5624,True,True,True,4.229
+SESUDAH_INGEST,install apa saja untuk laptop kuliah,P06,G03,panduan umum,0.5748,True,False,False,4.23
+SESUDAH_INGEST,laptop desain grafis dan edit foto,P02,P02,profil,0.6396,True,True,True,4.246
+SESUDAH_INGEST,komputer kasir toko,P15,P15,profil,0.6311,True,True,True,4.238
+SESUDAH_INGEST,laptop streaming youtube,P08,P08,profil,0.5031,True,True,True,4.243
+SESUDAH_INGEST,laptop data science AI machine learning,P13,P13,profil,0.6307,True,True,True,4.225
+SESUDAH_INGEST,berapa jam buka toko Bobby Computer,OOD,OOD1,di_luar_topik,0.4942,False,True,True,4.217
+SESUDAH_INGEST,cara bayar cicilan atau kredit,OOD,OOD3,di_luar_topik,0.5892,False,True,True,4.261
+SESUDAH_INGEST,garansi laptop resmi berapa tahun,OOD,OOD2,di_luar_topik,0.6436,False,True,True,4.248
+SESUDAH_INGEST,ongkos kirim ke Surabaya berapa ya,OOD,OOD3,di_luar_topik,0.4425,False,True,True,4.237
+SESUDAH_INGEST,apakah hari minggu toko buka,OOD,OOD1,di_luar_topik,0.5747,False,True,True,4.227
