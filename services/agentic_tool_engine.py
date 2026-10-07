@@ -259,6 +259,8 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
 def merge_filters(f1, f2):
     return f1 + f2
 
+BYPASS_LLM1_ON_RAG = True
+
 def run_agentic_tool(
     user_text: str,
     history: list[dict],
