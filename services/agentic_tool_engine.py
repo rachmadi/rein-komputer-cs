@@ -87,7 +87,7 @@ def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None,
         try:
             if op == ">=": passed = float(pval) >= float(val)
             elif op == "<=": passed = float(pval) <= float(val)
-            elif op == "==": passed = str(pval).lower() == str(val).lower()
+            elif op in ("==", "="): passed = str(pval).lower() == str(val).lower()
         except:
             passed = False
             
