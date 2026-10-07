@@ -190,9 +190,20 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             profil_id = active_profile_id
             
         if profil_id and not filters_to_apply:
-            prof_data = get_profile_by_id(profil_id.split(",")[0])
-            if prof_data:
-                filters_to_apply = prof_data.get("filter", [])
+            ids = [x.strip() for x in profil_id.split(",") if x.strip()]
+            if len(ids) == 1:
+                prof_data = get_profile_by_id(ids[0])
+                if prof_data:
+                    filters_to_apply = prof_data.get("filter", [])
+            elif len(ids) >= 2:
+                p1 = get_profile_by_id(ids[0])
+                p2 = get_profile_by_id(ids[1])
+                if p1 and p2:
+                    filters_to_apply = merge_filters(p1.get("filter", []), p2.get("filter", []))
+                    n1 = p1.get("judul") or ids[0]
+                    n2 = p2.get("judul") or ids[1]
+                    info_profil = f"Kebutuhan gabungan: {n1} + {n2}, memakai syarat terberat\n"
+
         
         check_text = (query + " " + user_text).lower()
         if not explicit_cat:
