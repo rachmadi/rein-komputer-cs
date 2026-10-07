@@ -462,6 +462,7 @@ def infer_tags_from_specs(rec: dict) -> list[dict]:
     is_cpu_budget = any(x in cpu for x in ("n100", "celeron", "pentium", "i3", "ryzen 3"))
     is_cpu_high_tdp = any(x in cpu for x in ("13420h", "7735hs", "12450hx", "14650hx", "14700f", "13400f", "13400"))
     is_cpu_top = any(x in cpu for x in ("14650hx", "14700", "14700f", "i9", "ryzen 9"))
+    cpu_tier = 3 if is_cpu_top else 2 if is_cpu_high_tdp else 1 if not is_cpu_budget else 0
 
     # PERTIMBANGAN GPU UNTUK BEBAN KERJA:
     # A. WORKLOAD GRAFIS BERAT & TEKNIK: 3D Rendering, Arsitektur, CAD, Insinyur, Simulasi, Konstruksi
@@ -591,6 +592,25 @@ def parse_product_text(text: str) -> dict | None:
     if cpu:
         low = cpu.lower()
         vendor = "intel" if "intel" in low else "amd" if ("amd" in low or "ryzen" in low) else None
+        
+        # Gunakan regex sama dengan migrate_derived_fields.py agar konsisten dengan database
+        def _parse_cpu_tier(s: str) -> int:
+            m = re.search(r"core\s+ultra\s+([579])", s)
+            if m:
+                return {"5": 2, "7": 3, "9": 4}[m.group(1)]
+            m = re.search(r"core\s+i([3579])", s)
+            if m:
+                return {"3": 1, "5": 2, "7": 3, "9": 4}[m.group(1)]
+            m = re.search(r"core\s+([579])\s+\d", s)
+            if m:
+                return {"5": 2, "7": 3, "9": 4}[m.group(1)]
+            m = re.search(r"ryzen\s+(?:ai\s+)?([3579])", s)
+            if m:
+                return {"3": 1, "5": 2, "7": 3, "9": 4}[m.group(1)]
+            if re.search(r"\bn\d{2,3}\b|celeron|pentium|athlon", s):
+                return 1
+            return 1  # default ke tier 1 jika tidak dikenali
+        cpu_tier = _parse_cpu_tier(low)
 
     # Khusus GPU (Identifikasi discrete vs integrated dan VRAM)
     gpu = clean_val(fields.get("gpu")) if jenis not in ("monitor", "printer") else None
@@ -627,9 +647,13 @@ def parse_product_text(text: str) -> dict | None:
         "ram_gb": ram_gb,
         "ram_type": ram_type,
         "storage": clean_val(fields.get("storage")) if jenis != "printer" else None,
+        "storage_ssd_gb": int(re.search(r"(\d+)\s*(GB|TB)", clean_val(fields.get("storage")) or "").group(1)) * (1024 if re.search(r"(\d+)\s*(GB|TB)", clean_val(fields.get("storage")) or "").group(2).upper() == "TB" else 1) if re.search(r"(\d+)\s*(GB|TB)", clean_val(fields.get("storage")) or "", re.I) else None,
         "gpu": gpu,
         "gpu_type": gpu_type,
+        "gpu_dedicated": 1 if gpu_type == "discrete" else 0,
         "gpu_vram": gpu_vram,
+        "vram_gb": gpu_vram,
+        "cpu_tier": cpu_tier if cpu else None,
         "display": display,
         "os": clean_val(fields.get("sistem operasi")) if jenis != "printer" else None,
         "panel": panel,
