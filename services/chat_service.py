@@ -142,6 +142,7 @@ def process_chat_message(
             "category": new_state_dict.get("kategori"),
             "persona_name": new_state_dict.get("persona"),
             "offered_products": [p.get("kode") for p in new_state_dict.get("produk_tampil", []) if p.get("kode")],
+            "fakta": turn_res.fakta_eksekusi,
             "metrics": {
                 "latensi_parse_ms": turn_res.latensi_parse_ms,
                 "latensi_mesin_ms": turn_res.latensi_mesin_ms,
