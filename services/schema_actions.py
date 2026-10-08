@@ -34,6 +34,25 @@ class SlotEnum(str, Enum):
     PERSONA = "persona"
 
 
+class JenisLanjutanEnum(str, Enum):
+    LEBIH_MURAH = "lebih_murah"
+    LEBIH_MAHAL = "lebih_mahal"
+    YANG_LAIN = "yang_lain"
+    FILTER_TAMBAHAN = "filter_tambahan"
+
+
+class JenisPerbaikanEnum(str, Enum):
+    SALAH_PAHAM = "salah_paham"
+    KELUHAN = "keluhan"
+    KOREKSI = "koreksi"
+
+
+class JenisBasaBasiEnum(str, Enum):
+    TERIMA_KASIH = "terima_kasih"
+    PAMIT = "pamit"
+    LAINNYA = "lainnya"
+
+
 class JenisEnum(str, Enum):
     # lanjutan_hasil
     LEBIH_MURAH = "lebih_murah"
@@ -142,6 +161,11 @@ class ParserOutput(BaseModel):
     }
 
 
-def get_parser_json_schema() -> dict:
+def get_parser_json_schema(allowed_actions: Optional[List[ActionEnum]] = None) -> dict:
     """Mengembalikan JSON schema dictionary tertutup untuk Ollama structured output."""
-    return ParserOutput.model_json_schema()
+    schema = ParserOutput.model_json_schema()
+    if allowed_actions is not None:
+        allowed_vals = [a.value if hasattr(a, "value") else str(a) for a in allowed_actions]
+        if "$defs" in schema and "ActionEnum" in schema["$defs"]:
+            schema["$defs"]["ActionEnum"]["enum"] = allowed_vals
+    return schema

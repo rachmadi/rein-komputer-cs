@@ -18,10 +18,17 @@ from pydantic import ValidationError
 
 from services.schema_actions import (
     ParserOutput, ActionEnum, ActionArguments, StateUpdate,
-    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum
+    SlotEnum, JenisEnum, JenisLanjutanEnum, JenisPerbaikanEnum, JenisBasaBasiEnum,
+    TokoTopikEnum, AtributSpesifikasiEnum
 )
 
 logger = logging.getLogger(__name__)
+
+ACTION_JENIS_MAP = {
+    ActionEnum.LANJUTAN_HASIL: {e.value for e in JenisLanjutanEnum},
+    ActionEnum.PERBAIKI_PERCAKAPAN: {e.value for e in JenisPerbaikanEnum},
+    ActionEnum.BASA_BASI: {e.value for e in JenisBasaBasiEnum},
+}
 
 
 def get_catalog_brands(db_path: str | None = None) -> list[str]:
@@ -226,6 +233,20 @@ def validate_parser_output(
             )
         args.produk = resolved_codes
 
+    # 4b. Validasi jenis per-aksi (mencegah kontaminasi antar-aksi, misal 'pamit' di lanjutan_hasil atau 'yang_lain' di basa_basi)
+    if parsed.aksi in ACTION_JENIS_MAP and args.jenis is not None:
+        jenis_str = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
+        if jenis_str not in ACTION_JENIS_MAP[parsed.aksi]:
+            logger.warning(f"Jenis '{jenis_str}' tidak sah untuk aksi '{parsed.aksi.value}'")
+            return (
+                ParserOutput(
+                    aksi=ActionEnum.TIDAK_JELAS,
+                    argumen=ActionArguments(alasan=f"Jenis '{jenis_str}' tidak valid untuk aksi {parsed.aksi.value}"),
+                    pembaruan_state=StateUpdate()
+                ),
+                False
+            )
+
     # 5. Pembersihan deterministik: Hapus argumen yang tidak relevan dengan aksi yang dipilih
     action_allowed_args = {
         ActionEnum.SAPA: set(),
@@ -254,3 +275,51 @@ def validate_parser_output(
         state_up.persona = state_up.persona.strip().lower()
 
     return parsed, True
+
+
+def check_state_consistency(parsed: ParserOutput, session_state: dict | None) -> Tuple[bool, str | None]:
+    """
+    Validasi konsistensi aksi terhadap state percakapan:
+    - jawab_pertanyaan_bot hanya sah bila pending_question ada
+    - lanjutan_hasil dan rujukan_produk hanya sah bila ada hasil/produk_tampil di sesi
+    """
+    state = session_state or {}
+    has_pending = bool(state.get("pending_question"))
+    produk_tampil = state.get("produk_tampil") or []
+    has_tampil = len(produk_tampil) > 0
+
+    if parsed.aksi == ActionEnum.JAWAB_PERTANYAAN_BOT and not has_pending:
+        return False, "jawab_pertanyaan_bot hanya sah bila pending_question ada"
+
+    if parsed.aksi == ActionEnum.LANJUTAN_HASIL and not has_tampil:
+        return False, "lanjutan_hasil hanya sah bila ada hasil/produk_tampil di sesi"
+
+    if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN) and not has_tampil:
+        return False, f"{parsed.aksi.value} hanya sah bila ada hasil/produk_tampil di sesi"
+
+    if parsed.argumen.rujukan_produk and not has_tampil:
+        return False, "rujukan_produk hanya sah bila ada hasil/produk_tampil di sesi"
+
+    return True, None
+
+
+def get_allowed_actions_for_state(session_state: dict | None) -> List[ActionEnum]:
+    """
+    Mengembalikan daftar aksi yang sah berdasarkan state saat ini.
+    Digunakan saat meminta parse ulang dari LLM jika aksi sebelumnya tidak konsisten dengan state.
+    """
+    state = session_state or {}
+    has_pending = bool(state.get("pending_question"))
+    produk_tampil = state.get("produk_tampil") or []
+    has_tampil = len(produk_tampil) > 0
+
+    disallowed = set()
+    if not has_pending:
+        disallowed.add(ActionEnum.JAWAB_PERTANYAAN_BOT)
+    if not has_tampil:
+        disallowed.add(ActionEnum.LANJUTAN_HASIL)
+        disallowed.add(ActionEnum.EVALUASI_KECOCOKAN)
+        disallowed.add(ActionEnum.TANYA_SPESIFIKASI)
+        disallowed.add(ActionEnum.BANDINGKAN)
+
+    return [a for a in ActionEnum if a not in disallowed]

@@ -22,9 +22,13 @@ from typing import Any, Dict, List, Tuple
 
 from services.schema_actions import (
     ParserOutput, ActionEnum, ActionArguments, StateUpdate,
-    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum
+    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum,
+    get_parser_json_schema
 )
-from services.validator import validate_parser_output, get_catalog_brands, get_catalog_categories
+from services.validator import (
+    validate_parser_output, check_state_consistency, get_allowed_actions_for_state,
+    get_catalog_brands, get_catalog_categories
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +40,7 @@ Tugas: Memahami pesan pelanggan secara akurat dan mengembalikan JSON terstruktur
 
 DEFINISI 12 AKSI:
 1. sapa: Menyapa atau membuka percakapan tanpa menyebut produk, kebutuhan, atau pertanyaan spesifik.
-2. cari_produk: Mencari produk berdasarkan kriteria teknis eksplisit seperti kategori, merek, spesifikasi perangkat keras, atau batas harga tanpa mengaitkannya dengan beban aktivitas komputasi tertentu.
+2. cari_produk: Mencari produk berdasarkan kriteria teknis eksplisit, menanyakan ketersediaan merek atau model tertentu (seperti 'ada asus?', 'jual vivobook?'), atau memfilter spesifikasi perangkat keras dan batas harga, termasuk pengecualian merek ('merek_kecuali'), tanpa mengaitkannya dengan beban aktivitas komputasi tertentu.
 3. minta_rekomendasi: Meminta saran produk berdasarkan aktivitas konkret, beban kerja komputasi, atau skenario penggunaan nyata yang membutuhkan penalaran kelayakan perangkat.
 4. jawab_pertanyaan_bot: Menjawab pertanyaan atau slot yang sebelumnya diajukan oleh bot, seperti menyebutkan persona, kategori, merek, atau budget secara tunggal tanpa aktivitas penggunaan.
 5. evaluasi_kecocokan: Menanyakan kelayakan atau kecukupan spesifikasi produk yang sedang tampil di layar untuk menjalankan kebutuhan atau beban kerja tertentu.
@@ -51,9 +55,11 @@ DEFINISI 12 AKSI:
 KEBIJAKAN BATAS AKSI:
 - 'minta_rekomendasi' HANYA jika ada aktivitas komputasi konkret atau skenario kerja nyata.
 - Jika pelanggan HANYA menyebut persona (misal dokter, guru, kakek) atau HANYA menyebut kategori/merek/budget tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona/kategori/merek/budget).
-- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama produk. JANGAN mengeluarkan kode produk internal katalog.
+- 'jawab_pertanyaan_bot' HANYA sah jika bot sebelumnya mengajukan pertanyaan ('pending_question' ada di konteks sesi).
+- 'lanjutan_hasil' HANYA sah jika ada produk yang sedang tampil di layar ('produk_tampil' tidak kosong).
+- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama produk dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
-- Untuk pengecualian merek, masukkan ke 'merek_kecuali'.
+- Untuk pengecualian merek pada 'cari_produk' atau 'lanjutan_hasil', masukkan ke 'merek_kecuali'.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
 """
 
@@ -299,23 +305,13 @@ def build_parser_messages(
     return messages
 
 
-def parse_user_message(
-    pesan: str,
-    state: dict | None = None,
-    history: list[dict] | None = None,
-    model: str = PARSER_MODEL,
-    ollama_url: str = OLLAMA_BASE_URL,
-    timeout: float = 25.0,
-    few_shots: list[dict] | None = None
-) -> Tuple[ParserOutput, Dict[str, Any]]:
-    """
-    Mem-parse pesan pelanggan menjadi aksi terstruktur via Ollama (gemma4:e4b).
-    Mengembalikan (ParserOutput_valid, metadata_metrik).
-    """
-    t0 = time.perf_counter()
-    schema = ParserOutput.model_json_schema()
-    messages = build_parser_messages(pesan, state=state, history=history, few_shots=few_shots)
-
+def _call_ollama_chat(
+    messages: list[dict],
+    schema: dict,
+    model: str,
+    ollama_url: str,
+    timeout: float
+) -> Tuple[dict, bool, str, str | None]:
     req_data = {
         "model": model,
         "messages": messages,
@@ -327,11 +323,9 @@ def parse_user_message(
             "num_predict": 120
         }
     }
-
     raw_content = ""
     json_valid = False
     error_msg = None
-
     try:
         req = urllib.request.Request(
             f"{ollama_url}/api/chat",
@@ -349,18 +343,76 @@ def parse_user_message(
         raw_json = {"aksi": "tidak_jelas", "argumen": {"alasan": f"Error: {str(e)}"}}
         error_msg = str(e)
 
-    dt_ms = (time.perf_counter() - t0) * 1000.0
+    return raw_json, json_valid, raw_content, error_msg
 
-    # Jalankan validator deterministik dengan pengecekan enum tertutup ketat
+
+def parse_user_message(
+    pesan: str,
+    state: dict | None = None,
+    history: list[dict] | None = None,
+    model: str = PARSER_MODEL,
+    ollama_url: str = OLLAMA_BASE_URL,
+    timeout: float = 25.0,
+    few_shots: list[dict] | None = None
+) -> Tuple[ParserOutput, Dict[str, Any]]:
+    """
+    Mem-parse pesan pelanggan menjadi aksi terstruktur via Ollama (gemma4:e4b).
+    Mengembalikan (ParserOutput_valid, metadata_metrik).
+    Jika aksi tidak konsisten dengan state, meminta parse ulang 1x dengan enum dibatasi.
+    """
+    t0 = time.perf_counter()
+    schema = get_parser_json_schema()
+    messages = build_parser_messages(pesan, state=state, history=history, few_shots=few_shots)
+
+    raw_json, json_valid, raw_content, error_msg = _call_ollama_chat(
+        messages, schema, model, ollama_url, timeout
+    )
+
     validated_output, is_schema_valid = validate_parser_output(raw_json, session_state=state)
+    is_consistent, reason = check_state_consistency(validated_output, session_state=state)
+    retried = False
 
-    # Nilai di luar enum tertutup dihitung sebagai JSON tidak valid
+    # Jika aksi tak sah menurut state: minta parse ulang sekali dengan enum aksi dibatasi sesuai state
+    if is_schema_valid and not is_consistent:
+        retried = True
+        logger.warning(
+            f"Aksi '{validated_output.aksi.value}' tidak konsisten dengan state: {reason}. "
+            "Melakukan parse ulang 1x dengan enum aksi dibatasi..."
+        )
+        allowed_actions = get_allowed_actions_for_state(state)
+        restricted_schema = get_parser_json_schema(allowed_actions=allowed_actions)
+
+        raw_json_2, json_valid_2, raw_content_2, error_msg_2 = _call_ollama_chat(
+            messages, restricted_schema, model, ollama_url, timeout
+        )
+        validated_output_2, is_schema_valid_2 = validate_parser_output(raw_json_2, session_state=state)
+        is_consistent_2, reason_2 = check_state_consistency(validated_output_2, session_state=state)
+
+        if is_schema_valid_2 and is_consistent_2:
+            validated_output = validated_output_2
+            is_schema_valid = is_schema_valid_2
+            json_valid = json_valid_2
+            raw_content = raw_content_2
+            error_msg = error_msg_2
+        else:
+            # Jika tetap gagal: tidak_jelas
+            logger.warning(f"Parse ulang tetap tidak konsisten/tidak valid: {reason_2}. Menjadi tidak_jelas.")
+            validated_output = ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan=f"Aksi tidak konsisten dengan state: {reason_2 or reason}"),
+                pembaruan_state=StateUpdate()
+            )
+            is_schema_valid = False
+            json_valid = False
+
+    dt_ms = (time.perf_counter() - t0) * 1000.0
     final_json_valid = json_valid and is_schema_valid
 
     metrics = {
         "latency_ms": round(dt_ms, 2),
         "json_valid": final_json_valid,
         "schema_valid": is_schema_valid,
+        "retried": retried,
         "raw_content": raw_content,
         "error": error_msg
     }

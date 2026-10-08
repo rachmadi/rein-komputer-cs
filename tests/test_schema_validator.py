@@ -151,3 +151,85 @@ def test_validator_unmatched_product_reference_rejected():
     assert is_valid2 is False
     assert res2.aksi == ActionEnum.TIDAK_JELAS
 
+
+def test_validator_separated_jenis_enums():
+    # 'pamit' tidak boleh dipakai di lanjutan_hasil (hanya untuk basa_basi)
+    raw1 = {"aksi": "lanjutan_hasil", "argumen": {"jenis": "pamit"}}
+    res1, is_valid1 = validate_parser_output(raw1, session_state={"produk_tampil": [{"kode": "KB-01"}]})
+    assert is_valid1 is False
+    assert res1.aksi == ActionEnum.TIDAK_JELAS
+
+    # 'yang_lain' boleh di lanjutan_hasil
+    raw2 = {"aksi": "lanjutan_hasil", "argumen": {"jenis": "yang_lain"}}
+    res2, is_valid2 = validate_parser_output(raw2, session_state={"produk_tampil": [{"kode": "KB-01"}]})
+    assert is_valid2 is True
+    assert res2.aksi == ActionEnum.LANJUTAN_HASIL
+
+    # 'yang_lain' tidak boleh di basa_basi
+    raw3 = {"aksi": "basa_basi", "argumen": {"jenis": "yang_lain"}}
+    res3, is_valid3 = validate_parser_output(raw3)
+    assert is_valid3 is False
+    assert res3.aksi == ActionEnum.TIDAK_JELAS
+
+    # 'pamit' boleh di basa_basi
+    raw4 = {"aksi": "basa_basi", "argumen": {"jenis": "pamit"}}
+    res4, is_valid4 = validate_parser_output(raw4)
+    assert is_valid4 is True
+    assert res4.aksi == ActionEnum.BASA_BASI
+
+
+def test_state_consistency_checks():
+    from services.validator import check_state_consistency, get_allowed_actions_for_state
+
+    # 1. jawab_pertanyaan_bot tanpa pending_question -> tidak sah
+    out_jawab = ParserOutput(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, argumen=ActionArguments(slot=SlotEnum.PERSONA, nilai="dokter"))
+    is_ok, reason = check_state_consistency(out_jawab, session_state={})
+    assert is_ok is False
+    assert "pending_question" in reason
+
+    # dengan pending_question -> sah
+    is_ok_pend, _ = check_state_consistency(out_jawab, session_state={"pending_question": "persona"})
+    assert is_ok_pend is True
+
+    # 2. lanjutan_hasil tanpa produk_tampil -> tidak sah
+    out_lanjut = ParserOutput(aksi=ActionEnum.LANJUTAN_HASIL, argumen=ActionArguments(jenis=JenisEnum.LEBIH_MURAH))
+    is_ok2, reason2 = check_state_consistency(out_lanjut, session_state={})
+    assert is_ok2 is False
+    assert "produk_tampil" in reason2
+
+    # dengan produk_tampil -> sah
+    is_ok_tampil, _ = check_state_consistency(out_lanjut, session_state={"produk_tampil": [{"kode": "KB-01"}]})
+    assert is_ok_tampil is True
+
+    # 3. get_allowed_actions_for_state
+    allowed_empty = get_allowed_actions_for_state({})
+    assert ActionEnum.JAWAB_PERTANYAAN_BOT not in allowed_empty
+    assert ActionEnum.LANJUTAN_HASIL not in allowed_empty
+    assert ActionEnum.EVALUASI_KECOCOKAN not in allowed_empty
+    assert ActionEnum.CARI_PRODUK in allowed_empty
+
+    allowed_with_q = get_allowed_actions_for_state({"pending_question": "budget"})
+    assert ActionEnum.JAWAB_PERTANYAAN_BOT in allowed_with_q
+
+
+def test_parser_reparse_on_state_inconsistency(monkeypatch):
+    from services.llm_parser import parse_user_message
+
+    calls = []
+
+    def mock_call_ollama(messages, schema, model, ollama_url, timeout):
+        calls.append(schema)
+        if len(calls) == 1:
+            # Panggilan pertama menghasilkan jawab_pertanyaan_bot padahal pending_question kosong
+            return {"aksi": "jawab_pertanyaan_bot", "argumen": {"slot": "persona", "nilai": "guru"}}, True, "{}", None
+        else:
+            # Panggilan kedua (re-parse dengan enum dibatasi) menghasilkan cari_produk
+            return {"aksi": "cari_produk", "argumen": {"kategori": "laptop"}}, True, "{}", None
+
+    monkeypatch.setattr("services.llm_parser._call_ollama_chat", mock_call_ollama)
+
+    output, metrics = parse_user_message("saya guru", state={})
+    assert len(calls) == 2
+    assert metrics["retried"] is True
+    assert output.aksi == ActionEnum.CARI_PRODUK
+
