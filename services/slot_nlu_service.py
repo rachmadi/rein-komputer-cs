@@ -21,7 +21,7 @@ from core.acts import extract_persona_name
 logger = logging.getLogger("slot_nlu")
 
 OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-DEFAULT_NLU_MODEL = os.getenv("SLOT_NLU_MODEL", "llama3.2:1b")
+DEFAULT_NLU_MODEL = "gemma4:e4b"
 DB_PATH = os.getenv("DB_PATH", "data/catalog.db")
 
 # Daftar merek dinamis dari database katalog Bobby Computer
