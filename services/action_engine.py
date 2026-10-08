@@ -70,6 +70,16 @@ def get_product_screen_inch(p: dict) -> float | None:
     return None
 
 
+def cpu_tier_to_description(tier: int) -> str:
+    mapping = {
+        1: "Intel Core i3 / Ryzen 3 / seri N (komputasi harian dasar)",
+        2: "Intel Core i5 / Ryzen 5 / Core Ultra 5 (multitasking standar & kerja aktif)",
+        3: "Intel Core i7 / Ryzen 7 / Core Ultra 7 (performa tinggi & beban grafis)",
+        4: "Intel Core i9 / Ryzen 9 / Core Ultra 9 (komputasi profesional sangat berat)"
+    }
+    return mapping.get(tier, f"Kelas prosesor tingkat {tier}")
+
+
 class ActionEngine:
     def __init__(self, catalog: Catalog | None = None, db_path: str | None = None):
         if catalog:
@@ -371,6 +381,11 @@ class ActionEngine:
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi_aktual": clean_specs(p),
                 "status_kecocokan": status_kecocokan,
+                "deskripsi_cpu": {
+                    "aktual": p.get("cpu") or f"Tingkat prosesor {p_cpu_tier}",
+                    "minimum": cpu_tier_to_description(min_cpu),
+                    "rekomendasi": cpu_tier_to_description(rec_cpu)
+                },
                 "angka_aktual": {
                     "cpu_tier": p_cpu_tier,
                     "ram_gb": p_ram,

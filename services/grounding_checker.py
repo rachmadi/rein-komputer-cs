@@ -95,6 +95,20 @@ class GroundingChecker:
                         nums.add(int(v))
         return nums
 
+    @staticmethod
+    def extract_fact_schema_keys(obj) -> set[str]:
+        """Ekstrak secara dinamis semua nama key field dari skema fakta."""
+        keys = set()
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(k, str):
+                    keys.add(k)
+                keys.update(GroundingChecker.extract_fact_schema_keys(v))
+        elif isinstance(obj, list):
+            for item in obj:
+                keys.update(GroundingChecker.extract_fact_schema_keys(item))
+        return keys
+
     def check(self, teks: str, fakta: dict, state: dict | None = None, penilaian: dict | None = None) -> Tuple[bool, List[str]]:
         """
         Memeriksa apakah teks jawaban LLM mematuhi grounding dan keselamatan fakta.
@@ -113,7 +127,23 @@ class GroundingChecker:
         if leak_m:
             violations.append(f"Menyebut kode internal terlarang: {', '.join(leak_m)}.")
 
-        # 3. Periksa kata teknis sistem / Python / DB
+        # 3. Periksa istilah skema fakta internal dinamis dan istilah teknis sistem
+        schema_keys = self.extract_fact_schema_keys(fakta)
+        forbidden_schema_terms = set()
+        for sk in schema_keys:
+            if "_" in sk:
+                forbidden_schema_terms.add(sk)
+            if "tier" in sk.lower():
+                forbidden_schema_terms.add("tier")
+
+        for term in forbidden_schema_terms:
+            if term == "tier":
+                if re.search(r"\btier\b", teks, re.IGNORECASE):
+                    violations.append("Menyebut istilah skema fakta internal 'tier' (mis. tier 1, tier 2).")
+            else:
+                if re.search(rf"\b{re.escape(term)}\b", teks, re.IGNORECASE):
+                    violations.append(f"Menyebut nama field skema fakta internal '{term}'.")
+
         technical_words = ["none", "nan", "null", "db_path", "pydantic", "schema_valid", "session_state"]
         for tw in technical_words:
             if re.search(rf"\b{tw}\b", teks, re.IGNORECASE):
@@ -142,7 +172,7 @@ class GroundingChecker:
         # 6. Periksa kesahihan angka spesifikasi pada evaluasi_kecocokan
         if fakta.get("evaluasi_produk"):
             valid_nums = self.extract_spec_numbers_from_facts(fakta)
-            spec_matches = re.findall(r"(?:ram|ssd|vram|tier)\s*(\d+)", teks.lower())
+            spec_matches = re.findall(r"(?:ram|ssd|vram)\s*(\d+)", teks.lower())
             for sm in spec_matches:
                 val = int(sm)
                 if val not in valid_nums:
