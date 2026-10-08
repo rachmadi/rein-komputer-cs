@@ -1,0 +1,9 @@
+{
+  "samples": 20,
+  "std_acc_pct": 90.0,
+  "std_latency_p50_ms": 3862.25,
+  "cmp_acc_pct": 85.0,
+  "cmp_latency_p50_ms": 4483.035599987488,
+  "delta_latency_ms": -620.7855999874882,
+  "apply_compact": false
+}

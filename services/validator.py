@@ -226,7 +226,28 @@ def validate_parser_output(
             )
         args.produk = resolved_codes
 
-    # 5. Normalisasi persona & sebutan di state_update
+    # 5. Pembersihan deterministik: Hapus argumen yang tidak relevan dengan aksi yang dipilih
+    action_allowed_args = {
+        ActionEnum.SAPA: set(),
+        ActionEnum.CARI_PRODUK: {"kategori", "merek", "merek_kecuali", "nama_model", "gpu", "min_harga", "max_harga", "ram_gb_min", "storage_gb_min", "ukuran_layar"},
+        ActionEnum.MINTA_REKOMENDASI: {"kebutuhan_teks", "persona", "kategori", "budget_min", "budget_max"},
+        ActionEnum.JAWAB_PERTANYAAN_BOT: {"slot", "nilai"},
+        ActionEnum.EVALUASI_KECOCOKAN: {"rujukan_produk", "produk", "kebutuhan_teks"},
+        ActionEnum.TANYA_SPESIFIKASI: {"rujukan_produk", "produk", "atribut"},
+        ActionEnum.BANDINGKAN: {"rujukan_produk", "produk"},
+        ActionEnum.LANJUTAN_HASIL: {"jenis", "merek_kecuali", "filter"},
+        ActionEnum.TANYA_INFO_TOKO: {"topik"},
+        ActionEnum.PERBAIKI_PERCAKAPAN: {"jenis", "rujukan"},
+        ActionEnum.BASA_BASI: {"jenis"},
+        ActionEnum.TIDAK_JELAS: {"alasan"}
+    }
+    allowed = action_allowed_args.get(parsed.aksi)
+    if allowed is not None:
+        for field in ActionArguments.model_fields.keys():
+            if field not in allowed and getattr(args, field, None) is not None:
+                setattr(args, field, None)
+
+    # 6. Normalisasi persona & sebutan di state_update
     if state_up.sebutan:
         state_up.sebutan = state_up.sebutan.strip()
     if state_up.persona:

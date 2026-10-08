@@ -24,7 +24,7 @@ dev-022,dev,ada opsi merk lain ga selain acer?,,"[{""no"": 1, ""kode"": ""KB-L01
 dev-023,dev,garansinya berapa lama min?,,,tanya_info_toko,"{""topik"": ""garansi""}",,log,tidak,Info garansi toko
 dev-024,dev,tokonya ada di mana ya lokasinya?,,,tanya_info_toko,"{""topik"": ""alamat""}",,log,tidak,Info alamat toko (enum tertutup 'alamat')
 dev-025,dev,bisa bayar pake kartu kredit cicilan?,,,tanya_info_toko,"{""topik"": ""pembayaran""}",,log,tidak,Info pembayaran cicilan
-dev-026,dev,bagusan nomor 1 apa nomor 2?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}]",bandingkan,"{""produk"": [""1"", ""2""]}",,log,tidak,Bandingkan produk 1 dan 2
+dev-026,dev,bagusan nomor 1 apa nomor 2?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}]",bandingkan,"{""rujukan_produk"": [1, 2]}",,log,tidak,Bandingkan produk 1 dan 2
 dev-027,dev,makasih banyak infonya sangat membantu,,,basa_basi,"{""jenis"": ""terima_kasih""}",,log,tidak,Basa-basi terima kasih
 dev-028,dev,ok sip makasih ya,,,basa_basi,"{""jenis"": ""terima_kasih""}",,log,tidak,Basa-basi terima kasih santai
 dev-029,dev,asdfghjkl,,,tidak_jelas,"{""alasan"": ""teks acak tanpa arti""}",,buatan,tidak,Teks gibberish/tidak jelas

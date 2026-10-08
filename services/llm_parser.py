@@ -317,7 +317,7 @@ def parse_user_message(
     history: list[dict] | None = None,
     model: str = PARSER_MODEL,
     ollama_url: str = OLLAMA_BASE_URL,
-    timeout: float = 12.0
+    timeout: float = 25.0
 ) -> Tuple[ParserOutput, Dict[str, Any]]:
     """
     Mem-parse pesan pelanggan menjadi aksi terstruktur via Ollama (gemma4:e4b).

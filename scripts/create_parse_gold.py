@@ -269,7 +269,7 @@ dev_items = [
         "pesan": "bagusan nomor 1 apa nomor 2?",
         "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
         "label_aksi": "bandingkan",
-        "label_argumen": {"produk": ["1", "2"]},
+        "label_argumen": {"rujukan_produk": [1, 2]},
         "label_pembaruan_state": {},
         "sumber": "log",
         "catatan": "Bandingkan produk 1 dan 2"
