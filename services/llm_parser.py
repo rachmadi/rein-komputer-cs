@@ -5,10 +5,11 @@ LLM-based Natural Language Understanding (NLU) Parser untuk Bobby Computer.
 
 Sesuai Antigravity v2:
 - Model: gemma4:e4b
-- Structured Output: JSON schema Pydantic
+- Structured Output: JSON schema Pydantic dengan ENUM TERTUTUP KETAT
 - Temperature: 0, num_predict: 120, think: False
+- Susunan Prompt: Instruksi dan contoh statis di depan, state dan pesan di akhir
 - Few-shots: HANYA dari set pengembangan (dev)
-- Validasi deterministik: skema, enum, rentang, dan resolusi rujukan produk.
+- Validasi deterministik: skema, enum tertutup, rentang, dan resolusi rujukan produk.
 """
 from __future__ import annotations
 
@@ -19,7 +20,10 @@ import urllib.request
 import logging
 from typing import Any, Dict, List, Tuple
 
-from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, StateUpdate
+from services.schema_actions import (
+    ParserOutput, ActionEnum, ActionArguments, StateUpdate,
+    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum
+)
 from services.validator import validate_parser_output, get_catalog_brands, get_catalog_categories
 
 logger = logging.getLogger(__name__)
@@ -27,28 +31,39 @@ logger = logging.getLogger(__name__)
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 PARSER_MODEL = os.getenv("PARSER_MODEL", "gemma4:e4b")
 
-SYSTEM_PARSER_PROMPT = """Kamu adalah NLU Parser untuk asisten Customer Care Bobby Computer di Telegram.
-Tugasmu: memahami pesan pelanggan secara akurat dan menerjemahkannya ke dalam JSON terstruktur.
+SYSTEM_PARSER_PROMPT = """Kamu adalah NLU Parser untuk customer care Bobby Computer di Telegram.
+Tugas: Memahami pesan pelanggan secara akurat dan mengembalikan JSON terstruktur sesuai skema tertutup.
 
-HIMPUNAN AKSI (11 AKSI):
-1. sapa: Sapaan pembuka tanpa permintaan spesifik (contoh: 'halo', 'selamat siang', termasuk sapaan singkat 'p').
-2. cari_produk: Mencari produk atau spesifikasi eksplisit tanpa menyebut peruntukan orang ('ada asus?', 'pc gaming rtx 4060', 'ram 32gb').
-3. minta_rekomendasi: Kebutuhan atau persona sudah jelas untuk rekomendasi ('laptop buat kakek', 'butuh laptop dkv', 'Paling cuma cari resep dan nonton youtube').
-4. jawab_pertanyaan_bot: Pelanggan menjawab pending_question bot secara singkat/parsial (slot: kebutuhan/aktivitas/budget/kategori/merek/persona, nilai).
-5. evaluasi_kecocokan: Menanyakan kecocokan atau fitur/spesifikasi produk yang sedang tampil ('cukup gak?', 'yang kedua bagus gak?', 'layarnya udah IPS?', 'bisa main valorant?').
-6. bandingkan: Membandingkan atau memilih antara beberapa produk yang disebut atau sedang tampil ('bagusan nomor 1 apa nomor 2?').
-7. lanjutan_hasil: Menyempitkan/mengubah hasil sebelumnya ('ada yang lebih murah?', 'ada opsi merk lain?').
-8. tanya_info_toko: Pertanyaan garansi, servis, pembayaran, pengiriman, jam buka, alamat toko.
-9. perbaiki_percakapan: Pelanggan menegur, mengoreksi, atau mengeluhkan salah paham ('kok malah...', 'yang tanya HP 14 siapa?', 'kan udah kubilang...').
-10. basa_basi: Obrolan penutup atau di luar topik (jenis: terima_kasih/pamit/lainnya).
-11. tidak_jelas: Teks acak atau maksud tidak bisa dipastikan dengan wajar ('asdfghjkl', 'hmm gimana ya').
+DAFTAR 12 AKSI & ATURAN ENUM TERTUTUP:
+1. sapa: Sapaan pembuka tanpa permintaan spesifik (contoh: 'halo', 'selamat siang', termasuk 'p').
+2. cari_produk: Mencari produk/spesifikasi eksplisit tanpa menyebut peruntukan orang ('ada asus?', 'pc gaming rtx 4060', 'ram 32gb').
+   - Argumen: kategori, merek, merek_kecuali, nama_model, gpu (mis. 'rtx 4060'), min_harga, max_harga, ram_gb_min, storage_gb_min, ukuran_layar.
+3. minta_rekomendasi: Kebutuhan atau aktivitas konkret sudah jelas untuk rekomendasi ('cari resep dan nonton youtube', 'buat render blender', 'laptop buat kakek').
+   - Argumen: kebutuhan_teks, persona, kategori, budget_min, budget_max.
+4. jawab_pertanyaan_bot: Pelanggan menjawab pending_question bot secara singkat/parsial (slot tertutup: 'kebutuhan', 'aktivitas', 'budget', 'kategori', 'merek', 'persona').
+5. evaluasi_kecocokan: Menanyakan apakah produk yang tampil cukup/cocok untuk aktivitas ('cukup gak spek segitu?', 'kuat main valorant gak?', 'yang kedua bagus nggak?').
+   - Argumen: produk (daftar kode/nomor), kebutuhan_teks.
+6. tanya_spesifikasi: Menanyakan fakta spesifikasi produk yang tampil ('layarnya udah IPS?', 'ssd nya berapa GB?', 'prosesornya apa?', 'keyboardnya ada lampu?').
+   - Argumen: produk, atribut (enum tertutup: 'ram', 'storage', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'lainnya').
+7. bandingkan: Membandingkan atau memilih antara beberapa produk yang disebut/tampil ('bagusan nomor 1 apa nomor 2?').
+   - Argumen: produk (daftar kode/nomor).
+8. lanjutan_hasil: Menyempitkan/mengubah hasil sebelumnya ('ada yang lebih murah?', 'ada opsi merk lain selain acer?').
+   - Argumen: jenis (enum tertutup: 'lebih_murah', 'lebih_mahal', 'yang_lain', 'filter_tambahan'), merek_kecuali.
+9. tanya_info_toko: Tanya info toko yang tidak ada di katalog.
+   - Argumen: topik (enum tertutup: 'garansi', 'servis', 'pembayaran', 'pengiriman', 'jam_buka', 'alamat', 'lainnya').
+10. perbaiki_percakapan: Pelanggan menegur, mengoreksi, atau mengeluh karena bot salah paham ('kok malah...', 'yang tanya HP 14 siapa?', 'kan udah kubilang...', 'bukan itu maksudku').
+    - Argumen: jenis (enum tertutup: 'salah_paham', 'keluhan', 'koreksi'), rujukan.
+11. basa_basi: Obrolan penutup atau di luar topik.
+    - Argumen: jenis (enum tertutup: 'terima_kasih', 'pamit', 'lainnya').
+12. tidak_jelas: Teks acak atau maksud tidak bisa dipastikan ('asdfghjkl', 'hmm gimana ya').
+    - Argumen: alasan.
 
-ATURAN PARSING:
-- Jika pelanggan menjawab aktivitas/kebutuhan secara lengkap untuk direkomendasikan ('Paling cuma cari resep dan nonton youtube'), gunakan `minta_rekomendasi`. Jika jawaban hanya nilai singkat/slot ('Buat hiburan', 'maks 7 juta'), gunakan `jawab_pertanyaan_bot`.
-- Jika ada produk yang sedang tampil dan pelanggan menanyakan apakah layarnya IPS, RAM bisa upgrade, atau cukup untuk aktivitasnya, gunakan `evaluasi_kecocokan`.
-- Jika pelanggan membandingkan dua opsi ('bagusan no 1 apa no 2?'), gunakan `bandingkan`.
-- Jika pelanggan menegur, menyindir, atau mengoreksi bot karena salah paham, gunakan `perbaiki_percakapan`.
-- Salin sebutan persona (ibu, bapak, mama, dsb.) persis sesuai kata pelanggan ke `pembaruan_state.sebutan`.
+KEBIJAKAN PENTING:
+- 'minta_rekomendasi' HANYA jika ada aktivitas konkret ('cari resep dan nonton youtube', 'ngetik word office', 'belajar coding python') ATAU jika pelanggan secara eksplisit meminta rekomendasi ('laptop layar 15.6 inch buat kakek').
+- Jika pelanggan HANYA menyebut persona ('buat mama', 'untuk ibu saya yang sudah sepuh') atau HANYA menyebut kategori/merek/budget tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona/kategori/merek/budget).
+- Untuk kartu grafis seperti 'rtx 4060', 'rtx 4050', 'gtx 1650', masukkan ke argumen 'gpu', BUKAN 'nama_model'.
+- Untuk pengecualian merek ('selain acer'), masukkan ke 'merek_kecuali'.
+- DILARANG menggunakan nilai jenis/topik/slot di luar enum yang telah ditentukan.
 """
 
 DEV_FEW_SHOTS = [
@@ -90,6 +105,18 @@ DEV_FEW_SHOTS = [
     },
     {
         "role": "user",
+        "content": "Pesan: \"pc dekstop gaming rtx 4060\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "cari_produk",
+            "argumen": {"kategori": "desktop", "gpu": "rtx 4060"},
+            "pembaruan_state": {"kategori": "desktop"}
+        })
+    },
+    {
+        "role": "user",
         "content": "Pesan: \"Buat mama sih bukan buat aku\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"
     },
     {
@@ -98,6 +125,18 @@ DEV_FEW_SHOTS = [
             "aksi": "jawab_pertanyaan_bot",
             "argumen": {"slot": "persona", "nilai": "mama"},
             "pembaruan_state": {"persona": "mama", "sebutan": "mama"}
+        })
+    },
+    {
+        "role": "user",
+        "content": "Pesan: \"Untuk ibu saya yang sudah sepuh\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "jawab_pertanyaan_bot",
+            "argumen": {"slot": "persona", "nilai": "ibu sepuh"},
+            "pembaruan_state": {"persona": "ibu sepuh", "sebutan": "ibu"}
         })
     },
     {
@@ -126,6 +165,30 @@ DEV_FEW_SHOTS = [
     },
     {
         "role": "user",
+        "content": "Pesan: \"yang kedua bagus nggak?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "evaluasi_kecocokan",
+            "argumen": {"produk": ["2"]},
+            "pembaruan_state": {}
+        })
+    },
+    {
+        "role": "user",
+        "content": "Pesan: \"layarnya udah ips?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}]}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "tanya_spesifikasi",
+            "argumen": {"produk": ["KB-L01"], "atribut": "layar"},
+            "pembaruan_state": {}
+        })
+    },
+    {
+        "role": "user",
         "content": "Pesan: \"bagusan nomor 1 apa nomor 2?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"
     },
     {
@@ -133,6 +196,18 @@ DEV_FEW_SHOTS = [
         "content": json.dumps({
             "aksi": "bandingkan",
             "argumen": {"produk": ["1", "2"]},
+            "pembaruan_state": {}
+        })
+    },
+    {
+        "role": "user",
+        "content": "Pesan: \"ada opsi merk lain ga selain acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\", \"merek\": \"acer\"}]}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "lanjutan_hasil",
+            "argumen": {"jenis": "yang_lain", "merek_kecuali": "acer"},
             "pembaruan_state": {}
         })
     },
@@ -162,49 +237,37 @@ DEV_FEW_SHOTS = [
     },
     {
         "role": "user",
+        "content": "Pesan: \"Kan sudah dibilang buat hiburan\"\nState: {\"pending_question\": null, \"slot_diketahui\": {\"kebutuhan_teks\": \"hiburan\"}, \"produk_tampil\": []}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "perbaiki_percakapan",
+            "argumen": {"jenis": "koreksi", "rujukan": "buat hiburan"},
+            "pembaruan_state": {"kebutuhan_teks": "hiburan"}
+        })
+    },
+    {
+        "role": "user",
         "content": "Pesan: \"Buat hiburan\"\nState: {\"pending_question\": \"aktivitas\", \"produk_tampil\": []}"
     },
     {
         "role": "assistant",
         "content": json.dumps({
             "aksi": "jawab_pertanyaan_bot",
-            "argumen": {"slot": "aktivitas", "nilai": "hiburan (nonton, browsing)"},
+            "argumen": {"slot": "aktivitas", "nilai": "hiburan"},
             "pembaruan_state": {"kebutuhan_teks": "hiburan"}
         })
     },
     {
         "role": "user",
-        "content": "Pesan: \"Mana?\"\nState: {\"pending_question\": null, \"slot_diketahui\": {\"kebutuhan_teks\": \"hiburan\"}, \"produk_tampil\": []}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "minta_rekomendasi",
-            "argumen": {"kebutuhan_teks": "hiburan"},
-            "pembaruan_state": {}
-        })
-    },
-    {
-        "role": "user",
-        "content": "Pesan: \"ada yang lebih murah?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"kode\": \"KB-L01\", \"harga\": 8000000}]}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "lanjutan_hasil",
-            "argumen": {"jenis": "lebih_murah"},
-            "pembaruan_state": {}
-        })
-    },
-    {
-        "role": "user",
-        "content": "Pesan: \"garansinya berapa lama?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
+        "content": "Pesan: \"tokonya ada di mana ya lokasinya?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
     },
     {
         "role": "assistant",
         "content": json.dumps({
             "aksi": "tanya_info_toko",
-            "argumen": {"topik": "garansi"},
+            "argumen": {"topik": "alamat"},
             "pembaruan_state": {}
         })
     },
@@ -223,15 +286,27 @@ DEV_FEW_SHOTS = [
 ]
 
 
-def build_parser_context(
+def build_parser_messages(
     pesan: str,
     state: dict | None = None,
     history: list[dict] | None = None
-) -> str:
-    """Membangun string prompt konteks untuk parser LLM."""
+) -> List[Dict[str, str]]:
+    """
+    Menyusun messages Ollama dengan struktur:
+    1. Instruksi Statis (System Prompt + Merek/Kategori DB) di depan.
+    2. Contoh Few-Shot Statis (DEV_FEW_SHOTS) di urutan berikutnya.
+    3. State Percakapan, Riwayat, dan Pesan Baru Pelanggan di akhir.
+    Struktur ini memaksimalkan penggunaan KV cache prefix Ollama/llamacpp.
+    """
     s = state or {}
     brands = get_catalog_brands()
     cats = get_catalog_categories()
+
+    system_content = (
+        f"{SYSTEM_PARSER_PROMPT}\n"
+        f"Katalog Merek Tersedia: {', '.join(brands)}\n"
+        f"Katalog Kategori Tersedia: {', '.join(cats)}"
+    )
 
     state_summary = {
         "pending_question": s.get("pending_question"),
@@ -245,12 +320,9 @@ def build_parser_context(
             }
             for idx, p in enumerate(s.get("produk_tampil", []))
         ],
-        "profil_aktif": s.get("profil_aktif"),
-        "merek_tersedia": brands,
-        "kategori_tersedia": cats
+        "profil_aktif": s.get("profil_aktif")
     }
 
-    # Format 6 riwayat terakhir
     recent_history = []
     if history:
         for h in history[-6:]:
@@ -258,13 +330,18 @@ def build_parser_context(
             recent_history.append(f"{role}: {h.get('content', '')}")
     history_str = "\n".join(recent_history) if recent_history else "Tidak ada"
 
-    return (
-        f"Katalog Merek: {', '.join(brands)}\n"
-        f"Katalog Kategori: {', '.join(cats)}\n"
-        f"Riwayat Pesan Terakhir:\n{history_str}\n"
-        f"State Percakapan: {json.dumps(state_summary, ensure_ascii=False)}\n"
+    user_dynamic_content = (
+        f"Riwayat Pesan Terakhir:\n{history_str}\n\n"
+        f"State Percakapan: {json.dumps(state_summary, ensure_ascii=False)}\n\n"
         f"Pesan Baru Pelanggan: \"{pesan}\""
     )
+
+    messages = [
+        {"role": "system", "content": system_content},
+        *DEV_FEW_SHOTS,
+        {"role": "user", "content": user_dynamic_content}
+    ]
+    return messages
 
 
 def parse_user_message(
@@ -281,13 +358,7 @@ def parse_user_message(
     """
     t0 = time.perf_counter()
     schema = ParserOutput.model_json_schema()
-    user_context = build_parser_context(pesan, state=state, history=history)
-
-    messages = [
-        {"role": "system", "content": SYSTEM_PARSER_PROMPT},
-        *DEV_FEW_SHOTS,
-        {"role": "user", "content": user_context}
-    ]
+    messages = build_parser_messages(pesan, state=state, history=history)
 
     req_data = {
         "model": model,
@@ -324,12 +395,16 @@ def parse_user_message(
 
     dt_ms = (time.perf_counter() - t0) * 1000.0
 
-    # Jalankan validator deterministik
-    validated_output = validate_parser_output(raw_json, session_state=state)
+    # Jalankan validator deterministik dengan pengecekan enum tertutup ketat
+    validated_output, is_schema_valid = validate_parser_output(raw_json, session_state=state)
+
+    # Nilai di luar enum tertutup dihitung sebagai JSON tidak valid
+    final_json_valid = json_valid and is_schema_valid
 
     metrics = {
         "latency_ms": round(dt_ms, 2),
-        "json_valid": json_valid,
+        "json_valid": final_json_valid,
+        "schema_valid": is_schema_valid,
         "raw_content": raw_content,
         "error": error_msg
     }

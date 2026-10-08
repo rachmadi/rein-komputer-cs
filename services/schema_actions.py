@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 services/schema_actions.py
-Definisi skema Pydantic dan JSON Schema untuk 11 aksi parser Antigravity v2.
+Definisi skema Pydantic dan JSON Schema tertutup untuk 12 aksi parser Antigravity v2.
 """
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ class ActionEnum(str, Enum):
     MINTA_REKOMENDASI = "minta_rekomendasi"
     JAWAB_PERTANYAAN_BOT = "jawab_pertanyaan_bot"
     EVALUASI_KECOCOKAN = "evaluasi_kecocokan"
+    TANYA_SPESIFIKASI = "tanya_spesifikasi"
     BANDINGKAN = "bandingkan"
     LANJUTAN_HASIL = "lanjutan_hasil"
     TANYA_INFO_TOKO = "tanya_info_toko"
@@ -24,11 +25,62 @@ class ActionEnum(str, Enum):
     TIDAK_JELAS = "tidak_jelas"
 
 
+class SlotEnum(str, Enum):
+    KEBUTUHAN = "kebutuhan"
+    AKTIVITAS = "aktivitas"
+    BUDGET = "budget"
+    KATEGORI = "kategori"
+    MEREK = "merek"
+    PERSONA = "persona"
+
+
+class JenisEnum(str, Enum):
+    # lanjutan_hasil
+    LEBIH_MURAH = "lebih_murah"
+    LEBIH_MAHAL = "lebih_mahal"
+    YANG_LAIN = "yang_lain"
+    FILTER_TAMBAHAN = "filter_tambahan"
+    # perbaiki_percakapan
+    SALAH_PAHAM = "salah_paham"
+    KELUHAN = "keluhan"
+    KOREKSI = "koreksi"
+    # basa_basi
+    TERIMA_KASIH = "terima_kasih"
+    PAMIT = "pamit"
+    LAINNYA = "lainnya"
+
+
+class TokoTopikEnum(str, Enum):
+    GARANSI = "garansi"
+    SERVIS = "servis"
+    PEMBAYARAN = "pembayaran"
+    PENGIRIMAN = "pengiriman"
+    JAM_BUKA = "jam_buka"
+    ALAMAT = "alamat"
+    LAINNYA = "lainnya"
+
+
+class AtributSpesifikasiEnum(str, Enum):
+    RAM = "ram"
+    STORAGE = "storage"
+    CPU = "cpu"
+    GPU = "gpu"
+    LAYAR = "layar"
+    BATERAI = "baterai"
+    PORT = "port"
+    BOBOT = "bobot"
+    KEYBOARD = "keyboard"
+    KAMERA = "kamera"
+    LAINNYA = "lainnya"
+
+
 class ActionArguments(BaseModel):
     # cari_produk
     kategori: Optional[str] = None
     merek: Optional[str] = None
+    merek_kecuali: Optional[str] = None
     nama_model: Optional[str] = None
+    gpu: Optional[str] = None
     min_harga: Optional[int] = None
     max_harga: Optional[int] = None
     ram_gb_min: Optional[int] = None
@@ -42,21 +94,21 @@ class ActionArguments(BaseModel):
     budget_max: Optional[int] = None
 
     # jawab_pertanyaan_bot
-    slot: Optional[str] = None
+    slot: Optional[SlotEnum] = None
     nilai: Optional[Union[str, int, float, None]] = None
 
-    # evaluasi_kecocokan & bandingkan
+    # evaluasi_kecocokan, tanya_spesifikasi, & bandingkan
     produk: Optional[List[str]] = None
+    atribut: Optional[AtributSpesifikasiEnum] = None
 
-    # lanjutan_hasil
-    jenis: Optional[str] = None  # lebih_murah, lebih_mahal, yang_lain, filter_tambahan
+    # lanjutan_hasil, perbaiki_percakapan, basa_basi
+    jenis: Optional[JenisEnum] = None
     filter: Optional[Dict[str, Any]] = None
 
     # tanya_info_toko
-    topik: Optional[str] = None  # garansi, servis, pembayaran, pengiriman, jam_buka, alamat, lainnya
+    topik: Optional[TokoTopikEnum] = None
 
     # perbaiki_percakapan
-    # jenis: salah_paham, keluhan, koreksi
     rujukan: Optional[str] = None
 
     # tidak_jelas
@@ -90,5 +142,5 @@ class ParserOutput(BaseModel):
 
 
 def get_parser_json_schema() -> dict:
-    """Mengembalikan JSON schema dictionary untuk Ollama structured output."""
+    """Mengembalikan JSON schema dictionary tertutup untuk Ollama structured output."""
     return ParserOutput.model_json_schema()

@@ -4,19 +4,22 @@ services/validator.py
 Validator deterministik keluaran Parser LLM untuk Antigravity v2.
 
 Prinsip:
-- R2: Hanya memvalidasi skema, tipe, enum, rentang, dan keberadaan di katalog.
-- R3: Tidak menimpa aksi parser dengan aturan bahasa/regex. Jika tidak valid atau ragu,
-      hasilnya diubah menjadi `tidak_jelas` dengan alasan eksplisit.
+- R2: Hanya memvalidasi skema, tipe, enum tertutup, rentang, dan keberadaan di katalog.
+- R3: Tidak menimpa aksi parser dengan aturan bahasa/regex. Jika tidak valid atau di luar enum tertutup,
+      hasilnya ditolak dan diubah menjadi `tidak_jelas` dengan alasan eksplisit.
 """
 from __future__ import annotations
 
 import os
 import sqlite3
 import logging
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Tuple
 from pydantic import ValidationError
 
-from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, StateUpdate
+from services.schema_actions import (
+    ParserOutput, ActionEnum, ActionArguments, StateUpdate,
+    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +75,6 @@ def resolve_product_references(
         "3": 2, "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2,
     }
 
-    # Jika produk_refs kosong tapi ada produk tampil dan aksi membutuhkan rujukan produk
     if not produk_refs:
         # Default: ambil semua kode produk yang sedang tampil
         return [p.get("kode") for p in produk_tampil if p.get("kode")]
@@ -88,7 +90,6 @@ def resolve_product_references(
                     matched = True
                     break
         if not matched:
-            # Periksa apakah ref cocok langsung dengan kode produk di katalog atau nama
             for p in produk_tampil:
                 p_kode = str(p.get("kode", "")).lower()
                 p_nama = str(p.get("nama", "")).lower()
@@ -106,33 +107,40 @@ def validate_parser_output(
     raw_output: dict | Any,
     session_state: dict | None = None,
     db_path: str | None = None
-) -> ParserOutput:
+) -> Tuple[ParserOutput, bool]:
     """
-    Memvalidasi keluaran parser LLM.
-    - Menjamin format Pydantic / ActionEnum valid.
-    - Memverifikasi rentang numerik budget (harus non-negatif).
-    - Memvalidasi konsistensi rujukan produk terhadap session_state.
-    - Menormalkan kategori/merek sesuai data katalog tanpa menimpa aksi.
-    - Jika format rusak atau tidak valid: kembalikan `tidak_jelas`.
+    Memvalidasi keluaran parser LLM terhadap skema dan enum tertutup.
+    Mengembalikan (ParserOutput, is_schema_valid).
+
+    - Nilai di luar enum tertutup (misal jenis 'pengingat', topik 'alamat_toko')
+      ditolak dan ditandai is_schema_valid = False.
     """
     state = session_state or {}
 
     # 1. Validasi struktur JSON ke Pydantic
     if not isinstance(raw_output, dict):
-        return ParserOutput(
-            aksi=ActionEnum.TIDAK_JELAS,
-            argumen=ActionArguments(alasan="Format keluaran bukan objek JSON"),
-            pembaruan_state=StateUpdate()
+        return (
+            ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan="Format keluaran bukan objek JSON"),
+                pembaruan_state=StateUpdate()
+            ),
+            False
         )
 
     try:
         parsed = ParserOutput.model_validate(raw_output)
     except ValidationError as ve:
-        logger.warning(f"Validasi skema parser gagal: {ve}")
-        return ParserOutput(
-            aksi=ActionEnum.TIDAK_JELAS,
-            argumen=ActionArguments(alasan=f"Skema tidak valid: {ve.errors()[0].get('msg', 'error')}"),
-            pembaruan_state=StateUpdate()
+        err_field = ve.errors()[0].get("loc", [""])[-1]
+        err_msg = ve.errors()[0].get("msg", "invalid")
+        logger.warning(f"Validasi skema/enum parser gagal pada field '{err_field}': {err_msg}")
+        return (
+            ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan=f"Enum/skema tidak valid pada {err_field}: {err_msg}"),
+                pembaruan_state=StateUpdate()
+            ),
+            False
         )
 
     args = parsed.argumen
@@ -161,8 +169,8 @@ def validate_parser_output(
         if cat_clean in catalog_cats:
             state_up.kategori = cat_clean
 
-    # 4. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan dan bandingkan
-    if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.BANDINGKAN):
+    # 4. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
+    if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
         produk_tampil = state.get("produk_tampil", [])
         args.produk = resolve_product_references(args.produk, produk_tampil)
 
@@ -172,4 +180,4 @@ def validate_parser_output(
     if state_up.persona:
         state_up.persona = state_up.persona.strip().lower()
 
-    return parsed
+    return parsed, True
