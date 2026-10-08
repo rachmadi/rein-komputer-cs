@@ -749,8 +749,8 @@ def run_agentic_tool(
         else:
             if known_needs:
                 reply = (
-                    f"Catatan kebutuhan yang kami miliki saat ini baru{needs_ref} 😊 "
-                    f"Rekomendasi{prod_ref} yang sempat kami tampilkan adalah pilihan awalan dari katalog kami.\n\n"
+                    f"Saya sebenarnya belum mengetahui kebutuhan pasti Kakak secara mendalam 😊 "
+                    f"Catatan yang kami miliki baru{needs_ref}, dan rekomendasi{prod_ref} sebelumnya merupakan rekomendasi umum dari katalog kami.\n\n"
                     f"Boleh ceritakan lebih detail aktivitas harian apa saja yang paling sering dijalankan dan berapa perkiraan budgetnya? Kami siap bantu pilihkan yang paling pas!"
                 )
             else:

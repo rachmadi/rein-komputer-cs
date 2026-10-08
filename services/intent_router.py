@@ -171,7 +171,8 @@ def classify_intent(text: str, has_prior_context: bool = False) -> IntentClass:
 
     # 4. MEREK-STOK: Pertanyaan stok atau penjualan merek ("jual laptop acer?", "ada Asus?", "punya Dell?")
     matched_brand = detect_brand(low)
-    if matched_brand:
+    has_specific_product = any(re.search(pat, low) for pat in PRODUCT_CODES) or any(re.search(r"\b" + re.escape(model) + r"\b", low) for model in PRODUCT_MODELS)
+    if matched_brand and not has_specific_product:
         has_need = any(re.search(r"\b" + nd + r"\b", low) for nd in NEED_INDICATORS)
         has_spec = any(re.search(pat, low) for pat in SPEC_INDICATORS)
         if not has_need and not has_spec:
