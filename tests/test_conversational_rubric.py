@@ -414,5 +414,39 @@ def test_rubric_niat_merek_dan_stok():
     assert any(k in reply_dell.lower() for k in ["lenovo", "asus", "hp", "acer"])
 
 
+def test_rubric_rujukan_state_pada_kritik_dan_pertanyaan_balik():
+    """
+    Instruksi 11: Simpan di state apa yang sudah ditampilkan ke pelanggan dan kebutuhan yang diketahui.
+    Jawaban untuk kritik atau pertanyaan balik harus merujuk ke state itu, bukan memicu pencarian baru.
+    """
+    sid = "test_rubric_state_ref"
+    reset_chat_session(sid)
+
+    # Turn 1: Kebutuhan spesifik video 4k
+    res1 = process_chat_message(sid, "laptop buat edit video 4k")
+    verify_rubric_invariants(res1["reply"])
+    assert len(res1.get("products", [])) > 0
+    p_offered = res1["products"][0]["nama"]
+
+    # Turn 2: Kritik spesifikasi berlebih ("apa gak kegedean tuh speknya?")
+    res2 = process_chat_message(sid, "apa gak kegedean tuh speknya?")
+    reply2 = res2["reply"]
+    verify_rubric_invariants(reply2)
+    assert res2["route"] == "META_CLARIFY"
+    # Tidak memicu pencarian baru
+    assert len(res2.get("products", [])) == 0, "Kritik tidak boleh memicu daftar produk baru"
+    # Merujuk ke produk sebelumnya dari state
+    assert p_offered in reply2 or "rekomendasi" in reply2.lower()
+
+    # Turn 3: Pertanyaan meta asal rekomendasi ("Dari mana kamu tahu kebutuhanku?")
+    res3 = process_chat_message(sid, "Dari mana kamu tahu kebutuhanku?")
+    reply3 = res3["reply"]
+    verify_rubric_invariants(reply3)
+    assert res3["route"] == "META_CLARIFY"
+    assert len(res3.get("products", [])) == 0, "Pertanyaan meta tidak boleh memicu daftar produk baru"
+    assert any(k in reply3.lower() for k in ["kebutuhan", "catatan", "rekomendasi"])
+
+
+
 
 

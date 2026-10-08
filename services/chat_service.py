@@ -175,12 +175,22 @@ def process_chat_message(
     # OPSI 2: AGENTIC TOOL CALLING ENGINE
     elif CHAT_ENGINE_MODE == "agentic_tool":
         from services.agentic_tool_engine import run_agentic_tool
+        from services.intent_router import classify_intent
+
+        cur_intent = classify_intent(user_text, bool(state.get("active_profile") or sess["messages"]))
+        if cur_intent in ("kebutuhan-jelas", "produk-spesifik") and user_text not in state.get("needs", []):
+            if "needs" not in state or not isinstance(state["needs"], list):
+                state["needs"] = []
+            state["needs"].append(user_text)
+
         tool_res = run_agentic_tool(
             user_text=user_text,
             history=sess["messages"],
             catalog=catalog,
             current_category=state.get("category"),
             current_offered_products=state.get("offered_products"),
+            shown_products=state.get("shown"),
+            known_needs=state.get("needs"),
             active_profile_id=state.get("active_profile"),
             previous_lowest_price=state.get("lowest_price"),
             persona_name=state.get("persona_name"),
@@ -193,7 +203,11 @@ def process_chat_message(
         prods = tool_res.get("products", [])
         if prods:
             state["offered_products"] = [p["kode"] for p in prods]
-            state["shown"] += [p["kode"] for p in prods if p["kode"] not in state["shown"]]
+            if "shown" not in state or not isinstance(state["shown"], list):
+                state["shown"] = []
+            for p in prods:
+                if p["kode"] not in state["shown"]:
+                    state["shown"].append(p["kode"])
             state["fsm_stage"] = "OFFERED"
         if tool_res.get("category"):
             state["category"] = tool_res["category"]

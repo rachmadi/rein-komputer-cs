@@ -581,6 +581,8 @@ def run_agentic_tool(
     catalog: Catalog,
     current_category: str | None = None,
     current_offered_products: list[str] | None = None,
+    shown_products: list[str] | None = None,
+    known_needs: list[str] | None = None,
     active_profile_id: str | None = None,
     previous_lowest_price: int | None = None,
     persona_name: str | None = None,
@@ -715,23 +717,47 @@ def run_agentic_tool(
         effective_persona = extract_persona_name(user_text) or persona_name
         target_label = f" untuk {effective_persona}" if effective_persona else ""
 
+        # Rujuk produk yang sudah ditampilkan dari state
+        target_codes = current_offered_products or shown_products or []
+        shown_names = []
+        if catalog and target_codes:
+            for c in target_codes:
+                p_obj = catalog.by_code.get(c)
+                if p_obj:
+                    shown_names.append(p_obj.get("nama") or c)
+        prod_ref = f" ({shown_names[0]})" if shown_names else ""
+
+        # Rujuk kebutuhan yang sudah diketahui dari state
+        needs_ref = ""
+        if known_needs:
+            clean_needs = [n for n in known_needs if n and len(n.split()) <= 6]
+            if clean_needs:
+                needs_ref = f" seputar {clean_needs[-1]}"
+
         if any(k in low for k in ["kegedean", "kebesaran", "kemahalan", "ketinggian", "keberatan", "terlalu", "overkill"]):
             reply = (
-                f"Betul Kak, mohon maaf jika rekomendasi sebelumnya spesifikasinya terasa terlalu tinggi atau berlebih{target_label} 🙏\n\n"
+                f"Betul Kak, mohon maaf jika rekomendasi{prod_ref} sebelumnya spesifikasinya terasa terlalu tinggi atau berlebih{target_label} 🙏\n\n"
                 f"Untuk penggunaan santai dan harian (seperti mengetik, browsing, atau menonton video), laptop kelas harian/office biasa tentu sudah sangat cukup dan harganya jauh lebih terjangkau. "
                 f"Boleh tahu berapa perkiraan rentang anggaran yang diinginkan agar bisa kami carikan pilihan yang lebih pas dan hemat?"
             )
         elif any(k in low for k in ["kok ditawarin", "kok malah", "aku kan nanya", "aku tadi tanya", "kurang nangkap", "bukan itu maksud"]):
             reply = (
                 f"Mohon maaf sekali atas ketergesa-gesaannya tadi ya Kak 🙏 Saya tadi terlalu cepat menyodorkan opsi lain tanpa menjawab langsung keraguan Kakak.\n\n"
-                f"Terkait pertanyaan Kakak, betul sekali bahwa spesifikasi laptop sebelumnya memang kelas berat dan terasa berlebih{target_label}. "
+                f"Terkait pertanyaan Kakak, betul sekali bahwa spesifikasi laptop{prod_ref} sebelumnya memang kelas berat dan terasa berlebih{target_label}. "
                 f"Kami siap membantu menyesuaikan dengan pilihan yang lebih ringan dan pas di budget. Boleh kami tahu aktivitas apa saja yang paling sering dijalankan{target_label}?"
             )
         else:
-            reply = (
-                "Saya sebenarnya belum mengetahui kebutuhan pasti Kakak 😊 Pilihan yang kami tampilkan sebelumnya adalah rekomendasi umum dari katalog kami.\n\n"
-                "Boleh ceritakan perangkat ini rencananya akan digunakan untuk aktivitas apa saja dan berapa perkiraan budgetnya? Kami siap membantu carikan yang paling pas!"
-            )
+            if known_needs:
+                reply = (
+                    f"Catatan kebutuhan yang kami miliki saat ini baru{needs_ref} 😊 "
+                    f"Rekomendasi{prod_ref} yang sempat kami tampilkan adalah pilihan awalan dari katalog kami.\n\n"
+                    f"Boleh ceritakan lebih detail aktivitas harian apa saja yang paling sering dijalankan dan berapa perkiraan budgetnya? Kami siap bantu pilihkan yang paling pas!"
+                )
+            else:
+                reply = (
+                    "Saya sebenarnya belum mengetahui kebutuhan pasti Kakak 😊 Pilihan yang kami tampilkan sebelumnya adalah rekomendasi umum dari katalog kami.\n\n"
+                    "Boleh ceritakan perangkat ini rencananya akan digunakan untuk aktivitas apa saja dan berapa perkiraan budgetnya? Kami siap membantu carikan yang paling pas!"
+                )
         return {
             "reply": reply,
             "products": [],
