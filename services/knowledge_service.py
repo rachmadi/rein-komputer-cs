@@ -63,7 +63,10 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
         url = f"{QDRANT_URL}/collections/{KNOWLEDGE_COLLECTION}/points/search"
         payload = {
             "vector": vec,
-            "limit": limit,
+            "limit": limit * 3,
+            "filter": {
+                "must": [{"key": "tipe", "match": {"value": "profil"}}]
+            },
             "with_payload": True
         }
         
@@ -82,7 +85,12 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
         profil_list = []
         for p in top_points:
             payload_data = p.get("payload", {})
-            profil_id = payload_data.get("id")
+            profil_id = str(payload_data.get("id") or "")
+            tipe = payload_data.get("tipe")
+            # Chunk G (panduan umum) dan M (panduan kategori) dilarang keras menjadi profil aktif!
+            if tipe != "profil" or not profil_id.startswith("P") or profil_id.startswith(("G", "M")):
+                continue
+
             if profil_id and profil_id not in _PROFILE_CACHE:
                 _PROFILE_CACHE[profil_id] = payload_data
                 
@@ -90,7 +98,8 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
                 "profil_id": profil_id,
                 "nama": payload_data.get("judul"),
                 "ringkasan": payload_data.get("text"),
-                "score": p.get("score", 0), "tipe": payload_data.get("tipe")
+                "score": p.get("score", 0),
+                "tipe": tipe
             })
             
         # Delta Rule
@@ -102,8 +111,10 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
             else:
                 # Ambil hanya top 1
                 profil_list = [profil_list[0]]
-        else:
+        elif len(profil_list) == 1:
             profil_list = profil_list[:1]
+        else:
+            return {"profil": [], "alasan": "tidak_ada_profil_cocok_di_atas_ambang"}
             
         # Clean up score from response
         for p in profil_list:
@@ -116,6 +127,9 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
         return {"profil": [], "alasan": "layanan_pengetahuan_error"}
 
 def get_profile_by_id(profil_id: str) -> dict[str, Any] | None:
+    if not str(profil_id).startswith("P") or str(profil_id).startswith(("G", "M")):
+        return None
+
     if profil_id in _PROFILE_CACHE:
         return _PROFILE_CACHE[profil_id]
         

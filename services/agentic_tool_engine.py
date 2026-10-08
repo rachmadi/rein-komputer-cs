@@ -168,29 +168,36 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             from services.knowledge_service import get_usage_requirements
             reqs = get_usage_requirements(kebutuhan)
             pls = reqs.get("profil", [])
-            if pls:
-                if pls[0].get("tipe") == "di_luar_topik":
-                    import os
-                    contact = os.getenv("TOKO_CONTACT", "0812-3456-7890 (WhatsApp)")
-                    return f"Maaf, pertanyaan Anda di luar konteks rekomendasi spesifikasi. Silakan hubungi staf toko kami di {contact}.", [], explicit_cat, pls[0]["profil_id"]
-                if len(pls) == 1:
-                    profil_id = pls[0]["profil_id"]
-                elif len(pls) >= 2:
-                    p1 = get_profile_by_id(pls[0]["profil_id"])
-                    p2 = get_profile_by_id(pls[1]["profil_id"])
-                    if p1 and p2:
+            valid_pls = [
+                p for p in pls
+                if p.get("tipe") == "profil" and str(p.get("profil_id", "")).startswith("P") and not str(p.get("profil_id", "")).startswith(("G", "M"))
+            ]
+            if valid_pls:
+                if len(valid_pls) == 1:
+                    profil_id = valid_pls[0]["profil_id"]
+                elif len(valid_pls) >= 2:
+                    p1 = get_profile_by_id(valid_pls[0]["profil_id"])
+                    p2 = get_profile_by_id(valid_pls[1]["profil_id"])
+                    if p1 and p2 and p1.get("tipe") == "profil" and p2.get("tipe") == "profil":
                         filters_to_apply = merge_filters(p1.get("filter", []), p2.get("filter", []))
                         n1 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p1.get("judul", "")).strip()
                         n2 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p2.get("judul", "")).strip()
                         info_profil = f"Kebutuhan gabungan: {n1} & {n2} (memakai syarat terberat)\n"
-                        profil_id = f"{pls[0]['profil_id']},{pls[1]['profil_id']}"
+                        profil_id = f"{valid_pls[0]['profil_id']},{valid_pls[1]['profil_id']}"
+                    else:
+                        profil_id = valid_pls[0]["profil_id"]
                 else:
                     profil_id = active_profile_id
             else:
-                profil_id = active_profile_id
+                profil_id = None
                 
         if not profil_id and not kebutuhan and active_profile_id:
             profil_id = active_profile_id
+
+        if profil_id:
+            ids = [x.strip() for x in str(profil_id).split(",") if x.strip()]
+            valid_ids = [x for x in ids if x.startswith("P") and not x.startswith(("G", "M"))]
+            profil_id = ",".join(valid_ids) if valid_ids else None
             
         if profil_id and not filters_to_apply:
             ids = [x.strip() for x in profil_id.split(",") if x.strip()]
@@ -201,7 +208,7 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             elif len(ids) >= 2:
                 p1 = get_profile_by_id(ids[0])
                 p2 = get_profile_by_id(ids[1])
-                if p1 and p2:
+                if p1 and p2 and p1.get("tipe") == "profil" and p2.get("tipe") == "profil":
                     filters_to_apply = merge_filters(p1.get("filter", []), p2.get("filter", []))
                     n1 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p1.get("judul") or ids[0]).strip()
                     n2 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p2.get("judul") or ids[1]).strip()
@@ -213,7 +220,7 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
         if m_ram_req:
             req_ram_val = int(m_ram_req.group(1) or m_ram_req.group(2))
             if req_ram_val > 64:
-                return "Produk tidak tersedia.", [], explicit_cat, profil_id
+                return "Produk tidak tersedia.", [], explicit_cat, None
             filters_to_apply.append({"field": "ram_gb", "op": ">=", "value": req_ram_val, "strength": "hard"})
         if not explicit_cat:
             cat_keywords = {
