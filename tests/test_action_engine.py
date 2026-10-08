@@ -76,9 +76,10 @@ def test_action_engine_evaluasi_kecocokan(engine):
     assert res.fakta["status"] == "sukses"
     assert len(res.fakta["evaluasi_produk"]) == 1
     eval_p = res.fakta["evaluasi_produk"][0]
-    assert eval_p["kode"] == "KB-L01"
-    assert "lolos" in eval_p
-    assert "terpenuhi" in eval_p
+    assert "angka_aktual" in eval_p
+    assert "standar_profil" in eval_p
+    assert "selisih_terhadap_minimum" in eval_p
+    assert "selisih_terhadap_rekomendasi" in eval_p
 
 
 def test_action_engine_tanya_spesifikasi(engine):
