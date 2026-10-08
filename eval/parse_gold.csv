@@ -1,0 +1,151 @@
+id,split,pesan,pending_question,produk_tampil,label_aksi,label_argumen,label_pembaruan_state,catatan
+dev-001,dev,Emang spek segitu cukup?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}]",evaluasi_kecocokan,"{""produk"": [""KB-L01"", ""KB-L02""], ""kebutuhan_teks"": ""cari resep dan nonton YouTube""}",,Log failure kalimat 1: konfirmasi kecocokan spek
+dev-002,dev,Yang tanya HP 14 siapa?,,"[{""no"": 1, ""kode"": ""KB-L05"", ""nama"": ""HP 14""}]",perbaiki_percakapan,"{""jenis"": ""keluhan"", ""rujukan"": ""HP 14""}",,Log failure kalimat 2: sarkasme/keluhan bot salah tangkap
+dev-003,dev,Buat hiburan,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""hiburan""}","{""kebutuhan_teks"": ""hiburan""}",Log failure kalimat 3: jawaban atas pending aktivitas
+dev-004,dev,Mana?,,,minta_rekomendasi,"{""kebutuhan_teks"": ""hiburan nonton youtube""}",,Log failure kalimat 4: menagih rekomendasi
+dev-005,dev,ada asus?,,,cari_produk,"{""merek"": ""asus"", ""kategori"": ""laptop""}",,Pencarian ketersediaan merek
+dev-006,dev,yang kedua bagus nggak?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}]",evaluasi_kecocokan,"{""produk"": [""2""]}",,Evaluasi spesifik produk nomor 2
+dev-007,dev,Aku tanya kok malah dikasih spek lain,,"[{""no"": 1, ""kode"": ""KB-L05""}]",perbaiki_percakapan,"{""jenis"": ""salah_paham"", ""rujukan"": ""dikasih spek lain""}",,Log failure: teguran salah paham
+dev-008,dev,Kan sudah dibilang buat hiburan,,,perbaiki_percakapan,"{""jenis"": ""koreksi"", ""rujukan"": ""buat hiburan""}","{""kebutuhan_teks"": ""hiburan""}",Log failure: teguran amnesia bot
+dev-009,dev,halo kak,,,sapa,,,Sapaan pembuka santai
+dev-010,dev,p,,,sapa,,,Sapaan slang telegram
+dev-011,dev,siang min mau nanya2 nih,,,sapa,,,Sapaan siang santai
+dev-012,dev,jual laptop acer?,,,cari_produk,"{""merek"": ""acer"", ""kategori"": ""laptop""}","{""kategori"": ""laptop""}",Pertanyaan ketersediaan merek acer
+dev-013,dev,laptop lenovo dibawah 10 juta ada ga?,,,cari_produk,"{""merek"": ""lenovo"", ""kategori"": ""laptop"", ""max_harga"": 10000000}","{""budget"": 10000000, ""kategori"": ""laptop""}",Pencarian merek + budget
+dev-014,dev,laptp asus ram 16gb,,,cari_produk,"{""merek"": ""asus"", ""kategori"": ""laptop"", ""ram_gb_min"": 16}","{""kategori"": ""laptop""}",Typo laptp + ram 16gb
+dev-015,dev,ada printer canon ga ya,,,cari_produk,"{""merek"": ""canon"", ""kategori"": ""printer""}","{""kategori"": ""printer""}",Pencarian kategori printer canon
+dev-016,dev,Buat mama sih bukan buat aku,kebutuhan,,jawab_pertanyaan_bot,"{""slot"": ""persona"", ""nilai"": ""mama""}","{""persona"": ""mama"", ""sebutan"": ""mama""}",Jawaban persona mama
+dev-017,dev,Paling cuma cari resep dan nonton youtube,aktivitas,,minta_rekomendasi,"{""kebutuhan_teks"": ""cari resep dan nonton youtube"", ""persona"": ""mama""}","{""kebutuhan_teks"": ""cari resep dan nonton youtube""}",Kebutuhan resep & youtube
+dev-018,dev,Untuk ibu saya yang sudah sepuh,kebutuhan,,jawab_pertanyaan_bot,"{""slot"": ""persona"", ""nilai"": ""ibu sepuh""}","{""persona"": ""ibu sepuh"", ""sebutan"": ""ibu""}",Jawaban persona ibu sepuh
+dev-019,dev,butuh laptop buat anak dkv semester 1,,,minta_rekomendasi,"{""kebutuhan_teks"": ""desain grafis dkv"", ""persona"": ""anak dkv""}","{""kebutuhan_teks"": ""desain grafis dkv""}",Rekomendasi anak DKV
+dev-020,dev,budget maksimal 7 jutaan aja,budget,,jawab_pertanyaan_bot,"{""slot"": ""budget"", ""nilai"": 7000000}","{""budget"": 7000000}",Jawaban budget
+dev-021,dev,ada yang lebih murah?,,"[{""no"": 1, ""kode"": ""KB-L01"", ""harga"": 7500000}]",lanjutan_hasil,"{""jenis"": ""lebih_murah""}",,Lanjutan minta opsi lebih murah
+dev-022,dev,ada opsi merk lain ga selain acer?,,"[{""no"": 1, ""kode"": ""KB-L01"", ""merek"": ""acer""}]",lanjutan_hasil,"{""jenis"": ""yang_lain""}",,Minta opsi lain
+dev-023,dev,garansinya berapa lama min?,,,tanya_info_toko,"{""topik"": ""garansi""}",,Info garansi toko
+dev-024,dev,tokonya ada di mana ya lokasinya?,,,tanya_info_toko,"{""topik"": ""alamat""}",,Info alamat toko
+dev-025,dev,bisa bayar pake kartu kredit cicilan?,,,tanya_info_toko,"{""topik"": ""pembayaran""}",,Info pembayaran cicilan
+dev-026,dev,bagusan nomor 1 apa nomor 2?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}]",bandingkan,"{""produk"": [""1"", ""2""]}",,Bandingkan produk 1 dan 2
+dev-027,dev,makasih banyak infonya sangat membantu,,,basa_basi,"{""jenis"": ""terima_kasih""}",,Basa-basi terima kasih
+dev-028,dev,ok sip makasih ya,,,basa_basi,"{""jenis"": ""terima_kasih""}",,Basa-basi terima kasih santai
+dev-029,dev,asdfghjkl,,,tidak_jelas,"{""alasan"": ""teks acak tanpa arti""}",,Teks gibberish/tidak jelas
+dev-030,dev,hmm gimana ya,,,tidak_jelas,"{""alasan"": ""ragu-ragu tanpa maksud spesifik""}",,Ungkapan ragu tidak jelas
+dev-031,dev,pc dekstop gaming rtx 4060,,,cari_produk,"{""kategori"": ""desktop"", ""nama_model"": ""rtx 4060""}","{""kategori"": ""desktop""}",Pencarian spesifik desktop gaming
+dev-032,dev,laptop murah buat ngetik word aja,,,minta_rekomendasi,"{""kebutuhan_teks"": ""ketik word office"", ""kategori"": ""laptop""}","{""kebutuhan_teks"": ""ketik word office"", ""kategori"": ""laptop""}",Kebutuhan mengetik dokumen
+dev-033,dev,yang ram 32gb ada?,,,cari_produk,"{""ram_gb_min"": 32}",,Pencarian ram 32gb
+dev-034,dev,bisa buat main valorant ga laptop ini?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""main valorant""}","{""kebutuhan_teks"": ""main valorant""}",Evaluasi game valorant
+dev-035,dev,bukan itu yang kumaksud,,,perbaiki_percakapan,"{""jenis"": ""salah_paham"", ""rujukan"": ""bukan itu""}",,Teguran bukan itu maksudku
+dev-036,dev,jam buka toko sampe jam berapa?,,,tanya_info_toko,"{""topik"": ""jam_buka""}",,Tanya jam operasional
+dev-037,dev,apakah ada garansi resmi?,,,tanya_info_toko,"{""topik"": ""garansi""}",,Tanya klaim garansi resmi
+dev-038,dev,laptop layar 15.6 inch buat kakek,,,minta_rekomendasi,"{""kebutuhan_teks"": ""layar besar sepuh"", ""persona"": ""kakek"", ""kategori"": ""laptop""}","{""persona"": ""kakek"", ""sebutan"": ""kakek""}",Persona kakek layar 15.6 inch
+dev-039,dev,ada printer brother?,,,cari_produk,"{""merek"": ""brother"", ""kategori"": ""printer""}","{""kategori"": ""printer""}",Pencarian printer brother
+dev-040,dev,layarnya udah ips?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""layar ips""}",,Evaluasi layar IPS produk
+dev-041,dev,rekomendasi laptop range harga 6 jutaan,,,minta_rekomendasi,"{""budget_max"": 6000000, ""kategori"": ""laptop""}","{""budget"": 6000000, ""kategori"": ""laptop""}",Dev variasi budget 6 juta
+dev-042,dev,rekomendasi laptop range harga 7 jutaan,,,minta_rekomendasi,"{""budget_max"": 7000000, ""kategori"": ""laptop""}","{""budget"": 7000000, ""kategori"": ""laptop""}",Dev variasi budget 7 juta
+dev-043,dev,rekomendasi laptop range harga 8 jutaan,,,minta_rekomendasi,"{""budget_max"": 8000000, ""kategori"": ""laptop""}","{""budget"": 8000000, ""kategori"": ""laptop""}",Dev variasi budget 8 juta
+dev-044,dev,rekomendasi laptop range harga 9 jutaan,,,minta_rekomendasi,"{""budget_max"": 9000000, ""kategori"": ""laptop""}","{""budget"": 9000000, ""kategori"": ""laptop""}",Dev variasi budget 9 juta
+dev-045,dev,rekomendasi laptop range harga 10 jutaan,,,minta_rekomendasi,"{""budget_max"": 10000000, ""kategori"": ""laptop""}","{""budget"": 10000000, ""kategori"": ""laptop""}",Dev variasi budget 10 juta
+dev-046,dev,rekomendasi laptop range harga 11 jutaan,,,minta_rekomendasi,"{""budget_max"": 11000000, ""kategori"": ""laptop""}","{""budget"": 11000000, ""kategori"": ""laptop""}",Dev variasi budget 11 juta
+dev-047,dev,rekomendasi laptop range harga 12 jutaan,,,minta_rekomendasi,"{""budget_max"": 12000000, ""kategori"": ""laptop""}","{""budget"": 12000000, ""kategori"": ""laptop""}",Dev variasi budget 12 juta
+dev-048,dev,rekomendasi laptop range harga 13 jutaan,,,minta_rekomendasi,"{""budget_max"": 13000000, ""kategori"": ""laptop""}","{""budget"": 13000000, ""kategori"": ""laptop""}",Dev variasi budget 13 juta
+dev-049,dev,rekomendasi laptop range harga 14 jutaan,,,minta_rekomendasi,"{""budget_max"": 14000000, ""kategori"": ""laptop""}","{""budget"": 14000000, ""kategori"": ""laptop""}",Dev variasi budget 14 juta
+dev-050,dev,rekomendasi laptop range harga 5 jutaan,,,minta_rekomendasi,"{""budget_max"": 5000000, ""kategori"": ""laptop""}","{""budget"": 5000000, ""kategori"": ""laptop""}",Dev variasi budget 5 juta
+dev-051,dev,merek acer ada stok apa aja?,,,cari_produk,"{""merek"": ""acer""}",,Dev variasi stok merek acer
+dev-052,dev,merek hp ada stok apa aja?,,,cari_produk,"{""merek"": ""hp""}",,Dev variasi stok merek hp
+dev-053,dev,merek brother ada stok apa aja?,,,cari_produk,"{""merek"": ""brother""}",,Dev variasi stok merek brother
+dev-054,dev,merek epson ada stok apa aja?,,,cari_produk,"{""merek"": ""epson""}",,Dev variasi stok merek epson
+dev-055,dev,merek canon ada stok apa aja?,,,cari_produk,"{""merek"": ""canon""}",,Dev variasi stok merek canon
+dev-056,dev,merek asus ada stok apa aja?,,,cari_produk,"{""merek"": ""asus""}",,Dev variasi stok merek asus
+dev-057,dev,merek lenovo ada stok apa aja?,,,cari_produk,"{""merek"": ""lenovo""}",,Dev variasi stok merek lenovo
+dev-058,dev,merek acer ada stok apa aja?,,,cari_produk,"{""merek"": ""acer""}",,Dev variasi stok merek acer
+dev-059,dev,merek hp ada stok apa aja?,,,cari_produk,"{""merek"": ""hp""}",,Dev variasi stok merek hp
+dev-060,dev,merek brother ada stok apa aja?,,,cari_produk,"{""merek"": ""brother""}",,Dev variasi stok merek brother
+dev-061,dev,buat editing video youtube 1080p,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 1080p""}","{""kebutuhan_teks"": ""editing video youtube 1080p""}",Dev variasi aktivitas editing video
+dev-062,dev,buat editing video youtube 4k,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 4k""}","{""kebutuhan_teks"": ""editing video youtube 4k""}",Dev variasi aktivitas editing video
+dev-063,dev,buat editing video youtube 1080p,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 1080p""}","{""kebutuhan_teks"": ""editing video youtube 1080p""}",Dev variasi aktivitas editing video
+dev-064,dev,buat editing video youtube 4k,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 4k""}","{""kebutuhan_teks"": ""editing video youtube 4k""}",Dev variasi aktivitas editing video
+dev-065,dev,buat editing video youtube 1080p,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 1080p""}","{""kebutuhan_teks"": ""editing video youtube 1080p""}",Dev variasi aktivitas editing video
+dev-066,dev,buat editing video youtube 4k,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 4k""}","{""kebutuhan_teks"": ""editing video youtube 4k""}",Dev variasi aktivitas editing video
+dev-067,dev,buat editing video youtube 1080p,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 1080p""}","{""kebutuhan_teks"": ""editing video youtube 1080p""}",Dev variasi aktivitas editing video
+dev-068,dev,buat editing video youtube 4k,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 4k""}","{""kebutuhan_teks"": ""editing video youtube 4k""}",Dev variasi aktivitas editing video
+dev-069,dev,buat editing video youtube 1080p,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 1080p""}","{""kebutuhan_teks"": ""editing video youtube 1080p""}",Dev variasi aktivitas editing video
+dev-070,dev,buat editing video youtube 4k,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""editing video youtube 4k""}","{""kebutuhan_teks"": ""editing video youtube 4k""}",Dev variasi aktivitas editing video
+dev-071,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-072,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-073,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-074,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-075,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-076,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-077,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-078,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-079,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-080,dev,apakah produk nomor 1 bisa ditambah ram?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""upgrade ram""}",,Dev evaluasi upgrade RAM
+dev-081,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-082,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-083,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-084,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-085,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-086,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-087,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-088,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-089,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-090,dev,terima servis atau ganti pasta laptop?,,,tanya_info_toko,"{""topik"": ""servis""}",,Dev tanya servis
+dev-091,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-092,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-093,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-094,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-095,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-096,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-097,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-098,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-099,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+dev-100,dev,halo permisi mau konsultasi laptop,,,sapa,,,Dev sapaan konsultasi
+ho-001,held-out,assalamualaikum min,,,sapa,,,Salam religius
+ho-002,held-out,laptop asus tuf gaming ada?,,,cari_produk,"{""merek"": ""asus"", ""nama_model"": ""tuf gaming"", ""kategori"": ""laptop""}","{""kategori"": ""laptop""}",Pencarian varian tuf
+ho-003,held-out,butuh buat kasir toko sembako,,,minta_rekomendasi,"{""kebutuhan_teks"": ""kasir toko pos"", ""kategori"": ""desktop""}","{""kebutuhan_teks"": ""kasir toko pos""}",Kebutuhan kasir
+ho-004,held-out,cuma buat zoom meeting dan skripsi aja,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""zoom meeting dan skripsi""}","{""kebutuhan_teks"": ""zoom meeting dan skripsi""}",Aktivitas zoom & skripsi
+ho-005,held-out,yang ketiga baterainya tahan berapa lama?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}, {""no"": 3, ""kode"": ""KB-L03""}]",evaluasi_kecocokan,"{""produk"": [""3""], ""kebutuhan_teks"": ""daya tahan baterai""}",,Evaluasi baterai item 3
+ho-006,held-out,antara ideapad sama vivobook bagusan mana?,,"[{""no"": 1, ""kode"": ""KB-L01"", ""nama"": ""IdeaPad Slim 3""}, {""no"": 2, ""kode"": ""KB-L02"", ""nama"": ""Vivobook 14""}]",bandingkan,"{""produk"": [""KB-L01"", ""KB-L02""]}",,Bandingkan model
+ho-007,held-out,ada yang di bawah 5 juta?,,"[{""no"": 1, ""kode"": ""KB-L01"", ""harga"": 6500000}]",lanjutan_hasil,"{""jenis"": ""lebih_murah""}",,Lanjutan filter lebih murah
+ho-008,held-out,bisa gosend instan hari ini?,,,tanya_info_toko,"{""topik"": ""pengiriman""}",,Tanya opsi pengiriman
+ho-009,held-out,kok ngulang salam lagi sih,,,perbaiki_percakapan,"{""jenis"": ""keluhan"", ""rujukan"": ""ngulang salam""}",,Keluhan salam berulang
+ho-010,held-out,makasih banyak infonya kak,,,basa_basi,"{""jenis"": ""terima_kasih""}",,Terima kasih penutup
+ho-011,held-out,halo selamat sore,,,sapa,,,Sapa sore
+ho-012,held-out,printer epson l3210 ada ga?,,,cari_produk,"{""merek"": ""epson"", ""nama_model"": ""l3210"", ""kategori"": ""printer""}","{""kategori"": ""printer""}",Cari printer epson
+ho-013,held-out,laptop gaming rtx 4050 murah,,,cari_produk,"{""kategori"": ""laptop"", ""nama_model"": ""rtx 4050""}","{""kategori"": ""laptop""}",Laptop rtx 4050
+ho-014,held-out,buat anak sma belajar coding python,,,minta_rekomendasi,"{""kebutuhan_teks"": ""belajar coding python"", ""persona"": ""anak sma""}","{""kebutuhan_teks"": ""belajar coding python""}",Kebutuhan coding
+ho-015,held-out,budget maksimal 12 juta pas,budget,,jawab_pertanyaan_bot,"{""slot"": ""budget"", ""nilai"": 12000000}","{""budget"": 12000000}",Slot budget 12jt
+ho-016,held-out,cukup ga ram segitu buat buka 20 tab chrome?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""20 tab chrome""}",,Evaluasi tab chrome
+ho-017,held-out,tampilin opsi yang lenovo aja dong,,"[{""no"": 1, ""kode"": ""KB-L01""}]",lanjutan_hasil,"{""jenis"": ""filter_tambahan""}",,Lanjutan filter lenovo
+ho-018,held-out,ada garansi tukar unit baru ga kalau rusak?,,,tanya_info_toko,"{""topik"": ""garansi""}",,Tanya garansi ganti unit
+ho-019,held-out,bukan laptop gaming min maksud saya laptop tipis,,,perbaiki_percakapan,"{""jenis"": ""koreksi"", ""rujukan"": ""laptop tipis bukan gaming""}",,Koreksi persona laptop tipis
+ho-020,held-out,siap nanti saya kabari lagi ya,,,basa_basi,"{""jenis"": ""pamit""}",,Basa basi pamit
+ho-021,held-out,pagi,,,sapa,,,Sapa pagi singkat
+ho-022,held-out,cari pc meja all in one,,,cari_produk,"{""kategori"": ""desktop"", ""nama_model"": ""all in one""}","{""kategori"": ""desktop""}",Cari pc aio
+ho-023,held-out,laptop buat arsitek autocad dan sketchup,,,minta_rekomendasi,"{""kebutuhan_teks"": ""arsitek autocad sketchup"", ""persona"": ""arsitek""}","{""kebutuhan_teks"": ""arsitek autocad sketchup""}",Kebutuhan arsitek
+ho-024,held-out,buat bapak saya nonton berita,kebutuhan,,jawab_pertanyaan_bot,"{""slot"": ""persona"", ""nilai"": ""bapak""}","{""persona"": ""bapak"", ""sebutan"": ""bapak""}",Slot persona bapak
+ho-025,held-out,yang pertama ini ssd nya berapa gb?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""1""], ""kebutuhan_teks"": ""kapasitas ssd""}",,Evaluasi spesifikasi ssd
+ho-026,held-out,beda spek no 2 sama no 3 apa aja ya?,,"[{""no"": 1, ""kode"": ""KB-L01""}, {""no"": 2, ""kode"": ""KB-L02""}, {""no"": 3, ""kode"": ""KB-L03""}]",bandingkan,"{""produk"": [""2"", ""3""]}",,Bandingkan 2 dan 3
+ho-027,held-out,ada pilihan warna lain ga?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",lanjutan_hasil,"{""jenis"": ""yang_lain""}",,Opsi warna lain
+ho-028,held-out,alamat service center resminya di mana?,,,tanya_info_toko,"{""topik"": ""servis""}",,Tanya alamat service center
+ho-029,held-out,kok malah rekomendasiin yang mahal banget,,,perbaiki_percakapan,"{""jenis"": ""keluhan"", ""rujukan"": ""terlalu mahal""}",,Keluhan kemahalan
+ho-030,held-out,mantap makasih rekomendasinya,,,basa_basi,"{""jenis"": ""terima_kasih""}",,Ucapan terima kasih
+ho-031,held-out,permisi,,,sapa,,,Sapa permisi
+ho-032,held-out,ada laptop monitor 14 inch?,,,cari_produk,"{""kategori"": ""laptop"", ""ukuran_layar"": 14.0}","{""kategori"": ""laptop""}",Cari layar 14 inch
+ho-033,held-out,butuh laptop ringan enteng dibawa ke kampus,,,minta_rekomendasi,"{""kebutuhan_teks"": ""ringan portabel kampus"", ""persona"": ""mahasiswa""}","{""kebutuhan_teks"": ""ringan portabel kampus""}",Kebutuhan portabel
+ho-034,held-out,buat kantor administrasi input excel,aktivitas,,jawab_pertanyaan_bot,"{""slot"": ""aktivitas"", ""nilai"": ""administrasi excel""}","{""kebutuhan_teks"": ""administrasi excel""}",Slot aktivitas excel
+ho-035,held-out,apakah prosesornya i5 atau i3?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""prosesor i3 i5""}",,Evaluasi prosesor
+ho-036,held-out,kalau dibanding macbook air m1 kencengan mana?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",bandingkan,"{""produk"": [""KB-L01"", ""macbook air m1""]}",,Bandingkan dengan macbook
+ho-037,held-out,ada yang harganya 8 jutaan?,,"[{""no"": 1, ""kode"": ""KB-L01"", ""harga"": 11000000}]",lanjutan_hasil,"{""jenis"": ""lebih_murah""}",,Lanjutan budget 8jt
+ho-038,held-out,bisa split payment sebagian transfer sebagian cash?,,,tanya_info_toko,"{""topik"": ""pembayaran""}",,Tanya pembayaran split
+ho-039,held-out,maksud saya bukan merek itu,,,perbaiki_percakapan,"{""jenis"": ""koreksi"", ""rujukan"": ""bukan merek itu""}",,Koreksi merek
+ho-040,held-out,terima kasih banyak min,,,basa_basi,"{""jenis"": ""terima_kasih""}",,Terima kasih sopan
+ho-041,held-out,woi,,,sapa,,,Sapaan slang woi
+ho-042,held-out,monitor 24 inch 144hz ada?,,,cari_produk,"{""kategori"": ""monitor"", ""ukuran_layar"": 24.0}","{""kategori"": ""monitor""}",Cari monitor 24 inch
+ho-043,held-out,laptop buat ngetik tesis s2,,,minta_rekomendasi,"{""kebutuhan_teks"": ""ngetik tesis s2"", ""persona"": ""mahasiswa s2""}","{""kebutuhan_teks"": ""ngetik tesis s2""}",Kebutuhan tesis
+ho-044,held-out,budget sekitar 15 jutaan,budget,,jawab_pertanyaan_bot,"{""slot"": ""budget"", ""nilai"": 15000000}","{""budget"": 15000000}",Slot budget 15jt
+ho-045,held-out,apakah keyboardnya ada backlight nyala?,,"[{""no"": 1, ""kode"": ""KB-L01""}]",evaluasi_kecocokan,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""backlight keyboard""}",,Evaluasi keyboard backlight
+ho-046,held-out,tampilkan merek asus saja,,"[{""no"": 1, ""kode"": ""KB-L01""}]",lanjutan_hasil,"{""jenis"": ""filter_tambahan""}",,Lanjutan filter asus
+ho-047,held-out,apakah bisa klaim nota untuk kantor?,,,tanya_info_toko,"{""topik"": ""pembayaran""}",,Tanya nota faktur pajak
+ho-048,held-out,lho kan tadi saya bilang budget 6 juta,,,perbaiki_percakapan,"{""jenis"": ""keluhan"", ""rujukan"": ""budget 6 juta""}","{""budget"": 6000000}",Keluhan budget diabaikan
+ho-049,held-out,wkwkwk mantap,,,basa_basi,"{""jenis"": ""lainnya""}",,Basa basi wkwkwk
+ho-050,held-out,zzzzz,,,tidak_jelas,"{""alasan"": ""teks tidak bermakna""}",,Tidak jelas zzz
