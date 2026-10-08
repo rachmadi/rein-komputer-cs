@@ -179,7 +179,9 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                     p2 = get_profile_by_id(pls[1]["profil_id"])
                     if p1 and p2:
                         filters_to_apply = merge_filters(p1.get("filter", []), p2.get("filter", []))
-                        info_profil = f"Kebutuhan gabungan: {p1['judul']} & {p2['judul']}. "
+                        n1 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p1.get("judul", "")).strip()
+                        n2 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p2.get("judul", "")).strip()
+                        info_profil = f"Kebutuhan gabungan: {n1} & {n2} (memakai syarat terberat)\n"
                         profil_id = f"{pls[0]['profil_id']},{pls[1]['profil_id']}"
                 else:
                     profil_id = active_profile_id
@@ -200,11 +202,10 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                 p2 = get_profile_by_id(ids[1])
                 if p1 and p2:
                     filters_to_apply = merge_filters(p1.get("filter", []), p2.get("filter", []))
-                    n1 = p1.get("judul") or ids[0]
-                    n2 = p2.get("judul") or ids[1]
-                    info_profil = f"Kebutuhan gabungan: {n1} + {n2}, memakai syarat terberat\n"
+                    n1 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p1.get("judul") or ids[0]).strip()
+                    n2 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p2.get("judul") or ids[1]).strip()
+                    info_profil = f"Kebutuhan gabungan: {n1} & {n2} (memakai syarat terberat)\n"
 
-        
         check_text = (query + " " + user_text).lower()
         if not explicit_cat:
             cat_keywords = {
@@ -252,6 +253,8 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                 "gpu": p.get("gpu"),
                 "vram_gb": p.get("vram_gb"),
                 "ram": p.get("ram"),
+                "ram_gb": p.get("ram_gb"),
+                "ram_type": p.get("ram_type"),
                 "storage": p.get("storage"),
                 "match_report": report
             }
@@ -265,6 +268,15 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                 return "Tidak ada yang lebih murah yang memenuhi kebutuhan ini.", [], explicit_cat, profil_id
             return "Produk tidak tersedia.", [], explicit_cat, profil_id
             
+        def _clean_specs(p_item: dict) -> str:
+            parts = []
+            if p_item.get("cpu"): parts.append(str(p_item["cpu"]))
+            if p_item.get("gpu"): parts.append(str(p_item["gpu"]))
+            r = p_item.get("ram") or (f"{p_item.get('ram_gb')} GB" + (f" {p_item.get('ram_type')}" if p_item.get("ram_type") else "") if p_item.get("ram_gb") else None)
+            if r: parts.append(f"RAM {r}")
+            if p_item.get("storage"): parts.append(str(p_item["storage"]))
+            return " | ".join(parts) if parts else "Spesifikasi standar"
+
         scored_products.sort(key=lambda x: x[0], reverse=True)
         # Urut kandidat relaksasi: sedikit kegagalan dulu (naik), skor tiebreaker (turun)
         relaxed_products.sort(
@@ -272,6 +284,8 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
         )
         top_prods = [p for s, p in scored_products[:3]]
         
+        has_filter_checked = bool(filters_to_apply)
+
         if not top_prods:
             top_relaxed = [p for s, p in relaxed_products[:2]]
             if "lebih murah" in user_text.lower() or "yang murah" in user_text.lower():
@@ -279,24 +293,31 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             else:
                 res_str = f"{info_profil}Tidak ada yang memenuhi syarat mutlak. Kandidat terdekat:\n"
             for p in top_relaxed:
-                mr = p.get("match_report", {})
-                res_str += f"- {p['nama']} | Rp{p.get('harga_idr',0):,} | {p.get('cpu')} {p.get('gpu')}\n  {p.get('alasan_gagal', '')}\n"
+                res_str += f"- {p['nama']} | Rp{p.get('harga_idr',0):,} | {_clean_specs(p)}\n  {p.get('alasan_gagal', '')}\n"
             return res_str, top_relaxed, explicit_cat, profil_id
             
-        res_str = f"{info_profil}\n"
+        if not has_filter_checked:
+            res_str = "Beberapa pilihan produk kami:\n\n"
+        else:
+            res_str = f"{info_profil}\n"
+
         for idx, p in enumerate(top_prods):
             mr = p.get("match_report", {})
             fails = mr.get("tidak_terpenuhi", [])
             unk = mr.get('tidak_diketahui', [])
             
-            icon = "✅" if not fails else "⚠️"
-            if len(fails) >= 2 or ("alasan_gagal" in p and "Belum memenuhi minimum" in str(p.get("alasan_gagal", ""))):
-                icon = "❌"
-            if p.get("alasan_gagal") == "VRAM belum tercantum, mohon konfirmasi ke staf":
-                icon = "⚠️"
+            if not has_filter_checked:
+                icon_prefix = f"{idx+1}."
+            else:
+                icon = "✅" if not fails else "⚠️"
+                if len(fails) >= 2 or ("alasan_gagal" in p and "Belum memenuhi minimum" in str(p.get("alasan_gagal", ""))):
+                    icon = "❌"
+                if p.get("alasan_gagal") == "VRAM belum tercantum, mohon konfirmasi ke staf":
+                    icon = "⚠️"
+                icon_prefix = f"{icon} {idx+1}."
                 
             unk_str = f"\n  (Tidak Diketahui: {', '.join(unk)})" if unk else ""
-            res_str += f"{icon} {idx+1}. **{p['nama']}** | Rp{p.get('harga_idr',0):,}\n  Spesifikasi: {p.get('cpu')} | {p.get('gpu')} | {p.get('ram')} | {p.get('storage')}{unk_str}\n\n"
+            res_str += f"{icon_prefix} **{p['nama']}** | Rp{p.get('harga_idr',0):,}\n  Spesifikasi: {_clean_specs(p)}{unk_str}\n\n"
         return res_str, top_prods, explicit_cat, profil_id
         
     return json.dumps({"status": "error", "message": f"Tool '{name}' tidak dikenal."}), [], None, None

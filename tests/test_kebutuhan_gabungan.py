@@ -23,9 +23,10 @@ def test_kebutuhan_gabungan_p05_p15():
     # Profil ganda harus dikembalikan
     assert "P05" in prof and "P15" in prof, f"Profil gabungan harus P05+P15, got: {prof}"
 
-    # Harus ada kalimat pembuka gabungan
+    # Harus ada kalimat pembuka gabungan natural TANPA kode internal
     assert "Kebutuhan gabungan" in ans, f"Teks 'Kebutuhan gabungan' harus ada dalam jawaban:\n{ans}"
-    assert "P05" in ans and "P15" in ans
+    assert "P05" not in ans and "P15" not in ans, f"Kode internal P05/P15 tidak boleh ada di jawaban:\n{ans}"
+    assert ("Game" in ans or "Gamer" in ans) and ("Kasir" in ans or "Toko" in ans), f"Nama natural harus ada:\n{ans}"
 
     # Harus ada ✅
     assert "✅" in ans, f"Harus ada produk ✅:\n{ans}"
