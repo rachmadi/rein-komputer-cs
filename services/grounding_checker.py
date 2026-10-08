@@ -95,7 +95,7 @@ class GroundingChecker:
                         nums.add(int(v))
         return nums
 
-    def check(self, teks: str, fakta: dict, state: dict | None = None) -> Tuple[bool, List[str]]:
+    def check(self, teks: str, fakta: dict, state: dict | None = None, penilaian: dict | None = None) -> Tuple[bool, List[str]]:
         """
         Memeriksa apakah teks jawaban LLM mematuhi grounding dan keselamatan fakta.
         Mengembalikan (is_valid, list_pelanggaran).
@@ -191,6 +191,28 @@ class GroundingChecker:
             # Cek di teks: tidak boleh menawarkan atau merekomendasikan produk merek_kecuali
             if re.search(rf"\b(?:ada|opsi|rekomendasi|pilihan|unit|laptop|desktop)\s+.*?\b{mk_clean}\b", teks, re.IGNORECASE) or re.search(rf"\b{mk_clean}\s+(?:vivobook|zenbook|tuf|rog|aspire|ideapad)\b", teks, re.IGNORECASE):
                 violations.append(f"Teks merekomendasikan merek '{merek_kecuali}' yang diminta untuk dikecualikan.")
+
+        # 10. Konsistensi penilaian spesifikasi terhadap tanda selisih (evaluasi_kecocokan)
+        if fakta.get("evaluasi_produk"):
+            for ep in fakta["evaluasi_produk"]:
+                kode = ep.get("kode")
+                expected_status = ep.get("status_kecocokan")
+                if not expected_status:
+                    diff_min = ep.get("selisih_terhadap_minimum", {})
+                    diff_rec = ep.get("selisih_terhadap_rekomendasi", {})
+                    if any(v < 0 for v in diff_min.values() if isinstance(v, (int, float))):
+                        expected_status = "di_bawah_minimum"
+                    elif all(v >= 0 for v in diff_rec.values() if isinstance(v, (int, float))):
+                        expected_status = "memenuhi_rekomendasi"
+                    else:
+                        expected_status = "memenuhi_minimum"
+
+                if penilaian and isinstance(penilaian, dict) and kode in penilaian:
+                    actual_penilaian = penilaian[kode]
+                    if actual_penilaian != expected_status:
+                        violations.append(
+                            f"Penilaian untuk produk '{kode}' adalah '{actual_penilaian}' bertentangan dengan tanda selisih numerik yang menunjukkan '{expected_status}'."
+                        )
 
         is_valid = len(violations) == 0
         return is_valid, violations

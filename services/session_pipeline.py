@@ -126,7 +126,9 @@ class SessionPipeline:
             history=history
         )
 
-        is_valid, violations = self.grounding_checker.check(gen_out.teks, action_res.fakta, state=state)
+        is_valid, violations = self.grounding_checker.check(
+            gen_out.teks, action_res.fakta, state=state, penilaian=gen_out.penilaian
+        )
         is_fallback = False
 
         if not is_valid:
@@ -140,7 +142,9 @@ class SessionPipeline:
                 history=history,
                 feedback_note=feedback_note
             )
-            is_valid_retry, violations_retry = self.grounding_checker.check(gen_out_retry.teks, action_res.fakta, state=state)
+            is_valid_retry, violations_retry = self.grounding_checker.check(
+                gen_out_retry.teks, action_res.fakta, state=state, penilaian=gen_out_retry.penilaian
+            )
             if is_valid_retry:
                 gen_out = gen_out_retry
                 violations = []

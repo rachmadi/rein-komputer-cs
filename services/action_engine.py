@@ -355,12 +355,22 @@ class ActionEngine:
             rec_ssd = max(512, min_ssd * 2) if min_ssd < 512 else min_ssd
             rec_vram = max(min_vram, 4 if min_vram > 0 else 0)
 
+            diff_min = [p_cpu_tier - min_cpu, p_ram - min_ram, p_ssd - min_ssd, p_vram - min_vram]
+            diff_rec = [p_cpu_tier - rec_cpu, p_ram - rec_ram, p_ssd - rec_ssd, p_vram - rec_vram]
+            if any(d < 0 for d in diff_min):
+                status_kecocokan = "di_bawah_minimum"
+            elif all(d >= 0 for d in diff_rec):
+                status_kecocokan = "memenuhi_rekomendasi"
+            else:
+                status_kecocokan = "memenuhi_minimum"
+
             eval_results.append({
                 "kode": p.get("kode"),
                 "nama": p.get("nama"),
                 "harga": p_price,
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi_aktual": clean_specs(p),
+                "status_kecocokan": status_kecocokan,
                 "angka_aktual": {
                     "cpu_tier": p_cpu_tier,
                     "ram_gb": p_ram,

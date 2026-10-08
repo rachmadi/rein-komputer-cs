@@ -90,3 +90,56 @@ def test_fact_consistency_merek_kecuali_enforced():
     is_ok_c, viols_c = checker.check(text_clean, fakta=fakta_clean)
     assert is_ok_c is True
     assert len(viols_c) == 0
+
+
+def test_fact_consistency_evaluasi_kecocokan_structured_penilaian():
+    """Poin 10: Pemeriksa memverifikasi secara deterministik kesesuaian penilaian terstruktur dengan tanda selisih."""
+    checker = GroundingChecker()
+
+    fakta_eval = {
+        "status": "sukses",
+        "evaluasi_produk": [
+            {
+                "kode": "KB-L01",
+                "nama": "Acer Aspire Lite 14",
+                "status_kecocokan": "di_bawah_minimum",
+                "selisih_terhadap_minimum": {"cpu_tier": -1, "ram_gb": -8, "ssd_gb": 0, "gpu_vram_gb": 0},
+                "selisih_terhadap_rekomendasi": {"cpu_tier": -2, "ram_gb": -8, "ssd_gb": 0, "gpu_vram_gb": 0}
+            },
+            {
+                "kode": "KB-L06",
+                "nama": "Acer Nitro V 15",
+                "status_kecocokan": "memenuhi_minimum",
+                "selisih_terhadap_minimum": {"cpu_tier": 0, "ram_gb": 0, "ssd_gb": 0, "gpu_vram_gb": 4},
+                "selisih_terhadap_rekomendasi": {"cpu_tier": -1, "ram_gb": 0, "ssd_gb": 0, "gpu_vram_gb": 4}
+            },
+            {
+                "kode": "KB-L09",
+                "nama": "ASUS TUF Gaming A15",
+                "status_kecocokan": "memenuhi_rekomendasi",
+                "selisih_terhadap_minimum": {"cpu_tier": 1, "ram_gb": 0, "ssd_gb": 488, "gpu_vram_gb": 8},
+                "selisih_terhadap_rekomendasi": {"cpu_tier": 0, "ram_gb": 0, "ssd_gb": 488, "gpu_vram_gb": 8}
+            }
+        ]
+    }
+
+    # 1. Penilaian konsisten (semua cocok dengan tanda selisih)
+    penilaian_valid = {
+        "KB-L01": "di_bawah_minimum",
+        "KB-L06": "memenuhi_minimum",
+        "KB-L09": "memenuhi_rekomendasi"
+    }
+    is_ok, viols = checker.check("Berikut evaluasi spesifikasi laptop untuk kebutuhan Kakak.", fakta=fakta_eval, penilaian=penilaian_valid)
+    assert is_ok is True
+    assert len(viols) == 0
+
+    # 2. Penilaian inkonsisten: KB-L01 (selisih negatif) diklaim memenuhi_rekomendasi
+    penilaian_invalid = {
+        "KB-L01": "memenuhi_rekomendasi",
+        "KB-L06": "memenuhi_minimum",
+        "KB-L09": "memenuhi_rekomendasi"
+    }
+    is_ok2, viols2 = checker.check("Berikut evaluasi spesifikasi laptop untuk kebutuhan Kakak.", fakta=fakta_eval, penilaian=penilaian_invalid)
+    assert is_ok2 is False
+    assert any("KB-L01" in v and "bertentangan dengan tanda selisih" in v for v in viols2)
+

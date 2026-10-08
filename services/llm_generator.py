@@ -45,14 +45,21 @@ ATURAN UTAMA:
 Kembalikan format JSON persis sesuai skema:
 {
   "teks": "<kalimat jawaban untuk pelanggan>",
-  "pertanyaan_diajukan": "<slot yang ditanyakan: 'kebutuhan' | 'budget' | 'kategori' | null>"
+  "pertanyaan_diajukan": "<slot yang ditanyakan: 'kebutuhan' | 'budget' | 'kategori' | null>",
+  "penilaian": {
+    "<kode_produk>": "di_bawah_minimum" | "memenuhi_minimum" | "memenuhi_rekomendasi"
+  }
 }
+Catatan untuk penilaian:
+- Khusus aksi evaluasi_kecocokan, isi 'penilaian' dengan status kecocokan tiap produk yang dievaluasi ('di_bawah_minimum', 'memenuhi_minimum', atau 'memenuhi_rekomendasi') sesuai fakta.
+- Untuk aksi selain evaluasi_kecocokan, isi 'penilaian' dengan null.
 """
 
 
 class GeneratorOutput(BaseModel):
     teks: str = Field(description="Jawaban percakapan untuk pelanggan, maksimal 3 kalimat.")
     pertanyaan_diajukan: Optional[str] = Field(default=None, description="Slot yang ditanyakan bot jika ada, misal 'kebutuhan', 'budget', atau null.")
+    penilaian: Optional[Dict[str, str]] = Field(default=None, description="Untuk evaluasi_kecocokan: mapping kode produk ke status kecocokan ('di_bawah_minimum', 'memenuhi_minimum', 'memenuhi_rekomendasi').")
 
     model_config = {
         "extra": "ignore"
@@ -135,7 +142,7 @@ def generate_response(
         "think": False,
         "options": {
             "temperature": 0.4,
-            "num_predict": 160
+            "num_predict": 256
         }
     }
 
