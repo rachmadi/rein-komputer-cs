@@ -287,7 +287,9 @@ class ActionEngine:
         else:
             fakta = {
                 "status": "sukses",
+                "merek_kecuali": merek_kecuali,
                 "total_cocok": len(matches),
+                "total_ditemukan": len(formatted_prods),
                 "produk": formatted_prods
             }
 
@@ -535,6 +537,7 @@ class ActionEngine:
         fakta = {
             "status": "sukses",
             "jenis": jenis,
+            "merek_kecuali": args.merek_kecuali,
             "total_ditemukan": len(formatted),
             "produk": formatted
         }

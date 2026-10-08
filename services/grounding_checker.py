@@ -153,5 +153,43 @@ class GroundingChecker:
                 if val not in valid_nums:
                     violations.append(f"Menyebutkan kapasitas memori {val} GB yang tidak ada di fakta.")
 
+        # 7. Konsistensi ketiadaan produk: total_ditemukan = 0 / tidak_ditemukan tidak boleh disertai klaim produk tersedia
+        total_ditemukan = fakta.get("total_ditemukan")
+        status_fakta = fakta.get("status")
+        if (total_ditemukan == 0 or status_fakta in ("tidak_ditemukan", "belum_ada_hasil")):
+            klaim_tersedia_patterns = [
+                r"(?<!belum\s)(?<!tidak\s)(?<!bukan\s)\b(?:kami ada|kami sediakan|tersedia beberapa|ada beberapa unit|silakan pilih unit|berikut rekomendasi|rekomendasi pilihan)\b",
+                r"(?<!belum\s)(?<!tidak\s)\b(?:ada unit|tersedia unit|tersedia opsi|ada pilihan produk|bisa mempertimbangkan pilihan)\b"
+            ]
+            for pat in klaim_tersedia_patterns:
+                if re.search(pat, teks, re.IGNORECASE):
+                    violations.append("Mengklaim produk tersedia padahal fakta total_ditemukan = 0 atau status tidak ditemukan.")
+                    break
+
+        # 8. Kartu produk harus cocok dengan produk yang disebut di teks
+        produk_list = fakta.get("produk") or (state.get("produk_tampil") if state else [])
+        if produk_list and isinstance(produk_list, list):
+            known_models = ["vivobook", "ideapad", "aspire", "legion", "tuf", "macbook", "pavilion", "thinkpad", "predator", "yoga", "zenbook", "rog", "loq", "victus", "omen"]
+            card_names_str = " ".join([f"{p.get('nama', '')} {p.get('brand', '')} {p.get('merek', '')}" for p in produk_list]).lower()
+            for km in known_models:
+                if re.search(rf"\b{km}\b", teks, re.IGNORECASE):
+                    if km not in card_names_str:
+                        violations.append(f"Teks menyebutkan model '{km}' yang tidak ada pada kartu produk yang ditampilkan.")
+
+        # 9. Pengecualian merek: jika merek_kecuali ada, tidak boleh ada produk merek itu
+        merek_kecuali = fakta.get("merek_kecuali") or (state.get("merek_kecuali") if state else None)
+        if merek_kecuali:
+            mk_clean = str(merek_kecuali).strip().lower()
+            # Cek di produk fakta
+            for p in (fakta.get("produk") or []):
+                p_brand = str(p.get("brand") or p.get("merek") or "").lower()
+                p_nama = str(p.get("nama") or "").lower()
+                if mk_clean == p_brand or mk_clean in p_brand or mk_clean in p_nama:
+                    violations.append(f"Daftar produk memuat merek '{merek_kecuali}' padahal diminta dikecualikan.")
+                    break
+            # Cek di teks: tidak boleh menawarkan atau merekomendasikan produk merek_kecuali
+            if re.search(rf"\b(?:ada|opsi|rekomendasi|pilihan|unit|laptop|desktop)\s+.*?\b{mk_clean}\b", teks, re.IGNORECASE) or re.search(rf"\b{mk_clean}\s+(?:vivobook|zenbook|tuf|rog|aspire|ideapad)\b", teks, re.IGNORECASE):
+                violations.append(f"Teks merekomendasikan merek '{merek_kecuali}' yang diminta untuk dikecualikan.")
+
         is_valid = len(violations) == 0
         return is_valid, violations
