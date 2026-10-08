@@ -529,9 +529,11 @@ class ActionEngine:
             highest_p = max((get_product_price(p) for p in tampil), default=5_000_000)
             matches = [p for p in candidates if get_product_price(p) > highest_p]
             matches.sort(key=lambda x: get_product_price(x))
-        elif jenis == "yang_lain":
+        elif jenis == "yang_lain" or jenis == "filter_tambahan" or args.merek_kecuali or args.filter:
             seen_kodes = {p.get("kode") for p in tampil}
             matches = [p for p in candidates if p.get("kode") not in seen_kodes]
+            if not matches:
+                matches = list(candidates)
             matches.sort(key=lambda x: get_product_price(x))
         else:
             matches = []

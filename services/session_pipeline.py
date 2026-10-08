@@ -55,6 +55,8 @@ class TurnExecutionResult:
     re_parse: bool = False
     prompt_eval_count: int = 0
     eval_count: int = 0
+    parsed_output: Optional[Dict[str, Any]] = None
+    raw_llm_content: Optional[str] = None
 
 
 class SessionPipeline:
@@ -195,7 +197,9 @@ class SessionPipeline:
             is_emergency_fallback=is_fallback,
             re_parse=parse_metrics.get("retried", False),
             prompt_eval_count=(parse_metrics.get("prompt_eval_count", 0) or 0) + (gen_metrics.get("prompt_eval_count", 0) or 0),
-            eval_count=(parse_metrics.get("eval_count", 0) or 0) + (gen_metrics.get("eval_count", 0) or 0)
+            eval_count=(parse_metrics.get("eval_count", 0) or 0) + (gen_metrics.get("eval_count", 0) or 0),
+            parsed_output=parsed.model_dump(),
+            raw_llm_content=parse_metrics.get("raw_content")
         )
 
         return turn_result, state
