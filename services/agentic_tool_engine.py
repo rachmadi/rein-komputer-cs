@@ -51,10 +51,77 @@ def has_tag(product: dict, tag_str: str) -> bool:
 def _match_legacy_query(p: dict, q: str) -> bool:
     q = q.lower()
     brands = ["acer", "asus", "lenovo", "hp", "nitro", "vivobook", "tuf", "ideapad", "legion", "macbook", "apple", "rog"]
-    for b in brands:
-        if b in q and b in p["nama"].lower():
-            return True
-    return q in p["nama"].lower() or q in p.get("kategori", "").lower() or q in str(p.get("tags", "")).lower()
+    matched_brands = [b for b in brands if re.search(r"\b" + b + r"\b", q)]
+    if matched_brands:
+        return any(b in p["nama"].lower() for b in matched_brands)
+
+    # Kata umum spek, kategori, atau filter yang bukan nama model/merek
+    common_words = [
+        "laptop", "notebook", "pc", "desktop", "komputer", "printer", "layar", "monitor",
+        "ram", "ssd", "gb", "tb", "jt", "juta", "murah", "di", "bawah", "dibawah", "buat", "untuk",
+        "ada", "yang", "aja", "saja", "kalo", "kalau", "mau", "cari"
+    ]
+    tokens = [w for w in re.findall(r"\w+", q) if not w.isdigit()]
+    specific_tokens = [w for w in tokens if w not in common_words]
+    if not specific_tokens:
+        return True
+    return any(w in p["nama"].lower() for w in specific_tokens) or q in str(p.get("tags", "")).lower()
+
+def format_natural_unmet_requirements(unmet_list: list[str]) -> str:
+    natural_parts = []
+    for item in unmet_list:
+        m_ram = re.search(r"ram_gb\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        if m_ram:
+            req_v = m_ram.group(1)
+            got_v = m_ram.group(2)
+            if got_v:
+                natural_parts.append(f"RAM {got_v} GB (butuh {req_v} GB)")
+            else:
+                natural_parts.append(f"butuh RAM {req_v} GB")
+            continue
+
+        m_vram = re.search(r"vram_gb\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        if m_vram:
+            req_v = m_vram.group(1)
+            got_v = m_vram.group(2)
+            if got_v and got_v != "0":
+                natural_parts.append(f"VRAM {got_v} GB (butuh {req_v} GB)")
+            else:
+                natural_parts.append(f"butuh VRAM {req_v} GB")
+            continue
+
+        m_ssd = re.search(r"storage_ssd_gb\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        if m_ssd:
+            req_v = int(m_ssd.group(1))
+            got_v = int(m_ssd.group(2)) if m_ssd.group(2) else None
+            req_lbl = f"{req_v//1024} TB" if req_v >= 1024 else f"{req_v} GB"
+            if got_v is not None:
+                got_lbl = f"{got_v//1024} TB" if got_v >= 1024 else f"{got_v} GB"
+                natural_parts.append(f"SSD {got_lbl} (butuh {req_lbl})")
+            else:
+                natural_parts.append(f"butuh SSD {req_lbl}")
+            continue
+
+        m_cpu = re.search(r"cpu_tier\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        if m_cpu:
+            req_v = m_cpu.group(1)
+            got_v = m_cpu.group(2)
+            if got_v:
+                natural_parts.append(f"prosesor tier {got_v} (butuh tier {req_v})")
+            else:
+                natural_parts.append(f"butuh prosesor tier {req_v}")
+            continue
+
+        if "gpu_dedicated" in item:
+            natural_parts.append("belum memiliki GPU dedicated")
+            continue
+
+        cleaned = re.sub(r"\b([a-z_]+)_gb\b", r"\1", item).replace("_", " ")
+        natural_parts.append(cleaned)
+
+    if natural_parts:
+        return f"Belum memenuhi: {', '.join(natural_parts)}"
+    return ""
 
 def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None, int, dict]:
     penalty = 0
@@ -215,13 +282,38 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                     info_profil = f"Kebutuhan gabungan: {n1} & {n2} (memakai syarat terberat)\n"
         check_text = (query + " " + user_text).lower()
 
-        # Cek spesifikasi RAM eksplisit (misal "ram 128gb")
+        # Deteksi kebutuhan "baterai awet"
+        is_baterai_req = any(k in check_text for k in ["baterai awet", "daya tahan baterai", "batre awet", "baterai tahan lama", "batre tahan lama", "baterainya awet"])
+        if is_baterai_req:
+            explicit_cat = "laptop"
+            profil_id = "P01"
+            filters_to_apply = [{"field": "gpu_dedicated", "op": "==", "value": 0, "strength": "hard"}]
+
+        # Parsing spesifikasi generik: RAM, SSD, dan Budget
+        # 1. RAM generik
         m_ram_req = re.search(r"\bram\s*(\d+)\s*gb\b|\b(\d+)\s*gb\s*ram\b", check_text)
         if m_ram_req:
             req_ram_val = int(m_ram_req.group(1) or m_ram_req.group(2))
-            if req_ram_val > 64:
+            max_cat_ram = max((p.get("ram_gb") or 0) for p in catalog.products)
+            if req_ram_val > max_cat_ram:
                 return "Produk tidak tersedia.", [], explicit_cat, None
             filters_to_apply.append({"field": "ram_gb", "op": ">=", "value": req_ram_val, "strength": "hard"})
+
+        # 2. SSD generik (GB / TB)
+        m_ssd_req = re.search(r"\bssd\s*(\d+)\s*(tb|gb)\b|\b(\d+)\s*(tb|gb)\s*ssd\b", check_text)
+        if m_ssd_req:
+            val_num = int(m_ssd_req.group(1) or m_ssd_req.group(3))
+            unit = (m_ssd_req.group(2) or m_ssd_req.group(4)).lower()
+            req_ssd_val = val_num * 1000 if unit == "tb" else val_num
+            max_cat_ssd = max((p.get("storage_ssd_gb") or 0) for p in catalog.products)
+            if req_ssd_val > max_cat_ssd:
+                return "Produk tidak tersedia.", [], explicit_cat, None
+            filters_to_apply.append({"field": "storage_ssd_gb", "op": ">=", "value": req_ssd_val, "strength": "hard"})
+
+        # 3. Budget generik
+        if not max_harga:
+            max_harga = parse_budget_from_text(check_text)
+
         if not explicit_cat:
             cat_keywords = {
                 "laptop": ("laptop", "notebook"),
@@ -306,11 +398,21 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             if "lebih murah" in user_text.lower() or "yang murah" in user_text.lower():
                 res_str = f"{info_profil}Tidak ada yang lebih murah yang memenuhi kebutuhan ini. Kandidat terdekat:\n"
             else:
-                res_str = f"{info_profil}Tidak ada yang memenuhi syarat mutlak. Kandidat terdekat:\n"
+                res_str = f"{info_profil}Kandidat terdekat:\n"
             for p in top_relaxed:
-                res_str += f"- {p['nama']} | Rp{p.get('harga_idr',0):,} | {_clean_specs(p)}\n  {p.get('alasan_gagal', '')}\n"
+                mr = p.get("match_report", {})
+                unmet = mr.get("tidak_terpenuhi", [])
+                fail_lbl = format_natural_unmet_requirements(unmet) or p.get("alasan_gagal", "")
+                res_str += f"- {p['nama']} | Rp{p.get('harga_idr',0):,} | {_clean_specs(p)}\n  {fail_lbl}\n"
             return res_str, top_relaxed, explicit_cat, profil_id
-            
+
+        if is_baterai_req:
+            # Kebutuhan baterai awet dilarang diberi tanda ✅ atau klaim syarat penuh
+            res_str = "Beberapa pilihan laptop tipis dengan grafis terintegrasi (lebih hemat daya):\n\n"
+            for idx, p in enumerate(top_prods):
+                res_str += f"{idx+1}. **{p['nama']}** | Rp{p.get('harga_idr',0):,}\n  Spesifikasi: {_clean_specs(p)}\n\n"
+            return res_str, top_prods, explicit_cat, profil_id
+
         if not has_filter_checked:
             res_str = "Beberapa pilihan produk kami:\n\n"
         else:
@@ -418,17 +520,48 @@ def format_conversational_frame(
     elif "produk tidak tersedia" in facts_lower or "tidak tersedia" in facts_lower:
         intro = f"Mohon maaf Kak, produk {cat_label} dengan kriteria tersebut saat ini belum tersedia di katalog kami."
         outro = "Apakah Kakak ingin kami rekomendasikan pilihan alternatif lain yang mendekati kebutuhan tersebut?"
+    elif any(k in user_text.lower() for k in ["baterai awet", "daya tahan baterai", "batre awet", "baterai tahan lama", "batre tahan lama", "baterainya awet"]):
+        intro = f"Data kapasitas dan daya tahan baterai tidak tercantum secara spesifik di katalog kami. Namun, untuk efisiensi daya, kami sarankan laptop tipis dengan kartu grafis terintegrasi (tanpa GPU dedicated). Berikut beberapa pilihannya:"
+        outro = "Boleh kami tahu berapa perkiraan budget atau preferensi merek yang Kakak cari? Kami siap bantu pilihkan yang paling sesuai!"
     elif not has_qualified:
         intro = f"Tentu Kak! Berikut beberapa pilihan {cat_label} yang tersedia di Bobby Computer:"
-        outro = "Semua unit di atas bergaransi resmi. Silakan beri tahu kami jika ada kebutuhan khusus atau rentang anggaran tertentu ya!"
+        outro = "Silakan beri tahu kami jika ada kebutuhan khusus atau rentang anggaran tertentu ya!"
     else:
-        intro = f"Tentu Kak! Berikut rekomendasi {cat_label} yang paling cocok dan sudah memenuhi seluruh syarat kebutuhan Kakak di Bobby Computer:"
-        outro = "Semua unit di atas bergaransi resmi dan siap pakai. Apakah ada merek atau tipe tertentu yang ingin Kakak tanyakan lebih detail?"
+        intro = f"Tentu Kak! Berikut rekomendasi {cat_label} yang memenuhi kriteria kebutuhan Kakak di Bobby Computer:"
+        outro = "Apakah ada merek atau tipe tertentu yang ingin Kakak tanyakan lebih detail?"
+
+    # Hilangkan duplikasi kalimat header kandidat terdekat di awal body
+    if "kandidat terdekat" in intro.lower() and "kandidat terdekat" in body.lower():
+        body = re.sub(r"^(?:(?:Tidak ada yang|Belum ada yang)[^\n]*\n+)?(?:Kandidat terdekat[^\n]*\n+)?", "", body, flags=re.IGNORECASE).strip()
+
+    # Bersihkan nama kolom teknis agar tidak muncul di teks pelanggan
+    for col_raw, col_nat in [
+        ("ram_gb", "RAM"),
+        ("vram_gb", "VRAM"),
+        ("storage_ssd_gb", "SSD"),
+        ("cpu_tier", "tingkat prosesor"),
+        ("gpu_dedicated", "GPU dedicated"),
+    ]:
+        body = re.sub(r"\b" + col_raw + r"\b", col_nat, body)
+
+    # Hilangkan duplikasi kalimat/baris yang berurutan
+    lines = body.split("\n")
+    dedup_lines = []
+    for l in lines:
+        stripped = l.strip()
+        if stripped and dedup_lines and dedup_lines[-1].strip() == stripped:
+            continue
+        dedup_lines.append(l)
+    body = "\n".join(dedup_lines)
 
     framed = f"{intro}\n\n{body}\n\n{outro}".strip()
     framed = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", framed)
     framed = re.sub(r"\b[PMG]\d{2}\b", "", framed)
     framed = re.sub(r"\n{3,}", "\n\n", framed)
+    # Hapus klaim tak berdasar
+    framed = framed.replace(" bergaransi resmi dan siap pakai.", ".")
+    framed = framed.replace(" bergaransi resmi.", ".")
+    framed = framed.replace(" siap pakai.", ".")
 
     t_frame = time.perf_counter() - t0
     return framed, {"frame_latency": t_frame, "frame_mode": "template"}

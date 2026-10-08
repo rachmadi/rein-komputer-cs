@@ -117,6 +117,9 @@ SPEC_INDICATORS = [
     r"\bcore\s*i[3579]\b",
     r"\bryzen\s*[3579]\b",
     r"\b\d+\s*(tb|gb)\s*ssd\b",
+    r"\bssd\s*\d+\s*(tb|gb)\b",
+    r"\b(budget|anggaran|harga|dana|di\s*bawah|dibawah|maksimal|maks|kurang\s*dari|under)\s*(\d+)?\s*(juta|jt)\b",
+    r"\b\d+\s*(juta|jt)\b",
 ]
 
 def classify_intent(text: str, has_prior_context: bool = False) -> IntentClass:

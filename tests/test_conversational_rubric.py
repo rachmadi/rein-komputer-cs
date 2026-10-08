@@ -24,6 +24,21 @@ def verify_rubric_invariants(reply: str):
     # Spesifikasi tidak boleh mengandung string literal 'None'
     assert "None" not in reply, f"Ditemukan string literal 'None' dalam spesifikasi: {reply}"
 
+    # Larangan nama kolom teknis di teks pelanggan
+    raw_columns = ["ram_gb", "vram_gb", "cpu_tier", "storage_ssd_gb", "gpu_dedicated"]
+    for col in raw_columns:
+        assert col not in reply.lower(), f"Ditemukan nama kolom teknis '{col}' dalam jawaban pelanggan:\n{reply}"
+
+    # Larangan klaim tanpa dasar
+    assert "bergaransi resmi" not in reply.lower(), "Klaim tanpa dasar 'bergaransi resmi' dilarang"
+    assert "siap pakai" not in reply.lower(), "Klaim tanpa dasar 'siap pakai' dilarang"
+
+    # Larangan duplikasi kalimat berurutan
+    lines = [l.strip() for l in reply.split("\n") if l.strip()]
+    for i in range(len(lines) - 1):
+        assert lines[i] != lines[i + 1], f"Ditemukan duplikasi baris berurutan: '{lines[i]}'"
+
+
 
 def test_rubric_percakapan_1_sapaan():
     """
@@ -249,5 +264,113 @@ def test_rubric_isolasi_sesi_antar_chat_id():
     # Sesi B harus menjelaskan belum ada rekomendasi dan bertanya kebutuhan
     assert any(k in reply_b.lower() for k in ["belum ada rekomendasi", "belum ada yang kami tampilkan", "belum ada"])
     assert any(k in reply_b.lower() for k in ["kebutuhan", "dicari", "anggaran", "budget"])
+
+
+def test_rubric_baterai_awet_tanpa_centang_dan_jujur():
+    """
+    Kebutuhan 'laptop baterai awet':
+    - Jangan beri ✅ 'memenuhi seluruh syarat'
+    - Jawab jujur bahwa data baterai tidak ada di katalog
+    - Arahkan ke laptop tipis tanpa GPU dedicated (profil P01/P16 dengan filter GPU integrated)
+    - Tanya budget
+    - Tampilkan hasil tanpa klaim syarat penuh
+    """
+    sid = "rubric_baterai_awet"
+    reset_chat_session(sid)
+    res = process_chat_message(sid, "laptop baterai awet")
+    reply = res["reply"]
+    verify_rubric_invariants(reply)
+
+    # Dilarang ada tanda ✅
+    assert "✅" not in reply, f"Baterai awet dilarang memiliki tanda ✅:\n{reply}"
+    # Dilarang klaim memenuhi seluruh syarat
+    assert "memenuhi seluruh syarat" not in reply.lower()
+
+    # Jawab jujur bahwa data baterai tidak ada di katalog
+    assert any(k in reply.lower() for k in ["tidak tercantum", "tidak ada", "daya tahan baterai"]), \
+        f"Jawaban harus jujur mengenai ketiadaan data baterai:\n{reply}"
+
+    # Arahkan ke laptop tipis tanpa GPU dedicated (integrated GPU)
+    prods = res.get("products", [])
+    assert len(prods) > 0, "Harus menyajikan opsi laptop tipis hemat daya"
+    from core.catalog import Catalog
+    cat = Catalog.from_dummy()
+    for p in prods:
+        cat_p = cat.by_code.get(p["kode"])
+        if cat_p:
+            assert cat_p.get("gpu_dedicated") == 0, f"Laptop dengan GPU dedicated dilarang muncul untuk baterai awet: {p['kode']}"
+
+    # Profil aktif harus P01 (atau P16), bukan G03
+    assert res.get("active_profile_id") in ("P01", "P16")
+
+    # Tanya budget
+    assert any(k in reply.lower() for k in ["budget", "anggaran", "biaya"])
+
+
+def test_rubric_parsing_spesifikasi_generik():
+    """
+    Uji parsing spesifikasi generik:
+    - RAM 32GB (ada di katalog: KB-L10)
+    - RAM 16GB (ada di katalog: >= 16GB)
+    - RAM 64GB (tidak ada di katalog: 0 produk)
+    - SSD 1TB (ada di katalog: KB-L07, KB-L09, KB-L10)
+    - Budget di bawah 10 juta (ada di katalog: <= 10.000.000)
+    """
+    # 1. RAM 32GB
+    res_r32 = process_chat_message("test_gen_r32", "laptop RAM 32GB")
+    verify_rubric_invariants(res_r32["reply"])
+    kodes_r32 = [p["kode"] for p in res_r32.get("products", [])]
+    assert "KB-L10" in kodes_r32, "Legion Pro 5 (RAM 32GB) harus ditemukan"
+
+    # 2. RAM 16GB
+    res_r16 = process_chat_message("test_gen_r16", "laptop RAM 16GB")
+    verify_rubric_invariants(res_r16["reply"])
+    assert len(res_r16.get("products", [])) > 0, "Laptop RAM 16GB harus ditemukan"
+
+    # 3. RAM 64GB (melebihi katalog)
+    res_r64 = process_chat_message("test_gen_r64", "laptop RAM 64GB")
+    verify_rubric_invariants(res_r64["reply"])
+    assert len(res_r64.get("products", [])) == 0, "Laptop RAM 64GB tidak ada di katalog"
+    assert "tidak tersedia" in res_r64["reply"].lower()
+
+    # 4. SSD 1TB
+    res_ssd = process_chat_message("test_gen_ssd", "laptop SSD 1TB")
+    verify_rubric_invariants(res_ssd["reply"])
+    kodes_ssd = [p["kode"] for p in res_ssd.get("products", [])]
+    assert any(k in kodes_ssd for k in ["KB-L07", "KB-L09", "KB-L10"]), "Laptop SSD 1TB harus ditemukan"
+
+    # 5. Budget di bawah 10 juta
+    res_b10 = process_chat_message("test_gen_b10", "laptop di bawah 10 juta")
+    verify_rubric_invariants(res_b10["reply"])
+    for p in res_b10.get("products", []):
+        assert p["harga_idr"] <= 10000000, f"Harga {p['harga_idr']} harus <= 10.000.000"
+
+
+def test_rubric_alasan_gagal_natural_tanpa_nama_kolom():
+    """
+    Uji penjelasan kegagalan syarat mutlak memakai bahasa natural,
+    tanpa nama kolom mentah (ram_gb, vram_gb), dan tanpa duplikasi kalimat header.
+    """
+    sid = "rubric_fail_natural"
+    reset_chat_session(sid)
+    # Turn 1: video 4k
+    process_chat_message(sid, "laptop buat edit video 4k")
+    # Turn 2: yang ASUS aja (ASUS TUF gagal RAM 32GB, Vivobook gagal RAM 32GB + VRAM 8GB)
+    res2 = process_chat_message(sid, "yang ASUS aja")
+    reply2 = res2["reply"]
+    verify_rubric_invariants(reply2)
+
+    # Larangan nama kolom
+    for col in ["ram_gb", "vram_gb", "storage_ssd_gb", "cpu_tier"]:
+        assert col not in reply2.lower(), f"Kolom teknis '{col}' dilarang muncul di reply:\n{reply2}"
+
+    # Harus memuat format natural
+    assert any(k in reply2.lower() for k in ["ram 16 gb", "butuh 32 gb", "vram"]), \
+        f"Penjelasan kegagalan harus natural:\n{reply2}"
+
+    # Larangan kalimat pengantar ganda
+    occurrences = len(re.findall(r"kandidat terdekat", reply2, re.IGNORECASE))
+    assert occurrences <= 1, f"Kalimat 'kandidat terdekat' tidak boleh duplikat (muncul {occurrences}x):\n{reply2}"
+
 
 
