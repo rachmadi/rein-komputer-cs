@@ -271,7 +271,8 @@ def build_parser_messages(
                     break
 
     kebutuhan_diketahui = (
-        s.get("kebutuhan_teks")
+        s.get("kebutuhan_diketahui")
+        or s.get("kebutuhan_teks")
         or (s.get("slot_diketahui") or {}).get("kebutuhan_teks")
         or s.get("profil_aktif")
     )

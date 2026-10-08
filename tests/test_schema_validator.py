@@ -233,3 +233,49 @@ def test_parser_reparse_on_state_inconsistency(monkeypatch):
     assert metrics["retried"] is True
     assert output.aksi == ActionEnum.CARI_PRODUK
 
+
+def test_validator_reject_slot_empty_or_negation():
+    # 1. Negasi "tidak ada"
+    raw1 = {
+        "aksi": "jawab_pertanyaan_bot",
+        "argumen": {"slot": "kategori", "nilai": "tidak ada"},
+        "pembaruan_state": {}
+    }
+    res1, is_valid1 = validate_parser_output(raw1, session_state={"pending_question": "kategori"})
+    assert is_valid1 is False
+    assert res1.aksi == ActionEnum.TIDAK_JELAS
+    assert "butuh klarifikasi" in res1.argumen.alasan.lower()
+
+    # 2. Negasi "-"
+    raw2 = {
+        "aksi": "jawab_pertanyaan_bot",
+        "argumen": {"slot": "budget", "nilai": "-"},
+        "pembaruan_state": {}
+    }
+    res2, is_valid2 = validate_parser_output(raw2, session_state={"pending_question": "budget"})
+    assert is_valid2 is False
+    assert res2.aksi == ActionEnum.TIDAK_JELAS
+
+    # 3. Nilai kosong None atau ""
+    raw3 = {
+        "aksi": "jawab_pertanyaan_bot",
+        "argumen": {"slot": "persona", "nilai": ""},
+        "pembaruan_state": {}
+    }
+    res3, is_valid3 = validate_parser_output(raw3, session_state={"pending_question": "persona"})
+    assert is_valid3 is False
+    assert res3.aksi == ActionEnum.TIDAK_JELAS
+
+
+def test_validator_reject_rujukan_produk_when_produk_tampil_empty():
+    # User / parser memberikan rujukan_produk padahal produk_tampil kosong
+    raw = {
+        "aksi": "evaluasi_kecocokan",
+        "argumen": {"rujukan_produk": [1], "kebutuhan_teks": "kuliah"},
+        "pembaruan_state": {}
+    }
+    res, is_valid = validate_parser_output(raw, session_state={"produk_tampil": []})
+    assert is_valid is False
+    assert res.aksi == ActionEnum.TIDAK_JELAS
+    assert "butuh klarifikasi" in res.argumen.alasan.lower()
+

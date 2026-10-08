@@ -216,17 +216,46 @@ def validate_parser_output(
         if cat_clean in catalog_cats:
             state_up.kategori = cat_clean
 
+    # 3b. Validasi nilai slot: tolak nilai kosong atau negasi ("tidak ada", "-") -> tidak_jelas & butuh klarifikasi
+    if parsed.aksi == ActionEnum.JAWAB_PERTANYAAN_BOT:
+        val_str = str(args.nilai).strip().lower() if args.nilai is not None else ""
+        negation_set = {
+            "", "-", "--", "tidak ada", "ga ada", "gak ada", "nggak ada", "ndak ada",
+            "kosong", "belum ada", "none", "null", "n/a", "tdk ada", "tidak"
+        }
+        if not val_str or val_str in negation_set:
+            logger.warning(f"Nilai slot ditolak karena kosong atau negasi: '{args.nilai}'")
+            return (
+                ParserOutput(
+                    aksi=ActionEnum.TIDAK_JELAS,
+                    argumen=ActionArguments(alasan=f"Nilai slot tidak valid (kosong atau negasi: '{args.nilai}'), butuh klarifikasi"),
+                    pembaruan_state=StateUpdate()
+                ),
+                False
+            )
+
     # 4. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
+    produk_tampil_list = state.get("produk_tampil", [])
+    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list:
+        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil kosong")
+        return (
+            ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan="Rujukan produk tidak sah saat tidak ada produk yang tampil di sesi, butuh klarifikasi"),
+                pembaruan_state=StateUpdate()
+            ),
+            False
+        )
+
     if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
-        produk_tampil = state.get("produk_tampil", [])
         raw_refs = args.rujukan_produk if args.rujukan_produk is not None else args.produk
-        resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil)
+        resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil_list)
         
         if not is_ref_valid:
             return (
                 ParserOutput(
                     aksi=ActionEnum.TIDAK_JELAS,
-                    argumen=ActionArguments(alasan=f"Rujukan produk '{failed_ref}' tidak ditemukan di produk yang tampil"),
+                    argumen=ActionArguments(alasan=f"Rujukan produk '{failed_ref}' tidak ditemukan di produk yang tampil, butuh klarifikasi"),
                     pembaruan_state=StateUpdate()
                 ),
                 False

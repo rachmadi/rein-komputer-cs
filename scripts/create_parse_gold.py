@@ -559,11 +559,33 @@ all_items = []
 for item in dev_items:
     item["split"] = "dev"
     item["ditulis_sebelum_melihat_model"] = "tidak"
+    st = item.get("state", {})
+    kebutuhan = (
+        st.get("kebutuhan_diketahui")
+        or (st.get("slot_diketahui") or {}).get("kebutuhan_teks")
+        or st.get("kebutuhan_teks")
+    )
+    item["state"] = {
+        "pending_question": st.get("pending_question"),
+        "produk_tampil": st.get("produk_tampil") or [],
+        "kebutuhan_diketahui": kebutuhan
+    }
     all_items.append(item)
 
 for item in held_out_items:
     item["split"] = "held-out-v1-terpakai"
     item["ditulis_sebelum_melihat_model"] = "ya"  # 50 held-out ditulis sebelum melihat model!
+    st = item.get("state", {})
+    kebutuhan = (
+        st.get("kebutuhan_diketahui")
+        or (st.get("slot_diketahui") or {}).get("kebutuhan_teks")
+        or st.get("kebutuhan_teks")
+    )
+    item["state"] = {
+        "pending_question": st.get("pending_question"),
+        "produk_tampil": st.get("produk_tampil") or [],
+        "kebutuhan_diketahui": kebutuhan
+    }
     all_items.append(item)
 
 # 1. Tulis ke eval/parse_gold.jsonl
@@ -573,7 +595,7 @@ with open("eval/parse_gold.jsonl", "w", encoding="utf-8") as f:
 
 # 2. Tulis ke eval/parse_gold.csv
 csv_headers = [
-    "id", "split", "pesan", "pending_question", "produk_tampil",
+    "id", "split", "pesan", "pending_question", "produk_tampil", "kebutuhan_diketahui",
     "label_aksi", "label_argumen", "label_pembaruan_state",
     "sumber", "ditulis_sebelum_melihat_model", "catatan"
 ]
@@ -589,6 +611,7 @@ with open("eval/parse_gold.csv", "w", encoding="utf-8", newline="") as f:
             it["pesan"],
             st.get("pending_question") or "",
             json.dumps(st.get("produk_tampil", []), ensure_ascii=False) if st.get("produk_tampil") else "",
+            st.get("kebutuhan_diketahui") or "",
             it["label_aksi"],
             json.dumps(it["label_argumen"], ensure_ascii=False) if it["label_argumen"] else "",
             json.dumps(it["label_pembaruan_state"], ensure_ascii=False) if it["label_pembaruan_state"] else "",
