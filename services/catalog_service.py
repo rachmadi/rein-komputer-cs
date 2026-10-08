@@ -68,7 +68,12 @@ def get_embedding(text: str, ollama_url: str = OLLAMA_URL, model: str = EMBED_MO
     try:
         response = requests.post(
             f"{ollama_url}/api/embed",
-            json={"model": model, "input": text, "keep_alive": 0},
+            json={
+                "model": model,
+                "input": text,
+                "options": {"num_gpu": 0},
+                "keep_alive": "30m"
+            },
             timeout=120
         )
         response.raise_for_status()

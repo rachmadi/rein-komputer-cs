@@ -140,9 +140,11 @@ def generate_response(
         "format": schema,
         "stream": False,
         "think": False,
+        "keep_alive": "30m",
         "options": {
             "temperature": 0.4,
-            "num_predict": 256
+            "num_predict": 256,
+            "num_ctx": 4096
         }
     }
 
@@ -152,6 +154,9 @@ def generate_response(
 
     prompt_eval_count = 0
     eval_count = 0
+    load_duration = 0
+    prompt_eval_duration = 0
+    eval_duration = 0
     try:
         req = urllib.request.Request(
             f"{ollama_url}/api/chat",
@@ -163,6 +168,9 @@ def generate_response(
             raw_content = data.get("message", {}).get("content", "").strip()
             prompt_eval_count = data.get("prompt_eval_count", 0)
             eval_count = data.get("eval_count", 0)
+            load_duration = data.get("load_duration", 0)
+            prompt_eval_duration = data.get("prompt_eval_duration", 0)
+            eval_duration = data.get("eval_duration", 0)
 
         parsed_json = json.loads(raw_content)
         out = GeneratorOutput.model_validate(parsed_json)
@@ -182,6 +190,9 @@ def generate_response(
         "error": error_msg,
         "raw_content": raw_content,
         "prompt_eval_count": prompt_eval_count,
-        "eval_count": eval_count
+        "eval_count": eval_count,
+        "load_duration_ms": round(load_duration / 1e6, 2),
+        "prompt_eval_duration_ms": round(prompt_eval_duration / 1e6, 2),
+        "eval_duration_ms": round(eval_duration / 1e6, 2)
     }
     return out, metrics

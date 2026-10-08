@@ -55,6 +55,9 @@ class TurnExecutionResult:
     re_parse: bool = False
     prompt_eval_count: int = 0
     eval_count: int = 0
+    load_duration_ms: float = 0.0
+    prompt_eval_duration_ms: float = 0.0
+    eval_duration_ms: float = 0.0
     parsed_output: Optional[Dict[str, Any]] = None
     raw_llm_content: Optional[str] = None
 
@@ -198,6 +201,9 @@ class SessionPipeline:
             re_parse=parse_metrics.get("retried", False),
             prompt_eval_count=(parse_metrics.get("prompt_eval_count", 0) or 0) + (gen_metrics.get("prompt_eval_count", 0) or 0),
             eval_count=(parse_metrics.get("eval_count", 0) or 0) + (gen_metrics.get("eval_count", 0) or 0),
+            load_duration_ms=round((parse_metrics.get("load_duration_ms", 0.0) or 0.0) + (gen_metrics.get("load_duration_ms", 0.0) or 0.0), 1),
+            prompt_eval_duration_ms=round((parse_metrics.get("prompt_eval_duration_ms", 0.0) or 0.0) + (gen_metrics.get("prompt_eval_duration_ms", 0.0) or 0.0), 1),
+            eval_duration_ms=round((parse_metrics.get("eval_duration_ms", 0.0) or 0.0) + (gen_metrics.get("eval_duration_ms", 0.0) or 0.0), 1),
             parsed_output=parsed.model_dump(),
             raw_llm_content=parse_metrics.get("raw_content")
         )

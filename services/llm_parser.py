@@ -289,9 +289,11 @@ def _call_ollama_chat(
         "format": schema,
         "stream": False,
         "think": False,
+        "keep_alive": "30m",
         "options": {
             "temperature": 0,
-            "num_predict": 120
+            "num_predict": 120,
+            "num_ctx": 4096
         }
     }
     raw_content = ""
@@ -299,6 +301,9 @@ def _call_ollama_chat(
     error_msg = None
     prompt_eval_count = 0
     eval_count = 0
+    load_duration = 0
+    prompt_eval_duration = 0
+    eval_duration = 0
     try:
         req = urllib.request.Request(
             f"{ollama_url}/api/chat",
@@ -310,6 +315,9 @@ def _call_ollama_chat(
             raw_content = data.get("message", {}).get("content", "").strip()
             prompt_eval_count = data.get("prompt_eval_count", 0)
             eval_count = data.get("eval_count", 0)
+            load_duration = data.get("load_duration", 0)
+            prompt_eval_duration = data.get("prompt_eval_duration", 0)
+            eval_duration = data.get("eval_duration", 0)
 
         raw_json = json.loads(raw_content)
         json_valid = True
@@ -318,7 +326,17 @@ def _call_ollama_chat(
         raw_json = {"aksi": "tidak_jelas", "argumen": {"alasan": f"Error: {str(e)}"}}
         error_msg = str(e)
 
-    return raw_json, json_valid, raw_content, error_msg, prompt_eval_count, eval_count
+    return (
+        raw_json,
+        json_valid,
+        raw_content,
+        error_msg,
+        prompt_eval_count,
+        eval_count,
+        load_duration,
+        prompt_eval_duration,
+        eval_duration
+    )
 
 
 def parse_user_message(
@@ -342,11 +360,15 @@ def parse_user_message(
     res_call = _call_ollama_chat(
         messages, schema, model, ollama_url, timeout
     )
-    if len(res_call) == 6:
-        raw_json, json_valid, raw_content, error_msg, p_eval_cnt, eval_cnt = res_call
-    else:
-        raw_json, json_valid, raw_content, error_msg = res_call[:4]
-        p_eval_cnt, eval_cnt = 0, 0
+    raw_json = res_call[0]
+    json_valid = res_call[1]
+    raw_content = res_call[2]
+    error_msg = res_call[3]
+    p_eval_cnt = res_call[4] if len(res_call) > 4 else 0
+    eval_cnt = res_call[5] if len(res_call) > 5 else 0
+    load_dur = res_call[6] if len(res_call) > 6 else 0
+    p_eval_dur = res_call[7] if len(res_call) > 7 else 0
+    eval_dur = res_call[8] if len(res_call) > 8 else 0
 
     validated_output, is_schema_valid = validate_parser_output(raw_json, session_state=state)
     is_consistent, reason = check_state_consistency(validated_output, session_state=state)
@@ -365,11 +387,15 @@ def parse_user_message(
         res_call_2 = _call_ollama_chat(
             messages, restricted_schema, model, ollama_url, timeout
         )
-        if len(res_call_2) == 6:
-            raw_json_2, json_valid_2, raw_content_2, error_msg_2, p_eval_cnt_2, eval_cnt_2 = res_call_2
-        else:
-            raw_json_2, json_valid_2, raw_content_2, error_msg_2 = res_call_2[:4]
-            p_eval_cnt_2, eval_cnt_2 = 0, 0
+        raw_json_2 = res_call_2[0]
+        json_valid_2 = res_call_2[1]
+        raw_content_2 = res_call_2[2]
+        error_msg_2 = res_call_2[3]
+        p_eval_cnt_2 = res_call_2[4] if len(res_call_2) > 4 else 0
+        eval_cnt_2 = res_call_2[5] if len(res_call_2) > 5 else 0
+        load_dur += res_call_2[6] if len(res_call_2) > 6 else 0
+        p_eval_dur += res_call_2[7] if len(res_call_2) > 7 else 0
+        eval_dur += res_call_2[8] if len(res_call_2) > 8 else 0
         p_eval_cnt += p_eval_cnt_2
         eval_cnt += eval_cnt_2
         validated_output_2, is_schema_valid_2 = validate_parser_output(raw_json_2, session_state=state)
@@ -403,7 +429,10 @@ def parse_user_message(
         "raw_content": raw_content,
         "error": error_msg,
         "prompt_eval_count": p_eval_cnt,
-        "eval_count": eval_cnt
+        "eval_count": eval_cnt,
+        "load_duration_ms": round(load_dur / 1e6, 2),
+        "prompt_eval_duration_ms": round(p_eval_dur / 1e6, 2),
+        "eval_duration_ms": round(eval_dur / 1e6, 2)
     }
 
     return validated_output, metrics
