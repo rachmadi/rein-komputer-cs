@@ -151,7 +151,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         if prods_to_send:
             for p in prods_to_send:
-                img_url = p.get("image_url") or "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80"
+                img_url = (p.get("image_url") or "").strip()
+                # Foto hanya dikirim jika image_url produk terisi asli, jangan memakai gambar pengganti
+                if not img_url or "unsplash" in img_url or not img_url.startswith("http"):
+                    continue
+
                 nama = p.get("nama", "Produk")
                 raw_price = p.get("harga") or p.get("harga_idr", 0)
                 if isinstance(raw_price, (int, float)):
@@ -165,17 +169,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 ram_part = f" | RAM {ram_val}" if ram_val else ""
                 caption = f"{nama}\nHarga: {harga}\n{cpu}{gpu_part}{ram_part}"
 
-                if img_url and img_url.startswith("http"):
-                    try:
-                        await update.message.reply_photo(
-                            photo=img_url,
-                            caption=caption
-                        )
-                        # Tandai bahwa foto produk ini sudah dikirimkan
-                        if p.get("kode"):
-                            sent_photos.add(p["kode"])
-                    except Exception as img_err:
-                        logger.warning(f"Gagal mengirim foto {nama}: {img_err}")
+                try:
+                    await update.message.reply_photo(
+                        photo=img_url,
+                        caption=caption
+                    )
+                    # Tandai bahwa foto produk ini sudah dikirimkan
+                    if p.get("kode"):
+                        sent_photos.add(p["kode"])
+                except Exception as img_err:
+                    logger.warning(f"Gagal mengirim foto {nama}: {img_err}")
 
         # Simpan produk yang aktif di giliran ini
         if products:
