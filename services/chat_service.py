@@ -248,7 +248,10 @@ def process_chat_message(
             "fsm_stage": new_s.get("fsm_stage"),
             "category": new_s.get("category"),
             "persona_name": new_s.get("persona_name"),
-            "offered_products": new_s.get("offered_products", []), "metrics": tool_res.get("metrics", {})
+            "offered_products": new_s.get("offered_products", []),
+            "active_profile_id": new_s.get("active_profile"),
+            "tools_called": [tc.get("name") for tc in tool_res.get("tool_calls", [])] if tool_res.get("tool_calls") else (tool_res.get("tools_called") or []),
+            "metrics": tool_res.get("metrics", {})
         }
 
     # OPSI FALLBACK: RULE ENGINE FSM
