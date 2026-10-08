@@ -36,11 +36,18 @@ def normalize_query(text: str) -> str:
 def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
     try:
         k = kebutuhan.lower()
+        # =====================================================================
+        # DOKUMENTASI KAMUS SEMENTARA (TEMPORARY HEURISTIC DICTIONARY):
+        # forced_profiles berfungsi sebagai fast-lookup pemetaan kata kunci
+        # kebutuhan deterministik (misal: "game berat" -> P05, "edit video 4k" -> P03,
+        # "kasir" -> P15) untuk memangkas latensi embedding & menjamin akurasi profil
+        # sebelum model perute semantik / zero-shot classifier mencapai 100% generalisasi.
+        # =====================================================================
         forced_profiles = []
-        if "game berat" in k: forced_profiles.append("P05")
+        if "game berat" in k or "game aaa" in k: forced_profiles.append("P05")
         if "edit video" in k and "4k" in k: forced_profiles.append("P03")
         elif "edit video" in k: forced_profiles.append("P02")
-        if "kasir" in k: forced_profiles.append("P15")
+        if "kasir" in k or "pos toko" in k: forced_profiles.append("P15")
         
         if forced_profiles:
             profil_list = []
