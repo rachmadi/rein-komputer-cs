@@ -76,6 +76,31 @@ async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     )
 
 
+import html
+import re
+
+def format_telegram_text(text: str) -> tuple[str, str | None]:
+    """
+    Format teks untuk Telegram:
+    - Melarang asteris ** mentah tampil di chat.
+    - Mengonversi **bold** menjadi <b>bold</b> untuk ParseMode.HTML.
+    - Mengonversi _italic_ atau *italic* menjadi <i>italic</i>.
+    """
+    if not text:
+        return "", None
+
+    # Escape karakter HTML dasar (&, <, >)
+    escaped = html.escape(text)
+
+    # Ubah **bold** menjadi <b>bold</b>
+    formatted = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escaped)
+
+    # Ubah *italic* menjadi <i>italic</i> jika ada
+    formatted = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<i>\1</i>", formatted)
+
+    return formatted, ParseMode.HTML
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Memproses pesan teks dari pelanggan Telegram."""
     if not update.message or not update.message.text:
@@ -106,12 +131,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         products = res.get("products", [])
         route = res.get("route", "")
 
-        # Kirim balasan teks utama
+        # Kirim balasan teks utama (tanpa ** mentah, menggunakan HTML atau fallback teks polos)
         parts = reply_text.split('\n\n')
         for part in parts:
-            if part.strip():
-                await update.message.reply_text(part.strip())
-                await asyncio.sleep(0.5)
+            p_clean = part.strip()
+            if not p_clean:
+                continue
+
+            html_text, p_mode = format_telegram_text(p_clean)
+            try:
+                await update.message.reply_text(html_text, parse_mode=p_mode)
+            except Exception as tg_err:
+                logger.warning(f"ParseMode HTML gagal ({tg_err}), fallback ke teks polos tanpa asteris")
+                plain_clean = re.sub(r"\*\*", "", p_clean)
+                await update.message.reply_text(plain_clean)
+            await asyncio.sleep(0.5)
         typing_task.cancel()
 
         # Inisialisasi himpunan kode produk yang sudah pernah dikirimkan fotonya
