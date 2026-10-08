@@ -35,6 +35,20 @@ META_PATTERNS = [
     r"kamu\s+(ini\s+)?(ai|bot|robot|manusia)",
     r"siapa\s+kamu",
     r"apakah\s+kamu\s+(ai|bot|robot)",
+    r"kebutuhan(nya)?\s+(aja\s+)?(kamu\s+)?belum\s+(tahu|tau)",
+    r"belum\s+(tahu|tau)\s+kebutuhan",
+    r"(gak|tidak|kurang)\s+(kegedean|kebesaran|kemahalan|ketinggian|keberatan|overkill)",
+    r"terlalu\s+(besar|tinggi|berat|mahal|spek|berlebih)",
+    r"spek(nya)?\s+(gak\s+)?kegedean",
+    r"kok\s+(malah\s+)?(ditawarin|nawarin)",
+    r"aku\s+(kan\s+|tadi\s+)?(tanya|nanya)",
+    r"kurang\s+nangkap",
+    r"bukan\s+itu\s+maksud(ku|nya)?",
+    r"maksudku\s+bukan",
+]
+
+PERSONA_PATTERNS = [
+    r"\b(buat|untuk)?\s*(mama|ibu|bunda|mamaku|ibuku|papa|ayah|bapak|papaku|ayahku|bapakku|anak|anakku|adik|adikku|kakak|istri|suami|kakek|nenek|orang\s*tua)\b"
 ]
 
 OUT_OF_DOMAIN_PATTERNS = [
@@ -86,11 +100,12 @@ PRODUCT_MODELS = [
 ]
 
 NEED_INDICATORS = [
-    "buat", "untuk", "kebutuhan", "dipakai", "dipake", "kerja", "kantor", "kuliah", "sekolah",
+    "kebutuhan", "dipakai", "dipake", "kerja", "kantor", "kuliah", "sekolah", "mahasiswa", "pelajar",
     "gaming", "game", "render", "rendering", "editing", "edit", "desain", "foto", "video",
     "blender", "photoshop", "autocad", "sketchup", "revit", "coding", "ngoding", "program",
     "data science", "machine learning", "ai", "kasir", "toko", "admin", "streaming", "obs",
-    "musik", "fl studio", "trading", "saham", "crypto", "baterai awet", "ringan", "tipis"
+    "musik", "fl studio", "trading", "saham", "crypto", "baterai awet", "ringan", "tipis",
+    "ngetik", "browsing", "office", "excel", "word", "belajar", "santai", "nonton", "youtube"
 ]
 
 SPEC_INDICATORS = [
@@ -111,7 +126,7 @@ def classify_intent(text: str, has_prior_context: bool = False) -> IntentClass:
     raw = text.strip()
     low = raw.lower()
 
-    # 1. META: Pertanyaan tentang asisten atau asal rekomendasi
+    # 1. META: Pertanyaan tentang asisten, asal rekomendasi, atau kritik alur/spek
     for pat in META_PATTERNS:
         if re.search(pat, low):
             return "meta"
@@ -147,10 +162,15 @@ def classify_intent(text: str, has_prior_context: bool = False) -> IntentClass:
             # Jika user bilang "laptop buat game" bukan produk-spesifik
             return "produk-spesifik"
 
-    # 6. KEBUTUHAN-JELAS vs KATEGORI-SAJA
+    # 6. KEBUTUHAN-JELAS vs KATEGORI-SAJA (termasuk persona tanpa aktivitas konkret)
     has_cat = any(re.search(r"\b" + cat + r"\b", low) for cat in CATEGORIES)
     has_need = any(re.search(r"\b" + nd + r"\b", low) for nd in NEED_INDICATORS)
     has_spec = any(re.search(pat, low) for pat in SPEC_INDICATORS)
+    has_persona = any(re.search(pat, low) for pat in PERSONA_PATTERNS)
+
+    # Persona tanpa kebutuhan/spesifikasi jelas ("buat mama sih", "untuk papa", "buat anak")
+    if has_persona and not has_need and not has_spec:
+        return "kategori-saja"
 
     if has_need or has_spec:
         return "kebutuhan-jelas"

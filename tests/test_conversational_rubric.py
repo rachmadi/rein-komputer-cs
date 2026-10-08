@@ -158,3 +158,63 @@ def test_rubric_conversational_framing_latency():
     # Ada pembuka dan penutup
     lines = [line.strip() for line in res_tpl["reply"].split("\n") if line.strip()]
     assert len(lines) >= 3, "Harus memuat pembuka, isi fakta produk, dan penutup"
+
+
+def test_rubric_percakapan_4_telegram_persona_dan_kritik_spek():
+    """
+    Percakapan 4 (Kasus nyata Telegram tg_1095607605):
+    Turn 1: 'Halo' -> GREETING, ramah, no products, no checkmark.
+    Turn 2: 'Laptop' -> CLARIFY_CATEGORY, tanya kebutuhan & budget, no products, no checkmark.
+    Turn 3: 'Buat mama sih' -> CLARIFY_CATEGORY (persona mama), tanya aktivitas mama & budget, no products, no checkmark.
+    Turn 4: 'Gak kegedean tuh speknya?' -> META_CLARIFY, empati kritik spek kebesaran, minta maaf & klarifikasi aktivitas mama, no products, no checkmark.
+    Turn 5: 'Loh...kok ditawarin yang lain? Aku tadi tanya apa gak kegedean spek yang sebelumnya?' -> META_CLARIFY, empati klarifikasi pertanyaan, no products, no checkmark.
+    Turn 6: 'Kebutuhannya aja kamu belum tau' -> META_CLARIFY, jujur mengakui belum tahu kebutuhan & tanya ramah, no products, no checkmark.
+    """
+    sid = "rubric_test_tg_persona_critique"
+    reset_chat_session(sid)
+
+    # Turn 1: 'Halo'
+    t1 = process_chat_message(sid, "Halo")
+    verify_rubric_invariants(t1["reply"])
+    assert t1["route"] == "GREETING"
+    assert len(t1.get("products", [])) == 0
+    assert "✅" not in t1["reply"]
+
+    # Turn 2: 'Laptop'
+    t2 = process_chat_message(sid, "Laptop")
+    verify_rubric_invariants(t2["reply"])
+    assert t2["route"] == "CLARIFY_CATEGORY"
+    assert len(t2.get("products", [])) == 0
+    assert "✅" not in t2["reply"]
+
+    # Turn 3: 'Buat mama sih'
+    t3 = process_chat_message(sid, "Buat mama sih")
+    verify_rubric_invariants(t3["reply"])
+    assert t3["route"] == "CLARIFY_CATEGORY"
+    assert len(t3.get("products", [])) == 0
+    assert "✅" not in t3["reply"]
+    assert "mama" in t3["reply"].lower()
+
+    # Turn 4: 'Gak kegedean tuh speknya?'
+    t4 = process_chat_message(sid, "Gak kegedean tuh speknya?")
+    verify_rubric_invariants(t4["reply"])
+    assert t4["route"] == "META_CLARIFY"
+    assert len(t4.get("products", [])) == 0
+    assert "✅" not in t4["reply"]
+    assert any(k in t4["reply"].lower() for k in ["terlalu tinggi", "berlebih", "mohon maaf", "mama"])
+
+    # Turn 5: 'Loh...kok ditawarin yang lain? Aku tadi tanya apa gak kegedean spek yang sebelumnya?'
+    t5 = process_chat_message(sid, "Loh...kok ditawarin yang lain? Aku tadi tanya apa gak kegedean spek yang sebelumnya?")
+    verify_rubric_invariants(t5["reply"])
+    assert t5["route"] == "META_CLARIFY"
+    assert len(t5.get("products", [])) == 0
+    assert "✅" not in t5["reply"]
+
+    # Turn 6: 'Kebutuhannya aja kamu belum tau'
+    t6 = process_chat_message(sid, "Kebutuhannya aja kamu belum tau")
+    verify_rubric_invariants(t6["reply"])
+    assert t6["route"] == "META_CLARIFY"
+    assert len(t6.get("products", [])) == 0
+    assert "✅" not in t6["reply"]
+    assert any(k in t6["reply"].lower() for k in ["belum tahu", "belum mengetahui", "rekomendasi"])
+

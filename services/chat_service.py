@@ -183,6 +183,7 @@ def process_chat_message(
             current_offered_products=state.get("offered_products"),
             active_profile_id=state.get("active_profile"),
             previous_lowest_price=state.get("lowest_price"),
+            persona_name=state.get("persona_name"),
             model=active_model
         )
         reply = tool_res["reply"]
@@ -198,6 +199,8 @@ def process_chat_message(
             state["category"] = tool_res["category"]
         if "active_profile_id" in tool_res:
             state["active_profile"] = tool_res["active_profile_id"]
+        if tool_res.get("persona_name"):
+            state["persona_name"] = tool_res["persona_name"]
         if prods:
             prices = [p.get("harga_idr") or p.get("harga", 0) for p in prods if (p.get("harga_idr") or p.get("harga", 0)) > 0]
             if prices:

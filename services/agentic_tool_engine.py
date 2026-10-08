@@ -434,6 +434,7 @@ def run_agentic_tool(
     current_offered_products: list[str] | None = None,
     active_profile_id: str | None = None,
     previous_lowest_price: int | None = None,
+    persona_name: str | None = None,
     model: str = "gemma4:e4b",
     url: str = "http://localhost:11434",
     use_llm_framing: bool | None = None
@@ -446,6 +447,7 @@ def run_agentic_tool(
     
     # 0. ROUTER NIAT SEBELUM PENCARIAN
     from services.intent_router import classify_intent
+    from core.acts import extract_persona_name
     intent = classify_intent(user_text, bool(active_profile_id or history))
 
     # Kelas 1: SAPAAN
@@ -457,43 +459,72 @@ def run_agentic_tool(
             "category": current_category,
             "route": "GREETING",
             "active_profile_id": None,
+            "persona_name": persona_name,
             "metrics": {"total": time.time() - t_start}
         }
 
     # Kelas 2: KATEGORI-SAJA ("laptop", "ada laptop?", "desktop", dll)
     if intent == "kategori-saja":
         low = user_text.lower()
-        cat_name = "laptop"
+        cat_name = current_category or "laptop"
         if any(k in low for k in ["desktop", "komputer", "pc", "aio"]): cat_name = "desktop"
         elif any(k in low for k in ["printer", "cetak"]): cat_name = "printer"
         elif any(k in low for k in ["monitor", "layar"]): cat_name = "monitor"
 
-        reply = (
-            f"Tentu ada, Kak! Kami memiliki beragam pilihan {cat_name} berkualitas di toko kami.\n\n"
-            f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan untuk kebutuhan apa saja "
-            f"(misalnya kerja kantor, kuliah, desain grafis, atau game) dan berapa perkiraan anggarannya?"
-        )
+        p_name = extract_persona_name(user_text) or persona_name
+
+        if p_name:
+            reply = (
+                f"Tentu ada, Kak! Kami memiliki beragam pilihan {cat_name} yang cocok dan nyaman untuk {p_name} di toko kami.\n\n"
+                f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan oleh {p_name} untuk aktivitas apa saja "
+                f"(misalnya menonton video/browsing santai, mengetik dokumen, atau ada pekerjaan khusus) dan berapa perkiraan anggarannya?"
+            )
+        else:
+            reply = (
+                f"Tentu ada, Kak! Kami memiliki beragam pilihan {cat_name} berkualitas di toko kami.\n\n"
+                f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan untuk kebutuhan apa saja "
+                f"(misalnya kerja kantor, kuliah, desain grafis, atau game) dan berapa perkiraan anggarannya?"
+            )
         return {
             "reply": reply,
             "products": [],
             "category": cat_name,
             "route": "CLARIFY_CATEGORY",
             "active_profile_id": None,
+            "persona_name": p_name,
             "metrics": {"total": time.time() - t_start}
         }
 
-    # Kelas 3: META ("Dari mana kamu tahu kebutuhanku?", dll)
+    # Kelas 3: META ("Dari mana kamu tahu kebutuhanku?", kritik spek kegedean, komplain CS, dll)
     if intent == "meta":
-        reply = (
-            "Saya sebenarnya belum mengetahui kebutuhan pasti Kakak 😊 Pilihan yang kami tampilkan sebelumnya adalah rekomendasi umum dari katalog kami.\n\n"
-            "Boleh ceritakan perangkat ini rencananya akan digunakan untuk aktivitas apa saja dan berapa perkiraan budgetnya? Kami siap membantu carikan yang paling pas!"
-        )
+        low = user_text.lower()
+        effective_persona = extract_persona_name(user_text) or persona_name
+        target_label = f" untuk {effective_persona}" if effective_persona else ""
+
+        if any(k in low for k in ["kegedean", "kebesaran", "kemahalan", "ketinggian", "keberatan", "terlalu", "overkill"]):
+            reply = (
+                f"Betul Kak, mohon maaf jika rekomendasi sebelumnya spesifikasinya terasa terlalu tinggi atau berlebih{target_label} 🙏\n\n"
+                f"Untuk penggunaan santai dan harian (seperti mengetik, browsing, atau menonton video), laptop kelas harian/office biasa tentu sudah sangat cukup dan harganya jauh lebih terjangkau. "
+                f"Boleh tahu berapa perkiraan rentang anggaran yang diinginkan agar bisa kami carikan pilihan yang lebih pas dan hemat?"
+            )
+        elif any(k in low for k in ["kok ditawarin", "kok malah", "aku kan nanya", "aku tadi tanya", "kurang nangkap", "bukan itu maksud"]):
+            reply = (
+                f"Mohon maaf sekali atas ketergesa-gesaannya tadi ya Kak 🙏 Saya tadi terlalu cepat menyodorkan opsi lain tanpa menjawab langsung keraguan Kakak.\n\n"
+                f"Terkait pertanyaan Kakak, betul sekali bahwa spesifikasi laptop sebelumnya memang kelas berat dan terasa berlebih{target_label}. "
+                f"Kami siap membantu menyesuaikan dengan pilihan yang lebih ringan dan pas di budget. Boleh kami tahu aktivitas apa saja yang paling sering dijalankan{target_label}?"
+            )
+        else:
+            reply = (
+                "Saya sebenarnya belum mengetahui kebutuhan pasti Kakak 😊 Pilihan yang kami tampilkan sebelumnya adalah rekomendasi umum dari katalog kami.\n\n"
+                "Boleh ceritakan perangkat ini rencananya akan digunakan untuk aktivitas apa saja dan berapa perkiraan budgetnya? Kami siap membantu carikan yang paling pas!"
+            )
         return {
             "reply": reply,
             "products": [],
             "category": current_category,
             "route": "META_CLARIFY",
             "active_profile_id": None,
+            "persona_name": effective_persona,
             "metrics": {"total": time.time() - t_start}
         }
 
