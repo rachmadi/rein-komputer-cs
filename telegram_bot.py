@@ -172,18 +172,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         # Kirim balasan teks utama (tanpa ** mentah, menggunakan HTML atau fallback teks polos)
         parts = [p.strip() for p in reply_text.split('\n\n') if p.strip()]
-        turn_id = uuid.uuid4().hex[:8]
         for idx, p_clean in enumerate(parts):
-            is_last = (idx == len(parts) - 1)
-            kb = get_feedback_keyboard(turn_id) if is_last else None
-
             html_text, p_mode = format_telegram_text(p_clean)
             try:
-                await update.message.reply_text(html_text, parse_mode=p_mode, reply_markup=kb)
+                await update.message.reply_text(html_text, parse_mode=p_mode)
             except Exception as tg_err:
                 logger.warning(f"ParseMode HTML gagal ({tg_err}), fallback ke teks polos tanpa asteris")
                 plain_clean = re.sub(r"\*\*", "", p_clean)
-                await update.message.reply_text(plain_clean, reply_markup=kb)
+                await update.message.reply_text(plain_clean)
             await asyncio.sleep(0.5)
         typing_task.cancel()
 
