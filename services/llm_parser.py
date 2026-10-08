@@ -294,7 +294,8 @@ def build_parser_messages(
     if history:
         for h in history[-6:]:
             role = "Pelanggan" if h.get("role") == "user" else "Bot"
-            recent_history.append(f"{role}: {h.get('content', '')}")
+            text_val = h.get('content') or h.get('text') or ''
+            recent_history.append(f"{role}: {text_val}")
     history_str = "\n".join(recent_history) if recent_history else "Tidak ada"
 
     user_dynamic_content = (

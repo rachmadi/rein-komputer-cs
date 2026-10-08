@@ -101,6 +101,57 @@ def process_chat_message(
 
     t0 = time.time()
 
+    # OPSI 0: ANTIGRAVITY V2 PIPELINE (LLM PARSER + DETERMINISTIC ENGINE + LLM GENERATOR)
+    if CHAT_ENGINE_MODE == "antigravity_v2":
+        from services.session_pipeline import SessionPipeline
+        pipeline = SessionPipeline()
+        prior_history = sess["messages"][:-1] if sess["messages"] else []
+        turn_res, new_state_dict = pipeline.process_turn(
+            pesan_pelanggan=user_text,
+            session_state=state,
+            history=prior_history
+        )
+        reply = turn_res.teks_jawaban
+        kartu_html = turn_res.kartu_produk_html
+        route = turn_res.aksi_terpilih
+        latency_ms = turn_res.latensi_total_ms
+
+        sess["state"] = new_state_dict
+        _session_manager.add_message(session_id, "bot", reply, route=route)
+
+        try:
+            log_turn(
+                session_id=session_id,
+                user_text=user_text,
+                bot_reply=reply,
+                route=route,
+                state_snapshot=new_state_dict,
+                latency_ms=latency_ms
+            )
+        except Exception:
+            pass
+
+        return {
+            "session_id": session_id,
+            "reply": reply,
+            "kartu_produk_html": kartu_html,
+            "route": route,
+            "messages": sess["messages"],
+            "products": new_state_dict.get("produk_tampil", []),
+            "fsm_stage": new_state_dict.get("pending_question"),
+            "category": new_state_dict.get("kategori"),
+            "persona_name": new_state_dict.get("persona"),
+            "offered_products": [p.get("kode") for p in new_state_dict.get("produk_tampil", []) if p.get("kode")],
+            "metrics": {
+                "latensi_parse_ms": turn_res.latensi_parse_ms,
+                "latensi_mesin_ms": turn_res.latensi_mesin_ms,
+                "latensi_generate_ms": turn_res.latensi_generate_ms,
+                "latensi_total_ms": turn_res.latensi_total_ms,
+                "pelanggaran_pemeriksa": turn_res.pelanggaran_pemeriksa,
+                "is_fallback": turn_res.is_emergency_fallback
+            }
+        }
+
     # OPSI 1: DYNAMIC CONTEXT RAG ENGINE
     if CHAT_ENGINE_MODE == "dynamic_rag":
         from services.dynamic_rag_engine import run_dynamic_rag

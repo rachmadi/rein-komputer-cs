@@ -164,23 +164,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         res = await asyncio.to_thread(process_chat_message, 
             session_id,
             user_text)
+        cards_html = res.get("kartu_produk_html")
         reply_text = (res.get("reply") or "").strip()
         if not reply_text:
             reply_text = "Mohon maaf Kak, ada kendala teknis sesaat. Ada produk komputer atau laptop yang bisa saya bantu carikan?"
         products = res.get("products", [])
         route = res.get("route", "")
 
-        # Kirim balasan teks utama (tanpa ** mentah, menggunakan HTML atau fallback teks polos)
-        parts = [p.strip() for p in reply_text.split('\n\n') if p.strip()]
-        for idx, p_clean in enumerate(parts):
-            html_text, p_mode = format_telegram_text(p_clean)
+        # 1. Antigravity v2: Kirim kartu produk terlebih dahulu (jika ada) sesuai R1 & Bagian 3
+        if cards_html:
             try:
-                await update.message.reply_text(html_text, parse_mode=p_mode)
-            except Exception as tg_err:
-                logger.warning(f"ParseMode HTML gagal ({tg_err}), fallback ke teks polos tanpa asteris")
-                plain_clean = re.sub(r"\*\*", "", p_clean)
-                await update.message.reply_text(plain_clean)
-            await asyncio.sleep(0.5)
+                await update.message.reply_text(cards_html, parse_mode=ParseMode.HTML)
+            except Exception as card_err:
+                logger.warning(f"Kirim kartu HTML gagal ({card_err}), fallback teks polos")
+                await update.message.reply_text(cards_html)
+            await asyncio.sleep(0.4)
+
+        # 2. Kirim balasan teks percakapan dari Generator LLM dengan tombol umpan balik
+        turn_id = str(uuid.uuid4())[:8]
+        fb_kb = get_feedback_keyboard(turn_id)
+        html_text, p_mode = format_telegram_text(reply_text)
+        try:
+            await update.message.reply_text(html_text, parse_mode=p_mode, reply_markup=fb_kb)
+        except Exception as tg_err:
+            logger.warning(f"ParseMode HTML gagal ({tg_err}), fallback ke teks polos")
+            plain_clean = re.sub(r"\*\*", "", reply_text)
+            await update.message.reply_text(plain_clean, reply_markup=fb_kb)
+
         typing_task.cancel()
 
         # Inisialisasi himpunan kode produk yang sudah pernah dikirimkan fotonya
