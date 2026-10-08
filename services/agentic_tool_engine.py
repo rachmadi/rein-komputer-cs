@@ -554,9 +554,17 @@ def run_agentic_tool(
         # Kasus A: Pertanyaan jumlah / variasi opsi ("cuma itu?", "ada yang lain?")
         if any(k in low for k in ["cuma itu", "hanya itu", "yang lain ada", "ada yang lain", "yang lain?", "ada lagi", "pilihan lain", "opsi lain"]):
             offered_count = len(current_offered_products or [])
-            if offered_count <= 1:
+            if offered_count == 0:
                 reply = (
-                    "Iya Kak, saat ini di katalog kami baru ada 1 model yang benar-benar memenuhi seluruh spesifikasi keras untuk kebutuhan tersebut secara maksimal (yaitu Lenovo Legion Pro 5 16).\n\n"
+                    "Sebelumnya belum ada rekomendasi yang kami tampilkan Kak 😊\n\n"
+                    "Boleh ceritakan perangkat apa yang sedang Kakak cari, untuk kebutuhan apa, atau berapa perkiraan anggarannya? Kami siap bantu pilihkan yang paling pas!"
+                )
+            elif offered_count == 1:
+                p_code = (current_offered_products or [])[0]
+                p_obj = catalog.by_code.get(p_code) if catalog else None
+                p_name = p_obj["nama"] if p_obj else "Lenovo Legion Pro 5 16"
+                reply = (
+                    f"Iya Kak, saat ini di katalog kami baru ada 1 model yang benar-benar memenuhi seluruh spesifikasi keras untuk kebutuhan tersebut secara maksimal ({p_name}).\n\n"
                     "Jika ingin melihat pilihan alternatif dengan harga lebih terjangkau, kita bisa mempertimbangkan laptop dengan RAM 16 GB atau kartu grafis setingkat di bawahnya. Apakah Kakak ingin kami tampilkan pilihan alternatif terdekatnya?"
                 )
             else:

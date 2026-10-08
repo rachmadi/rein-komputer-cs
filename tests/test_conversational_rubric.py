@@ -218,3 +218,36 @@ def test_rubric_percakapan_4_telegram_persona_dan_kritik_spek():
     assert "✅" not in t6["reply"]
     assert any(k in t6["reply"].lower() for k in ["belum tahu", "belum mengetahui", "rekomendasi"])
 
+
+def test_rubric_isolasi_sesi_antar_chat_id():
+    """
+    Uji Isolasi Sesi: Dua sesi (chat_id berbeda) TIDAK berbagi state.
+    - Sesi A: 'laptop buat edit video 4k' -> Menghasilkan rekomendasi produk A (Legion Pro 5)
+    - Sesi B: 'cuma itu?' -> Harus menjawab bahwa belum ada rekomendasi yang ditampilkan dan bertanya kebutuhan, tanpa menyebut produk A.
+    """
+    sid_a = "session_iso_user_A"
+    sid_b = "session_iso_user_B"
+    reset_chat_session(sid_a)
+    reset_chat_session(sid_b)
+
+    # Sesi A meminta laptop edit video 4k
+    res_a = process_chat_message(sid_a, "laptop buat edit video 4k")
+    verify_rubric_invariants(res_a["reply"])
+    assert len(res_a.get("products", [])) > 0
+    assert any("Legion" in p.get("nama", "") for p in res_a["products"])
+
+    # Sesi B (pengguna berbeda) langsung bertanya lanjutan 'cuma itu?'
+    res_b = process_chat_message(sid_b, "cuma itu?")
+    verify_rubric_invariants(res_b["reply"])
+    reply_b = res_b["reply"]
+
+    # Sesi B dilarang menyebut produk dari Sesi A
+    assert "legion" not in reply_b.lower()
+    assert "lenovo" not in reply_b.lower()
+    assert len(res_b.get("products", [])) == 0
+
+    # Sesi B harus menjelaskan belum ada rekomendasi dan bertanya kebutuhan
+    assert any(k in reply_b.lower() for k in ["belum ada rekomendasi", "belum ada yang kami tampilkan", "belum ada"])
+    assert any(k in reply_b.lower() for k in ["kebutuhan", "dicari", "anggaran", "budget"])
+
+
