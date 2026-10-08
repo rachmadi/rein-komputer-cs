@@ -194,6 +194,8 @@ def process_chat_message(
             active_profile_id=state.get("active_profile"),
             previous_lowest_price=state.get("lowest_price"),
             persona_name=state.get("persona_name"),
+            pending_question=state.get("pending_question"),
+            slots=state.get("slots"),
             model=active_model
         )
         reply = tool_res["reply"]
@@ -213,8 +215,13 @@ def process_chat_message(
             state["category"] = tool_res["category"]
         if "active_profile_id" in tool_res:
             state["active_profile"] = tool_res["active_profile_id"]
+            state["profil_aktif"] = tool_res["active_profile_id"]
         if tool_res.get("persona_name"):
             state["persona_name"] = tool_res["persona_name"]
+        if "pending_question" in tool_res:
+            state["pending_question"] = tool_res["pending_question"]
+        if "slots" in tool_res:
+            state["slots"] = tool_res["slots"]
         if prods:
             prices = [p.get("harga_idr") or p.get("harga", 0) for p in prods if (p.get("harga_idr") or p.get("harga", 0)) > 0]
             if prices:
@@ -267,6 +274,9 @@ def process_chat_message(
             "persona_name": new_s.get("persona_name"),
             "offered_products": new_s.get("offered_products", []),
             "active_profile_id": new_s.get("active_profile"),
+            "pending_question": new_s.get("pending_question"),
+            "slots": new_s.get("slots"),
+            "profil_aktif": new_s.get("profil_aktif"),
             "tools_called": [tc.get("name") for tc in tool_res.get("tool_calls", [])] if tool_res.get("tool_calls") else (tool_res.get("tools_called") or []),
             "metrics": tool_res.get("metrics", {})
         }

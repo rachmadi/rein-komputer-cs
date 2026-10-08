@@ -13,6 +13,8 @@ import os
 import sqlite3
 import threading
 import uuid
+import hmac
+import hashlib
 from datetime import datetime
 from typing import Any
 
@@ -20,7 +22,13 @@ logger = logging.getLogger("chat_logger")
 
 LOG_DIR = "logs"
 JSONL_LOG_PATH = os.path.join(LOG_DIR, "chat_history.jsonl")
-DB_PATH = os.path.join("data", "catalog.db")
+DB_PATH = os.getenv("DB_PATH", os.path.join("data", "catalog.db"))
+LOG_HMAC_SECRET = os.getenv("LOG_HMAC_SECRET", "bobby_computer_secure_salt_2026")
+
+def anonymize_id(raw_id: str | int, length: int = 12) -> str:
+    """Anonymize user / session identifier using HMAC-SHA256."""
+    secret = LOG_HMAC_SECRET.encode("utf-8")
+    return hmac.new(secret, str(raw_id).encode("utf-8"), hashlib.sha256).hexdigest()[:length]
 
 _lock = threading.Lock()
 
@@ -95,6 +103,7 @@ def log_turn(
         "log_id": log_id,
         "timestamp": now_iso,
         "session_id": session_id,
+        "anon_session_id": anonymize_id(session_id),
         "channel": channel,
         "user_text": user_text,
         "bot_reply": bot_reply,

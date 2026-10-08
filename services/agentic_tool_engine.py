@@ -221,8 +221,17 @@ def check_fast_path(text: str, catalog: Catalog, previous_lowest_price: int | No
         if "lebih murah" in t or "yang murah" in t:
             args["max_harga"] = (previous_lowest_price - 1) if previous_lowest_price else 10000000
         return True, "Berikut hasil pencarian dari katalog kami:", {"name": "search_catalog", "args": args}
-        
+
     return False, "", {}
+        
+def _clean_specs(p_item: dict) -> str:
+    parts = []
+    if p_item.get("cpu"): parts.append(str(p_item["cpu"]))
+    if p_item.get("gpu"): parts.append(str(p_item["gpu"]))
+    r = p_item.get("ram") or (f"{p_item.get('ram_gb')} GB" + (f" {p_item.get('ram_type')}" if p_item.get("ram_type") else "") if p_item.get("ram_gb") else None)
+    if r: parts.append(f"RAM {r}")
+    if p_item.get("storage"): parts.append(str(p_item["storage"]))
+    return " | ".join(parts) if parts else "Spesifikasi standar"
 
 def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[str] = [], user_text: str = "", active_profile_id: str | None = None, active_category: str | None = None) -> tuple[str, list[dict], str | None, str | None]:
     if name == "search_catalog":
@@ -338,10 +347,30 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                         earliest_idx = idx
                         explicit_cat = cname
                         
+        brand_filter = args.get("brand")
+        if not brand_filter and query:
+            from services.intent_router import detect_brand
+            brand_filter = detect_brand(query)
+
+        check_profile_str = str(profil_id or "").upper()
+        is_light_profile_id = any(pid in check_profile_str for pid in ["P11", "P01", "P14"])
+        check_text = (query + " " + user_text).lower()
+        heavy_kw = ["game", "gaming", "gamer", "render", "3d", "blender", "4k", "arsitek", "autocad", "rtx", "gtx"]
+        is_heavy = any(k in check_text for k in heavy_kw)
+        light_kw = ["hiburan", "nonton", "video", "youtube", "film", "streaming", "browsing", "santai", "sepuh", "tua", "ibu", "ayah", "kakek", "nenek", "belajar", "harian", "anak sekolah", "office", "administrasi"]
+        is_light_text = any(k in check_text for k in light_kw)
+        is_light_usage = (is_light_profile_id or is_light_text) and not is_heavy
+
         scored_products = []
         relaxed_products = []
         for p in catalog.products:
             if explicit_cat and p["kategori"] != explicit_cat: continue
+            if brand_filter:
+                p_brand = (p.get("brand") or "").lower()
+                p_name = (p.get("nama") or "").lower()
+                b_target = "apple" if brand_filter.lower() == "macbook" else brand_filter.lower()
+                if b_target not in p_brand and b_target not in p_name:
+                    continue
             p_price = p.get("harga_idr") or 0
             if max_harga and p_price > max_harga: continue
             if min_harga and p_price < min_harga: continue
@@ -358,8 +387,27 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                     
             score = 50 + penalty
             if p["kode"] not in session_offered: score += 15
-            score += (p.get("cpu_tier") or 0) * 2
-            if p.get("gpu_dedicated") == 1: score += 5
+
+            if is_light_usage:
+                # Overkill Spec Penalty untuk profil/kebutuhan santai/ringan & persona sepuh
+                if p.get("gpu_dedicated") == 1:
+                    score -= 80  # Penalti berat GPU dedicated (panas, bising, boros daya)
+                else:
+                    score += 20  # Bonus grafis terintegrasi (senyap, hemat daya)
+                    
+                if (p.get("ram_gb") or 0) > 16:
+                    score -= 40  # Penalti RAM jauh di atas rekomendasi
+                    
+                if (p.get("harga_idr") or 0) > 15_000_000:
+                    score -= 50  # Penalti harga jauh di atas kebutuhan
+                    
+                if p.get("screen_inch") in (14.0, 15.6):
+                    score += 15  # Layar nyaman
+                if any(k in check_text for k in ["sepuh", "tua", "kakek", "nenek", "ibu", "ayah"]) and p.get("screen_inch") == 15.6:
+                    score += 10  # Preferensi layar lebih lega untuk orang tua
+            else:
+                score += (p.get("cpu_tier") or 0) * 2
+                if p.get("gpu_dedicated") == 1: score += 5
             
             p_output = {
                 "kode": p["kode"],
@@ -372,6 +420,7 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                 "ram_gb": p.get("ram_gb"),
                 "ram_type": p.get("ram_type"),
                 "storage": p.get("storage"),
+                "screen_inch": p.get("screen_inch"),
                 "match_report": report
             }
             if passed: scored_products.append((score, p_output))
@@ -393,7 +442,8 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
             if p_item.get("storage"): parts.append(str(p_item["storage"]))
             return " | ".join(parts) if parts else "Spesifikasi standar"
 
-        scored_products.sort(key=lambda x: x[0], reverse=True)
+        # Urutkan menurut kecocokan dengan kebutuhan (skor tertinggi) lalu harga (termurah)
+        scored_products.sort(key=lambda x: (x[0], -(x[1].get('harga_idr') or 0)), reverse=True)
         # Urut kandidat relaksasi: sedikit kegagalan dulu (naik), skor tiebreaker (turun)
         relaxed_products.sort(
             key=lambda x: (len(x[1].get("match_report", {}).get("tidak_terpenuhi", [])), -x[0])
@@ -462,7 +512,8 @@ def format_conversational_frame(
     active_profile_id: str | None = None,
     use_llm: bool = False,
     model: str = "gemma4:e4b",
-    url: str = "http://localhost:11434"
+    url: str = "http://localhost:11434",
+    persona_name: str | None = None
 ) -> tuple[str, dict]:
     """
     Lapisan percakapan Customer Care Bobby Computer:
@@ -510,8 +561,8 @@ def format_conversational_frame(
                     outro = parsed.get("outro", "").strip()
                     t_frame = time.time() - t0_llm
                     reply = f"{intro}\n\n{body}\n\n{outro}".strip()
-                    reply = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", reply)
-                    reply = re.sub(r"\b[PMG]\d{2}\b", "", reply)
+                    reply = re.sub(r"\b(?:P\d{2}|M\d{2}|G0[1-4])\b\s*[—–\-:]?\s*", "", reply)
+                    reply = re.sub(r"\b(?:P\d{2}|M\d{2}|G0[1-4])\b", "", reply)
                     reply = re.sub(r"\n{3,}", "\n\n", reply)
                     return reply, {"frame_latency": t_frame, "frame_mode": "llm"}
         except Exception as e:
@@ -533,11 +584,13 @@ def format_conversational_frame(
         intro = f"Data kapasitas dan daya tahan baterai tidak tercantum secara spesifik di katalog kami. Namun, untuk efisiensi daya, kami sarankan laptop tipis dengan kartu grafis terintegrasi (tanpa GPU dedicated). Berikut beberapa pilihannya:"
         outro = "Boleh kami tahu berapa perkiraan budget atau preferensi merek yang Kakak cari? Kami siap bantu pilihkan yang paling sesuai!"
     elif not has_qualified:
-        intro = f"Tentu Kak! Berikut beberapa pilihan {cat_label} yang tersedia di Bobby Computer:"
-        outro = "Silakan beri tahu kami jika ada kebutuhan khusus atau rentang anggaran tertentu ya!"
+        target_str = f" untuk {persona_name}" if persona_name else ""
+        intro = f"Berikut beberapa pilihan {cat_label}{target_str} yang tersedia di Bobby Computer:"
+        outro = f"Silakan beri tahu kami jika ada kebutuhan khusus atau rentang anggaran tertentu untuk {persona_name} ya!" if persona_name else "Silakan beri tahu kami jika ada kebutuhan khusus atau rentang anggaran tertentu ya!"
     else:
-        intro = f"Tentu Kak! Berikut rekomendasi {cat_label} yang memenuhi kriteria kebutuhan Kakak di Bobby Computer:"
-        outro = "Apakah ada merek atau tipe tertentu yang ingin Kakak tanyakan lebih detail?"
+        target_str = f" untuk {persona_name}" if persona_name else " Kakak"
+        intro = f"Berikut rekomendasi {cat_label} yang memenuhi kriteria kebutuhan{target_str} di Bobby Computer:"
+        outro = f"Apakah ada merek atau tipe tertentu yang ingin ditanyakan lebih detail untuk {persona_name}?" if persona_name else "Apakah ada merek atau tipe tertentu yang ingin Kakak tanyakan lebih detail?"
 
     # Hilangkan duplikasi kalimat header kandidat terdekat di awal body
     if "kandidat terdekat" in intro.lower() and "kandidat terdekat" in body.lower():
@@ -564,8 +617,8 @@ def format_conversational_frame(
     body = "\n".join(dedup_lines)
 
     framed = f"{intro}\n\n{body}\n\n{outro}".strip()
-    framed = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", framed)
-    framed = re.sub(r"\b[PMG]\d{2}\b", "", framed)
+    framed = re.sub(r"\b(?:P\d{2}|M\d{2}|G0[1-4])\b\s*[—–\-:]?\s*", "", framed)
+    framed = re.sub(r"\b(?:P\d{2}|M\d{2}|G0[1-4])\b", "", framed)
     framed = re.sub(r"\n{3,}", "\n\n", framed)
     # Hapus klaim tak berdasar
     framed = framed.replace(" bergaransi resmi dan siap pakai.", ".")
@@ -586,6 +639,8 @@ def run_agentic_tool(
     active_profile_id: str | None = None,
     previous_lowest_price: int | None = None,
     persona_name: str | None = None,
+    pending_question: str | None = None,
+    slots: dict | None = None,
     model: str = "gemma4:e4b",
     url: str = "http://localhost:11434",
     use_llm_framing: bool | None = None
@@ -596,74 +651,76 @@ def run_agentic_tool(
     t_llm2 = 0.0
     effective_llm_framing = USE_LLM_FRAMING if use_llm_framing is None else use_llm_framing
     
-    # 0. ROUTER NIAT SEBELUM PENCARIAN
-    from services.intent_router import classify_intent
+    # 0. PELACAK STATUS DIALOG (DST) & NLU BERBASIS SLOT
+    from services.slot_nlu_service import (
+        understand_message_with_llm,
+        map_activity_to_profile,
+        get_catalog_brands
+    )
     from core.acts import extract_persona_name
-    intent = classify_intent(user_text, bool(active_profile_id or history))
+    from services.intent_router import detect_brand, classify_intent
 
-    # Kelas 1: SAPAAN
+    user_msgs = [m for m in history if m.get("role") == "user"]
+    is_initial_turn = (len(user_msgs) <= 1)
+
+    current_slots = dict(slots or {})
+    if current_category and not current_slots.get("kategori"):
+        current_slots["kategori"] = current_category
+    if persona_name and not current_slots.get("persona"):
+        current_slots["persona"] = persona_name.lower()
+
+    nlu_res = understand_message_with_llm(
+        user_text=user_text,
+        pending_question=pending_question,
+        current_slots=current_slots,
+        model=model
+    )
+    intent = nlu_res.get("intent", "kebutuhan")
+    slots = nlu_res.get("slots", {})
+    t_nlu_latency = nlu_res.get("latency_ms", 0.0)
+
+    # Sinkronisasi persona dengan kata asli pelanggan jika ada
+    p_detected = extract_persona_name(user_text)
+    if p_detected:
+        persona_name = p_detected
+        slots["persona"] = p_detected.lower()
+    elif slots.get("persona"):
+        persona_name = slots["persona"].capitalize()
+
+    if slots.get("kategori"):
+        current_category = slots["kategori"]
+
+    low = user_text.lower().strip()
+
+    # Kebijakan Dialog 1: SAPAAN (Salam HANYA untuk turn awal, dilarang salam berulang)
     if intent == "sapaan":
-        reply = "Halo, Kak! Selamat datang di Bobby Computer 😊 Sedang mencari laptop, PC desktop, monitor, atau printer hari ini? Silakan beri tahu kami, kami siap bantu carikan yang paling sesuai kebutuhan!"
+        if is_initial_turn:
+            reply = "Halo, Kak! Selamat datang di Bobby Computer 😊 Sedang mencari laptop, PC desktop, monitor, atau printer hari ini? Silakan beri tahu kami, kami siap bantu carikan yang paling sesuai kebutuhan!"
+            pq = "kebutuhan"
+            route = "GREETING"
+        else:
+            reply = "Halo Kak! Ada spesifikasi atau pilihan perangkat tertentu yang ingin ditanyakan lagi seputar kebutuhan sebelumnya?"
+            pq = pending_question or "kebutuhan"
+            route = "GREETING_CONTINUATION"
         return {
             "reply": reply,
             "products": [],
             "category": current_category,
-            "route": "GREETING",
+            "route": route,
             "active_profile_id": None,
             "persona_name": persona_name,
-            "metrics": {"total": time.time() - t_start}
+            "pending_question": pq,
+            "slots": slots,
+            "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
         }
 
-    # Kelas 2: KATEGORI-SAJA ("laptop", "ada laptop?", "desktop", dll)
-    if intent == "kategori-saja":
-        low = user_text.lower()
-        cat_name = current_category or "laptop"
-        if any(k in low for k in ["desktop", "komputer", "pc", "aio"]): cat_name = "desktop"
-        elif any(k in low for k in ["printer", "cetak"]): cat_name = "printer"
-        elif any(k in low for k in ["monitor", "layar"]): cat_name = "monitor"
+    # Kebijakan Dialog 2: MEREK-STOK ("Ada asus?", "jual laptop acer?")
+    brand_req = slots.get("merek") or detect_brand(user_text)
+    if intent in ("merek-stok", "tanya_merek_stok") or (brand_req and any(k in low for k in ["ada ", "jual ", "punya ", "tersedia "])):
+        if brand_req:
+            slots["merek"] = brand_req
 
-        p_name = extract_persona_name(user_text) or persona_name
-
-        if p_name:
-            reply = (
-                f"Tentu ada, Kak! Kami memiliki beragam pilihan {cat_name} yang cocok dan nyaman untuk {p_name} di toko kami.\n\n"
-                f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan oleh {p_name} untuk aktivitas apa saja "
-                f"(misalnya menonton video/browsing santai, mengetik dokumen, atau ada pekerjaan khusus) dan berapa perkiraan anggarannya?"
-            )
-        else:
-            reply = (
-                f"Tentu ada, Kak! Kami memiliki beragam pilihan {cat_name} berkualitas di toko kami.\n\n"
-                f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan untuk kebutuhan apa saja "
-                f"(misalnya kerja kantor, kuliah, desain grafis, atau game) dan berapa perkiraan anggarannya?"
-            )
-        return {
-            "reply": reply,
-            "products": [],
-            "category": cat_name,
-            "route": "CLARIFY_CATEGORY",
-            "active_profile_id": None,
-            "persona_name": p_name,
-            "metrics": {"total": time.time() - t_start}
-        }
-
-    # Kelas 2.5: MEREK-STOK ("jual laptop acer?", "ada Asus?", "punya laptop dell?")
-    if intent == "merek-stok":
-        from services.intent_router import detect_brand
-        low = user_text.lower()
-        brand_req = detect_brand(user_text)
-
-        explicit_cat = None
-        if any(k in low for k in ["laptop", "notebook"]):
-            explicit_cat = "laptop"
-        elif any(k in low for k in ["desktop", "komputer", "pc", "aio"]):
-            explicit_cat = "desktop"
-        elif any(k in low for k in ["printer", "cetak"]):
-            explicit_cat = "printer"
-        elif any(k in low for k in ["monitor", "layar"]):
-            explicit_cat = "monitor"
-        else:
-            explicit_cat = current_category
-
+        explicit_cat = slots.get("kategori") or current_category or "laptop"
         matched_products = []
         if catalog and brand_req:
             b_norm = brand_req.lower()
@@ -693,7 +750,9 @@ def run_agentic_tool(
                 "route": "BRAND_STOCK",
                 "active_profile_id": None,
                 "persona_name": persona_name,
-                "metrics": {"total": time.time() - t_start}
+                "pending_question": "aktivitas",
+                "slots": slots,
+                "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
             }
         else:
             reply = (
@@ -708,11 +767,131 @@ def run_agentic_tool(
                 "route": "BRAND_STOCK_UNAVAILABLE",
                 "active_profile_id": None,
                 "persona_name": persona_name,
-                "metrics": {"total": time.time() - t_start}
+                "pending_question": "kebutuhan",
+                "slots": slots,
+                "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
+            }
+
+    # Kebijakan Dialog 3: PERSONA CLARIFICATION (Persona terisi tapi aktivitas kosong)
+    if slots.get("persona") and not slots.get("aktivitas") and intent in ("kebutuhan", "kategori-saja"):
+        p_word = slots.get("persona")
+        is_sepuh = any(k in user_text.lower() for k in ["sepuh", "tua", "kakek", "nenek"])
+        target_persona_label = f"{p_word} tercinta yang sudah sepuh" if is_sepuh else f"{p_word}"
+        cat_disp = current_category or "laptop"
+        m_val = slots.get("merek") or ""
+        brand_name = m_val.upper() if m_val in ("hp", "asus", "msi") else m_val.capitalize()
+        brand_str = f" {brand_name}" if brand_name else ""
+
+        reply = (
+            f"Baik Kak, untuk {target_persona_label}, rencananya {cat_disp}{brand_str} ini akan digunakan untuk aktivitas apa saja "
+            f"(misalnya menonton video/browsing santai, mengetik dokumen, atau ada pekerjaan khusus) dan berapa perkiraan anggarannya?"
+        )
+        return {
+            "reply": reply,
+            "products": [],
+            "category": cat_disp,
+            "route": "CLARIFY_CATEGORY",
+            "active_profile_id": None,
+            "persona_name": persona_name,
+            "pending_question": "aktivitas",
+            "slots": slots,
+            "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
+        }
+
+    # Kebijakan Dialog 4: KATEGORI-SAJA (tanpa persona dan tanpa aktivitas)
+    if intent == "kategori-saja" and not slots.get("aktivitas"):
+        cat_name = current_category or "laptop"
+        if any(k in low for k in ["desktop", "komputer", "pc", "aio"]): cat_name = "desktop"
+        elif any(k in low for k in ["printer", "cetak"]): cat_name = "printer"
+        elif any(k in low for k in ["monitor", "layar"]): cat_name = "monitor"
+
+        reply = (
+            f"Kami memiliki beragam pilihan {cat_name} berkualitas di Bobby Computer.\n\n"
+            f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan untuk kebutuhan apa saja "
+            f"(misalnya kerja kantor, kuliah, desain grafis, atau game) dan berapa perkiraan anggarannya?"
+        )
+        return {
+            "reply": reply,
+            "products": [],
+            "category": cat_name,
+            "route": "CLARIFY_CATEGORY",
+            "active_profile_id": None,
+            "persona_name": persona_name,
+            "pending_question": "aktivitas",
+            "slots": slots,
+            "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
+        }
+
+    # Kebijakan Dialog 5: META / PROTES ("Kan sudah dibilang buat hiburan", dll)
+    if any(k in low for k in ["kan sudah dibilang", "kan buat hiburan", "kan tadi kubilang", "kan sudah kubilang"]):
+        p_word = slots.get("persona") or "ibu"
+        act_word = slots.get("aktivitas") or "hiburan santai"
+        prof_to_use = active_profile_id or map_activity_to_profile(act_word, p_word) or "P11"
+        
+        ans_str, prods, cat, prof = execute_tool(
+            "search_catalog",
+            {"profil_id": prof_to_use, "kategori": current_category or "laptop", "brand": slots.get("merek")},
+            catalog, current_offered_products or [], user_text, prof_to_use, current_category
+        )
+        reply = (
+            f"Mohon maaf sekali atas kebingungannya tadi ya Kak 🙏 Sesuai yang Kakak sampaikan untuk {p_word} dan kebutuhan {act_word} "
+            f"(seperti menonton video dan browsing), laptop yang paling pas dan nyaman tanpa kartu grafis berat yang bising adalah:\n\n"
+        )
+        for idx, p in enumerate(prods[:2]):
+            reply += f"{idx+1}. **{p['nama']}** | Rp{p.get('harga_idr', 0):,}\n  Spesifikasi: {_clean_specs(p)}\n\n"
+        reply += "Laptop ini sangat hening, hemat daya, dan bobotnya ringan sehingga nyaman dipakai. Apakah pilihan ini sudah sesuai dengan yang dicari?"
+        return {
+            "reply": reply.strip(),
+            "products": prods[:2],
+            "category": current_category or "laptop",
+            "route": "META_CORRECTION",
+            "active_profile_id": prof_to_use,
+            "persona_name": persona_name,
+            "pending_question": None,
+            "slots": slots,
+            "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
+        }
+
+    # Kebijakan Dialog 6: LANJUTAN ("Mana?", dll)
+    if low in ("mana?", "mana", "mana laptopnya?", "mana produknya?"):
+        if slots.get("aktivitas") or active_profile_id:
+            prof_to_use = active_profile_id or map_activity_to_profile(slots.get("aktivitas"), slots.get("persona")) or "P11"
+            ans_str, prods, cat, prof = execute_tool(
+                "search_catalog",
+                {"profil_id": prof_to_use, "kategori": current_category or "laptop", "brand": slots.get("merek")},
+                catalog, current_offered_products or [], user_text, prof_to_use, current_category
+            )
+            framed_reply, frame_meta = format_conversational_frame(
+                user_text, ans_str, prods, cat or current_category, prof_to_use,
+                use_llm=effective_llm_framing, model=model, url=url, persona_name=persona_name
+            )
+            return {
+                "reply": framed_reply.strip(),
+                "products": prods,
+                "category": cat or current_category,
+                "route": "FOLLOWUP_RECOMMENDATION",
+                "active_profile_id": prof_to_use,
+                "persona_name": persona_name,
+                "pending_question": "budget",
+                "slots": slots,
+                "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
+            }
+        else:
+            reply = "Sebelumnya belum ada perangkat yang dipilih, Kak. Boleh ceritakan perangkat apa yang sedang dicari dan untuk aktivitas apa?"
+            return {
+                "reply": reply,
+                "products": [],
+                "category": current_category,
+                "route": "CLARIFY_FOLLOWUP",
+                "active_profile_id": None,
+                "persona_name": persona_name,
+                "pending_question": "kebutuhan",
+                "slots": slots,
+                "metrics": {"total": time.time() - t_start, "nlu_ms": t_nlu_latency}
             }
 
     # Kelas 3: META ("Dari mana kamu tahu kebutuhanku?", kritik spek kegedean, komplain CS, dll)
-    if intent == "meta":
+    if intent in ("meta", "meta_protes"):
         low = user_text.lower()
         effective_persona = extract_persona_name(user_text) or persona_name
         target_label = f" untuk {effective_persona}" if effective_persona else ""
@@ -877,18 +1056,21 @@ def run_agentic_tool(
     elif new_cat and not current_category:
         current_category = new_cat
 
-    # 1.5 Pangkas LLM-1 untuk peruntukan (jika BYPASS_LLM1_ON_RAG aktif dan retrieval lolos ambang)
-    if BYPASS_LLM1_ON_RAG and not should_skip_rag(user_text, catalog):
-        from services.knowledge_service import get_usage_requirements
-        reqs = get_usage_requirements(user_text)
-        pls = reqs.get("profil", [])
-        if pls and pls[0].get("tipe") != "di_luar_topik":
-            p_ids = [p["profil_id"] for p in pls]
-            prof_arg = ",".join(p_ids)
+    if BYPASS_LLM1_ON_RAG:
+        prof_arg = map_activity_to_profile(slots.get("aktivitas"), slots.get("persona"))
+        if not prof_arg and not should_skip_rag(user_text, catalog):
+            from services.knowledge_service import get_usage_requirements
+            reqs = get_usage_requirements(user_text)
+            pls = reqs.get("profil", [])
+            if pls and pls[0].get("tipe") != "di_luar_topik":
+                p_ids = [p["profil_id"] for p in pls]
+                prof_arg = ",".join(p_ids)
+
+        if prof_arg:
             t0_tool = time.time()
             ans_str, prods, cat, new_profile_id = execute_tool(
                 "search_catalog",
-                {"profil_id": prof_arg, "kategori": current_category},
+                {"profil_id": prof_arg, "kategori": current_category, "brand": slots.get("merek")},
                 catalog,
                 current_offered_products or [],
                 user_text,
@@ -898,7 +1080,7 @@ def run_agentic_tool(
             total = time.time() - t_start
             final_reply, frame_meta = format_conversational_frame(
                 user_text, ans_str, prods, cat or current_category, new_profile_id,
-                use_llm=effective_llm_framing, model=model, url=url
+                use_llm=effective_llm_framing, model=model, url=url, persona_name=persona_name
             )
             metrics = {
                 "llm1": 0.0,
@@ -916,6 +1098,9 @@ def run_agentic_tool(
                 "route": "FAST_AGENTIC",
                 "tool_calls": [{"name": "search_catalog", "args": {"profil_id": prof_arg}}],
                 "active_profile_id": new_profile_id,
+                "persona_name": persona_name,
+                "pending_question": "budget" if prods else "kebutuhan",
+                "slots": slots,
                 "metrics": metrics
             }
 
@@ -973,6 +1158,8 @@ def run_agentic_tool(
             func = tc.get("function", {})
             t_name = func.get("name")
             t_args = func.get("arguments", {})
+            if slots.get("merek") and isinstance(t_args, dict) and not t_args.get("brand"):
+                t_args["brand"] = slots.get("merek")
             ans_str, p_list, t_cat, t_prof = execute_tool(t_name, t_args, catalog, current_offered_products or [], user_text, new_profile_id)
             if p_list: prods.extend(p_list)
             if t_cat: cat = t_cat
@@ -986,7 +1173,7 @@ def run_agentic_tool(
         combined_facts = "\n\n".join(tool_outputs)
         final_reply, frame_meta = format_conversational_frame(
             user_text, combined_facts, prods, cat, new_profile_id,
-            use_llm=effective_llm_framing, model=model, url=url
+            use_llm=effective_llm_framing, model=model, url=url, persona_name=persona_name
         )
         t_llm2 = frame_meta.get("frame_latency", 0.0)
     else:
@@ -998,4 +1185,15 @@ def run_agentic_tool(
     metrics = {"llm1": t_llm1, "tool": t_tool, "llm2": t_llm2, "total": total}
     logger.info(f"[PERF] LLM-1: {t_llm1:.2f}s | Tool: {t_tool:.2f}s | LLM-2: {t_llm2:.2f}s | Total: {total:.2f}s")
     
-    return {"reply": final_reply.strip(), "products": prods, "category": cat, "route": "AGENTIC", "tool_calls": executed_tools, "active_profile_id": new_profile_id, "metrics": metrics}
+    return {
+        "reply": final_reply.strip(),
+        "products": prods,
+        "category": cat,
+        "route": "AGENTIC",
+        "tool_calls": executed_tools,
+        "active_profile_id": new_profile_id,
+        "persona_name": persona_name,
+        "pending_question": "budget" if prods else "kebutuhan",
+        "slots": slots,
+        "metrics": metrics
+    }

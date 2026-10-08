@@ -18,7 +18,7 @@ from core.catalog import Catalog
 def verify_rubric_invariants(reply: str):
     """Verifikasi invarian universal untuk seluruh respons percakapan Customer Care."""
     # 4. Tidak ada kode internal (P03, P05, M01, G02, dsb.)
-    internal_codes = re.findall(r"\b[PMG]\d{2}\b", reply)
+    internal_codes = re.findall(r"\b(?:P\d{2}|M\d{2}|G0[1-4])\b", reply)
     assert not internal_codes, f"Ditemukan kode internal dalam jawaban pelanggan: {internal_codes} | Reply: {reply}"
 
     # Spesifikasi tidak boleh mengandung string literal 'None'

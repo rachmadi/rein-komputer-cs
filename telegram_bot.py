@@ -48,11 +48,13 @@ from services.chat_service import process_chat_message, reset_chat_session
 
 FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
 
+from core.chat_logger import anonymize_id
+
 def record_feedback(session_id: str, user_id: int | str, rating: str, note: str = "") -> None:
-    """Simpan feedback pelanggan ke log secara teranonimasi."""
+    """Simpan feedback pelanggan ke log secara teranonimasi dengan HMAC-SHA256."""
     os.makedirs("logs", exist_ok=True)
-    anon_user = hashlib.sha256(str(user_id).encode("utf-8")).hexdigest()[:12]
-    anon_session = hashlib.sha256(str(session_id).encode("utf-8")).hexdigest()[:12]
+    anon_user = anonymize_id(str(user_id), length=12)
+    anon_session = anonymize_id(str(session_id), length=12)
     record = {
         "timestamp": datetime.now().isoformat(),
         "anon_user_id": anon_user,

@@ -157,19 +157,26 @@ def extract_persona(norm_text: str) -> str | None:
     return None
 
 def extract_persona_name(norm_text: str) -> str | None:
-    for p in ("om aku", "omku", "om", "pamanku", "paman", "papaku", "papa", "ayahku", "ayah",
-              "bapakku", "bapak", "mamaku", "mama", "ibuku", "ibu", "tanteku", "tante",
-              "bibiku", "bibi", "kakek", "nenek", "anakku", "anak", "adikku", "adik"):
-        if has_phrase(norm_text, p):
-            if p in ("om aku", "omku", "om", "pamanku", "paman"):
-                return "Om"
-            if p in ("papaku", "papa", "ayahku", "ayah", "bapakku", "bapak"):
-                return "Papa"
-            if p in ("mamaku", "mama", "ibuku", "ibu"):
-                return "Mama"
-            if p in ("tanteku", "tante", "bibiku", "bibi"):
-                return "Tante"
-            return p.capitalize()
+    pairs = [
+        ("om aku", "Om"), ("pamanku", "Paman"), ("paman", "Paman"), ("omku", "Om"), ("om", "Om"),
+        ("papaku", "Papa"), ("papa", "Papa"),
+        ("ayahku", "Ayah"), ("ayah", "Ayah"),
+        ("bapakku", "Bapak"), ("bapak", "Bapak"),
+        ("mamaku", "Mama"), ("mama", "Mama"),
+        ("ibuku", "Ibu"), ("ibu", "Ibu"),
+        ("tanteku", "Tante"), ("tante", "Tante"),
+        ("bibiku", "Bibi"), ("bibi", "Bibi"),
+        ("kakekku", "Kakek"), ("kakek", "Kakek"),
+        ("nenekku", "Nenek"), ("nenek", "Nenek"),
+        ("anakku", "Anak"), ("anak", "Anak"),
+        ("adikku", "Adik"), ("adik", "Adik"),
+        ("kakakku", "Kakak"), ("kakak", "Kakak"),
+        ("istriku", "Istri"), ("istri", "Istri"),
+        ("suamiku", "Suami"), ("suami", "Suami"),
+    ]
+    for phrase, label in pairs:
+        if has_phrase(norm_text, phrase):
+            return label
     return None
 
 def extract_user_type(norm_text: str) -> str | None:

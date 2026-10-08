@@ -7,7 +7,23 @@ import copy
 
 def new_state() -> dict:
     return {
-        "category": None, "active_profile_id": None,
+        # Pelacak Status Dialog (DST Struktural)
+        "pending_question": None,  # "aktivitas", "budget", "kategori", "merek", None
+        "slots": {
+            "persona": None,        # e.g. "ibu", "ayah", "anak"
+            "aktivitas": None,      # e.g. "hiburan", "nonton", "kuliah", "kerja kantor"
+            "budget": None,         # integer rupiah (e.g. 7000000)
+            "kategori": None,       # "laptop", "desktop", "printer", "monitor"
+            "merek": None,          # "asus", "acer", "lenovo", "hp"
+            "ukuran_layar": None,   # "14", "15.6"
+            "portabilitas": None    # "ringan", "tipis"
+        },
+        "shown_products": [],
+        "profil_aktif": None,
+
+        # Kompatibilitas State Mesin
+        "category": None,
+        "active_profile_id": None,
         "needs": [],
         "persona": None,
         "user_type": None,
