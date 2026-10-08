@@ -31,23 +31,23 @@ SYSTEM_PARSER_PROMPT = """Kamu adalah NLU Parser untuk asisten Customer Care Bob
 Tugasmu: memahami pesan pelanggan secara akurat dan menerjemahkannya ke dalam JSON terstruktur.
 
 HIMPUNAN AKSI (11 AKSI):
-1. sapa: Sapaan pembuka tanpa permintaan spesifik (contoh: 'halo', 'selamat siang').
-2. cari_produk: Mencari produk atau spesifikasi eksplisit (kategori, merek, nama_model, min_harga, max_harga, ram_gb_min, storage_gb_min, ukuran_layar).
-3. minta_rekomendasi: Kebutuhan sudah cukup jelas untuk rekomendasi (kebutuhan_teks, persona, kategori, budget_min, budget_max).
-4. jawab_pertanyaan_bot: Pelanggan menjawab pending_question bot (slot: kebutuhan/aktivitas/budget/kategori/merek/persona, nilai).
-5. evaluasi_kecocokan: Pelanggan menanyakan kecocokan spesifikasi produk yang sedang tampil ('cukup gak?', 'yang kedua bagus gak?').
-6. bandingkan: Pelanggan meminta membandingkan beberapa produk yang disebut atau sedang tampil.
-7. lanjutan_hasil: Pelanggan menyempitkan/mengubah hasil sebelumnya (jenis: lebih_murah/lebih_mahal/yang_lain/filter_tambahan).
+1. sapa: Sapaan pembuka tanpa permintaan spesifik (contoh: 'halo', 'selamat siang', termasuk sapaan singkat 'p').
+2. cari_produk: Mencari produk atau spesifikasi eksplisit tanpa menyebut peruntukan orang ('ada asus?', 'pc gaming rtx 4060', 'ram 32gb').
+3. minta_rekomendasi: Kebutuhan atau persona sudah jelas untuk rekomendasi ('laptop buat kakek', 'butuh laptop dkv', 'Paling cuma cari resep dan nonton youtube').
+4. jawab_pertanyaan_bot: Pelanggan menjawab pending_question bot secara singkat/parsial (slot: kebutuhan/aktivitas/budget/kategori/merek/persona, nilai).
+5. evaluasi_kecocokan: Menanyakan kecocokan atau fitur/spesifikasi produk yang sedang tampil ('cukup gak?', 'yang kedua bagus gak?', 'layarnya udah IPS?', 'bisa main valorant?').
+6. bandingkan: Membandingkan atau memilih antara beberapa produk yang disebut atau sedang tampil ('bagusan nomor 1 apa nomor 2?').
+7. lanjutan_hasil: Menyempitkan/mengubah hasil sebelumnya ('ada yang lebih murah?', 'ada opsi merk lain?').
 8. tanya_info_toko: Pertanyaan garansi, servis, pembayaran, pengiriman, jam buka, alamat toko.
 9. perbaiki_percakapan: Pelanggan menegur, mengoreksi, atau mengeluhkan salah paham ('kok malah...', 'yang tanya HP 14 siapa?', 'kan udah kubilang...').
 10. basa_basi: Obrolan penutup atau di luar topik (jenis: terima_kasih/pamit/lainnya).
-11. tidak_jelas: Maksud tidak bisa dipastikan dengan wajar.
+11. tidak_jelas: Teks acak atau maksud tidak bisa dipastikan dengan wajar ('asdfghjkl', 'hmm gimana ya').
 
 ATURAN PARSING:
-- Jika ada `pending_question` di state dan pesan relevan dengan slot tersebut, gunakan `jawab_pertanyaan_bot` atau `minta_rekomendasi`.
+- Jika pelanggan menjawab aktivitas/kebutuhan secara lengkap untuk direkomendasikan ('Paling cuma cari resep dan nonton youtube'), gunakan `minta_rekomendasi`. Jika jawaban hanya nilai singkat/slot ('Buat hiburan', 'maks 7 juta'), gunakan `jawab_pertanyaan_bot`.
+- Jika ada produk yang sedang tampil dan pelanggan menanyakan apakah layarnya IPS, RAM bisa upgrade, atau cukup untuk aktivitasnya, gunakan `evaluasi_kecocokan`.
+- Jika pelanggan membandingkan dua opsi ('bagusan no 1 apa no 2?'), gunakan `bandingkan`.
 - Jika pelanggan menegur, menyindir, atau mengoreksi bot karena salah paham, gunakan `perbaiki_percakapan`.
-- Jika pelanggan bertanya apakah spesifikasi cukup untuk kebutuhannya, gunakan `evaluasi_kecocokan`.
-- Jangan mengarang slot yang tidak disebutkan. Biarkan null jika tidak ada.
 - Salin sebutan persona (ibu, bapak, mama, dsb.) persis sesuai kata pelanggan ke `pembaruan_state.sebutan`.
 """
 
@@ -55,6 +55,18 @@ DEV_FEW_SHOTS = [
     {
         "role": "user",
         "content": "Pesan: \"halo\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "sapa",
+            "argumen": {},
+            "pembaruan_state": {}
+        })
+    },
+    {
+        "role": "user",
+        "content": "Pesan: \"p\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
     },
     {
         "role": "assistant",
@@ -114,13 +126,13 @@ DEV_FEW_SHOTS = [
     },
     {
         "role": "user",
-        "content": "Pesan: \"yang kedua bagus nggak?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}, {\"no\": 3, \"kode\": \"KB-L03\"}]}"
+        "content": "Pesan: \"bagusan nomor 1 apa nomor 2?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"
     },
     {
         "role": "assistant",
         "content": json.dumps({
-            "aksi": "evaluasi_kecocokan",
-            "argumen": {"produk": ["2"]},
+            "aksi": "bandingkan",
+            "argumen": {"produk": ["1", "2"]},
             "pembaruan_state": {}
         })
     },
@@ -194,18 +206,6 @@ DEV_FEW_SHOTS = [
             "aksi": "tanya_info_toko",
             "argumen": {"topik": "garansi"},
             "pembaruan_state": {}
-        })
-    },
-    {
-        "role": "user",
-        "content": "Pesan: \"laptop RAM 32GB di bawah 20 juta\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "cari_produk",
-            "argumen": {"kategori": "laptop", "ram_gb_min": 32, "max_harga": 20000000},
-            "pembaruan_state": {"budget": 20000000, "kategori": "laptop"}
         })
     },
     {
