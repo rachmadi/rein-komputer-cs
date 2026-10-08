@@ -92,6 +92,7 @@ def resolve_product_references(
     }
 
     resolved = []
+    failed_refs = []
     for raw_ref in produk_refs:
         if raw_ref is None:
             continue
@@ -102,7 +103,8 @@ def resolve_product_references(
                 resolved.append(tampil[idx]["kode"])
                 continue
             else:
-                return [], False, str(raw_ref)
+                failed_refs.append(str(raw_ref))
+                continue
 
         ref_clean = str(raw_ref).lower().strip()
         
@@ -112,7 +114,8 @@ def resolve_product_references(
                 resolved.extend([p.get("kode") for p in tampil if p.get("kode")])
                 continue
             else:
-                return [], False, ref_clean
+                failed_refs.append(ref_clean)
+                continue
 
         # Cek ordinal / nomor digit
         matched = False
@@ -140,11 +143,13 @@ def resolve_product_references(
                     break
 
         if not matched:
-            return [], False, str(raw_ref)
+            failed_refs.append(str(raw_ref))
 
     # Hilangkan duplikasi dengan mempertahankan urutan
     seen = set()
     dedup = [x for x in resolved if not (x in seen or seen.add(x))]
+    if failed_refs:
+        return dedup, False, failed_refs[0] if len(failed_refs) == 1 else failed_refs
     if not dedup:
         return [], False, "rujukan_kosong"
     return dedup, True, None
@@ -165,26 +170,28 @@ def validate_parser_output(
     state = session_state or {}
 
     # 1. Validasi struktur JSON ke Pydantic
-    if not isinstance(raw_output, dict):
+    if isinstance(raw_output, ParserOutput):
+        parsed = raw_output
+    elif isinstance(raw_output, dict):
+        try:
+            parsed = ParserOutput.model_validate(raw_output)
+        except ValidationError as ve:
+            err_field = ve.errors()[0].get("loc", [""])[-1]
+            err_msg = ve.errors()[0].get("msg", "invalid")
+            logger.warning(f"Validasi skema/enum parser gagal pada field '{err_field}': {err_msg}")
+            return (
+                ParserOutput(
+                    aksi=ActionEnum.TIDAK_JELAS,
+                    argumen=ActionArguments(alasan=f"Enum/skema tidak valid pada {err_field}: {err_msg}"),
+                    pembaruan_state=StateUpdate()
+                ),
+                False
+            )
+    else:
         return (
             ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
                 argumen=ActionArguments(alasan="Format keluaran bukan objek JSON"),
-                pembaruan_state=StateUpdate()
-            ),
-            False
-        )
-
-    try:
-        parsed = ParserOutput.model_validate(raw_output)
-    except ValidationError as ve:
-        err_field = ve.errors()[0].get("loc", [""])[-1]
-        err_msg = ve.errors()[0].get("msg", "invalid")
-        logger.warning(f"Validasi skema/enum parser gagal pada field '{err_field}': {err_msg}")
-        return (
-            ParserOutput(
-                aksi=ActionEnum.TIDAK_JELAS,
-                argumen=ActionArguments(alasan=f"Enum/skema tidak valid pada {err_field}: {err_msg}"),
                 pembaruan_state=StateUpdate()
             ),
             False
@@ -252,15 +259,23 @@ def validate_parser_output(
         resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil_list)
         
         if not is_ref_valid:
-            return (
-                ParserOutput(
-                    aksi=ActionEnum.TIDAK_JELAS,
-                    argumen=ActionArguments(alasan=f"Rujukan produk '{failed_ref}' tidak ditemukan di produk yang tampil, butuh klarifikasi"),
-                    pembaruan_state=StateUpdate()
-                ),
-                False
-            )
-        args.produk = resolved_codes
+            if parsed.aksi == ActionEnum.BANDINGKAN:
+                failed_list = [failed_ref] if isinstance(failed_ref, str) else list(failed_ref)
+                failed_clean = [f for f in failed_list if f != "rujukan_kosong"]
+                args.produk = resolved_codes if resolved_codes else [p.get("kode") for p in produk_tampil_list if p.get("kode")]
+                if failed_clean:
+                    args.produk_luar_katalog = failed_clean
+            else:
+                return (
+                    ParserOutput(
+                        aksi=ActionEnum.TIDAK_JELAS,
+                        argumen=ActionArguments(alasan=f"Rujukan produk '{failed_ref}' tidak ditemukan di produk yang tampil, butuh klarifikasi"),
+                        pembaruan_state=StateUpdate()
+                    ),
+                    False
+                )
+        else:
+            args.produk = resolved_codes
 
     # 4b. Validasi jenis per-aksi (mencegah kontaminasi antar-aksi, misal 'pamit' di lanjutan_hasil atau 'yang_lain' di basa_basi)
     if parsed.aksi in ACTION_JENIS_MAP and args.jenis is not None:
@@ -284,7 +299,7 @@ def validate_parser_output(
         ActionEnum.JAWAB_PERTANYAAN_BOT: {"slot", "nilai"},
         ActionEnum.EVALUASI_KECOCOKAN: {"rujukan_produk", "produk", "kebutuhan_teks"},
         ActionEnum.TANYA_SPESIFIKASI: {"rujukan_produk", "produk", "atribut"},
-        ActionEnum.BANDINGKAN: {"rujukan_produk", "produk"},
+        ActionEnum.BANDINGKAN: {"rujukan_produk", "produk", "produk_luar_katalog"},
         ActionEnum.LANJUTAN_HASIL: {"jenis", "merek_kecuali", "filter"},
         ActionEnum.TANYA_INFO_TOKO: {"topik"},
         ActionEnum.PERBAIKI_PERCAKAPAN: {"jenis", "rujukan"},

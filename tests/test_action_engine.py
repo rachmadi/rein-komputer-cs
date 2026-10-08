@@ -163,3 +163,28 @@ def test_action_engine_brand_case_normalization_asus_vivobook_tuf(engine):
     res_tuf = engine.execute(parsed_tuf, session_state={})
     assert res_tuf.fakta["status"] == "sukses"
     assert any("TUF" in p["nama"] for p in res_tuf.produk_list)
+
+
+def test_action_engine_bandingkan_produk_luar_katalog(engine):
+    """Poin 8: Rujukan produk di luar katalog (misal MacBook Air M1) tetap bandingkan, bukan tidak_jelas."""
+    from services.validator import validate_parser_output
+    
+    parsed_input = ParserOutput(
+        aksi=ActionEnum.BANDINGKAN,
+        argumen=ActionArguments(rujukan_produk=["KB-L01", "MacBook Air M1"]),
+        pembaruan_state=StateUpdate()
+    )
+    state = {"produk_tampil": [{"no": 1, "kode": "KB-L01", "nama": "ASUS Vivobook 14"}]}
+    validated, is_valid = validate_parser_output(parsed_input, state)
+    
+    assert validated.aksi == ActionEnum.BANDINGKAN
+    assert validated.argumen.produk == ["KB-L01"]
+    assert "MacBook Air M1" in validated.argumen.produk_luar_katalog
+    
+    res = engine.execute(validated, session_state=state)
+    assert res.aksi == ActionEnum.BANDINGKAN
+    assert res.fakta["status"] == "sebagian_tidak_di_katalog"
+    assert res.fakta["total_dibandingkan"] == 1
+    assert "MacBook Air M1" in res.fakta["produk_luar_katalog"]
+    assert "tidak tersedia di katalog Bobby Computer" in res.fakta["catatan"]
+

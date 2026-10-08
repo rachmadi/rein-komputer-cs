@@ -471,10 +471,24 @@ class ActionEngine:
                 "display": p.get("display") or f"{p.get('ukuran_layar', '')} inci"
             })
 
+        produk_luar = args.produk_luar_katalog or []
+        status = "sukses"
+        catatan = None
+        if produk_luar:
+            nama_luar_str = ", ".join(produk_luar)
+            if items:
+                status = "sebagian_tidak_di_katalog"
+                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer (toko kami berfokus pada laptop dan PC Windows resmi). Berikut spesifikasi produk di katalog kami untuk perbandingan."
+            else:
+                status = "tidak_di_katalog"
+                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer."
+
         fakta = {
-            "status": "sukses",
+            "status": status,
             "total_dibandingkan": len(items),
-            "perbandingan": items
+            "perbandingan": items,
+            "produk_luar_katalog": produk_luar,
+            "catatan": catatan
         }
         return ActionResult(aksi=ActionEnum.BANDINGKAN, fakta=fakta)
 

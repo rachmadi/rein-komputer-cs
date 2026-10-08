@@ -119,6 +119,7 @@ class ActionArguments(BaseModel):
     # evaluasi_kecocokan, tanya_spesifikasi, & bandingkan
     rujukan_produk: Optional[List[Union[int, str]]] = None  # nomor urut (1, 2, dll) atau nama dari produk_tampil
     produk: Optional[List[str]] = None                      # kode produk hasil resolusi validator
+    produk_luar_katalog: Optional[List[str]] = None         # rujukan produk yang tidak ada di katalog Bobby Computer
     atribut: Optional[AtributSpesifikasiEnum] = None
 
     # lanjutan_hasil, perbaiki_percakapan, basa_basi

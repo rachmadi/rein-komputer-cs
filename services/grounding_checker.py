@@ -167,10 +167,11 @@ class GroundingChecker:
                     break
 
         # 8. Kartu produk harus cocok dengan produk yang disebut di teks
-        produk_list = fakta.get("produk") or (state.get("produk_tampil") if state else [])
-        if produk_list and isinstance(produk_list, list):
+        produk_list = fakta.get("produk") or fakta.get("perbandingan") or (state.get("produk_tampil") if state else [])
+        produk_luar = fakta.get("produk_luar_katalog") or []
+        if (produk_list and isinstance(produk_list, list)) or produk_luar:
             known_models = ["vivobook", "ideapad", "aspire", "legion", "tuf", "macbook", "pavilion", "thinkpad", "predator", "yoga", "zenbook", "rog", "loq", "victus", "omen"]
-            card_names_str = " ".join([f"{p.get('nama', '')} {p.get('brand', '')} {p.get('merek', '')}" for p in produk_list]).lower()
+            card_names_str = (" ".join([f"{p.get('nama', '')} {p.get('brand', '')} {p.get('merek', '')}" for p in (produk_list or [])]) + " " + " ".join([str(x) for x in produk_luar])).lower()
             for km in known_models:
                 if re.search(rf"\b{km}\b", teks, re.IGNORECASE):
                     if km not in card_names_str:
