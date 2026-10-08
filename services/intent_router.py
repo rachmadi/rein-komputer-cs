@@ -22,7 +22,8 @@ IntentClass = Literal[
     "produk-spesifik",
     "lanjutan",
     "meta",
-    "di-luar-topik"
+    "di-luar-topik",
+    "merek-stok"
 ]
 
 # Daftar pola dan kata kunci
@@ -122,9 +123,29 @@ SPEC_INDICATORS = [
     r"\b\d+\s*(juta|jt)\b",
 ]
 
+CATALOG_BRANDS = ["lenovo", "asus", "hp", "acer", "canon", "epson", "brother"]
+OTHER_BRANDS = [
+    "dell", "apple", "macbook", "msi", "samsung", "toshiba", "axioo", "zyrex",
+    "huawei", "xiaomi", "redmibook", "advan", "infinix", "avita", "sony", "vaio", "razer", "alienware", "fujitsu"
+]
+ALL_KNOWN_BRANDS = CATALOG_BRANDS + OTHER_BRANDS
+
+BRAND_STOCK_PATTERNS = [
+    r"\b(ada|jual|punya|ready|stok|stock|sedia|menyediakan)\b",
+    r"\b(apakah\s+(ada|jual|punya|menyediakan))\b",
+]
+
+def detect_brand(text: str) -> str | None:
+    low = text.lower()
+    for b in ALL_KNOWN_BRANDS:
+        if re.search(r"\b" + re.escape(b) + r"\b", low):
+            return b
+    return None
+
 def classify_intent(text: str, has_prior_context: bool = False) -> IntentClass:
     """
-    Mengklasifikasikan niat pengguna ke dalam 7 kelas.
+    Mengklasifikasikan niat pengguna ke dalam 8 kelas:
+    sapaan, kategori-saja, kebutuhan-jelas, produk-spesifik, lanjutan, meta, di-luar-topik, merek-stok.
     """
     raw = text.strip()
     low = raw.lower()
@@ -147,6 +168,16 @@ def classify_intent(text: str, has_prior_context: bool = False) -> IntentClass:
     for pat in FOLLOW_UP_PATTERNS:
         if re.search(pat, low):
             return "lanjutan"
+
+    # 4. MEREK-STOK: Pertanyaan stok atau penjualan merek ("jual laptop acer?", "ada Asus?", "punya Dell?")
+    matched_brand = detect_brand(low)
+    if matched_brand:
+        has_need = any(re.search(r"\b" + nd + r"\b", low) for nd in NEED_INDICATORS)
+        has_spec = any(re.search(pat, low) for pat in SPEC_INDICATORS)
+        if not has_need and not has_spec:
+            has_stock_query = any(re.search(pat, low) for pat in BRAND_STOCK_PATTERNS) or any(k in low for k in ["jual", "ready", "stok", "ada", "punya", "sedia"])
+            if has_stock_query or len(low.split()) <= 3:
+                return "merek-stok"
 
     # 4. SAPAAN: Pesan hanya berupa sapaan/salam murni
     if re.search(GREETINGS_PATTERN, low):

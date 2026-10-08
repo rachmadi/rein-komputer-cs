@@ -368,9 +368,51 @@ def test_rubric_alasan_gagal_natural_tanpa_nama_kolom():
     assert any(k in reply2.lower() for k in ["ram 16 gb", "butuh 32 gb", "vram"]), \
         f"Penjelasan kegagalan harus natural:\n{reply2}"
 
-    # Larangan kalimat pengantar ganda
     occurrences = len(re.findall(r"kandidat terdekat", reply2, re.IGNORECASE))
     assert occurrences <= 1, f"Kalimat 'kandidat terdekat' tidak boleh duplikat (muncul {occurrences}x):\n{reply2}"
+
+
+def test_rubric_niat_merek_dan_stok():
+    """
+    Instruksi 8: Pertanyaan merek/stok ('jual laptop acer?', 'ada Asus?', 'punya laptop dell?').
+    - Jawab ya/tidak sesuai katalog.
+    - Tampilkan produk merek itu, tanpa mengabaikan merek.
+    - Tanpa klaim syarat/✅ yang tidak relevan.
+    - Produk kosong jika merek tidak tersedia di katalog.
+    """
+    # 1. 'jual laptop acer?' -> Tersedia di katalog
+    res_acer = process_chat_message("test_brand_acer", "jual laptop acer?")
+    reply_acer = res_acer["reply"]
+    verify_rubric_invariants(reply_acer)
+    assert res_acer["route"] == "BRAND_STOCK"
+    assert "✅" not in reply_acer, "Pertanyaan merek tanpa syarat tidak boleh diberi centang"
+    assert "ya" in reply_acer.lower() and "acer" in reply_acer.lower()
+    prods_acer = res_acer.get("products", [])
+    assert len(prods_acer) > 0, "Harus menampilkan laptop Acer"
+    for p in prods_acer:
+        assert "acer" in p["brand"].lower() or "acer" in p["nama"].lower(), f"Produk harus Acer, bukan {p['nama']}"
+
+    # 2. 'ada Asus?' -> Tersedia di katalog
+    res_asus = process_chat_message("test_brand_asus", "ada Asus?")
+    reply_asus = res_asus["reply"]
+    verify_rubric_invariants(reply_asus)
+    assert res_asus["route"] == "BRAND_STOCK"
+    assert "✅" not in reply_asus
+    assert "ya" in reply_asus.lower() and "asus" in reply_asus.lower()
+    prods_asus = res_asus.get("products", [])
+    assert len(prods_asus) > 0, "Harus menampilkan produk ASUS"
+    for p in prods_asus:
+        assert "asus" in p["brand"].lower() or "asus" in p["nama"].lower(), f"Produk harus ASUS, bukan {p['nama']}"
+
+    # 3. 'punya laptop dell?' -> Tidak tersedia di katalog
+    res_dell = process_chat_message("test_brand_dell", "punya laptop dell?")
+    reply_dell = res_dell["reply"]
+    verify_rubric_invariants(reply_dell)
+    assert res_dell["route"] == "BRAND_STOCK_UNAVAILABLE"
+    assert len(res_dell.get("products", [])) == 0, "Dell tidak ada di katalog, produk harus kosong"
+    assert any(k in reply_dell.lower() for k in ["belum menyediakan", "belum menjual", "mohon maaf"])
+    assert any(k in reply_dell.lower() for k in ["lenovo", "asus", "hp", "acer"])
+
 
 
 

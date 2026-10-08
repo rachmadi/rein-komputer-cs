@@ -123,6 +123,15 @@ def format_natural_unmet_requirements(unmet_list: list[str]) -> str:
         return f"Belum memenuhi: {', '.join(natural_parts)}"
     return ""
 
+def _clean_specs(p_item: dict) -> str:
+    parts = []
+    if p_item.get("cpu"): parts.append(str(p_item["cpu"]))
+    if p_item.get("gpu"): parts.append(str(p_item["gpu"]))
+    r = p_item.get("ram") or (f"{p_item.get('ram_gb')} GB" + (f" {p_item.get('ram_type')}" if p_item.get("ram_type") else "") if p_item.get("ram_gb") else None)
+    if r: parts.append(f"RAM {r}")
+    if p_item.get("storage"): parts.append(str(p_item["storage"]))
+    return " | ".join(parts) if parts else "Spesifikasi standar"
+
 def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None, int, dict]:
     penalty = 0
     failed_reasons = []
@@ -634,6 +643,71 @@ def run_agentic_tool(
             "persona_name": p_name,
             "metrics": {"total": time.time() - t_start}
         }
+
+    # Kelas 2.5: MEREK-STOK ("jual laptop acer?", "ada Asus?", "punya laptop dell?")
+    if intent == "merek-stok":
+        from services.intent_router import detect_brand
+        low = user_text.lower()
+        brand_req = detect_brand(user_text)
+
+        explicit_cat = None
+        if any(k in low for k in ["laptop", "notebook"]):
+            explicit_cat = "laptop"
+        elif any(k in low for k in ["desktop", "komputer", "pc", "aio"]):
+            explicit_cat = "desktop"
+        elif any(k in low for k in ["printer", "cetak"]):
+            explicit_cat = "printer"
+        elif any(k in low for k in ["monitor", "layar"]):
+            explicit_cat = "monitor"
+        else:
+            explicit_cat = current_category
+
+        matched_products = []
+        if catalog and brand_req:
+            b_norm = brand_req.lower()
+            b_target = "apple" if b_norm == "macbook" else b_norm
+
+            for p in catalog.products:
+                p_brand = (p.get("brand") or "").lower()
+                p_name = (p.get("nama") or "").lower()
+                if b_target in p_brand or b_target in p_name:
+                    if explicit_cat and p.get("kategori") != explicit_cat:
+                        continue
+                    matched_products.append(p)
+
+        brand_disp = brand_req.upper() if brand_req in ("hp", "asus", "msi") else brand_req.capitalize() if brand_req else "tersebut"
+        cat_disp = f" {explicit_cat}" if explicit_cat else ""
+
+        if matched_products:
+            top_prods = matched_products[:3]
+            reply = f"Ya Kak, kami menjual{cat_disp} merek {brand_disp} di Bobby Computer. Berikut beberapa pilihannya di katalog kami:\n\n"
+            for idx, p in enumerate(top_prods):
+                reply += f"{idx+1}. **{p['nama']}** | Rp{p.get('harga_idr', 0):,}\n  Spesifikasi: {_clean_specs(p)}\n\n"
+            reply += f"Apakah ada tipe {brand_disp} tertentu atau rentang budget yang sedang Kakak cari?"
+            return {
+                "reply": reply.strip(),
+                "products": top_prods,
+                "category": explicit_cat or current_category,
+                "route": "BRAND_STOCK",
+                "active_profile_id": None,
+                "persona_name": persona_name,
+                "metrics": {"total": time.time() - t_start}
+            }
+        else:
+            reply = (
+                f"Mohon maaf Kak, saat ini kami belum menyediakan produk merek {brand_disp} di Bobby Computer 🙏\n\n"
+                "Di katalog kami saat ini tersedia lengkap untuk merek Lenovo, ASUS, HP, dan Acer (serta printer Canon, Epson, dan Brother). "
+                "Apakah Kakak berkenan jika kami bantu carikan produk dengan spesifikasi setara dari merek yang tersedia?"
+            )
+            return {
+                "reply": reply.strip(),
+                "products": [],
+                "category": explicit_cat or current_category,
+                "route": "BRAND_STOCK_UNAVAILABLE",
+                "active_profile_id": None,
+                "persona_name": persona_name,
+                "metrics": {"total": time.time() - t_start}
+            }
 
     # Kelas 3: META ("Dari mana kamu tahu kebutuhanku?", kritik spek kegedean, komplain CS, dll)
     if intent == "meta":
