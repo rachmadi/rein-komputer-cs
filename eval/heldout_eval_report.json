@@ -1,0 +1,1578 @@
+{
+  "held_out": {
+    "total": 50,
+    "correct_actions": 47,
+    "accuracy_pct": 94.0,
+    "valid_json_pct": 100.0,
+    "tidak_jelas_pct": 4.0,
+    "latency_p50_ms": 3648.66,
+    "latency_p95_ms": 4257.66,
+    "slot_f1": {
+      "nama_model": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "kategori": {
+        "tp": 5,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.714,
+        "f1": 0.833
+      },
+      "merek": {
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.667,
+        "recall": 1.0,
+        "f1": 0.8
+      },
+      "kebutuhan_teks": {
+        "tp": 2,
+        "fp": 5,
+        "fn": 6,
+        "precision": 0.286,
+        "recall": 0.25,
+        "f1": 0.267
+      },
+      "nilai": {
+        "tp": 1,
+        "fp": 3,
+        "fn": 2,
+        "precision": 0.25,
+        "recall": 0.333,
+        "f1": 0.286
+      },
+      "slot": {
+        "tp": 3,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1": 0.857
+      },
+      "produk": {
+        "tp": 4,
+        "fp": 4,
+        "fn": 4,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5
+      },
+      "atribut": {
+        "tp": 4,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1": 0.889
+      },
+      "jenis": {
+        "tp": 11,
+        "fp": 3,
+        "fn": 4,
+        "precision": 0.786,
+        "recall": 0.733,
+        "f1": 0.759
+      },
+      "topik": {
+        "tp": 3,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.6,
+        "recall": 0.6,
+        "f1": 0.6
+      },
+      "rujukan": {
+        "tp": 3,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.6,
+        "recall": 0.6,
+        "f1": 0.6
+      },
+      "gpu": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "persona": {
+        "tp": 1,
+        "fp": 0,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.25,
+        "f1": 0.4
+      },
+      "filter": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "ukuran_layar": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "alasan": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      }
+    },
+    "confusion_matrix": {
+      "sapa": {
+        "sapa": 4,
+        "tidak_jelas": 1
+      },
+      "cari_produk": {
+        "cari_produk": 6
+      },
+      "minta_rekomendasi": {
+        "minta_rekomendasi": 6,
+        "jawab_pertanyaan_bot": 1
+      },
+      "tanya_spesifikasi": {
+        "tanya_spesifikasi": 4
+      },
+      "bandingkan": {
+        "bandingkan": 3
+      },
+      "lanjutan_hasil": {
+        "lanjutan_hasil": 4,
+        "cari_produk": 1
+      },
+      "tanya_info_toko": {
+        "tanya_info_toko": 5
+      },
+      "perbaiki_percakapan": {
+        "perbaiki_percakapan": 5
+      },
+      "basa_basi": {
+        "basa_basi": 5
+      },
+      "jawab_pertanyaan_bot": {
+        "jawab_pertanyaan_bot": 3
+      },
+      "evaluasi_kecocokan": {
+        "evaluasi_kecocokan": 1
+      },
+      "tidak_jelas": {
+        "tidak_jelas": 1
+      }
+    },
+    "errors": [
+      {
+        "no": 4,
+        "id": "ho-004",
+        "pesan": "cuma buat zoom meeting dan skripsi aja",
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "slot": "aktivitas",
+          "nilai": "zoom meeting dan skripsi"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "zoom meeting dan skripsi"
+        },
+        "benar_aksi": false,
+        "benar_args": false,
+        "latency_ms": 4072.13,
+        "json_valid": true
+      },
+      {
+        "no": 41,
+        "id": "ho-041",
+        "pesan": "woi",
+        "pred_aksi": "tidak_jelas",
+        "gold_aksi": "sapa",
+        "pred_args": {
+          "alasan": "sapaan yang terlalu informal atau tidak jelas maksudnya"
+        },
+        "gold_args": {},
+        "benar_aksi": false,
+        "benar_args": false,
+        "latency_ms": 3277.38,
+        "json_valid": true
+      },
+      {
+        "no": 46,
+        "id": "ho-046",
+        "pesan": "tampilkan merek asus saja",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "lanjutan_hasil",
+        "pred_args": {
+          "merek": "asus"
+        },
+        "gold_args": {
+          "jenis": "filter_tambahan"
+        },
+        "benar_aksi": false,
+        "benar_args": false,
+        "latency_ms": 3391.7,
+        "json_valid": true
+      }
+    ],
+    "results": [
+      {
+        "no": 1,
+        "id": "ho-001",
+        "pesan": "assalamualaikum min",
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "pred_args": {},
+        "gold_args": {},
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3140.88,
+        "json_valid": true
+      },
+      {
+        "no": 2,
+        "id": "ho-002",
+        "pesan": "laptop asus tuf gaming ada?",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "pred_args": {
+          "kategori": "laptop",
+          "merek": "asus",
+          "nama_model": "tuf gaming"
+        },
+        "gold_args": {
+          "merek": "asus",
+          "nama_model": "tuf gaming",
+          "kategori": "laptop"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3988.98,
+        "json_valid": true
+      },
+      {
+        "no": 3,
+        "id": "ho-003",
+        "pesan": "butuh buat kasir toko sembako",
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "kebutuhan_teks": "kasir toko sembako"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "kasir toko pos",
+          "kategori": "desktop"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4262.5,
+        "json_valid": true
+      },
+      {
+        "no": 4,
+        "id": "ho-004",
+        "pesan": "cuma buat zoom meeting dan skripsi aja",
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "slot": "aktivitas",
+          "nilai": "zoom meeting dan skripsi"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "zoom meeting dan skripsi"
+        },
+        "benar_aksi": false,
+        "benar_args": false,
+        "latency_ms": 4072.13,
+        "json_valid": true
+      },
+      {
+        "no": 5,
+        "id": "ho-005",
+        "pesan": "yang ketiga baterainya tahan berapa lama?",
+        "pred_aksi": "tanya_spesifikasi",
+        "gold_aksi": "tanya_spesifikasi",
+        "pred_args": {
+          "produk": [
+            "KB-L03"
+          ],
+          "atribut": "baterai"
+        },
+        "gold_args": {
+          "produk": [
+            "3"
+          ],
+          "atribut": "baterai"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3748.71,
+        "json_valid": true
+      },
+      {
+        "no": 6,
+        "id": "ho-006",
+        "pesan": "antara ideapad sama vivobook bagusan mana?",
+        "pred_aksi": "bandingkan",
+        "gold_aksi": "bandingkan",
+        "pred_args": {
+          "produk": [
+            "KB-L01",
+            "KB-L02"
+          ]
+        },
+        "gold_args": {
+          "produk": [
+            "KB-L01",
+            "KB-L02"
+          ]
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3321.54,
+        "json_valid": true
+      },
+      {
+        "no": 7,
+        "id": "ho-007",
+        "pesan": "ada yang di bawah 5 juta?",
+        "pred_aksi": "lanjutan_hasil",
+        "gold_aksi": "lanjutan_hasil",
+        "pred_args": {
+          "jenis": "lebih_murah"
+        },
+        "gold_args": {
+          "jenis": "lebih_murah"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3403.89,
+        "json_valid": true
+      },
+      {
+        "no": 8,
+        "id": "ho-008",
+        "pesan": "bisa gosend instan hari ini?",
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "pred_args": {
+          "topik": "pengiriman"
+        },
+        "gold_args": {
+          "topik": "pengiriman"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3436.56,
+        "json_valid": true
+      },
+      {
+        "no": 9,
+        "id": "ho-009",
+        "pesan": "kok ngulang salam lagi sih",
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "pred_args": {
+          "jenis": "keluhan",
+          "rujukan": "ngulang salam"
+        },
+        "gold_args": {
+          "jenis": "keluhan",
+          "rujukan": "ngulang salam"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3695.1,
+        "json_valid": true
+      },
+      {
+        "no": 10,
+        "id": "ho-010",
+        "pesan": "makasih banyak infonya kak",
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "pred_args": {
+          "jenis": "terima_kasih"
+        },
+        "gold_args": {
+          "jenis": "terima_kasih"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3343.62,
+        "json_valid": true
+      },
+      {
+        "no": 11,
+        "id": "ho-011",
+        "pesan": "halo selamat sore",
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "pred_args": {},
+        "gold_args": {},
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3006.15,
+        "json_valid": true
+      },
+      {
+        "no": 12,
+        "id": "ho-012",
+        "pesan": "printer epson l3210 ada ga?",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "pred_args": {
+          "kategori": "printer",
+          "merek": "epson",
+          "nama_model": "l3210"
+        },
+        "gold_args": {
+          "merek": "epson",
+          "nama_model": "l3210",
+          "kategori": "printer"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3968.05,
+        "json_valid": true
+      },
+      {
+        "no": 13,
+        "id": "ho-013",
+        "pesan": "laptop gaming rtx 4050 murah",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "pred_args": {
+          "kategori": "laptop",
+          "gpu": "rtx 4050"
+        },
+        "gold_args": {
+          "kategori": "laptop",
+          "gpu": "rtx 4050"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 4153.78,
+        "json_valid": true
+      },
+      {
+        "no": 14,
+        "id": "ho-014",
+        "pesan": "buat anak sma belajar coding python",
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "kebutuhan_teks": "belajar coding python",
+          "persona": "anak sma"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "belajar coding python",
+          "persona": "anak sma"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 4202.83,
+        "json_valid": true
+      },
+      {
+        "no": 15,
+        "id": "ho-015",
+        "pesan": "budget maksimal 12 juta pas",
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "pred_args": {
+          "slot": "budget",
+          "nilai": "12 juta"
+        },
+        "gold_args": {
+          "slot": "budget",
+          "nilai": 12000000
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3971.99,
+        "json_valid": true
+      },
+      {
+        "no": 16,
+        "id": "ho-016",
+        "pesan": "cukup ga ram segitu buat buka 20 tab chrome?",
+        "pred_aksi": "evaluasi_kecocokan",
+        "gold_aksi": "evaluasi_kecocokan",
+        "pred_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "atribut": "ram"
+        },
+        "gold_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "kebutuhan_teks": "20 tab chrome"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3601.09,
+        "json_valid": true
+      },
+      {
+        "no": 17,
+        "id": "ho-017",
+        "pesan": "tampilin opsi yang lenovo aja dong",
+        "pred_aksi": "lanjutan_hasil",
+        "gold_aksi": "lanjutan_hasil",
+        "pred_args": {
+          "jenis": "yang_lain",
+          "filter": {
+            "merek": "lenovo"
+          }
+        },
+        "gold_args": {
+          "jenis": "filter_tambahan"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3998.63,
+        "json_valid": true
+      },
+      {
+        "no": 18,
+        "id": "ho-018",
+        "pesan": "ada garansi tukar unit baru ga kalau rusak?",
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "pred_args": {
+          "topik": "garansi"
+        },
+        "gold_args": {
+          "topik": "garansi"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3457.21,
+        "json_valid": true
+      },
+      {
+        "no": 19,
+        "id": "ho-019",
+        "pesan": "bukan laptop gaming min maksud saya laptop tipis",
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "pred_args": {
+          "jenis": "koreksi",
+          "rujukan": "laptop tipis"
+        },
+        "gold_args": {
+          "jenis": "koreksi",
+          "rujukan": "laptop tipis"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3864.2,
+        "json_valid": true
+      },
+      {
+        "no": 20,
+        "id": "ho-020",
+        "pesan": "siap nanti saya kabari lagi ya",
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "pred_args": {
+          "jenis": "pamit"
+        },
+        "gold_args": {
+          "jenis": "pamit"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3374.79,
+        "json_valid": true
+      },
+      {
+        "no": 21,
+        "id": "ho-021",
+        "pesan": "pagi",
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "pred_args": {},
+        "gold_args": {},
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3003.95,
+        "json_valid": true
+      },
+      {
+        "no": 22,
+        "id": "ho-022",
+        "pesan": "cari pc meja all in one",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "pred_args": {
+          "kategori": "desktop",
+          "nama_model": "all in one"
+        },
+        "gold_args": {
+          "kategori": "desktop",
+          "nama_model": "all in one"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3785.25,
+        "json_valid": true
+      },
+      {
+        "no": 23,
+        "id": "ho-023",
+        "pesan": "laptop buat arsitek autocad dan sketchup",
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "kebutuhan_teks": "autocad dan sketchup"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "arsitek autocad sketchup",
+          "persona": "arsitek"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4772.92,
+        "json_valid": true
+      },
+      {
+        "no": 24,
+        "id": "ho-024",
+        "pesan": "buat bapak saya",
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "pred_args": {
+          "slot": "persona",
+          "nilai": "bapak"
+        },
+        "gold_args": {
+          "slot": "persona",
+          "nilai": "bapak"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3907.77,
+        "json_valid": true
+      },
+      {
+        "no": 25,
+        "id": "ho-025",
+        "pesan": "yang pertama ini ssd nya berapa gb?",
+        "pred_aksi": "tanya_spesifikasi",
+        "gold_aksi": "tanya_spesifikasi",
+        "pred_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "atribut": "storage"
+        },
+        "gold_args": {
+          "produk": [
+            "1"
+          ],
+          "atribut": "storage"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3556.19,
+        "json_valid": true
+      },
+      {
+        "no": 26,
+        "id": "ho-026",
+        "pesan": "beda spek no 2 sama no 3 apa aja ya?",
+        "pred_aksi": "bandingkan",
+        "gold_aksi": "bandingkan",
+        "pred_args": {
+          "produk": [
+            "KB-L02",
+            "KB-L03"
+          ]
+        },
+        "gold_args": {
+          "produk": [
+            "2",
+            "3"
+          ]
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3298.73,
+        "json_valid": true
+      },
+      {
+        "no": 27,
+        "id": "ho-027",
+        "pesan": "ada pilihan warna lain ga?",
+        "pred_aksi": "lanjutan_hasil",
+        "gold_aksi": "lanjutan_hasil",
+        "pred_args": {
+          "jenis": "filter_tambahan",
+          "filter": {
+            "warna": "lain"
+          }
+        },
+        "gold_args": {
+          "jenis": "yang_lain"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3765.32,
+        "json_valid": true
+      },
+      {
+        "no": 28,
+        "id": "ho-028",
+        "pesan": "alamat service center resminya di mana?",
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "pred_args": {
+          "topik": "servis"
+        },
+        "gold_args": {
+          "topik": "alamat"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3445.73,
+        "json_valid": true
+      },
+      {
+        "no": 29,
+        "id": "ho-029",
+        "pesan": "kok malah rekomendasiin yang mahal banget",
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "pred_args": {
+          "jenis": "keluhan",
+          "rujukan": "rekomendasiin yang mahal banget"
+        },
+        "gold_args": {
+          "jenis": "keluhan",
+          "rujukan": "terlalu mahal"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3791.38,
+        "json_valid": true
+      },
+      {
+        "no": 30,
+        "id": "ho-030",
+        "pesan": "mantap makasih rekomendasinya",
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "pred_args": {
+          "jenis": "terima_kasih"
+        },
+        "gold_args": {
+          "jenis": "terima_kasih"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3352.47,
+        "json_valid": true
+      },
+      {
+        "no": 31,
+        "id": "ho-031",
+        "pesan": "permisi",
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "pred_args": {},
+        "gold_args": {},
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3046.42,
+        "json_valid": true
+      },
+      {
+        "no": 32,
+        "id": "ho-032",
+        "pesan": "ada laptop monitor 14 inch?",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "pred_args": {
+          "kategori": "laptop",
+          "ukuran_layar": 14.0
+        },
+        "gold_args": {
+          "kategori": "laptop",
+          "ukuran_layar": 14.0
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3849.84,
+        "json_valid": true
+      },
+      {
+        "no": 33,
+        "id": "ho-033",
+        "pesan": "butuh laptop ringan enteng dibawa ke kampus",
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "kebutuhan_teks": "laptop ringan enteng dibawa ke kampus"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "ringan portabel kampus",
+          "persona": "mahasiswa"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4251.74,
+        "json_valid": true
+      },
+      {
+        "no": 34,
+        "id": "ho-034",
+        "pesan": "buat kantor administrasi input excel",
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "kebutuhan_teks": "input excel"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "administrasi excel"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4150.51,
+        "json_valid": true
+      },
+      {
+        "no": 35,
+        "id": "ho-035",
+        "pesan": "apakah prosesornya i5 atau i3?",
+        "pred_aksi": "tanya_spesifikasi",
+        "gold_aksi": "tanya_spesifikasi",
+        "pred_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "atribut": "cpu"
+        },
+        "gold_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "atribut": "cpu"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3641.17,
+        "json_valid": true
+      },
+      {
+        "no": 36,
+        "id": "ho-036",
+        "pesan": "kalau dibanding macbook air m1 kencengan mana?",
+        "pred_aksi": "bandingkan",
+        "gold_aksi": "bandingkan",
+        "pred_args": {
+          "produk": [
+            "macbook air m1"
+          ]
+        },
+        "gold_args": {
+          "produk": [
+            "KB-L01",
+            "macbook air m1"
+          ]
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3303.48,
+        "json_valid": true
+      },
+      {
+        "no": 37,
+        "id": "ho-037",
+        "pesan": "ada yang harganya 8 jutaan?",
+        "pred_aksi": "lanjutan_hasil",
+        "gold_aksi": "lanjutan_hasil",
+        "pred_args": {
+          "jenis": "lebih_murah"
+        },
+        "gold_args": {
+          "jenis": "lebih_murah"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3368.51,
+        "json_valid": true
+      },
+      {
+        "no": 38,
+        "id": "ho-038",
+        "pesan": "bisa split payment sebagian transfer sebagian cash?",
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "pred_args": {
+          "topik": "pembayaran"
+        },
+        "gold_args": {
+          "topik": "pembayaran"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3454.61,
+        "json_valid": true
+      },
+      {
+        "no": 39,
+        "id": "ho-039",
+        "pesan": "maksud saya bukan merek itu",
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "pred_args": {
+          "jenis": "koreksi",
+          "rujukan": "merek itu"
+        },
+        "gold_args": {
+          "jenis": "koreksi",
+          "rujukan": "bukan merek itu"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3659.06,
+        "json_valid": true
+      },
+      {
+        "no": 40,
+        "id": "ho-040",
+        "pesan": "terima kasih banyak min",
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "pred_args": {
+          "jenis": "terima_kasih"
+        },
+        "gold_args": {
+          "jenis": "terima_kasih"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3331.88,
+        "json_valid": true
+      },
+      {
+        "no": 41,
+        "id": "ho-041",
+        "pesan": "woi",
+        "pred_aksi": "tidak_jelas",
+        "gold_aksi": "sapa",
+        "pred_args": {
+          "alasan": "sapaan yang terlalu informal atau tidak jelas maksudnya"
+        },
+        "gold_args": {},
+        "benar_aksi": false,
+        "benar_args": false,
+        "latency_ms": 3277.38,
+        "json_valid": true
+      },
+      {
+        "no": 42,
+        "id": "ho-042",
+        "pesan": "monitor 24 inch 144hz ada?",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "pred_args": {
+          "ukuran_layar": 24.0,
+          "kebutuhan_teks": "monitor 144hz"
+        },
+        "gold_args": {
+          "kategori": "monitor",
+          "ukuran_layar": 24.0
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4192.89,
+        "json_valid": true
+      },
+      {
+        "no": 43,
+        "id": "ho-043",
+        "pesan": "laptop buat ngetik tesis s2",
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "pred_args": {
+          "kebutuhan_teks": "ngetik tesis s2"
+        },
+        "gold_args": {
+          "kebutuhan_teks": "ngetik tesis s2",
+          "persona": "mahasiswa s2"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4275.54,
+        "json_valid": true
+      },
+      {
+        "no": 44,
+        "id": "ho-044",
+        "pesan": "budget sekitar 15 jutaan",
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "pred_args": {
+          "slot": "budget",
+          "nilai": "15 jutaan"
+        },
+        "gold_args": {
+          "slot": "budget",
+          "nilai": 15000000
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4028.31,
+        "json_valid": true
+      },
+      {
+        "no": 45,
+        "id": "ho-045",
+        "pesan": "apakah keyboardnya ada backlight nyala?",
+        "pred_aksi": "tanya_spesifikasi",
+        "gold_aksi": "tanya_spesifikasi",
+        "pred_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "atribut": "keyboard"
+        },
+        "gold_args": {
+          "produk": [
+            "KB-L01"
+          ],
+          "atribut": "keyboard"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3656.15,
+        "json_valid": true
+      },
+      {
+        "no": 46,
+        "id": "ho-046",
+        "pesan": "tampilkan merek asus saja",
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "lanjutan_hasil",
+        "pred_args": {
+          "merek": "asus"
+        },
+        "gold_args": {
+          "jenis": "filter_tambahan"
+        },
+        "benar_aksi": false,
+        "benar_args": false,
+        "latency_ms": 3391.7,
+        "json_valid": true
+      },
+      {
+        "no": 47,
+        "id": "ho-047",
+        "pesan": "apakah bisa klaim nota untuk kantor?",
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "pred_args": {
+          "topik": "garansi"
+        },
+        "gold_args": {
+          "topik": "pembayaran"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3375.31,
+        "json_valid": true
+      },
+      {
+        "no": 48,
+        "id": "ho-048",
+        "pesan": "lho kan tadi saya bilang budget 6 juta",
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "pred_args": {
+          "jenis": "koreksi",
+          "rujukan": "budget 6 juta"
+        },
+        "gold_args": {
+          "jenis": "keluhan",
+          "rujukan": "budget 6 juta"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 4064.97,
+        "json_valid": true
+      },
+      {
+        "no": 49,
+        "id": "ho-049",
+        "pesan": "wkwkwk mantap",
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "pred_args": {
+          "jenis": "lainnya"
+        },
+        "gold_args": {
+          "jenis": "lainnya"
+        },
+        "benar_aksi": true,
+        "benar_args": true,
+        "latency_ms": 3359.34,
+        "json_valid": true
+      },
+      {
+        "no": 50,
+        "id": "ho-050",
+        "pesan": "zzzzz",
+        "pred_aksi": "tidak_jelas",
+        "gold_aksi": "tidak_jelas",
+        "pred_args": {
+          "alasan": "teks acak"
+        },
+        "gold_args": {
+          "alasan": "teks tidak bermakna"
+        },
+        "benar_aksi": true,
+        "benar_args": false,
+        "latency_ms": 3045.36,
+        "json_valid": true
+      }
+    ]
+  },
+  "dev_40": {
+    "total": 40,
+    "total_accuracy_pct": 97.5,
+    "few_shot": {
+      "total": 16,
+      "correct": 16,
+      "accuracy_pct": 100.0
+    },
+    "non_few_shot": {
+      "total": 24,
+      "correct": 23,
+      "accuracy_pct": 95.83
+    },
+    "latency_p50_ms": 3635.52,
+    "latency_p95_ms": 4314.22,
+    "results": [
+      {
+        "no": 1,
+        "id": "dev-001",
+        "pesan": "Emang spek segitu cukup?",
+        "is_few_shot": true,
+        "pred_aksi": "evaluasi_kecocokan",
+        "gold_aksi": "evaluasi_kecocokan",
+        "benar": true,
+        "latency_ms": 3828.52
+      },
+      {
+        "no": 2,
+        "id": "dev-002",
+        "pesan": "Yang tanya HP 14 siapa?",
+        "is_few_shot": true,
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "benar": true,
+        "latency_ms": 3736.5
+      },
+      {
+        "no": 3,
+        "id": "dev-003",
+        "pesan": "Buat hiburan",
+        "is_few_shot": true,
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "benar": true,
+        "latency_ms": 3869.42
+      },
+      {
+        "no": 4,
+        "id": "dev-004",
+        "pesan": "Mana?",
+        "is_few_shot": false,
+        "pred_aksi": "tidak_jelas",
+        "gold_aksi": "minta_rekomendasi",
+        "benar": false,
+        "latency_ms": 3510.05
+      },
+      {
+        "no": 5,
+        "id": "dev-005",
+        "pesan": "ada asus?",
+        "is_few_shot": false,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3519.49
+      },
+      {
+        "no": 6,
+        "id": "dev-006",
+        "pesan": "yang kedua bagus nggak?",
+        "is_few_shot": true,
+        "pred_aksi": "evaluasi_kecocokan",
+        "gold_aksi": "evaluasi_kecocokan",
+        "benar": true,
+        "latency_ms": 3899.15
+      },
+      {
+        "no": 7,
+        "id": "dev-007",
+        "pesan": "Aku tanya kok malah dikasih spek lain",
+        "is_few_shot": true,
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "benar": true,
+        "latency_ms": 3862.63
+      },
+      {
+        "no": 8,
+        "id": "dev-008",
+        "pesan": "Kan sudah dibilang buat hiburan",
+        "is_few_shot": true,
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "benar": true,
+        "latency_ms": 4014.93
+      },
+      {
+        "no": 9,
+        "id": "dev-009",
+        "pesan": "halo kak",
+        "is_few_shot": false,
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "benar": true,
+        "latency_ms": 3054.26
+      },
+      {
+        "no": 10,
+        "id": "dev-010",
+        "pesan": "p",
+        "is_few_shot": true,
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "benar": true,
+        "latency_ms": 2986.45
+      },
+      {
+        "no": 11,
+        "id": "dev-011",
+        "pesan": "siang min mau nanya2 nih",
+        "is_few_shot": false,
+        "pred_aksi": "sapa",
+        "gold_aksi": "sapa",
+        "benar": true,
+        "latency_ms": 3008.78
+      },
+      {
+        "no": 12,
+        "id": "dev-012",
+        "pesan": "jual laptop acer?",
+        "is_few_shot": true,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3591.08
+      },
+      {
+        "no": 13,
+        "id": "dev-013",
+        "pesan": "laptop lenovo dibawah 10 juta ada ga?",
+        "is_few_shot": false,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 4065.87
+      },
+      {
+        "no": 14,
+        "id": "dev-014",
+        "pesan": "laptp asus ram 16gb",
+        "is_few_shot": false,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3927.31
+      },
+      {
+        "no": 15,
+        "id": "dev-015",
+        "pesan": "ada printer canon ga ya",
+        "is_few_shot": false,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3603.3
+      },
+      {
+        "no": 16,
+        "id": "dev-016",
+        "pesan": "Buat mama sih bukan buat aku",
+        "is_few_shot": true,
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "benar": true,
+        "latency_ms": 3841.66
+      },
+      {
+        "no": 17,
+        "id": "dev-017",
+        "pesan": "Paling cuma cari resep dan nonton youtube",
+        "is_few_shot": true,
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "benar": true,
+        "latency_ms": 4307.03
+      },
+      {
+        "no": 18,
+        "id": "dev-018",
+        "pesan": "Untuk ibu saya yang sudah sepuh",
+        "is_few_shot": true,
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "benar": true,
+        "latency_ms": 3976.41
+      },
+      {
+        "no": 19,
+        "id": "dev-019",
+        "pesan": "butuh laptop buat anak dkv semester 1",
+        "is_few_shot": false,
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "benar": true,
+        "latency_ms": 4270.35
+      },
+      {
+        "no": 20,
+        "id": "dev-020",
+        "pesan": "budget maksimal 7 jutaan aja",
+        "is_few_shot": false,
+        "pred_aksi": "jawab_pertanyaan_bot",
+        "gold_aksi": "jawab_pertanyaan_bot",
+        "benar": true,
+        "latency_ms": 3967.86
+      },
+      {
+        "no": 21,
+        "id": "dev-021",
+        "pesan": "ada yang lebih murah?",
+        "is_few_shot": false,
+        "pred_aksi": "lanjutan_hasil",
+        "gold_aksi": "lanjutan_hasil",
+        "benar": true,
+        "latency_ms": 3423.33
+      },
+      {
+        "no": 22,
+        "id": "dev-022",
+        "pesan": "ada opsi merk lain ga selain acer?",
+        "is_few_shot": true,
+        "pred_aksi": "lanjutan_hasil",
+        "gold_aksi": "lanjutan_hasil",
+        "benar": true,
+        "latency_ms": 3573.84
+      },
+      {
+        "no": 23,
+        "id": "dev-023",
+        "pesan": "garansinya berapa lama min?",
+        "is_few_shot": false,
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "benar": true,
+        "latency_ms": 3397.97
+      },
+      {
+        "no": 24,
+        "id": "dev-024",
+        "pesan": "tokonya ada di mana ya lokasinya?",
+        "is_few_shot": true,
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "benar": true,
+        "latency_ms": 3361.38
+      },
+      {
+        "no": 25,
+        "id": "dev-025",
+        "pesan": "bisa bayar pake kartu kredit cicilan?",
+        "is_few_shot": false,
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "benar": true,
+        "latency_ms": 3440.21
+      },
+      {
+        "no": 26,
+        "id": "dev-026",
+        "pesan": "bagusan nomor 1 apa nomor 2?",
+        "is_few_shot": true,
+        "pred_aksi": "bandingkan",
+        "gold_aksi": "bandingkan",
+        "benar": true,
+        "latency_ms": 3318.1
+      },
+      {
+        "no": 27,
+        "id": "dev-027",
+        "pesan": "makasih banyak infonya sangat membantu",
+        "is_few_shot": false,
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "benar": true,
+        "latency_ms": 3402.01
+      },
+      {
+        "no": 28,
+        "id": "dev-028",
+        "pesan": "ok sip makasih ya",
+        "is_few_shot": false,
+        "pred_aksi": "basa_basi",
+        "gold_aksi": "basa_basi",
+        "benar": true,
+        "latency_ms": 3378.01
+      },
+      {
+        "no": 29,
+        "id": "dev-029",
+        "pesan": "asdfghjkl",
+        "is_few_shot": false,
+        "pred_aksi": "tidak_jelas",
+        "gold_aksi": "tidak_jelas",
+        "benar": true,
+        "latency_ms": 3127.1
+      },
+      {
+        "no": 30,
+        "id": "dev-030",
+        "pesan": "hmm gimana ya",
+        "is_few_shot": false,
+        "pred_aksi": "tidak_jelas",
+        "gold_aksi": "tidak_jelas",
+        "benar": true,
+        "latency_ms": 3411.12
+      },
+      {
+        "no": 31,
+        "id": "dev-031",
+        "pesan": "pc dekstop gaming rtx 4060",
+        "is_few_shot": true,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3721.95
+      },
+      {
+        "no": 32,
+        "id": "dev-032",
+        "pesan": "laptop murah buat ngetik word aja",
+        "is_few_shot": false,
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "benar": true,
+        "latency_ms": 4450.91
+      },
+      {
+        "no": 33,
+        "id": "dev-033",
+        "pesan": "yang ram 32gb ada?",
+        "is_few_shot": false,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3506.74
+      },
+      {
+        "no": 34,
+        "id": "dev-034",
+        "pesan": "bisa buat main valorant ga laptop ini?",
+        "is_few_shot": false,
+        "pred_aksi": "evaluasi_kecocokan",
+        "gold_aksi": "evaluasi_kecocokan",
+        "benar": true,
+        "latency_ms": 4251.41
+      },
+      {
+        "no": 35,
+        "id": "dev-035",
+        "pesan": "bukan itu yang kumaksud",
+        "is_few_shot": false,
+        "pred_aksi": "perbaiki_percakapan",
+        "gold_aksi": "perbaiki_percakapan",
+        "benar": true,
+        "latency_ms": 3780.75
+      },
+      {
+        "no": 36,
+        "id": "dev-036",
+        "pesan": "jam buka toko sampe jam berapa?",
+        "is_few_shot": false,
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "benar": true,
+        "latency_ms": 3490.78
+      },
+      {
+        "no": 37,
+        "id": "dev-037",
+        "pesan": "apakah ada garansi resmi?",
+        "is_few_shot": false,
+        "pred_aksi": "tanya_info_toko",
+        "gold_aksi": "tanya_info_toko",
+        "benar": true,
+        "latency_ms": 3393.42
+      },
+      {
+        "no": 38,
+        "id": "dev-038",
+        "pesan": "laptop layar 15.6 inch buat kakek",
+        "is_few_shot": false,
+        "pred_aksi": "minta_rekomendasi",
+        "gold_aksi": "minta_rekomendasi",
+        "benar": true,
+        "latency_ms": 4641.32
+      },
+      {
+        "no": 39,
+        "id": "dev-039",
+        "pesan": "ada printer brother?",
+        "is_few_shot": false,
+        "pred_aksi": "cari_produk",
+        "gold_aksi": "cari_produk",
+        "benar": true,
+        "latency_ms": 3667.74
+      },
+      {
+        "no": 40,
+        "id": "dev-040",
+        "pesan": "layarnya udah ips?",
+        "is_few_shot": true,
+        "pred_aksi": "tanya_spesifikasi",
+        "gold_aksi": "tanya_spesifikasi",
+        "benar": true,
+        "latency_ms": 3671.26
+      }
+    ]
+  }
+}
