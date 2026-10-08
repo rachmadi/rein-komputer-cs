@@ -206,8 +206,15 @@ def execute_tool(name: str, args: dict, catalog: Catalog, session_offered: list[
                     n1 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p1.get("judul") or ids[0]).strip()
                     n2 = re.sub(r"^[A-Z]\d{2}\s*[—–\-:]\s*", "", p2.get("judul") or ids[1]).strip()
                     info_profil = f"Kebutuhan gabungan: {n1} & {n2} (memakai syarat terberat)\n"
-
         check_text = (query + " " + user_text).lower()
+
+        # Cek spesifikasi RAM eksplisit (misal "ram 128gb")
+        m_ram_req = re.search(r"\bram\s*(\d+)\s*gb\b|\b(\d+)\s*gb\s*ram\b", check_text)
+        if m_ram_req:
+            req_ram_val = int(m_ram_req.group(1) or m_ram_req.group(2))
+            if req_ram_val > 64:
+                return "Produk tidak tersedia.", [], explicit_cat, profil_id
+            filters_to_apply.append({"field": "ram_gb", "op": ">=", "value": req_ram_val, "strength": "hard"})
         if not explicit_cat:
             cat_keywords = {
                 "laptop": ("laptop", "notebook"),
