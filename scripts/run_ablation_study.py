@@ -34,9 +34,39 @@ if sys.platform == "win32":
 
 from services.llm_parser import (
     parse_user_message,
-    SYNTHETIC_8_BOUNDARY_FEW_SHOTS,
-    OLD_14_FEW_SHOTS
+    SYNTHETIC_8_BOUNDARY_FEW_SHOTS
 )
+
+OLD_14_FEW_SHOTS = [
+    {"role": "user", "content": "Pesan: \"halo\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "sapa", "argumen": {}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"jual laptop acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "cari_produk", "argumen": {"kategori": "laptop", "merek": "acer"}, "pembaruan_state": {"kategori": "laptop"}})},
+    {"role": "user", "content": "Pesan: \"pc dekstop gaming rtx 4060\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "cari_produk", "argumen": {"kategori": "desktop", "gpu": "rtx 4060"}, "pembaruan_state": {"kategori": "desktop"}})},
+    {"role": "user", "content": "Pesan: \"Buat mama sih bukan buat aku\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "jawab_pertanyaan_bot", "argumen": {"slot": "persona", "nilai": "mama"}, "pembaruan_state": {"persona": "mama", "sebutan": "mama"}})},
+    {"role": "user", "content": "Pesan: \"Untuk ibu saya yang sudah sepuh\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "jawab_pertanyaan_bot", "argumen": {"slot": "persona", "nilai": "ibu sepuh"}, "pembaruan_state": {"persona": "ibu sepuh", "sebutan": "ibu"}})},
+    {"role": "user", "content": "Pesan: \"Paling cuma cari resep dan nonton youtube\"\nState: {\"pending_question\": \"aktivitas\", \"slot_diketahui\": {\"persona\": \"mama\"}, \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "minta_rekomendasi", "argumen": {"kebutuhan_teks": "cari resep dan nonton YouTube", "persona": "mama"}, "pembaruan_state": {"kebutuhan_teks": "cari resep dan nonton YouTube"}})},
+    {"role": "user", "content": "Pesan: \"Emang spek segitu cukup?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}, {\"no\": 3, \"kode\": \"KB-L03\"}], \"slot_diketahui\": {\"kebutuhan_teks\": \"cari resep dan nonton YouTube\"}}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "evaluasi_kecocokan", "argumen": {"rujukan_produk": [1, 2, 3], "kebutuhan_teks": "cari resep dan nonton YouTube"}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"yang kedua bagus nggak?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "evaluasi_kecocokan", "argumen": {"rujukan_produk": [2]}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"layarnya udah ips?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}]}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "tanya_spesifikasi", "argumen": {"rujukan_produk": [1], "atribut": "layar"}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"bagusan nomor 1 apa nomor 2?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "bandingkan", "argumen": {"rujukan_produk": [1, 2]}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"ada opsi merk lain ga selain acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\", \"merek\": \"acer\"}]}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "lanjutan_hasil", "argumen": {"jenis": "yang_lain", "merek_kecuali": "acer"}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"Aku tanya kok malah dikasih spek lain\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "perbaiki_percakapan", "argumen": {"jenis": "salah_paham", "rujukan": "dikasih spek lain"}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"Yang tanya HP 14 siapa?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"kode\": \"KB-L05\", \"nama\": \"HP 14\"}]}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "perbaiki_percakapan", "argumen": {"jenis": "keluhan", "rujukan": "HP 14"}, "pembaruan_state": {}})},
+    {"role": "user", "content": "Pesan: \"tokonya ada di mana ya lokasinya?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
+    {"role": "assistant", "content": json.dumps({"aksi": "tanya_info_toko", "argumen": {"topik": "alamat"}, "pembaruan_state": {}})}
+]
 
 
 def calc_percentile(data: list[float], p: float) -> float:

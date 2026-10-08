@@ -40,7 +40,7 @@ Tugas: Memahami pesan pelanggan secara akurat dan mengembalikan JSON terstruktur
 
 DEFINISI 12 AKSI:
 1. sapa: Menyapa atau membuka percakapan tanpa menyebut produk, kebutuhan, atau pertanyaan spesifik.
-2. cari_produk: Mencari produk berdasarkan kriteria teknis eksplisit, menanyakan ketersediaan merek atau model tertentu (seperti 'ada asus?', 'jual vivobook?'), atau memfilter spesifikasi perangkat keras dan batas harga, termasuk pengecualian merek ('merek_kecuali'), tanpa mengaitkannya dengan beban aktivitas komputasi tertentu.
+2. cari_produk: Mencari produk berdasarkan kriteria teknis eksplisit, menanyakan ketersediaan merek atau lini produk tertentu, atau memfilter spesifikasi perangkat keras dan batas harga, termasuk pengecualian merek ('merek_kecuali'), tanpa mengaitkannya dengan beban aktivitas komputasi tertentu.
 3. minta_rekomendasi: Meminta saran produk berdasarkan aktivitas konkret, beban kerja komputasi, atau skenario penggunaan nyata yang membutuhkan penalaran kelayakan perangkat.
 4. jawab_pertanyaan_bot: Menjawab pertanyaan atau slot yang sebelumnya diajukan oleh bot, seperti menyebutkan persona, kategori, merek, atau budget secara tunggal tanpa aktivitas penggunaan.
 5. evaluasi_kecocokan: Menanyakan kelayakan atau kecukupan spesifikasi produk yang sedang tampil di layar untuk menjalankan kebutuhan atau beban kerja tertentu.
@@ -54,12 +54,12 @@ DEFINISI 12 AKSI:
 
 KEBIJAKAN BATAS AKSI:
 - 'minta_rekomendasi' HANYA jika ada aktivitas komputasi konkret atau skenario kerja nyata.
-- Jika pelanggan HANYA menyebut persona (misal dokter, guru, kakek) atau HANYA menyebut kategori/merek/budget tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona/kategori/merek/budget).
+- Jika pelanggan HANYA menyebut persona (misal dokter, guru, kerabat) atau HANYA menyebut kategori/merek/budget tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona/kategori/merek/budget).
 - 'jawab_pertanyaan_bot' HANYA sah jika bot sebelumnya mengajukan pertanyaan ('pending_question' ada di konteks sesi).
 - 'lanjutan_hasil' HANYA sah jika ada produk yang sedang tampil di layar ('produk_tampil' tidak kosong).
 - Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama produk dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
-- 'persona' adalah pengguna akhir perangkat (misal: mama, kakek, anak, staf), BUKAN lawan bicara. Jangan mengisi 'sebutan' dengan persona tersebut. Lawan bicara tetap disapa 'Kak' kecuali pelanggan menyebut sebutan untuk dirinya sendiri.
+- 'persona' adalah pihak pemakai perangkat (seperti kerabat, profesi, atau rekan kerja), BUKAN lawan bicara. Jangan mengisi 'sebutan' dengan persona tersebut. Lawan bicara tetap disapa 'Kak' kecuali pelanggan menyebut sebutan untuk dirinya sendiri.
 - Parser boleh mengekstrak beberapa slot sekaligus dari satu kalimat di 'argumen' dan 'pembaruan_state' (misal: kategori dan persona dapat diisi bersamaan).
 - Untuk pengecualian merek pada 'cari_produk' atau 'lanjutan_hasil', masukkan ke 'merek_kecuali'.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
@@ -196,38 +196,6 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     }
-]
-
-# 14 CONTOH LAMA (Dipertahankan khusus untuk studi ablasi kondisi c)
-OLD_14_FEW_SHOTS = [
-    {"role": "user", "content": "Pesan: \"halo\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "sapa", "argumen": {}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"jual laptop acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "cari_produk", "argumen": {"kategori": "laptop", "merek": "acer"}, "pembaruan_state": {"kategori": "laptop"}})},
-    {"role": "user", "content": "Pesan: \"pc dekstop gaming rtx 4060\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "cari_produk", "argumen": {"kategori": "desktop", "gpu": "rtx 4060"}, "pembaruan_state": {"kategori": "desktop"}})},
-    {"role": "user", "content": "Pesan: \"Buat mama sih bukan buat aku\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "jawab_pertanyaan_bot", "argumen": {"slot": "persona", "nilai": "mama"}, "pembaruan_state": {"persona": "mama", "sebutan": "mama"}})},
-    {"role": "user", "content": "Pesan: \"Untuk ibu saya yang sudah sepuh\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "jawab_pertanyaan_bot", "argumen": {"slot": "persona", "nilai": "ibu sepuh"}, "pembaruan_state": {"persona": "ibu sepuh", "sebutan": "ibu"}})},
-    {"role": "user", "content": "Pesan: \"Paling cuma cari resep dan nonton youtube\"\nState: {\"pending_question\": \"aktivitas\", \"slot_diketahui\": {\"persona\": \"mama\"}, \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "minta_rekomendasi", "argumen": {"kebutuhan_teks": "cari resep dan nonton YouTube", "persona": "mama"}, "pembaruan_state": {"kebutuhan_teks": "cari resep dan nonton YouTube"}})},
-    {"role": "user", "content": "Pesan: \"Emang spek segitu cukup?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}, {\"no\": 3, \"kode\": \"KB-L03\"}], \"slot_diketahui\": {\"kebutuhan_teks\": \"cari resep dan nonton YouTube\"}}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "evaluasi_kecocokan", "argumen": {"rujukan_produk": [1, 2, 3], "kebutuhan_teks": "cari resep dan nonton YouTube"}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"yang kedua bagus nggak?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "evaluasi_kecocokan", "argumen": {"rujukan_produk": [2]}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"layarnya udah ips?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}]}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "tanya_spesifikasi", "argumen": {"rujukan_produk": [1], "atribut": "layar"}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"bagusan nomor 1 apa nomor 2?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "bandingkan", "argumen": {"rujukan_produk": [1, 2]}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"ada opsi merk lain ga selain acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\", \"merek\": \"acer\"}]}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "lanjutan_hasil", "argumen": {"jenis": "yang_lain", "merek_kecuali": "acer"}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"Aku tanya kok malah dikasih spek lain\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "perbaiki_percakapan", "argumen": {"jenis": "salah_paham", "rujukan": "dikasih spek lain"}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"Yang tanya HP 14 siapa?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"kode\": \"KB-L05\", \"nama\": \"HP 14\"}]}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "perbaiki_percakapan", "argumen": {"jenis": "keluhan", "rujukan": "HP 14"}, "pembaruan_state": {}})},
-    {"role": "user", "content": "Pesan: \"tokonya ada di mana ya lokasinya?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"},
-    {"role": "assistant", "content": json.dumps({"aksi": "tanya_info_toko", "argumen": {"topik": "alamat"}, "pembaruan_state": {}})}
 ]
 
 CURRENT_FEW_SHOTS = SYNTHETIC_8_BOUNDARY_FEW_SHOTS

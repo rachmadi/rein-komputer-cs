@@ -1,0 +1,431 @@
+[
+  {
+    "id": "dev-005",
+    "pesan": "ada asus?",
+    "gold_aksi": "cari_produk",
+    "gold_argumen": {
+      "merek": "asus",
+      "kategori": "laptop"
+    },
+    "pred": {
+      "aksi": "cari_produk",
+      "argumen": {
+        "kategori": null,
+        "merek": "asus",
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": null,
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": null
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": true,
+    "metrics": {
+      "latency_ms": 3568.23,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"cari_produk\", \"argumen\": {\"merek\": \"asus\"}, \"pembaruan_state\": {\"kategori\": null}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-004",
+    "pesan": "Mana?",
+    "gold_aksi": "minta_rekomendasi",
+    "gold_argumen": {
+      "kebutuhan_teks": "hiburan nonton youtube"
+    },
+    "pred": {
+      "aksi": "tidak_jelas",
+      "argumen": {
+        "kategori": null,
+        "merek": null,
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": null,
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": "pertanyaan terlalu singkat dan tidak merujuk pada konteks sebelumnya"
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": false,
+    "metrics": {
+      "latency_ms": 3708.95,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"tidak_jelas\", \"argumen\": {\"alasan\": \"pertanyaan terlalu singkat dan tidak merujuk pada konteks sebelumnya\"}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-010",
+    "pesan": "p",
+    "gold_aksi": "sapa",
+    "gold_argumen": {},
+    "pred": {
+      "aksi": "tidak_jelas",
+      "argumen": {
+        "kategori": null,
+        "merek": null,
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": null,
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": "input terlalu singkat dan tidak jelas"
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": false,
+    "metrics": {
+      "latency_ms": 3299.44,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"tidak_jelas\", \"argumen\": {\"alasan\": \"input terlalu singkat dan tidak jelas\"}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-023",
+    "pesan": "garansinya berapa lama min?",
+    "gold_aksi": "tanya_info_toko",
+    "gold_argumen": {
+      "topik": "garansi"
+    },
+    "pred": {
+      "aksi": "tanya_info_toko",
+      "argumen": {
+        "kategori": null,
+        "merek": null,
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": null,
+        "filter": null,
+        "topik": "garansi",
+        "rujukan": null,
+        "alasan": null
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": true,
+    "metrics": {
+      "latency_ms": 3497.78,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"tanya_info_toko\", \"argumen\": {\"topik\": \"garansi\"}, \"pembaruan_state\": {}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-027",
+    "pesan": "makasih banyak infonya sangat membantu",
+    "gold_aksi": "basa_basi",
+    "gold_argumen": {
+      "jenis": "terima_kasih"
+    },
+    "pred": {
+      "aksi": "basa_basi",
+      "argumen": {
+        "kategori": null,
+        "merek": null,
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": "terima_kasih",
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": null
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": true,
+    "metrics": {
+      "latency_ms": 3378.66,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"basa_basi\", \"argumen\": {\"jenis\": \"terima_kasih\"}, \"pembaruan_state\": {}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-028",
+    "pesan": "ok sip makasih ya",
+    "gold_aksi": "basa_basi",
+    "gold_argumen": {
+      "jenis": "terima_kasih"
+    },
+    "pred": {
+      "aksi": "basa_basi",
+      "argumen": {
+        "kategori": null,
+        "merek": null,
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": "terima_kasih",
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": null
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": true,
+    "metrics": {
+      "latency_ms": 3516.25,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"basa_basi\", \"argumen\": {\"jenis\": \"terima_kasih\"}, \"pembaruan_state\": {}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-034",
+    "pesan": "bisa buat main valorant ga laptop ini?",
+    "gold_aksi": "evaluasi_kecocokan",
+    "gold_argumen": {
+      "produk": [
+        "KB-L01"
+      ],
+      "kebutuhan_teks": "main valorant"
+    },
+    "pred": {
+      "aksi": "evaluasi_kecocokan",
+      "argumen": {
+        "kategori": null,
+        "merek": null,
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": "main valorant",
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": [
+          "KB-L01"
+        ],
+        "atribut": null,
+        "jenis": null,
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": null
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": null
+      }
+    },
+    "correct": true,
+    "metrics": {
+      "latency_ms": 3671.94,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"evaluasi_kecocokan\", \"argumen\": {\"kebutuhan_teks\": \"main valorant\"}, \"pembaruan_state\": {}}",
+      "error": null
+    }
+  },
+  {
+    "id": "dev-039",
+    "pesan": "ada printer brother?",
+    "gold_aksi": "cari_produk",
+    "gold_argumen": {
+      "merek": "brother",
+      "kategori": "printer"
+    },
+    "pred": {
+      "aksi": "cari_produk",
+      "argumen": {
+        "kategori": "printer",
+        "merek": "brother",
+        "merek_kecuali": null,
+        "nama_model": null,
+        "gpu": null,
+        "min_harga": null,
+        "max_harga": null,
+        "ram_gb_min": null,
+        "storage_gb_min": null,
+        "ukuran_layar": null,
+        "kebutuhan_teks": null,
+        "persona": null,
+        "budget_min": null,
+        "budget_max": null,
+        "slot": null,
+        "nilai": null,
+        "rujukan_produk": null,
+        "produk": null,
+        "atribut": null,
+        "jenis": null,
+        "filter": null,
+        "topik": null,
+        "rujukan": null,
+        "alasan": null
+      },
+      "pembaruan_state": {
+        "persona": null,
+        "sebutan": null,
+        "kebutuhan_teks": null,
+        "budget": null,
+        "kategori": "printer"
+      }
+    },
+    "correct": true,
+    "metrics": {
+      "latency_ms": 3784.22,
+      "json_valid": true,
+      "schema_valid": true,
+      "retried": false,
+      "raw_content": "{\"aksi\": \"cari_produk\", \"argumen\": {\"kategori\": \"printer\", \"merek\": \"brother\"}, \"pembaruan_state\": {\"kategori\": \"printer\"}}",
+      "error": null
+    }
+  }
+]
