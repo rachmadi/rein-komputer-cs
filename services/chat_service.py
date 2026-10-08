@@ -131,13 +131,37 @@ def process_chat_message(
         except Exception:
             pass
 
+        raw_tampil = new_state_dict.get("produk_tampil", [])
+        enriched_products = []
+        for p in raw_tampil:
+            p_copy = dict(p)
+            cat_p = pipeline.action_engine.get_product_by_code(p.get("kode"))
+            if cat_p:
+                for k in ["brand", "gpu", "ram_gb", "storage_ssd_gb", "vram_gb", "gpu_vram_gb", "harga_idr"]:
+                    if k in cat_p and k not in p_copy:
+                        p_copy[k] = cat_p[k]
+                if "vram_gb" not in p_copy and "gpu_vram_gb" in cat_p:
+                    p_copy["vram_gb"] = cat_p["gpu_vram_gb"]
+                if "harga_idr" not in p_copy and "harga" in p_copy:
+                    p_copy["harga_idr"] = p_copy["harga"]
+            enriched_products.append(p_copy)
+
         return {
             "session_id": session_id,
             "reply": reply,
             "kartu_produk_html": kartu_html,
             "route": route,
             "messages": sess["messages"],
-            "products": new_state_dict.get("produk_tampil", []),
+            "products": enriched_products,
+            "slots": {
+                "merek": new_state_dict.get("merek"),
+                "kategori": new_state_dict.get("kategori"),
+                "persona": new_state_dict.get("persona"),
+                "aktivitas": new_state_dict.get("aktivitas"),
+                "kebutuhan": new_state_dict.get("kebutuhan_teks"),
+                "budget": new_state_dict.get("budget_max")
+            },
+            "pending_question": new_state_dict.get("pending_question"),
             "fsm_stage": new_state_dict.get("pending_question"),
             "category": new_state_dict.get("kategori"),
             "persona_name": new_state_dict.get("persona"),

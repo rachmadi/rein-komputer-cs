@@ -86,7 +86,17 @@ class SessionPipeline:
         action_res: ActionResult = self.action_engine.execute(parsed, session_state=state)
         lat_mesin = (time.perf_counter() - t_engine_0) * 1000.0
 
-        # Update state dari pembaruan_state parser
+        # Update state dari argumen & pembaruan_state parser
+        if parsed.argumen.merek:
+            state["merek"] = parsed.argumen.merek
+        if parsed.argumen.kategori:
+            state["kategori"] = parsed.argumen.kategori
+        if parsed.argumen.persona:
+            state["persona"] = parsed.argumen.persona
+        if parsed.argumen.slot and parsed.argumen.nilai:
+            slot_name = parsed.argumen.slot.value if hasattr(parsed.argumen.slot, "value") else str(parsed.argumen.slot)
+            state[slot_name] = parsed.argumen.nilai
+
         state_up = parsed.pembaruan_state
         if state_up.persona:
             state["persona"] = state_up.persona
