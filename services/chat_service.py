@@ -70,9 +70,12 @@ class SessionManager:
         return msg
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DEFAULT_CHAT_MODEL = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
-CHAT_ENGINE_MODE = os.getenv("CHAT_ENGINE_MODE", "dynamic_rag")
+CHAT_ENGINE_MODE = os.getenv("CHAT_ENGINE_MODE", "agentic_tool")
 
 _session_manager = SessionManager()
 
@@ -166,7 +169,7 @@ def process_chat_message(
             "fsm_stage": new_s.get("fsm_stage"),
             "category": new_s.get("category"),
             "persona_name": new_s.get("persona_name"),
-            "offered_products": new_s.get("offered_products", []), "metrics": tool_res.get("metrics", {})
+            "offered_products": new_s.get("offered_products", []), "metrics": rag_res.get("metrics", {})
         }
 
     # OPSI 2: AGENTIC TOOL CALLING ENGINE

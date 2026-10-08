@@ -27,8 +27,14 @@ def test_turn_2_all_hard_failures():
     assert "ram_gb" in report["tidak_terpenuhi"][0].lower() or "vram_gb" in report["tidak_terpenuhi"][0].lower() or "cpu_tier" in report["tidak_terpenuhi"][0].lower()
 
     # Now let's test via execute_tool where NO products match P03
-    import services.agentic_tool_engine; services.agentic_tool_engine.get_profile_by_id = lambda x: {"filter": filters}; args = {"profil_id": "P03", "max_harga": 10000000}
-    ans_str, p_list, cat, prof = execute_tool("search_catalog", args, catalog, [], "")
+    import services.agentic_tool_engine
+    orig_get_profile = services.agentic_tool_engine.get_profile_by_id
+    try:
+        services.agentic_tool_engine.get_profile_by_id = lambda x: {"filter": filters}
+        args = {"profil_id": "P03", "max_harga": 10000000}
+        ans_str, p_list, cat, prof = execute_tool("search_catalog", args, catalog, [], "")
+    finally:
+        services.agentic_tool_engine.get_profile_by_id = orig_get_profile
     
     assert "Kandidat terdekat" in ans_str
     for prod in p_list:

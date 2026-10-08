@@ -1,3 +1,4 @@
+import os
 import json
 import urllib.request
 import logging
@@ -326,6 +327,97 @@ def merge_filters(f1, f2):
     return f1 + f2
 
 BYPASS_LLM1_ON_RAG = True
+USE_LLM_FRAMING = os.getenv("USE_LLM_FRAMING", "false").lower() in ("true", "1", "yes")
+
+def format_conversational_frame(
+    user_text: str,
+    facts_str: str,
+    prods: list[dict],
+    category: str | None = None,
+    active_profile_id: str | None = None,
+    use_llm: bool = False,
+    model: str = "gemma4:e4b",
+    url: str = "http://localhost:11434"
+) -> tuple[str, dict]:
+    """
+    Lapisan percakapan Customer Care Bobby Computer:
+    - Kode menyusun fakta (daftar produk, status kelolosan, spesifikasi, harga).
+    - Membingkai dengan 1-2 kalimat pembuka & penutup yang natural ala Customer Care.
+    - Menggunakan templat ramah untuk kasus cepat/sederhana (latensi ~0.00ms),
+      atau memanggil LLM (terukur latensinya) saat use_llm=True.
+    - Melarang seluruh kode internal (P0x, M0x, G0x).
+    - Mengukur latensi pembingkaian.
+    """
+    t0 = time.perf_counter()
+    cat_label = category or "perangkat"
+    if not facts_str or not facts_str.strip():
+        return facts_str, {"frame_latency": 0.0, "frame_mode": "none"}
+
+    body = facts_str.strip()
+    body = re.sub(r"^Berikut adalah rekomendasi produk yang cocok untuk kebutuhan Anda:\s*", "", body).strip()
+    body = re.sub(r"^Beberapa pilihan produk kami:\s*", "", body).strip()
+
+    if use_llm:
+        t0_llm = time.time()
+        prompt = (
+            f"Kamu adalah staf Customer Care toko Bobby Computer.\n"
+            f"Tulis 1 kalimat pembuka ramah dan 1 kalimat penutup singkat untuk menyapa pelanggan.\n"
+            f"Dilarang mengulang spesifikasi atau merangkum daftar produk.\n"
+            f"Pertanyaan user: '{user_text}'\n\n"
+            f"Keluarkan HANYA format JSON:\n"
+            f"{{\"intro\": \"<1 kalimat pembuka>\", \"outro\": \"<1 kalimat penutup>\"}}"
+        )
+        try:
+            req_data = json.dumps({
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": False,
+                "options": {"num_ctx": 1024, "num_predict": 100, "temperature": 0.3}
+            }).encode("utf-8")
+            req = urllib.request.Request(f"{url}/api/chat", data=req_data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                cnt = res.get("message", {}).get("content", "").strip()
+                m_json = re.search(r"\{.*\}", cnt, re.DOTALL)
+                if m_json:
+                    parsed = json.loads(m_json.group(0))
+                    intro = parsed.get("intro", "").strip()
+                    outro = parsed.get("outro", "").strip()
+                    t_frame = time.time() - t0_llm
+                    reply = f"{intro}\n\n{body}\n\n{outro}".strip()
+                    reply = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", reply)
+                    reply = re.sub(r"\b[PMG]\d{2}\b", "", reply)
+                    reply = re.sub(r"\n{3,}", "\n\n", reply)
+                    return reply, {"frame_latency": t_frame, "frame_mode": "llm"}
+        except Exception as e:
+            logger.warning(f"Fallback to template framing: {e}")
+
+    facts_lower = body.lower()
+    has_qualified = "✅" in body
+
+    if "tidak ada yang lebih murah" in facts_lower:
+        intro = f"Saat ini belum ada {cat_label} yang lebih terjangkau yang memenuhi seluruh spesifikasi mutlak kebutuhan ini, Kak."
+        outro = "Kandidat terdekat di atas bisa dipertimbangkan jika Kakak bersedia menyesuaikan anggaran atau spesifikasi. Mau kami bantu cek opsi lainnya?"
+    elif "tidak ada yang memenuhi syarat mutlak" in facts_lower or "kandidat terdekat" in facts_lower:
+        intro = f"Mohon maaf Kak, untuk spesifikasi tersebut saat ini belum ada {cat_label} yang memenuhi seluruh syarat mutlak secara sempurna di katalog kami. Berikut kandidat terdekat yang paling mendekati:"
+        outro = "Pilihan di atas bisa jadi pertimbangan jika Kakak bersedia menyesuaikan sedikit spesifikasi atau budget. Ada yang ingin ditanyakan lagi?"
+    elif "produk tidak tersedia" in facts_lower or "tidak tersedia" in facts_lower:
+        intro = f"Mohon maaf Kak, produk {cat_label} dengan kriteria tersebut saat ini belum tersedia di katalog kami."
+        outro = "Apakah Kakak ingin kami rekomendasikan pilihan alternatif lain yang mendekati kebutuhan tersebut?"
+    elif not has_qualified:
+        intro = f"Tentu Kak! Berikut beberapa pilihan {cat_label} yang tersedia di Bobby Computer:"
+        outro = "Semua unit di atas bergaransi resmi. Silakan beri tahu kami jika ada kebutuhan khusus atau rentang anggaran tertentu ya!"
+    else:
+        intro = f"Tentu Kak! Berikut rekomendasi {cat_label} yang paling cocok dan sudah memenuhi seluruh syarat kebutuhan Kakak di Bobby Computer:"
+        outro = "Semua unit di atas bergaransi resmi dan siap pakai. Apakah ada merek atau tipe tertentu yang ingin Kakak tanyakan lebih detail?"
+
+    framed = f"{intro}\n\n{body}\n\n{outro}".strip()
+    framed = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", framed)
+    framed = re.sub(r"\b[PMG]\d{2}\b", "", framed)
+    framed = re.sub(r"\n{3,}", "\n\n", framed)
+
+    t_frame = time.perf_counter() - t0
+    return framed, {"frame_latency": t_frame, "frame_mode": "template"}
 
 def run_agentic_tool(
     user_text: str,
@@ -336,12 +428,14 @@ def run_agentic_tool(
     active_profile_id: str | None = None,
     previous_lowest_price: int | None = None,
     model: str = "gemma4:e4b",
-    url: str = "http://localhost:11434"
+    url: str = "http://localhost:11434",
+    use_llm_framing: bool | None = None
 ) -> dict:
     t_start = time.time()
     t_llm1 = 0.0
     t_tool = 0.0
     t_llm2 = 0.0
+    effective_llm_framing = USE_LLM_FRAMING if use_llm_framing is None else use_llm_framing
     
     # 0. ROUTER NIAT SEBELUM PENCARIAN
     from services.intent_router import classify_intent
@@ -448,14 +542,17 @@ def run_agentic_tool(
                 catalog, current_offered_products or [], user_text, active_profile_id, current_category
             )
             t_tool = time.time() - t0
-            reply = ans_str if ans_str else "Tidak ada yang lebih murah yang memenuhi kebutuhan ini."
+            framed_reply, frame_meta = format_conversational_frame(
+                user_text, ans_str, prods, cat or current_category, prof or active_profile_id,
+                use_llm=effective_llm_framing, model=model, url=url
+            )
             return {
-                "reply": reply.strip(),
+                "reply": framed_reply.strip(),
                 "products": prods,
                 "category": cat or current_category,
                 "route": "FAST_AGENTIC",
                 "active_profile_id": prof or active_profile_id,
-                "metrics": {"tool": t_tool, "total": time.time() - t_start}
+                "metrics": {"tool": t_tool, "frame": frame_meta, "total": time.time() - t_start}
             }
 
         # Kasus C: "yang ASUS aja" / penyempit brand / spesifikasi
@@ -466,14 +563,17 @@ def run_agentic_tool(
             catalog, current_offered_products or [], user_text, active_profile_id, current_category
         )
         t_tool = time.time() - t0
-        reply = ans_str if ans_str else "Produk tidak tersedia."
+        framed_reply, frame_meta = format_conversational_frame(
+            user_text, ans_str, prods, cat or current_category, prof or active_profile_id,
+            use_llm=effective_llm_framing, model=model, url=url
+        )
         return {
-            "reply": reply.strip(),
+            "reply": framed_reply.strip(),
             "products": prods,
             "category": cat or current_category,
             "route": "FAST_AGENTIC",
             "active_profile_id": prof or active_profile_id,
-            "metrics": {"tool": t_tool, "total": time.time() - t_start}
+            "metrics": {"tool": t_tool, "frame": frame_meta, "total": time.time() - t_start}
         }
 
     # Deteksi pergantian kategori pada pesan kebutuhan/produk baru
@@ -510,13 +610,19 @@ def run_agentic_tool(
             )
             t_tool = time.time() - t0_tool
             total = time.time() - t_start
-            intro = "Berikut adalah rekomendasi produk yang cocok untuk kebutuhan Anda:"
-            final_reply = intro + "\n\n" + ans_str if ans_str else intro
-            # Larang kode internal P0x di balasan
-            final_reply = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", final_reply)
-            final_reply = re.sub(r"\b[PMG]\d{2}\b", "", final_reply)
-            metrics = {"llm1": 0.0, "tool": t_tool, "llm2": 0.0, "total": total, "bypassed": True}
-            logger.info(f"[PERF] Bypassed LLM-1 on RAG total={total:.2f}s")
+            final_reply, frame_meta = format_conversational_frame(
+                user_text, ans_str, prods, cat or current_category, new_profile_id,
+                use_llm=effective_llm_framing, model=model, url=url
+            )
+            metrics = {
+                "llm1": 0.0,
+                "tool": t_tool,
+                "llm2": 0.0,
+                "frame": frame_meta,
+                "total": total,
+                "bypassed": True
+            }
+            logger.info(f"[PERF] Bypassed LLM-1 on RAG tool={t_tool:.3f}s frame={frame_meta.get('frame_latency',0):.4f}s total={total:.2f}s")
             return {
                 "reply": final_reply.strip(),
                 "products": prods,
@@ -590,20 +696,13 @@ def run_agentic_tool(
             messages.append({"role": "tool", "content": ans_str, "tool_call_id": tc.get("id")})
         t_tool = time.time() - t0_tool
         
-        # 4. LLM-2 (Generating Intro)
-        t0_llm2 = time.time()
-        req_body["messages"] = messages
-        try:
-            req = urllib.request.Request(f"{url}/api/chat", data=json.dumps(req_body).encode("utf-8"), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=120) as response:
-                res2 = json.loads(response.read().decode("utf-8"))
-                final_intro = res2.get("message", {}).get("content", "").strip()
-        except Exception as e:
-            logger.error(f"Error LLM-2 call: {e}")
-            final_intro = "Berikut adalah rekomendasi produk untuk Anda:"
-        t_llm2 = time.time() - t0_llm2
-        
-        final_reply = final_intro + "\n\n" + "\n\n".join(tool_outputs)
+        # 4. Pembingkaian Percakapan
+        combined_facts = "\n\n".join(tool_outputs)
+        final_reply, frame_meta = format_conversational_frame(
+            user_text, combined_facts, prods, cat, new_profile_id,
+            use_llm=effective_llm_framing, model=model, url=url
+        )
+        t_llm2 = frame_meta.get("frame_latency", 0.0)
     else:
         final_reply = msg.get("content", "").strip()
         if not final_reply:
