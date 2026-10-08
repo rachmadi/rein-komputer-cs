@@ -488,7 +488,7 @@ class ActionEngine:
             nama_luar_str = ", ".join(produk_luar)
             if items:
                 status = "sebagian_tidak_di_katalog"
-                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer (toko kami berfokus pada laptop dan PC Windows resmi). Berikut spesifikasi produk di katalog kami untuk perbandingan."
+                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer. Berikut spesifikasi produk di katalog kami untuk perbandingan."
             else:
                 status = "tidak_di_katalog"
                 catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer."
@@ -574,11 +574,13 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     def _handle_tanya_info_toko(self, args: ActionArguments, state: dict) -> ActionResult:
         topik = args.topik.value if hasattr(args.topik, "value") else str(args.topik)
+        kontak_staf = os.getenv("KONTAK_STAF", "@cs_bobbycomputer")
+        arahan = f"Arahkan pelanggan menghubungi staf toko di {kontak_staf} untuk informasi operasional dan layanan resmi."
         fakta = {
             "topik": topik,
             "data_tersedia": False,
-            "kontak_staf": os.getenv("KONTAK_STAF", "@cs_bobbycomputer"),
-            "arahan": "Arahkan pelanggan menghubungi staf toko di @cs_bobbycomputer untuk informasi toko resmi."
+            "kontak_staf": kontak_staf,
+            "arahan": arahan
         }
         return ActionResult(aksi=ActionEnum.TANYA_INFO_TOKO, fakta=fakta)
 
