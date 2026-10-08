@@ -42,11 +42,11 @@ DAFTAR 12 AKSI & ATURAN ENUM TERTUTUP:
    - Argumen: kebutuhan_teks, persona, kategori, budget_min, budget_max.
 4. jawab_pertanyaan_bot: Pelanggan menjawab pending_question bot secara singkat/parsial (slot tertutup: 'kebutuhan', 'aktivitas', 'budget', 'kategori', 'merek', 'persona').
 5. evaluasi_kecocokan: Menanyakan apakah produk yang tampil cukup/cocok untuk aktivitas ('cukup gak spek segitu?', 'kuat main valorant gak?', 'yang kedua bagus nggak?').
-   - Argumen: produk (daftar kode/nomor), kebutuhan_teks.
+   - Argumen: rujukan_produk (nomor urut seperti [1], [2], atau nama produk, BUKAN kode internal), kebutuhan_teks.
 6. tanya_spesifikasi: Menanyakan fakta spesifikasi produk yang tampil ('layarnya udah IPS?', 'ssd nya berapa GB?', 'prosesornya apa?', 'keyboardnya ada lampu?').
-   - Argumen: produk, atribut (enum tertutup: 'ram', 'storage', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'lainnya').
+   - Argumen: rujukan_produk (nomor urut seperti [1] atau nama produk), atribut (enum tertutup: 'ram', 'storage', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'lainnya').
 7. bandingkan: Membandingkan atau memilih antara beberapa produk yang disebut/tampil ('bagusan nomor 1 apa nomor 2?').
-   - Argumen: produk (daftar kode/nomor).
+   - Argumen: rujukan_produk (daftar nomor urut seperti [1, 2] atau nama produk).
 8. lanjutan_hasil: Menyempitkan/mengubah hasil sebelumnya ('ada yang lebih murah?', 'ada opsi merk lain selain acer?').
    - Argumen: jenis (enum tertutup: 'lebih_murah', 'lebih_mahal', 'yang_lain', 'filter_tambahan'), merek_kecuali.
 9. tanya_info_toko: Tanya info toko yang tidak ada di katalog.
@@ -61,12 +61,14 @@ DAFTAR 12 AKSI & ATURAN ENUM TERTUTUP:
 KEBIJAKAN PENTING:
 - 'minta_rekomendasi' HANYA jika ada aktivitas konkret ('cari resep dan nonton youtube', 'ngetik word office', 'belajar coding python') ATAU jika pelanggan secara eksplisit meminta rekomendasi ('laptop layar 15.6 inch buat kakek').
 - Jika pelanggan HANYA menyebut persona ('buat mama', 'untuk ibu saya yang sudah sepuh') atau HANYA menyebut kategori/merek/budget tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona/kategori/merek/budget).
+- Untuk referensi produk yang tampil pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama produk. JANGAN mengeluarkan kode produk katalog internal.
 - Untuk kartu grafis seperti 'rtx 4060', 'rtx 4050', 'gtx 1650', masukkan ke argumen 'gpu', BUKAN 'nama_model'.
 - Untuk pengecualian merek ('selain acer'), masukkan ke 'merek_kecuali'.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum yang telah ditentukan.
 """
 
 DEV_FEW_SHOTS = [
+    # 1. sapa
     {
         "role": "user",
         "content": "Pesan: \"halo\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
@@ -79,18 +81,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     },
-    {
-        "role": "user",
-        "content": "Pesan: \"p\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "sapa",
-            "argumen": {},
-            "pembaruan_state": {}
-        })
-    },
+    # 2. cari_produk (merek & kategori)
     {
         "role": "user",
         "content": "Pesan: \"jual laptop acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
@@ -103,6 +94,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {"kategori": "laptop"}
         })
     },
+    # 3. cari_produk (spesifikasi gpu)
     {
         "role": "user",
         "content": "Pesan: \"pc dekstop gaming rtx 4060\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
@@ -115,6 +107,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {"kategori": "desktop"}
         })
     },
+    # 4. jawab_pertanyaan_bot (persona saja -> jawab_pertanyaan_bot)
     {
         "role": "user",
         "content": "Pesan: \"Buat mama sih bukan buat aku\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"
@@ -127,6 +120,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {"persona": "mama", "sebutan": "mama"}
         })
     },
+    # 5. jawab_pertanyaan_bot (persona lanjut)
     {
         "role": "user",
         "content": "Pesan: \"Untuk ibu saya yang sudah sepuh\"\nState: {\"pending_question\": \"kebutuhan\", \"produk_tampil\": []}"
@@ -139,6 +133,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {"persona": "ibu sepuh", "sebutan": "ibu"}
         })
     },
+    # 6. minta_rekomendasi (aktivitas konkret)
     {
         "role": "user",
         "content": "Pesan: \"Paling cuma cari resep dan nonton youtube\"\nState: {\"pending_question\": \"aktivitas\", \"slot_diketahui\": {\"persona\": \"mama\"}, \"produk_tampil\": []}"
@@ -151,6 +146,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {"kebutuhan_teks": "cari resep dan nonton YouTube"}
         })
     },
+    # 7. evaluasi_kecocokan (rujukan semua produk tampil)
     {
         "role": "user",
         "content": "Pesan: \"Emang spek segitu cukup?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}, {\"no\": 3, \"kode\": \"KB-L03\"}], \"slot_diketahui\": {\"kebutuhan_teks\": \"cari resep dan nonton YouTube\"}}"
@@ -159,10 +155,11 @@ DEV_FEW_SHOTS = [
         "role": "assistant",
         "content": json.dumps({
             "aksi": "evaluasi_kecocokan",
-            "argumen": {"produk": ["KB-L01", "KB-L02", "KB-L03"], "kebutuhan_teks": "cari resep dan nonton YouTube"},
+            "argumen": {"rujukan_produk": [1, 2, 3], "kebutuhan_teks": "cari resep dan nonton YouTube"},
             "pembaruan_state": {}
         })
     },
+    # 8. evaluasi_kecocokan (rujukan nomor urut 2)
     {
         "role": "user",
         "content": "Pesan: \"yang kedua bagus nggak?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"
@@ -171,10 +168,11 @@ DEV_FEW_SHOTS = [
         "role": "assistant",
         "content": json.dumps({
             "aksi": "evaluasi_kecocokan",
-            "argumen": {"produk": ["2"]},
+            "argumen": {"rujukan_produk": [2]},
             "pembaruan_state": {}
         })
     },
+    # 9. tanya_spesifikasi (rujukan nomor urut 1 & atribut layar)
     {
         "role": "user",
         "content": "Pesan: \"layarnya udah ips?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}]}"
@@ -183,10 +181,11 @@ DEV_FEW_SHOTS = [
         "role": "assistant",
         "content": json.dumps({
             "aksi": "tanya_spesifikasi",
-            "argumen": {"produk": ["KB-L01"], "atribut": "layar"},
+            "argumen": {"rujukan_produk": [1], "atribut": "layar"},
             "pembaruan_state": {}
         })
     },
+    # 10. bandingkan (rujukan nomor urut 1 dan 2)
     {
         "role": "user",
         "content": "Pesan: \"bagusan nomor 1 apa nomor 2?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\"}, {\"no\": 2, \"kode\": \"KB-L02\"}]}"
@@ -195,10 +194,11 @@ DEV_FEW_SHOTS = [
         "role": "assistant",
         "content": json.dumps({
             "aksi": "bandingkan",
-            "argumen": {"produk": ["1", "2"]},
+            "argumen": {"rujukan_produk": [1, 2]},
             "pembaruan_state": {}
         })
     },
+    # 11. lanjutan_hasil (filter pengecualian merek)
     {
         "role": "user",
         "content": "Pesan: \"ada opsi merk lain ga selain acer?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"no\": 1, \"kode\": \"KB-L01\", \"merek\": \"acer\"}]}"
@@ -211,6 +211,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     },
+    # 12. perbaiki_percakapan (salah_paham)
     {
         "role": "user",
         "content": "Pesan: \"Aku tanya kok malah dikasih spek lain\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
@@ -223,6 +224,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     },
+    # 13. perbaiki_percakapan (keluhan)
     {
         "role": "user",
         "content": "Pesan: \"Yang tanya HP 14 siapa?\"\nState: {\"pending_question\": null, \"produk_tampil\": [{\"kode\": \"KB-L05\", \"nama\": \"HP 14\"}]}"
@@ -235,30 +237,7 @@ DEV_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     },
-    {
-        "role": "user",
-        "content": "Pesan: \"Kan sudah dibilang buat hiburan\"\nState: {\"pending_question\": null, \"slot_diketahui\": {\"kebutuhan_teks\": \"hiburan\"}, \"produk_tampil\": []}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "perbaiki_percakapan",
-            "argumen": {"jenis": "koreksi", "rujukan": "buat hiburan"},
-            "pembaruan_state": {"kebutuhan_teks": "hiburan"}
-        })
-    },
-    {
-        "role": "user",
-        "content": "Pesan: \"Buat hiburan\"\nState: {\"pending_question\": \"aktivitas\", \"produk_tampil\": []}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "jawab_pertanyaan_bot",
-            "argumen": {"slot": "aktivitas", "nilai": "hiburan"},
-            "pembaruan_state": {"kebutuhan_teks": "hiburan"}
-        })
-    },
+    # 14. tanya_info_toko (alamat)
     {
         "role": "user",
         "content": "Pesan: \"tokonya ada di mana ya lokasinya?\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
@@ -268,18 +247,6 @@ DEV_FEW_SHOTS = [
         "content": json.dumps({
             "aksi": "tanya_info_toko",
             "argumen": {"topik": "alamat"},
-            "pembaruan_state": {}
-        })
-    },
-    {
-        "role": "user",
-        "content": "Pesan: \"makasih ya\"\nState: {\"pending_question\": null, \"produk_tampil\": []}"
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "basa_basi",
-            "argumen": {"jenis": "terima_kasih"},
             "pembaruan_state": {}
         })
     }

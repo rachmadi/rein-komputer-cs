@@ -59,15 +59,24 @@ def get_catalog_categories(db_path: str | None = None) -> list[str]:
 
 
 def resolve_product_references(
-    produk_refs: List[str] | None,
+    produk_refs: List[Any] | None,
     produk_tampil: List[Dict[str, Any]] | None
-) -> List[str]:
+) -> Tuple[List[str], bool, str | None]:
     """
-    Menyelesaikan rujukan produk ordinal ('1', 'kedua', 'yang kedua', dsb.)
-    menjadi kode produk katalog berdasarkan produk_tampil di state percakapan.
+    Menyelesaikan rujukan_produk (nomor urut, ordinal, nama produk)
+    menjadi daftar kode produk katalog dari produk_tampil di state percakapan.
+    
+    Mengembalikan: (resolved_codes, is_valid, failed_reference_str)
+    Jika rujukan tidak ditemukan atau tidak valid, is_valid = False.
     """
-    if not produk_tampil:
-        return produk_refs or []
+    tampil = produk_tampil or []
+
+    # Jika rujukan tidak disertakan
+    if not produk_refs:
+        if tampil:
+            # Default ke seluruh produk yang tampil jika ada
+            return [p.get("kode") for p in tampil if p.get("kode")], True, None
+        return [], False, "tidak_ada_produk_tampil"
 
     ordinal_map = {
         "1": 0, "pertama": 0, "yang pertama": 0, "kesatu": 0, "no 1": 0, "no. 1": 0,
@@ -75,32 +84,63 @@ def resolve_product_references(
         "3": 2, "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2,
     }
 
-    if not produk_refs:
-        # Default: ambil semua kode produk yang sedang tampil
-        return [p.get("kode") for p in produk_tampil if p.get("kode")]
-
     resolved = []
-    for ref in produk_refs:
-        ref_clean = str(ref).lower().strip()
+    for raw_ref in produk_refs:
+        if raw_ref is None:
+            continue
+        # Jika tipe int (misal 1, 2, 3)
+        if isinstance(raw_ref, int):
+            idx = raw_ref - 1
+            if 0 <= idx < len(tampil) and tampil[idx].get("kode"):
+                resolved.append(tampil[idx]["kode"])
+                continue
+            else:
+                return [], False, str(raw_ref)
+
+        ref_clean = str(raw_ref).lower().strip()
+        
+        # Cek kata kunci 'semua'
+        if ref_clean in ("semua", "semuanya", "tampil", "seluruhnya"):
+            if tampil:
+                resolved.extend([p.get("kode") for p in tampil if p.get("kode")])
+                continue
+            else:
+                return [], False, ref_clean
+
+        # Cek ordinal / nomor digit
         matched = False
-        for ord_key, idx in ordinal_map.items():
-            if ref_clean == ord_key or f"yang {ord_key}" in ref_clean:
-                if idx < len(produk_tampil) and produk_tampil[idx].get("kode"):
-                    resolved.append(produk_tampil[idx]["kode"])
-                    matched = True
-                    break
+        if ref_clean.isdigit():
+            idx = int(ref_clean) - 1
+            if 0 <= idx < len(tampil) and tampil[idx].get("kode"):
+                resolved.append(tampil[idx]["kode"])
+                matched = True
+        else:
+            for ord_key, idx in ordinal_map.items():
+                if ref_clean == ord_key or f"yang {ord_key}" in ref_clean:
+                    if idx < len(tampil) and tampil[idx].get("kode"):
+                        resolved.append(tampil[idx]["kode"])
+                        matched = True
+                        break
+
         if not matched:
-            for p in produk_tampil:
+            # Cek kecocokan nama atau kode produk yang ada di produk_tampil
+            for p in tampil:
                 p_kode = str(p.get("kode", "")).lower()
                 p_nama = str(p.get("nama", "")).lower()
-                if ref_clean in p_kode or ref_clean in p_nama:
+                if ref_clean == p_kode or (len(ref_clean) >= 3 and (ref_clean in p_nama or ref_clean in p_kode)):
                     resolved.append(p.get("kode"))
                     matched = True
                     break
-            if not matched:
-                resolved.append(ref)
 
-    return resolved
+        if not matched:
+            return [], False, str(raw_ref)
+
+    # Hilangkan duplikasi dengan mempertahankan urutan
+    seen = set()
+    dedup = [x for x in resolved if not (x in seen or seen.add(x))]
+    if not dedup:
+        return [], False, "rujukan_kosong"
+    return dedup, True, None
 
 
 def validate_parser_output(
@@ -112,8 +152,8 @@ def validate_parser_output(
     Memvalidasi keluaran parser LLM terhadap skema dan enum tertutup.
     Mengembalikan (ParserOutput, is_schema_valid).
 
-    - Nilai di luar enum tertutup (misal jenis 'pengingat', topik 'alamat_toko')
-      ditolak dan ditandai is_schema_valid = False.
+    - Nilai di luar enum tertutup ditolak dan ditandai is_schema_valid = False.
+    - Rujukan produk dipetakan ke kode; rujukan yang tidak cocok ditolak menjadi tidak_jelas.
     """
     state = session_state or {}
 
@@ -172,7 +212,19 @@ def validate_parser_output(
     # 4. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
     if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
         produk_tampil = state.get("produk_tampil", [])
-        args.produk = resolve_product_references(args.produk, produk_tampil)
+        raw_refs = args.rujukan_produk if args.rujukan_produk is not None else args.produk
+        resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil)
+        
+        if not is_ref_valid:
+            return (
+                ParserOutput(
+                    aksi=ActionEnum.TIDAK_JELAS,
+                    argumen=ActionArguments(alasan=f"Rujukan produk '{failed_ref}' tidak ditemukan di produk yang tampil"),
+                    pembaruan_state=StateUpdate()
+                ),
+                False
+            )
+        args.produk = resolved_codes
 
     # 5. Normalisasi persona & sebutan di state_update
     if state_up.sebutan:

@@ -98,7 +98,8 @@ class ActionArguments(BaseModel):
     nilai: Optional[Union[str, int, float, None]] = None
 
     # evaluasi_kecocokan, tanya_spesifikasi, & bandingkan
-    produk: Optional[List[str]] = None
+    rujukan_produk: Optional[List[Union[int, str]]] = None  # nomor urut (1, 2, dll) atau nama dari produk_tampil
+    produk: Optional[List[str]] = None                      # kode produk hasil resolusi validator
     atribut: Optional[AtributSpesifikasiEnum] = None
 
     # lanjutan_hasil, perbaiki_percakapan, basa_basi

@@ -116,10 +116,38 @@ def test_validator_resolve_product_ordinal():
     }
     raw = {
         "aksi": "evaluasi_kecocokan",
-        "argumen": {"produk": ["yang kedua"]},
+        "argumen": {"rujukan_produk": [2]},
         "pembaruan_state": {}
     }
     res, is_valid = validate_parser_output(raw, session_state=state)
     assert is_valid is True
     assert res.aksi == ActionEnum.EVALUASI_KECOCOKAN
     assert res.argumen.produk == ["KB-L02"]
+
+
+def test_validator_unmatched_product_reference_rejected():
+    state = {
+        "produk_tampil": [
+            {"no": 1, "kode": "KB-L01", "nama": "Laptop A"},
+            {"no": 2, "kode": "KB-L02", "nama": "Laptop B"}
+        ]
+    }
+    # User asks about product #5 or "macbook" which is not in produk_tampil
+    raw1 = {
+        "aksi": "evaluasi_kecocokan",
+        "argumen": {"rujukan_produk": [5]},
+        "pembaruan_state": {}
+    }
+    res1, is_valid1 = validate_parser_output(raw1, session_state=state)
+    assert is_valid1 is False
+    assert res1.aksi == ActionEnum.TIDAK_JELAS
+
+    raw2 = {
+        "aksi": "tanya_spesifikasi",
+        "argumen": {"rujukan_produk": ["macbook pro"], "atribut": "ram"},
+        "pembaruan_state": {}
+    }
+    res2, is_valid2 = validate_parser_output(raw2, session_state=state)
+    assert is_valid2 is False
+    assert res2.aksi == ActionEnum.TIDAK_JELAS
+
