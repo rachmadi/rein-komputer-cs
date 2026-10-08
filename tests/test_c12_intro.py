@@ -5,10 +5,16 @@ from services.agentic_tool_engine import execute_tool
 def test_intro_non_contradictory():
     catalog = Catalog.from_dummy()
     
-    # Skenario 1: Ada produk cocok
-    ans, prods, _, _ = execute_tool("search_catalog", {"kategori": "laptop", "max_harga": 50000000}, catalog, [])
+    # Skenario 1: Ada syarat yang diperiksa dan terpenuhi (memakai tanda ✅)
+    ans, prods, _, _ = execute_tool("search_catalog", {"kebutuhan": "edit video 4k", "kategori": "laptop"}, catalog, [])
     assert "✅" in ans
     assert len(prods) > 0
+
+    # Skenario 1b: Pencarian tanpa syarat kebutuhan (judul netral tanpa tanda ✅)
+    ans_no_crit, prods_no_crit, _, _ = execute_tool("search_catalog", {"kategori": "laptop", "max_harga": 50000000}, catalog, [])
+    assert "Beberapa pilihan" in ans_no_crit
+    assert "✅" not in ans_no_crit
+    assert len(prods_no_crit) > 0
     
     # Skenario 2: Tidak ada mutlak, tapi ada kandidat terdekat
     # Misal kita cari VRAM 64GB

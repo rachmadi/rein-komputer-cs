@@ -343,24 +343,153 @@ def run_agentic_tool(
     t_tool = 0.0
     t_llm2 = 0.0
     
-    # 1. Jalur Cepat (Fast Path)
-    is_fast, fast_reply, fast_tool = check_fast_path(user_text, catalog, previous_lowest_price)
-    if is_fast:
-        t_llm1 = 0
-        ans_str = ""
-        prods = []
-        cat = None
-        prof = None
-        if fast_tool:
+    # 0. ROUTER NIAT SEBELUM PENCARIAN
+    from services.intent_router import classify_intent
+    intent = classify_intent(user_text, bool(active_profile_id or history))
+
+    # Kelas 1: SAPAAN
+    if intent == "sapaan":
+        reply = "Halo, Kak! Selamat datang di Bobby Computer 😊 Sedang mencari laptop, PC desktop, monitor, atau printer hari ini? Silakan beri tahu kami, kami siap bantu carikan yang paling sesuai kebutuhan!"
+        return {
+            "reply": reply,
+            "products": [],
+            "category": current_category,
+            "route": "GREETING",
+            "active_profile_id": None,
+            "metrics": {"total": time.time() - t_start}
+        }
+
+    # Kelas 2: KATEGORI-SAJA ("laptop", "ada laptop?", "desktop", dll)
+    if intent == "kategori-saja":
+        low = user_text.lower()
+        cat_name = "laptop"
+        if any(k in low for k in ["desktop", "komputer", "pc", "aio"]): cat_name = "desktop"
+        elif any(k in low for k in ["printer", "cetak"]): cat_name = "printer"
+        elif any(k in low for k in ["monitor", "layar"]): cat_name = "monitor"
+
+        reply = (
+            f"Tentu ada, Kak! Kami memiliki beragam pilihan {cat_name} berkualitas di toko kami.\n\n"
+            f"Agar rekomendasinya pas, boleh kami tahu rencananya {cat_name} ini akan digunakan untuk kebutuhan apa saja "
+            f"(misalnya kerja kantor, kuliah, desain grafis, atau game) dan berapa perkiraan anggarannya?"
+        )
+        return {
+            "reply": reply,
+            "products": [],
+            "category": cat_name,
+            "route": "CLARIFY_CATEGORY",
+            "active_profile_id": None,
+            "metrics": {"total": time.time() - t_start}
+        }
+
+    # Kelas 3: META ("Dari mana kamu tahu kebutuhanku?", dll)
+    if intent == "meta":
+        reply = (
+            "Saya sebenarnya belum mengetahui kebutuhan pasti Kakak 😊 Pilihan yang kami tampilkan sebelumnya adalah rekomendasi umum dari katalog kami.\n\n"
+            "Boleh ceritakan perangkat ini rencananya akan digunakan untuk aktivitas apa saja dan berapa perkiraan budgetnya? Kami siap membantu carikan yang paling pas!"
+        )
+        return {
+            "reply": reply,
+            "products": [],
+            "category": current_category,
+            "route": "META_CLARIFY",
+            "active_profile_id": None,
+            "metrics": {"total": time.time() - t_start}
+        }
+
+    # Kelas 4: DI-LUAR-TOPIK
+    if intent == "di-luar-topik":
+        low = user_text.lower()
+        if any(k in low for k in ["jam buka", "buka jam", "tutup jam"]):
+            reply = "Toko Bobby Computer buka setiap hari Senin - Sabtu pukul 09.00 - 20.00 WIB, dan Minggu pukul 10.00 - 17.00 WIB. Ada yang bisa kami bantu terkait perangkat komputer atau laptop?"
+        elif any(k in low for k in ["alamat", "lokasi"]):
+            reply = "Toko fisik kami beralamat di Jalan Komputer No. 45. Kakak juga bisa berkonsultasi langsung dengan staf toko kami di WhatsApp: 0812-3456-7890."
+        elif any(k in low for k in ["cicil", "kredit", "paylater"]):
+            reply = "Kami melayani pembayaran tunai, transfer bank, serta cicilan melalui rekanan e-commerce resmi kami. Mau kami bantu carikan spesifikasi perangkatnya terlebih dahulu, Kak?"
+        else:
+            reply = "Untuk informasi layanan purna jual, toko fisik, atau pertanyaan umum lainnya, Kakak bisa menghubungi staf toko kami di 0812-3456-7890 (WhatsApp). Ada produk laptop atau PC yang sedang dicari hari ini?"
+        return {
+            "reply": reply,
+            "products": [],
+            "category": current_category,
+            "route": "OUT_OF_DOMAIN",
+            "active_profile_id": active_profile_id,
+            "metrics": {"total": time.time() - t_start}
+        }
+
+    # Kelas 5: LANJUTAN ("cuma itu?", "yang lain?", "lebih murah", "yang ASUS aja")
+    if intent == "lanjutan":
+        low = user_text.lower()
+        # Kasus A: Pertanyaan jumlah / variasi opsi ("cuma itu?", "ada yang lain?")
+        if any(k in low for k in ["cuma itu", "hanya itu", "yang lain ada", "ada yang lain", "yang lain?", "ada lagi", "pilihan lain", "opsi lain"]):
+            offered_count = len(current_offered_products or [])
+            if offered_count <= 1:
+                reply = (
+                    "Iya Kak, saat ini di katalog kami baru ada 1 model yang benar-benar memenuhi seluruh spesifikasi keras untuk kebutuhan tersebut secara maksimal (yaitu Lenovo Legion Pro 5 16).\n\n"
+                    "Jika ingin melihat pilihan alternatif dengan harga lebih terjangkau, kita bisa mempertimbangkan laptop dengan RAM 16 GB atau kartu grafis setingkat di bawahnya. Apakah Kakak ingin kami tampilkan pilihan alternatif terdekatnya?"
+                )
+            else:
+                reply = f"Saat ini ada {offered_count} pilihan utama di katalog kami yang paling memenuhi kriteria tersebut. Apakah Kakak ingin melihat opsi merek tertentu, atau mempertimbangkan rentang anggaran yang berbeda?"
+            return {
+                "reply": reply,
+                "products": [],
+                "category": current_category,
+                "route": "FOLLOWUP_OPTIONS",
+                "active_profile_id": active_profile_id,
+                "metrics": {"total": time.time() - t_start}
+            }
+
+        # Kasus B: "lebih murah" -> Filter harga batas atas eksklusif
+        if "lebih murah" in low or "yang murah" in low:
+            max_p = (previous_lowest_price - 1) if previous_lowest_price else 10000000
             t0 = time.time()
-            ans_str, prods, cat, prof = execute_tool(fast_tool["name"], fast_tool["args"], catalog, current_offered_products or [], user_text, active_profile_id, current_category)
+            ans_str, prods, cat, prof = execute_tool(
+                "search_catalog",
+                {"query": user_text, "max_harga": max_p, "profil_id": active_profile_id},
+                catalog, current_offered_products or [], user_text, active_profile_id, current_category
+            )
             t_tool = time.time() - t0
-        t_llm2 = 0
-        final_reply = fast_reply + "\n\n" + ans_str if ans_str else fast_reply
-        total = time.time() - t_start
-        metrics = {"llm1": t_llm1, "tool": t_tool, "llm2": t_llm2, "total": total}
-        logger.info(f"[PERF] FastPath total={total:.2f}s")
-        return {"reply": final_reply.strip(), "products": prods, "category": cat or current_category, "route": "FAST_AGENTIC", "active_profile_id": prof or active_profile_id, "metrics": metrics}
+            reply = ans_str if ans_str else "Tidak ada yang lebih murah yang memenuhi kebutuhan ini."
+            return {
+                "reply": reply.strip(),
+                "products": prods,
+                "category": cat or current_category,
+                "route": "FAST_AGENTIC",
+                "active_profile_id": prof or active_profile_id,
+                "metrics": {"tool": t_tool, "total": time.time() - t_start}
+            }
+
+        # Kasus C: "yang ASUS aja" / penyempit brand / spesifikasi
+        t0 = time.time()
+        ans_str, prods, cat, prof = execute_tool(
+            "search_catalog",
+            {"query": user_text, "profil_id": active_profile_id},
+            catalog, current_offered_products or [], user_text, active_profile_id, current_category
+        )
+        t_tool = time.time() - t0
+        reply = ans_str if ans_str else "Produk tidak tersedia."
+        return {
+            "reply": reply.strip(),
+            "products": prods,
+            "category": cat or current_category,
+            "route": "FAST_AGENTIC",
+            "active_profile_id": prof or active_profile_id,
+            "metrics": {"tool": t_tool, "total": time.time() - t_start}
+        }
+
+    # Deteksi pergantian kategori pada pesan kebutuhan/produk baru
+    new_cat = None
+    low = user_text.lower()
+    if any(k in low for k in ["laptop", "notebook"]): new_cat = "laptop"
+    elif any(k in low for k in ["desktop", "komputer", "pc", "aio"]): new_cat = "desktop"
+    elif any(k in low for k in ["printer", "cetak"]): new_cat = "printer"
+    elif any(k in low for k in ["monitor", "layar"]): new_cat = "monitor"
+
+    if new_cat and current_category and new_cat != current_category:
+        # Kategori berganti -> reset profil aktif!
+        active_profile_id = None
+        current_category = new_cat
+    elif new_cat and not current_category:
+        current_category = new_cat
 
     # 1.5 Pangkas LLM-1 untuk peruntukan (jika BYPASS_LLM1_ON_RAG aktif dan retrieval lolos ambang)
     if BYPASS_LLM1_ON_RAG and not should_skip_rag(user_text, catalog):
@@ -383,12 +512,15 @@ def run_agentic_tool(
             total = time.time() - t_start
             intro = "Berikut adalah rekomendasi produk yang cocok untuk kebutuhan Anda:"
             final_reply = intro + "\n\n" + ans_str if ans_str else intro
+            # Larang kode internal P0x di balasan
+            final_reply = re.sub(r"\b[PMG]\d{2}\b\s*[—–\-:]?\s*", "", final_reply)
+            final_reply = re.sub(r"\b[PMG]\d{2}\b", "", final_reply)
             metrics = {"llm1": 0.0, "tool": t_tool, "llm2": 0.0, "total": total, "bypassed": True}
             logger.info(f"[PERF] Bypassed LLM-1 on RAG total={total:.2f}s")
             return {
                 "reply": final_reply.strip(),
                 "products": prods,
-                "category": cat,
+                "category": cat or current_category,
                 "route": "FAST_AGENTIC",
                 "tool_calls": [{"name": "search_catalog", "args": {"profil_id": prof_arg}}],
                 "active_profile_id": new_profile_id,

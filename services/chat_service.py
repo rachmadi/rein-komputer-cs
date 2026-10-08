@@ -193,6 +193,12 @@ def process_chat_message(
             state["fsm_stage"] = "OFFERED"
         if tool_res.get("category"):
             state["category"] = tool_res["category"]
+        if "active_profile_id" in tool_res:
+            state["active_profile"] = tool_res["active_profile_id"]
+        if prods:
+            prices = [p.get("harga_idr") or p.get("harga", 0) for p in prods if (p.get("harga_idr") or p.get("harga", 0)) > 0]
+            if prices:
+                state["lowest_price"] = min(prices)
         new_s = state
         sess["state"] = new_s
 
