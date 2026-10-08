@@ -19,7 +19,7 @@ dev_items = [
         "pesan": "Emang spek segitu cukup?",
         "state": {"pending_question": None, "slot_diketahui": {"kebutuhan_teks": "cari resep dan nonton YouTube"}, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
         "label_aksi": "evaluasi_kecocokan",
-        "label_argumen": {"produk": ["KB-L01", "KB-L02"], "kebutuhan_teks": "cari resep dan nonton YouTube"},
+        "label_argumen": {"rujukan_produk": [1, 2], "kebutuhan_teks": "cari resep dan nonton YouTube"},
         "label_pembaruan_state": {},
         "sumber": "log",
         "catatan": "Log failure kalimat 1: konfirmasi kecocokan spek"
@@ -69,7 +69,7 @@ dev_items = [
         "pesan": "yang kedua bagus nggak?",
         "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
         "label_aksi": "evaluasi_kecocokan",
-        "label_argumen": {"produk": ["2"]},
+        "label_argumen": {"rujukan_produk": [2]},
         "label_pembaruan_state": {},
         "sumber": "log",
         "catatan": "Evaluasi kelayakan produk nomor 2"
@@ -460,7 +460,7 @@ for i in range(41, 101):
             "pesan": f"apakah produk nomor 1 bisa ditambah ram?",
             "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
             "label_aksi": "tanya_spesifikasi",
-            "label_argumen": {"produk": ["1"], "atribut": "ram"},
+            "label_argumen": {"rujukan_produk": [1], "atribut": "ram"},
             "label_pembaruan_state": {},
             "sumber": "buatan",
             "catatan": "Dev tanya spesifikasi upgrade RAM"
@@ -488,6 +488,391 @@ for i in range(41, 101):
             "catatan": "Dev sapaan konsultasi"
         })
 
+# --- DATA DEV TAMBAHAN (41 CONTOH SESUAI INSTRUKSI FASE 2) ---
+new_dev_items = [
+    # 1. Kalimat pendek bergantung konteks (5)
+    {
+        "id": "dev-101",
+        "pesan": "terus?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "lanjutan_hasil",
+        "label_argumen": {"jenis": "yang_lain"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Konteks pendek menanyakan kelanjutan opsi"
+    },
+    {
+        "id": "dev-102",
+        "pesan": "yang itu",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01", "nama": "Asus Vivobook"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1]},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Konteks pendek merujuk produk tampil"
+    },
+    {
+        "id": "dev-103",
+        "pesan": "oke yang pertama",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1]},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Konteks pendek memilih produk nomor satu"
+    },
+    {
+        "id": "dev-104",
+        "pesan": "murahin dikit",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01", "harga": 8000000}]},
+        "label_aksi": "lanjutan_hasil",
+        "label_argumen": {"jenis": "lebih_murah"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Konteks pendek minta opsi lebih murah"
+    },
+    {
+        "id": "dev-105",
+        "pesan": "yang ada SSD 1TB",
+        "state": {"pending_question": None, "produk_tampil": [], "slot_diketahui": {"kategori": "laptop"}},
+        "label_aksi": "cari_produk",
+        "label_argumen": {"kategori": "laptop", "storage_gb_min": 1000},
+        "label_pembaruan_state": {"kategori": "laptop"},
+        "sumber": "log",
+        "catatan": "Konteks pendek filter storage 1TB dengan pembawaan kategori laptop"
+    },
+
+    # 2. Persona saja (5)
+    {
+        "id": "dev-106",
+        "pesan": "buat adekku",
+        "state": {"pending_question": "kebutuhan", "produk_tampil": []},
+        "label_aksi": "jawab_pertanyaan_bot",
+        "label_argumen": {"slot": "persona", "nilai": "adek"},
+        "label_pembaruan_state": {"persona": "adek", "sebutan": "adek"},
+        "sumber": "log",
+        "catatan": "Persona saja tanpa aktivitas konkret"
+    },
+    {
+        "id": "dev-107",
+        "pesan": "untuk ayah",
+        "state": {"pending_question": "kebutuhan", "produk_tampil": []},
+        "label_aksi": "jawab_pertanyaan_bot",
+        "label_argumen": {"slot": "persona", "nilai": "ayah"},
+        "label_pembaruan_state": {"persona": "ayah", "sebutan": "ayah"},
+        "sumber": "log",
+        "catatan": "Persona saja tanpa aktivitas konkret"
+    },
+    {
+        "id": "dev-108",
+        "pesan": "buat ponakan SD",
+        "state": {"pending_question": "kebutuhan", "produk_tampil": []},
+        "label_aksi": "jawab_pertanyaan_bot",
+        "label_argumen": {"slot": "persona", "nilai": "ponakan SD"},
+        "label_pembaruan_state": {"persona": "ponakan SD"},
+        "sumber": "log",
+        "catatan": "Persona saja ponakan SD"
+    },
+    {
+        "id": "dev-109",
+        "pesan": "buat istri tercinta",
+        "state": {"pending_question": "kebutuhan", "produk_tampil": []},
+        "label_aksi": "jawab_pertanyaan_bot",
+        "label_argumen": {"slot": "persona", "nilai": "istri"},
+        "label_pembaruan_state": {"persona": "istri", "sebutan": "ibu"},
+        "sumber": "log",
+        "catatan": "Persona saja istri"
+    },
+    {
+        "id": "dev-110",
+        "pesan": "untuk kakek",
+        "state": {"pending_question": "kebutuhan", "produk_tampil": []},
+        "label_aksi": "jawab_pertanyaan_bot",
+        "label_argumen": {"slot": "persona", "nilai": "kakek"},
+        "label_pembaruan_state": {"persona": "kakek", "sebutan": "kakek"},
+        "sumber": "log",
+        "catatan": "Persona saja kakek"
+    },
+
+    # 3. Pembawaan kategori antar-giliran (5)
+    {
+        "id": "dev-111",
+        "pesan": "yang asus ada?",
+        "state": {"pending_question": None, "slot_diketahui": {"kategori": "laptop"}, "produk_tampil": []},
+        "label_aksi": "cari_produk",
+        "label_argumen": {"kategori": "laptop", "merek": "asus"},
+        "label_pembaruan_state": {"kategori": "laptop"},
+        "sumber": "log",
+        "catatan": "Pembawaan kategori laptop dari turn sebelumnya"
+    },
+    {
+        "id": "dev-112",
+        "pesan": "budget 8 jutaan",
+        "state": {"pending_question": None, "slot_diketahui": {"kategori": "desktop"}, "produk_tampil": []},
+        "label_aksi": "cari_produk",
+        "label_argumen": {"kategori": "desktop", "max_harga": 8000000},
+        "label_pembaruan_state": {"budget": 8000000, "kategori": "desktop"},
+        "sumber": "log",
+        "catatan": "Pembawaan kategori desktop dengan filter budget"
+    },
+    {
+        "id": "dev-113",
+        "pesan": "yang bisa scan dan fotocopy ada?",
+        "state": {"pending_question": None, "slot_diketahui": {"kategori": "printer"}, "produk_tampil": []},
+        "label_aksi": "cari_produk",
+        "label_argumen": {"kategori": "printer", "nama_model": "all in one scan"},
+        "label_pembaruan_state": {"kategori": "printer"},
+        "sumber": "log",
+        "catatan": "Pembawaan kategori printer"
+    },
+    {
+        "id": "dev-114",
+        "pesan": "ram 16gb berapaan ya?",
+        "state": {"pending_question": None, "slot_diketahui": {"kategori": "laptop"}, "produk_tampil": []},
+        "label_aksi": "cari_produk",
+        "label_argumen": {"kategori": "laptop", "ram_gb_min": 16},
+        "label_pembaruan_state": {"kategori": "laptop"},
+        "sumber": "log",
+        "catatan": "Pembawaan kategori laptop dengan filter ram 16gb"
+    },
+    {
+        "id": "dev-115",
+        "pesan": "yang layarnya 27 inch ada?",
+        "state": {"pending_question": None, "slot_diketahui": {"kategori": "monitor"}, "produk_tampil": []},
+        "label_aksi": "cari_produk",
+        "label_argumen": {"kategori": "monitor", "ukuran_layar": 27.0},
+        "label_pembaruan_state": {"kategori": "monitor"},
+        "sumber": "log",
+        "catatan": "Pembawaan kategori monitor dengan ukuran layar 27 inch"
+    },
+
+    # 4. Evaluasi Kecocokan (11, >= 10)
+    {
+        "id": "dev-116",
+        "pesan": "kuat buat main genshin impact ga?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "genshin impact"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi game genshin impact"
+    },
+    {
+        "id": "dev-117",
+        "pesan": "bisa buat editing video 4k premiere pro?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "editing video 4k premiere pro"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi video editing premiere pro"
+    },
+    {
+        "id": "dev-118",
+        "pesan": "apakah tahan seharian baterainya buat kerja di luar?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "kerja di luar baterai"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi ketahanan baterai kerja mobile"
+    },
+    {
+        "id": "dev-119",
+        "pesan": "cukup kencang ga buat buka autocad?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "autocad"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi beban kerja autocad"
+    },
+    {
+        "id": "dev-120",
+        "pesan": "yang nomor 1 bisa buat render blender?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "render blender"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi render 3d blender produk 1"
+    },
+    {
+        "id": "dev-121",
+        "pesan": "laptop pertama ini awet ga buat kuliah 4 tahun?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "kuliah 4 tahun"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi daya tahan kuliah produk 1"
+    },
+    {
+        "id": "dev-122",
+        "pesan": "kalau yang kedua kuat gta v ga?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [2], "kebutuhan_teks": "gta v"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi game gta v produk 2"
+    },
+    {
+        "id": "dev-123",
+        "pesan": "yang ketiga lemot gak kalau buka banyak excel?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}, {"no": 3, "kode": "KB-L03"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [3], "kebutuhan_teks": "banyak excel"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi multitasking excel produk 3"
+    },
+    {
+        "id": "dev-124",
+        "pesan": "buat desain grafis photoshop lancar jaya kan?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "desain grafis photoshop"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi desain grafis photoshop"
+    },
+    {
+        "id": "dev-125",
+        "pesan": "spek segini udah mumpuni belum buat live streaming obs?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "live streaming obs"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi streaming obs"
+    },
+    {
+        "id": "dev-126",
+        "pesan": "bisa buat anak kuliah informatika koding android studio?",
+        "state": {"pending_question": None, "produk_tampil": [{"no": 1, "kode": "KB-L01"}]},
+        "label_aksi": "evaluasi_kecocokan",
+        "label_argumen": {"rujukan_produk": [1], "kebutuhan_teks": "koding android studio"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Evaluasi koding berat android studio"
+    },
+
+    # 5. Perbaiki Percakapan (11, >= 10)
+    {
+        "id": "dev-127",
+        "pesan": "bukan itu yang kumaksud min",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "salah_paham"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Koreksi salah paham umum"
+    },
+    {
+        "id": "dev-128",
+        "pesan": "kan dari tadi aku mintanya laptop bukan pc",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "koreksi", "rujukan": "laptop bukan pc"},
+        "label_pembaruan_state": {"kategori": "laptop"},
+        "sumber": "log",
+        "catatan": "Koreksi kategori laptop bukan pc"
+    },
+    {
+        "id": "dev-129",
+        "pesan": "kok ngaco sih jawabnya",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "keluhan", "rujukan": "jawaban ngaco"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Keluhan jawaban bot ngaco"
+    },
+    {
+        "id": "dev-130",
+        "pesan": "bukan, aku tanyanya garansi resminya bukan harga",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "koreksi", "rujukan": "garansi bukan harga"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Koreksi salah tangkap topik garansi"
+    },
+    {
+        "id": "dev-131",
+        "pesan": "salah paham kamu min",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "salah_paham"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Salah paham langsung"
+    },
+    {
+        "id": "dev-132",
+        "pesan": "maksud saya monitornya yang lengkung curved",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "koreksi", "rujukan": "monitor curved"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Koreksi model monitor curved"
+    },
+    {
+        "id": "dev-133",
+        "pesan": "lho kan aku ga minta merk acer kenapa dikasih acer",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "keluhan", "rujukan": "dikasih acer"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Keluhan rekomendasi merek tidak diinginkan"
+    },
+    {
+        "id": "dev-134",
+        "pesan": "jangan ulangi pertanyaan yang sama terus dong",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "keluhan", "rujukan": "pertanyaan berulang"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Keluhan bot looping"
+    },
+    {
+        "id": "dev-135",
+        "pesan": "bukan warna hitam, maunya yang putih atau silver",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "koreksi", "rujukan": "warna putih silver"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Koreksi preferensi warna"
+    },
+    {
+        "id": "dev-136",
+        "pesan": "tadi kan udah kubilang budget maksimal 7 juta",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "koreksi", "rujukan": "budget 7 juta"},
+        "label_pembaruan_state": {"budget": 7000000},
+        "sumber": "log",
+        "catatan": "Koreksi amnesia budget"
+    },
+    {
+        "id": "dev-137",
+        "pesan": "jawabanmu muter-muter aja dari tadi",
+        "state": {"pending_question": None, "produk_tampil": []},
+        "label_aksi": "perbaiki_percakapan",
+        "label_argumen": {"jenis": "keluhan", "rujukan": "jawaban muter-muter"},
+        "label_pembaruan_state": {},
+        "sumber": "log",
+        "catatan": "Keluhan alur percakapan membingungkan"
+    }
+]
+
+dev_items.extend(new_dev_items)
+
 # 50 HELD-OUT EXAMPLES (Murni untuk evaluasi generalisasi)
 held_out_items = []
 ho_raw = [
@@ -495,8 +880,8 @@ ho_raw = [
     ("ho-002", "laptop asus tuf gaming ada?", None, [], "cari_produk", {"merek": "asus", "nama_model": "tuf gaming", "kategori": "laptop"}, {"kategori": "laptop"}, "buatan", "Pencarian varian tuf"),
     ("ho-003", "butuh buat kasir toko sembako", None, [], "minta_rekomendasi", {"kebutuhan_teks": "kasir toko pos", "kategori": "desktop"}, {"kebutuhan_teks": "kasir toko pos"}, "log", "Kebutuhan kasir"),
     ("ho-004", "cuma buat zoom meeting dan skripsi aja", "aktivitas", [], "minta_rekomendasi", {"kebutuhan_teks": "zoom meeting dan skripsi"}, {"kebutuhan_teks": "zoom meeting dan skripsi"}, "log", "Aktivitas zoom & skripsi konkret"),
-    ("ho-005", "yang ketiga baterainya tahan berapa lama?", None, [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}, {"no": 3, "kode": "KB-L03"}], "tanya_spesifikasi", {"produk": ["3"], "atribut": "baterai"}, {}, "log", "Aksi baru: tanya spesifikasi baterai"),
-    ("ho-006", "antara ideapad sama vivobook bagusan mana?", None, [{"no": 1, "kode": "KB-L01", "nama": "IdeaPad Slim 3"}, {"no": 2, "kode": "KB-L02", "nama": "Vivobook 14"}], "bandingkan", {"produk": ["KB-L01", "KB-L02"]}, {}, "log", "Bandingkan model"),
+    ("ho-005", "yang ketiga baterainya tahan berapa lama?", None, [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}, {"no": 3, "kode": "KB-L03"}], "tanya_spesifikasi", {"rujukan_produk": [3], "atribut": "baterai"}, {}, "log", "Aksi baru: tanya spesifikasi baterai"),
+    ("ho-006", "antara ideapad sama vivobook bagusan mana?", None, [{"no": 1, "kode": "KB-L01", "nama": "IdeaPad Slim 3"}, {"no": 2, "kode": "KB-L02", "nama": "Vivobook 14"}], "bandingkan", {"rujukan_produk": ["ideapad", "vivobook"]}, {}, "log", "Bandingkan model"),
     ("ho-007", "ada yang di bawah 5 juta?", None, [{"no": 1, "kode": "KB-L01", "harga": 6500000}], "lanjutan_hasil", {"jenis": "lebih_murah"}, {}, "log", "Lanjutan filter lebih murah"),
     ("ho-008", "bisa gosend instan hari ini?", None, [], "tanya_info_toko", {"topik": "pengiriman"}, {}, "log", "Tanya opsi pengiriman"),
     ("ho-009", "kok ngulang salam lagi sih", None, [], "perbaiki_percakapan", {"jenis": "keluhan", "rujukan": "ngulang salam"}, {}, "log", "Keluhan salam berulang"),
@@ -506,7 +891,7 @@ ho_raw = [
     ("ho-013", "laptop gaming rtx 4050 murah", None, [], "cari_produk", {"kategori": "laptop", "gpu": "rtx 4050"}, {"kategori": "laptop"}, "log", "Laptop argumen gpu rtx 4050"),
     ("ho-014", "buat anak sma belajar coding python", None, [], "minta_rekomendasi", {"kebutuhan_teks": "belajar coding python", "persona": "anak sma"}, {"kebutuhan_teks": "belajar coding python"}, "log", "Kebutuhan coding"),
     ("ho-015", "budget maksimal 12 juta pas", "budget", [], "jawab_pertanyaan_bot", {"slot": "budget", "nilai": 12000000}, {"budget": 12000000}, "log", "Slot budget 12jt"),
-    ("ho-016", "cukup ga ram segitu buat buka 20 tab chrome?", None, [{"no": 1, "kode": "KB-L01"}], "evaluasi_kecocokan", {"produk": ["KB-L01"], "kebutuhan_teks": "20 tab chrome"}, {}, "log", "Evaluasi kecocokan tab chrome"),
+    ("ho-016", "cukup ga ram segitu buat buka 20 tab chrome?", None, [{"no": 1, "kode": "KB-L01"}], "evaluasi_kecocokan", {"rujukan_produk": [1], "kebutuhan_teks": "20 tab chrome"}, {}, "log", "Evaluasi kecocokan tab chrome"),
     ("ho-017", "tampilin opsi yang lenovo aja dong", None, [{"no": 1, "kode": "KB-L01"}], "lanjutan_hasil", {"jenis": "filter_tambahan"}, {}, "log", "Lanjutan filter lenovo"),
     ("ho-018", "ada garansi tukar unit baru ga kalau rusak?", None, [], "tanya_info_toko", {"topik": "garansi"}, {}, "log", "Tanya garansi ganti unit"),
     ("ho-019", "bukan laptop gaming min maksud saya laptop tipis", None, [], "perbaiki_percakapan", {"jenis": "koreksi", "rujukan": "laptop tipis"}, {}, "log", "Koreksi persona laptop tipis"),
@@ -515,8 +900,8 @@ ho_raw = [
     ("ho-022", "cari pc meja all in one", None, [], "cari_produk", {"kategori": "desktop", "nama_model": "all in one"}, {"kategori": "desktop"}, "buatan", "Cari pc aio"),
     ("ho-023", "laptop buat arsitek autocad dan sketchup", None, [], "minta_rekomendasi", {"kebutuhan_teks": "arsitek autocad sketchup", "persona": "arsitek"}, {"kebutuhan_teks": "arsitek autocad sketchup"}, "log", "Kebutuhan arsitek"),
     ("ho-024", "buat bapak saya", "kebutuhan", [], "jawab_pertanyaan_bot", {"slot": "persona", "nilai": "bapak"}, {"persona": "bapak", "sebutan": "bapak"}, "log", "Slot persona bapak tanpa aktivitas"),
-    ("ho-025", "yang pertama ini ssd nya berapa gb?", None, [{"no": 1, "kode": "KB-L01"}], "tanya_spesifikasi", {"produk": ["1"], "atribut": "storage"}, {}, "log", "Aksi baru: tanya spesifikasi storage"),
-    ("ho-026", "beda spek no 2 sama no 3 apa aja ya?", None, [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}, {"no": 3, "kode": "KB-L03"}], "bandingkan", {"produk": ["2", "3"]}, {}, "log", "Bandingkan 2 dan 3"),
+    ("ho-025", "yang pertama ini ssd nya berapa gb?", None, [{"no": 1, "kode": "KB-L01"}], "tanya_spesifikasi", {"rujukan_produk": [1], "atribut": "storage"}, {}, "log", "Aksi baru: tanya spesifikasi storage"),
+    ("ho-026", "beda spek no 2 sama no 3 apa aja ya?", None, [{"no": 1, "kode": "KB-L01"}, {"no": 2, "kode": "KB-L02"}, {"no": 3, "kode": "KB-L03"}], "bandingkan", {"rujukan_produk": [2, 3]}, {}, "log", "Bandingkan 2 dan 3"),
     ("ho-027", "ada pilihan warna lain ga?", None, [{"no": 1, "kode": "KB-L01"}], "lanjutan_hasil", {"jenis": "yang_lain"}, {}, "buatan", "Opsi warna lain"),
     ("ho-028", "alamat service center resminya di mana?", None, [], "tanya_info_toko", {"topik": "alamat"}, {}, "log", "Tanya alamat service center"),
     ("ho-029", "kok malah rekomendasiin yang mahal banget", None, [], "perbaiki_percakapan", {"jenis": "keluhan", "rujukan": "terlalu mahal"}, {}, "log", "Keluhan kemahalan"),
@@ -525,8 +910,8 @@ ho_raw = [
     ("ho-032", "ada laptop monitor 14 inch?", None, [], "cari_produk", {"kategori": "laptop", "ukuran_layar": 14.0}, {"kategori": "laptop"}, "buatan", "Cari layar 14 inch"),
     ("ho-033", "butuh laptop ringan enteng dibawa ke kampus", None, [], "minta_rekomendasi", {"kebutuhan_teks": "ringan portabel kampus", "persona": "mahasiswa"}, {"kebutuhan_teks": "ringan portabel kampus"}, "log", "Kebutuhan portabel"),
     ("ho-034", "buat kantor administrasi input excel", "aktivitas", [], "minta_rekomendasi", {"kebutuhan_teks": "administrasi excel"}, {"kebutuhan_teks": "administrasi excel"}, "log", "Kebutuhan konkret administrasi excel"),
-    ("ho-035", "apakah prosesornya i5 atau i3?", None, [{"no": 1, "kode": "KB-L01"}], "tanya_spesifikasi", {"produk": ["KB-L01"], "atribut": "cpu"}, {}, "log", "Aksi baru: tanya spesifikasi cpu"),
-    ("ho-036", "kalau dibanding macbook air m1 kencengan mana?", None, [{"no": 1, "kode": "KB-L01"}], "bandingkan", {"produk": ["KB-L01", "macbook air m1"]}, {}, "log", "Bandingkan dengan macbook"),
+    ("ho-035", "apakah prosesornya i5 atau i3?", None, [{"no": 1, "kode": "KB-L01"}], "tanya_spesifikasi", {"rujukan_produk": [1], "atribut": "cpu"}, {}, "log", "Aksi baru: tanya spesifikasi cpu"),
+    ("ho-036", "kalau dibanding macbook air m1 kencengan mana?", None, [{"no": 1, "kode": "KB-L01"}], "bandingkan", {"rujukan_produk": [1, "macbook air m1"]}, {}, "log", "Bandingkan dengan macbook"),
     ("ho-037", "ada yang harganya 8 jutaan?", None, [{"no": 1, "kode": "KB-L01", "harga": 11000000}], "lanjutan_hasil", {"jenis": "lebih_murah"}, {}, "log", "Lanjutan budget 8jt"),
     ("ho-038", "bisa split payment sebagian transfer sebagian cash?", None, [], "tanya_info_toko", {"topik": "pembayaran"}, {}, "log", "Tanya pembayaran split"),
     ("ho-039", "maksud saya bukan merek itu", None, [], "perbaiki_percakapan", {"jenis": "koreksi", "rujukan": "bukan merek itu"}, {}, "log", "Koreksi merek"),
@@ -535,7 +920,7 @@ ho_raw = [
     ("ho-042", "monitor 24 inch 144hz ada?", None, [], "cari_produk", {"kategori": "monitor", "ukuran_layar": 24.0}, {"kategori": "monitor"}, "buatan", "Cari monitor 24 inch"),
     ("ho-043", "laptop buat ngetik tesis s2", None, [], "minta_rekomendasi", {"kebutuhan_teks": "ngetik tesis s2", "persona": "mahasiswa s2"}, {"kebutuhan_teks": "ngetik tesis s2"}, "log", "Kebutuhan tesis"),
     ("ho-044", "budget sekitar 15 jutaan", "budget", [], "jawab_pertanyaan_bot", {"slot": "budget", "nilai": 15000000}, {"budget": 15000000}, "log", "Slot budget 15jt"),
-    ("ho-045", "apakah keyboardnya ada backlight nyala?", None, [{"no": 1, "kode": "KB-L01"}], "tanya_spesifikasi", {"produk": ["KB-L01"], "atribut": "keyboard"}, {}, "log", "Aksi baru: tanya spesifikasi keyboard"),
+    ("ho-045", "apakah keyboardnya ada backlight nyala?", None, [{"no": 1, "kode": "KB-L01"}], "tanya_spesifikasi", {"rujukan_produk": [1], "atribut": "keyboard"}, {}, "log", "Aksi baru: tanya spesifikasi keyboard"),
     ("ho-046", "tampilkan merek asus saja", None, [{"no": 1, "kode": "KB-L01"}], "lanjutan_hasil", {"jenis": "filter_tambahan"}, {}, "buatan", "Lanjutan filter asus"),
     ("ho-047", "apakah bisa klaim nota untuk kantor?", None, [], "tanya_info_toko", {"topik": "pembayaran"}, {}, "log", "Tanya nota faktur pajak"),
     ("ho-048", "lho kan tadi saya bilang budget 6 juta", None, [], "perbaiki_percakapan", {"jenis": "keluhan", "rujukan": "budget 6 juta"}, {"budget": 6000000}, "log", "Keluhan budget diabaikan"),
@@ -562,9 +947,10 @@ for item in dev_items:
     all_items.append(item)
 
 for item in held_out_items:
-    item["split"] = "held-out"
+    item["split"] = "held-out-v1-terpakai"
     item["ditulis_sebelum_melihat_model"] = "ya"  # 50 held-out ditulis sebelum melihat model!
     all_items.append(item)
+
 
 # 1. Tulis ke eval/parse_gold.jsonl
 with open("eval/parse_gold.jsonl", "w", encoding="utf-8") as f:
