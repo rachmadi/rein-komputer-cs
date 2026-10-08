@@ -42,6 +42,20 @@ def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
         elif "edit video" in k: forced_profiles.append("P02")
         if "kasir" in k: forced_profiles.append("P15")
         
+        if forced_profiles:
+            profil_list = []
+            for pid in forced_profiles[:limit]:
+                pdata = get_profile_by_id(pid)
+                if pdata:
+                    profil_list.append({
+                        "profil_id": pid,
+                        "nama": pdata.get("judul"),
+                        "ringkasan": pdata.get("text"),
+                        "tipe": pdata.get("tipe", "profil")
+                    })
+            if profil_list:
+                return {"profil": profil_list, "alasan": None}
+        
         vec = get_embedding(normalize_query(kebutuhan))
         if not vec:
             return {"profil": [], "alasan": "layanan_pengetahuan_error"}
