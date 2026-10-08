@@ -439,6 +439,15 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     def _handle_lanjutan_hasil(self, args: ActionArguments, state: dict) -> ActionResult:
         tampil = state.get("produk_tampil", [])
+        if not tampil:
+            fakta = {
+                "status": "belum_ada_hasil",
+                "pesan": "Belum ada produk yang ditampilkan sebelumnya untuk disesuaikan.",
+                "total_ditemukan": 0,
+                "produk": []
+            }
+            return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
+
         jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
         kategori = state.get("kategori") or "laptop"
 
@@ -456,6 +465,8 @@ class ActionEngine:
             seen_kodes = {p.get("kode") for p in tampil}
             matches = [p for p in candidates if p.get("kode") not in seen_kodes]
             matches.sort(key=lambda x: get_product_price(x))
+        else:
+            matches = []
         if args.merek_kecuali:
             mk_clean = str(args.merek_kecuali).strip().lower()
             matches = [
