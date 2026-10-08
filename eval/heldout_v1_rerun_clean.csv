@@ -1,0 +1,51 @@
+id,pesan,gold_aksi,pred_aksi,benar_salah,gold_args,pred_args,latensi_ms,retried
+ho-001,assalamualaikum min,sapa,sapa,BENAR,{},{},22777.1,tidak
+ho-002,laptop asus tuf gaming ada?,cari_produk,cari_produk,BENAR,"{""merek"": ""asus"", ""nama_model"": ""tuf gaming"", ""kategori"": ""laptop""}","{""kategori"": ""laptop"", ""merek"": ""asus"", ""nama_model"": ""tuf gaming""}",4136.8,tidak
+ho-003,butuh buat kasir toko sembako,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""kasir toko pos"", ""kategori"": ""desktop""}","{""kebutuhan_teks"": ""kasir toko sembako""}",4179.5,tidak
+ho-004,cuma buat zoom meeting dan skripsi aja,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""zoom meeting dan skripsi""}","{""kebutuhan_teks"": ""zoom meeting dan skripsi"", ""persona"": ""mahasiswa""}",4572.6,tidak
+ho-005,yang ketiga baterainya tahan berapa lama?,tanya_spesifikasi,tanya_spesifikasi,BENAR,"{""produk"": [""3""], ""atribut"": ""baterai""}","{""rujukan_produk"": [3], ""produk"": [""KB-L03""], ""atribut"": ""baterai""}",3787.9,tidak
+ho-006,antara ideapad sama vivobook bagusan mana?,bandingkan,bandingkan,BENAR,"{""produk"": [""KB-L01"", ""KB-L02""]}","{""rujukan_produk"": [1, 2], ""produk"": [""KB-L01"", ""KB-L02""]}",3444.4,tidak
+ho-007,ada yang di bawah 5 juta?,lanjutan_hasil,lanjutan_hasil,BENAR,"{""jenis"": ""lebih_murah""}",{},3532.5,tidak
+ho-008,bisa gosend instan hari ini?,tanya_info_toko,tanya_info_toko,BENAR,"{""topik"": ""pengiriman""}","{""topik"": ""pengiriman""}",3449.0,tidak
+ho-009,kok ngulang salam lagi sih,perbaiki_percakapan,perbaiki_percakapan,BENAR,"{""jenis"": ""keluhan"", ""rujukan"": ""ngulang salam""}","{""jenis"": ""koreksi""}",3817.4,tidak
+ho-010,makasih banyak infonya kak,basa_basi,basa_basi,BENAR,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3436.7,tidak
+ho-011,halo selamat sore,sapa,sapa,BENAR,{},{},3108.0,tidak
+ho-012,printer epson l3210 ada ga?,cari_produk,cari_produk,BENAR,"{""merek"": ""epson"", ""nama_model"": ""l3210"", ""kategori"": ""printer""}","{""kategori"": ""printer"", ""merek"": ""epson"", ""nama_model"": ""l3210""}",4246.0,tidak
+ho-013,laptop gaming rtx 4050 murah,cari_produk,cari_produk,BENAR,"{""kategori"": ""laptop"", ""gpu"": ""rtx 4050""}","{""kategori"": ""laptop"", ""gpu"": ""rtx 4050""}",3875.2,tidak
+ho-014,buat anak sma belajar coding python,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""belajar coding python"", ""persona"": ""anak sma""}","{""kebutuhan_teks"": ""belajar coding python"", ""persona"": ""anak sma""}",4493.5,tidak
+ho-015,budget maksimal 12 juta pas,jawab_pertanyaan_bot,jawab_pertanyaan_bot,BENAR,"{""slot"": ""budget"", ""nilai"": 12000000}","{""slot"": ""budget"", ""nilai"": 12000000}",4010.9,tidak
+ho-016,cukup ga ram segitu buat buka 20 tab chrome?,evaluasi_kecocokan,evaluasi_kecocokan,BENAR,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""20 tab chrome""}","{""kebutuhan_teks"": ""buka 20 tab chrome"", ""produk"": [""KB-L01""]}",3721.1,tidak
+ho-017,tampilin opsi yang lenovo aja dong,lanjutan_hasil,lanjutan_hasil,BENAR,"{""jenis"": ""filter_tambahan""}",{},3372.2,tidak
+ho-018,ada garansi tukar unit baru ga kalau rusak?,tanya_info_toko,tanya_info_toko,BENAR,"{""topik"": ""garansi""}","{""topik"": ""garansi""}",3448.1,tidak
+ho-019,bukan laptop gaming min maksud saya laptop tipis,perbaiki_percakapan,perbaiki_percakapan,BENAR,"{""jenis"": ""koreksi"", ""rujukan"": ""laptop tipis""}","{""jenis"": ""koreksi"", ""rujukan"": ""laptop tipis""}",3698.2,tidak
+ho-020,siap nanti saya kabari lagi ya,basa_basi,basa_basi,BENAR,"{""jenis"": ""pamit""}","{""jenis"": ""pamit""}",3393.2,tidak
+ho-021,pagi,sapa,sapa,BENAR,{},{},2993.3,tidak
+ho-022,cari pc meja all in one,cari_produk,cari_produk,BENAR,"{""kategori"": ""desktop"", ""nama_model"": ""all in one""}","{""kategori"": ""desktop""}",3399.3,tidak
+ho-023,laptop buat arsitek autocad dan sketchup,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""arsitek autocad sketchup"", ""persona"": ""arsitek""}","{""kebutuhan_teks"": ""autocad dan sketchup"", ""persona"": ""arsitek""}",4697.5,tidak
+ho-024,buat bapak saya,jawab_pertanyaan_bot,jawab_pertanyaan_bot,BENAR,"{""slot"": ""persona"", ""nilai"": ""bapak""}","{""slot"": ""persona"", ""nilai"": ""bapak""}",3724.6,tidak
+ho-025,yang pertama ini ssd nya berapa gb?,tanya_spesifikasi,tanya_spesifikasi,BENAR,"{""produk"": [""1""], ""atribut"": ""storage""}","{""rujukan_produk"": [1], ""produk"": [""KB-L01""], ""atribut"": ""storage""}",3802.7,tidak
+ho-026,beda spek no 2 sama no 3 apa aja ya?,bandingkan,bandingkan,BENAR,"{""produk"": [""2"", ""3""]}","{""rujukan_produk"": [2, 3], ""produk"": [""KB-L02"", ""KB-L03""]}",3425.9,tidak
+ho-027,ada pilihan warna lain ga?,lanjutan_hasil,tidak_jelas,SALAH,"{""jenis"": ""yang_lain""}","{""alasan"": ""Jenis 'pamit' tidak valid untuk aksi lanjutan_hasil""}",3479.9,tidak
+ho-028,alamat service center resminya di mana?,tanya_info_toko,tanya_info_toko,BENAR,"{""topik"": ""alamat""}","{""topik"": ""alamat""}",3375.6,tidak
+ho-029,kok malah rekomendasiin yang mahal banget,perbaiki_percakapan,perbaiki_percakapan,BENAR,"{""jenis"": ""keluhan"", ""rujukan"": ""terlalu mahal""}","{""jenis"": ""keluhan""}",3703.3,tidak
+ho-030,mantap makasih rekomendasinya,basa_basi,basa_basi,BENAR,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3489.4,tidak
+ho-031,permisi,sapa,sapa,BENAR,{},{},3060.6,tidak
+ho-032,ada laptop monitor 14 inch?,cari_produk,cari_produk,BENAR,"{""kategori"": ""laptop"", ""ukuran_layar"": 14.0}","{""kategori"": ""laptop"", ""ukuran_layar"": 14.0}",4228.1,tidak
+ho-033,butuh laptop ringan enteng dibawa ke kampus,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""ringan portabel kampus"", ""persona"": ""mahasiswa""}","{""kebutuhan_teks"": ""laptop ringan untuk dibawa ke kampus"", ""persona"": ""mahasiswa""}",5134.8,tidak
+ho-034,buat kantor administrasi input excel,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""administrasi excel""}","{""kebutuhan_teks"": ""input excel untuk kantor administrasi""}",4081.1,tidak
+ho-035,apakah prosesornya i5 atau i3?,tanya_spesifikasi,tanya_spesifikasi,BENAR,"{""produk"": [""KB-L01""], ""atribut"": ""cpu""}","{""produk"": [""KB-L01""], ""atribut"": ""cpu""}",3478.0,tidak
+ho-036,kalau dibanding macbook air m1 kencengan mana?,bandingkan,tidak_jelas,SALAH,"{""produk"": [""KB-L01"", ""macbook air m1""]}","{""alasan"": ""Rujukan produk 'MacBook Air M1' tidak ditemukan di produk yang tampil, butuh klarifikasi""}",3366.8,tidak
+ho-037,ada yang harganya 8 jutaan?,lanjutan_hasil,lanjutan_hasil,BENAR,"{""jenis"": ""lebih_murah""}",{},3596.0,tidak
+ho-038,bisa split payment sebagian transfer sebagian cash?,tanya_info_toko,tanya_info_toko,BENAR,"{""topik"": ""pembayaran""}","{""topik"": ""pembayaran""}",3599.7,tidak
+ho-039,maksud saya bukan merek itu,perbaiki_percakapan,perbaiki_percakapan,BENAR,"{""jenis"": ""koreksi"", ""rujukan"": ""bukan merek itu""}","{""jenis"": ""koreksi"", ""rujukan"": ""bukan merek itu""}",3839.5,tidak
+ho-040,terima kasih banyak min,basa_basi,basa_basi,BENAR,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3618.8,tidak
+ho-041,woi,sapa,tidak_jelas,SALAH,{},{},2854.2,tidak
+ho-042,monitor 24 inch 144hz ada?,cari_produk,cari_produk,BENAR,"{""kategori"": ""monitor"", ""ukuran_layar"": 24.0}","{""kategori"": ""monitor"", ""ukuran_layar"": 24.0}",4494.8,tidak
+ho-043,laptop buat ngetik tesis s2,minta_rekomendasi,minta_rekomendasi,BENAR,"{""kebutuhan_teks"": ""ngetik tesis s2"", ""persona"": ""mahasiswa s2""}","{""kebutuhan_teks"": ""mengetik tesis S2"", ""persona"": ""mahasiswa""}",4769.8,tidak
+ho-044,budget sekitar 15 jutaan,jawab_pertanyaan_bot,jawab_pertanyaan_bot,BENAR,"{""slot"": ""budget"", ""nilai"": 15000000}","{""slot"": ""budget"", ""nilai"": ""15 jutaan""}",3980.0,tidak
+ho-045,apakah keyboardnya ada backlight nyala?,tanya_spesifikasi,tanya_spesifikasi,BENAR,"{""produk"": [""KB-L01""], ""atribut"": ""keyboard""}","{""produk"": [""KB-L01""], ""atribut"": ""keyboard""}",3452.9,tidak
+ho-046,tampilkan merek asus saja,lanjutan_hasil,cari_produk,SALAH,"{""jenis"": ""filter_tambahan""}","{""merek"": ""asus""}",3589.5,tidak
+ho-047,apakah bisa klaim nota untuk kantor?,tanya_info_toko,tanya_info_toko,BENAR,"{""topik"": ""pembayaran""}","{""topik"": ""pembayaran""}",3870.4,tidak
+ho-048,lho kan tadi saya bilang budget 6 juta,perbaiki_percakapan,perbaiki_percakapan,BENAR,"{""jenis"": ""keluhan"", ""rujukan"": ""budget 6 juta""}","{""jenis"": ""koreksi"", ""rujukan"": ""budget 6 juta""}",3796.7,tidak
+ho-049,wkwkwk mantap,basa_basi,basa_basi,BENAR,"{""jenis"": ""lainnya""}",{},3139.7,tidak
+ho-050,zzzzz,tidak_jelas,tidak_jelas,BENAR,"{""alasan"": ""teks tidak bermakna""}",{},3093.7,tidak
