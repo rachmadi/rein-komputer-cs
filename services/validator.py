@@ -298,10 +298,14 @@ def validate_parser_output(
                 setattr(args, field, None)
 
     # 6. Normalisasi persona & sebutan di state_update
-    if state_up.sebutan:
-        state_up.sebutan = state_up.sebutan.strip()
+    # Persona adalah pengguna akhir perangkat, bukan lawan bicara.
     if state_up.persona:
         state_up.persona = state_up.persona.strip().lower()
+    if state_up.sebutan:
+        state_up.sebutan = state_up.sebutan.strip()
+        # Jika sebutan tidak sengaja disamakan dengan persona pengguna perangkat, hapus agar lawan bicara tetap disapa "Kak"
+        if state_up.persona and state_up.sebutan.lower() == state_up.persona:
+            state_up.sebutan = None
 
     return parsed, True
 

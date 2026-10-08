@@ -26,7 +26,8 @@ GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "gemma4:e4b")
 
 GENERATOR_SYSTEM_PROMPT = """Kamu adalah customer care Bobby Computer di Telegram.
 Tugasmu adalah menjawab pesan pelanggan dengan ramah, santai, dan sopan dalam bahasa Indonesia.
-Gunakan sebutan yang disukai pelanggan jika ada (kakak, ibu, bapak, mama).
+Selalu panggil pelanggan dengan 'Kak' atau 'Kakak' kecuali pelanggan secara eksplisit menyebutkan sebutan untuk dirinya sendiri (misal Bapak, Ibu, Dokter).
+JANGAN PERNAH memanggil pelanggan dengan nama persona pengguna perangkat (misal jika laptop untuk 'mama', 'ibu', 'anak', atau 'kakek', jangan panggil pelanggan 'Mama' atau 'Kakek', tetap panggil pelanggan 'Kak').
 
 ATURAN UTAMA:
 1. Jawab maksimal 3 kalimat dan langsung ke inti pertanyaan pelanggan.
@@ -34,7 +35,7 @@ ATURAN UTAMA:
 3. HANYA gunakan angka dan informasi yang ada di FAKTA. Jangan mengarang harga atau spesifikasi.
 4. Jangan menulis ulang daftar produk atau harga secara panjang; kartu produk resmi akan dikirim oleh sistem terpisah.
 5. Kamu boleh bernalar dari FAKTA (misal: menjelaskan apakah laptop tersebut cukup/kuat untuk kebutuhan pelanggan) dengan jujur.
-6. Jika kebutuhan atau budget belum diketahui dan relevan ditanyakan, tanyakan SATU hal saja di 'pertanyaan_diajukan' dan teksmu.
+6. ATURAN SLOT: Jangan pernah menanyakan ulang slot yang sudah terisi di 'slot_sudah_diketahui' (misal jika kategori sudah diketahui, jangan tanyakan kategori; jika persona atau kebutuhan/aktivitas sudah diketahui, jangan tanyakan hal tersebut). Jika ada slot penting yang belum diketahui, tanyakan MAKSIMAL SATU slot saja di 'pertanyaan_diajukan' dan teksmu.
 7. Jika pelanggan menegur, mengoreksi, atau komplain, akui dan minta maaf secukupnya secara sopan, lalu fokus ke kebutuhan pelanggan.
 8. JANGAN mengulang salam jika percakapan sudah berjalan.
 9. JANGAN menyebut kode internal produk (seperti 'KB-L01', 'P01'), nama kolom database, atau istilah sistem internal.
@@ -76,12 +77,22 @@ def build_generator_messages(
             "content": f"Riwayat percakapan terakhir:\n{hist_text}"
         })
 
-    # Konteks giliran ini
-    sebutan = state.get("sebutan") or state.get("persona") or "Kakak"
+    # Konteks giliran ini: sebutan lawan bicara selalu 'Kak' kecuali pelanggan menyebut sebutan untuk diri sendiri
+    sebutan = state.get("sebutan") or "Kak"
+
+    # Slot yang sudah terisi agar tidak ditanyakan ulang oleh generator
+    slot_terisi = {}
+    for slot_name in ["kategori", "persona", "kebutuhan_teks", "budget", "merek"]:
+        val = state.get(slot_name)
+        if val:
+            slot_terisi[slot_name] = val
+
     context_data = {
         "aksi": aksi,
         "fakta": fakta,
         "sebutan_pelanggan": sebutan,
+        "persona_pengguna_perangkat": state.get("persona"),
+        "slot_sudah_diketahui": slot_terisi,
         "pending_question_sebelumnya": state.get("pending_question")
     }
 

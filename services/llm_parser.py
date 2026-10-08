@@ -59,6 +59,8 @@ KEBIJAKAN BATAS AKSI:
 - 'lanjutan_hasil' HANYA sah jika ada produk yang sedang tampil di layar ('produk_tampil' tidak kosong).
 - Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama produk dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
+- 'persona' adalah pengguna akhir perangkat (misal: mama, kakek, anak, staf), BUKAN lawan bicara. Jangan mengisi 'sebutan' dengan persona tersebut. Lawan bicara tetap disapa 'Kak' kecuali pelanggan menyebut sebutan untuk dirinya sendiri.
+- Parser boleh mengekstrak beberapa slot sekaligus dari satu kalimat di 'argumen' dan 'pembaruan_state' (misal: kategori dan persona dapat diisi bersamaan).
 - Untuk pengecualian merek pada 'cari_produk' atau 'lanjutan_hasil', masukkan ke 'merek_kecuali'.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
 """
