@@ -150,6 +150,8 @@ def generate_response(
     json_valid = False
     error_msg = None
 
+    prompt_eval_count = 0
+    eval_count = 0
     try:
         req = urllib.request.Request(
             f"{ollama_url}/api/chat",
@@ -159,6 +161,8 @@ def generate_response(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             raw_content = data.get("message", {}).get("content", "").strip()
+            prompt_eval_count = data.get("prompt_eval_count", 0)
+            eval_count = data.get("eval_count", 0)
 
         parsed_json = json.loads(raw_content)
         out = GeneratorOutput.model_validate(parsed_json)
@@ -176,6 +180,8 @@ def generate_response(
         "latency_ms": round(dt_ms, 2),
         "json_valid": json_valid,
         "error": error_msg,
-        "raw_content": raw_content
+        "raw_content": raw_content,
+        "prompt_eval_count": prompt_eval_count,
+        "eval_count": eval_count
     }
     return out, metrics

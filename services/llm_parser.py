@@ -297,6 +297,8 @@ def _call_ollama_chat(
     raw_content = ""
     json_valid = False
     error_msg = None
+    prompt_eval_count = 0
+    eval_count = 0
     try:
         req = urllib.request.Request(
             f"{ollama_url}/api/chat",
@@ -306,6 +308,8 @@ def _call_ollama_chat(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             raw_content = data.get("message", {}).get("content", "").strip()
+            prompt_eval_count = data.get("prompt_eval_count", 0)
+            eval_count = data.get("eval_count", 0)
 
         raw_json = json.loads(raw_content)
         json_valid = True
@@ -314,7 +318,7 @@ def _call_ollama_chat(
         raw_json = {"aksi": "tidak_jelas", "argumen": {"alasan": f"Error: {str(e)}"}}
         error_msg = str(e)
 
-    return raw_json, json_valid, raw_content, error_msg
+    return raw_json, json_valid, raw_content, error_msg, prompt_eval_count, eval_count
 
 
 def parse_user_message(
@@ -335,9 +339,14 @@ def parse_user_message(
     schema = get_parser_json_schema()
     messages = build_parser_messages(pesan, state=state, history=history, few_shots=few_shots)
 
-    raw_json, json_valid, raw_content, error_msg = _call_ollama_chat(
+    res_call = _call_ollama_chat(
         messages, schema, model, ollama_url, timeout
     )
+    if len(res_call) == 6:
+        raw_json, json_valid, raw_content, error_msg, p_eval_cnt, eval_cnt = res_call
+    else:
+        raw_json, json_valid, raw_content, error_msg = res_call[:4]
+        p_eval_cnt, eval_cnt = 0, 0
 
     validated_output, is_schema_valid = validate_parser_output(raw_json, session_state=state)
     is_consistent, reason = check_state_consistency(validated_output, session_state=state)
@@ -353,9 +362,16 @@ def parse_user_message(
         allowed_actions = get_allowed_actions_for_state(state)
         restricted_schema = get_parser_json_schema(allowed_actions=allowed_actions)
 
-        raw_json_2, json_valid_2, raw_content_2, error_msg_2 = _call_ollama_chat(
+        res_call_2 = _call_ollama_chat(
             messages, restricted_schema, model, ollama_url, timeout
         )
+        if len(res_call_2) == 6:
+            raw_json_2, json_valid_2, raw_content_2, error_msg_2, p_eval_cnt_2, eval_cnt_2 = res_call_2
+        else:
+            raw_json_2, json_valid_2, raw_content_2, error_msg_2 = res_call_2[:4]
+            p_eval_cnt_2, eval_cnt_2 = 0, 0
+        p_eval_cnt += p_eval_cnt_2
+        eval_cnt += eval_cnt_2
         validated_output_2, is_schema_valid_2 = validate_parser_output(raw_json_2, session_state=state)
         is_consistent_2, reason_2 = check_state_consistency(validated_output_2, session_state=state)
 
@@ -385,7 +401,9 @@ def parse_user_message(
         "schema_valid": is_schema_valid,
         "retried": retried,
         "raw_content": raw_content,
-        "error": error_msg
+        "error": error_msg,
+        "prompt_eval_count": p_eval_cnt,
+        "eval_count": eval_cnt
     }
 
     return validated_output, metrics

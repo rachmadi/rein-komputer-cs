@@ -52,6 +52,9 @@ class TurnExecutionResult:
     json_valid: bool = True
     pelanggaran_pemeriksa: List[str] = field(default_factory=list)
     is_emergency_fallback: bool = False
+    re_parse: bool = False
+    prompt_eval_count: int = 0
+    eval_count: int = 0
 
 
 class SessionPipeline:
@@ -189,7 +192,10 @@ class SessionPipeline:
             latensi_total_ms=round(lat_total, 1),
             json_valid=parse_metrics.get("json_valid", True),
             pelanggaran_pemeriksa=violations,
-            is_emergency_fallback=is_fallback
+            is_emergency_fallback=is_fallback,
+            re_parse=parse_metrics.get("retried", False),
+            prompt_eval_count=(parse_metrics.get("prompt_eval_count", 0) or 0) + (gen_metrics.get("prompt_eval_count", 0) or 0),
+            eval_count=(parse_metrics.get("eval_count", 0) or 0) + (gen_metrics.get("eval_count", 0) or 0)
         )
 
         return turn_result, state
