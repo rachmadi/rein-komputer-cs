@@ -50,6 +50,26 @@ def get_product_price(p: dict) -> int:
     return int(p.get("harga") or p.get("harga_idr") or 0)
 
 
+def get_product_brand(p: dict) -> str:
+    return str(p.get("brand") or p.get("merek") or "").strip().lower()
+
+
+def get_product_screen_inch(p: dict) -> float | None:
+    val = p.get("screen_inch") or p.get("ukuran_layar")
+    if val is not None:
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            pass
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(?:inci|inch|\"|'|s\b)", str(p.get("display") or "") + " " + str(p.get("nama") or ""))
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    return None
+
+
 class ActionEngine:
     def __init__(self, catalog: Catalog | None = None, db_path: str | None = None):
         if catalog:
@@ -205,19 +225,23 @@ class ActionEngine:
 
         matches = []
         for p in self.catalog.products:
-            p_cat = str(p.get("kategori", "")).lower()
-            p_nama = str(p.get("nama", "")).lower()
-            p_merek = str(p.get("merek", "")).lower()
+            p_cat = str(p.get("kategori", "")).strip().lower()
+            p_nama = str(p.get("nama", "")).strip().lower()
+            p_brand = get_product_brand(p)
 
-            if kategori and p_cat != kategori.lower():
+            if kategori and p_cat != kategori.strip().lower():
                 continue
-            if merek and (merek.lower() not in p_nama and merek.lower() not in p_merek):
+            if merek:
+                m_clean = str(merek).strip().lower()
+                if m_clean != p_brand and m_clean not in p_brand and m_clean not in p_nama:
+                    continue
+            if merek_kecuali:
+                mk_clean = str(merek_kecuali).strip().lower()
+                if mk_clean == p_brand or mk_clean in p_brand or mk_clean in p_nama:
+                    continue
+            if nama_model and nama_model.strip().lower() not in p_nama:
                 continue
-            if merek_kecuali and (merek_kecuali.lower() in p_nama or merek_kecuali.lower() in p_merek):
-                continue
-            if nama_model and nama_model.lower() not in p_nama:
-                continue
-            if gpu and gpu.lower() not in str(p.get("gpu", "")).lower():
+            if gpu and gpu.strip().lower() not in str(p.get("gpu", "")).strip().lower():
                 continue
             if min_harga and get_product_price(p) < min_harga:
                 continue
@@ -227,8 +251,10 @@ class ActionEngine:
                 continue
             if storage_gb_min and (p.get("storage_ssd_gb") or 0) < storage_gb_min:
                 continue
-            if ukuran_layar and abs((p.get("ukuran_layar") or 0.0) - float(ukuran_layar)) > 0.6:
-                continue
+            if ukuran_layar:
+                p_inch = get_product_screen_inch(p)
+                if p_inch is not None and abs(p_inch - float(ukuran_layar)) > 0.6:
+                    continue
 
             matches.append(p)
 
@@ -255,8 +281,8 @@ class ActionEngine:
                     "kategori": kategori, "merek": merek, "merek_kecuali": merek_kecuali,
                     "gpu": gpu, "max_harga": max_harga, "ram_gb_min": ram_gb_min
                 },
-                "kategori_tersedia": sorted(list(set(p.get("kategori") for p in self.catalog.products if p.get("kategori")))),
-                "merek_tersedia": sorted(list(set(p.get("merek") for p in self.catalog.products if p.get("merek"))))
+                "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))))
             }
         else:
             fakta = {
@@ -430,10 +456,14 @@ class ActionEngine:
             seen_kodes = {p.get("kode") for p in tampil}
             matches = [p for p in candidates if p.get("kode") not in seen_kodes]
             matches.sort(key=lambda x: get_product_price(x))
-        else:  # filter_tambahan
-            matches = candidates
-            if args.merek_kecuali:
-                matches = [p for p in matches if args.merek_kecuali.lower() not in p.get("nama", "").lower()]
+        if args.merek_kecuali:
+            mk_clean = str(args.merek_kecuali).strip().lower()
+            matches = [
+                p for p in matches
+                if mk_clean != get_product_brand(p)
+                and mk_clean not in get_product_brand(p)
+                and mk_clean not in str(p.get("nama", "")).lower()
+            ]
 
         top = matches[:3]
         formatted = []

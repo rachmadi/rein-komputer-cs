@@ -137,3 +137,28 @@ def test_action_engine_tanya_info_toko(engine):
     assert res.aksi == ActionEnum.TANYA_INFO_TOKO
     assert res.fakta["data_tersedia"] is False
     assert "@cs_bobbycomputer" in res.fakta["kontak_staf"]
+
+
+def test_action_engine_brand_case_normalization_asus_vivobook_tuf(engine):
+    """Poin 1: Uji merek asus/ASUS/Asus pada fixture menemukan ASUS Vivobook dan TUF."""
+    for variant in ["asus", "ASUS", "Asus"]:
+        parsed = ParserOutput(
+            aksi=ActionEnum.CARI_PRODUK,
+            argumen=ActionArguments(merek=variant, kategori="laptop"),
+            pembaruan_state=StateUpdate()
+        )
+        res = engine.execute(parsed, session_state={})
+        assert res.fakta["status"] == "sukses", f"Gagal pada varian: {variant}"
+        assert len(res.produk_list) >= 2, f"Harus menemukan minimal 2 laptop ASUS untuk varian: {variant}"
+        names = [p["nama"] for p in res.produk_list]
+        assert any("Vivobook" in n for n in names), f"Vivobook tidak ditemukan untuk varian: {variant}"
+
+    # Pastikan TUF Gaming A15 juga ditemukan saat mencari ASUS gaming atau tanpa limit
+    parsed_tuf = ParserOutput(
+        aksi=ActionEnum.CARI_PRODUK,
+        argumen=ActionArguments(merek="ASUS", nama_model="TUF"),
+        pembaruan_state=StateUpdate()
+    )
+    res_tuf = engine.execute(parsed_tuf, session_state={})
+    assert res_tuf.fakta["status"] == "sukses"
+    assert any("TUF" in p["nama"] for p in res_tuf.produk_list)
