@@ -19,11 +19,21 @@ import logging
 import os
 import sys
 import asyncio
+from datetime import datetime
 
-from telegram import Update
+import hashlib
+import json
+import uuid
+
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Update,
+)
 from telegram.constants import ParseMode
 from telegram.ext import (
     ApplicationBuilder,
+    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -35,6 +45,33 @@ load_dotenv()
 
 # Integrasi dengan Unified Chat Service
 from services.chat_service import process_chat_message, reset_chat_session
+
+FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
+
+def record_feedback(session_id: str, user_id: int | str, rating: str, note: str = "") -> None:
+    """Simpan feedback pelanggan ke log secara teranonimasi."""
+    os.makedirs("logs", exist_ok=True)
+    anon_user = hashlib.sha256(str(user_id).encode("utf-8")).hexdigest()[:12]
+    anon_session = hashlib.sha256(str(session_id).encode("utf-8")).hexdigest()[:12]
+    record = {
+        "timestamp": datetime.now().isoformat(),
+        "anon_user_id": anon_user,
+        "anon_session_id": anon_session,
+        "raw_session_id": session_id,
+        "rating": rating,
+        "note": note
+    }
+    with open(FEEDBACK_LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+def get_feedback_keyboard(turn_id: str) -> InlineKeyboardMarkup:
+    """Inline keyboard 👍/👎 untuk feedback percakapan."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("👍", callback_data=f"fb:like:{turn_id}"),
+            InlineKeyboardButton("👎", callback_data=f"fb:dislike:{turn_id}")
+        ]
+    ])
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -132,19 +169,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         route = res.get("route", "")
 
         # Kirim balasan teks utama (tanpa ** mentah, menggunakan HTML atau fallback teks polos)
-        parts = reply_text.split('\n\n')
-        for part in parts:
-            p_clean = part.strip()
-            if not p_clean:
-                continue
+        parts = [p.strip() for p in reply_text.split('\n\n') if p.strip()]
+        turn_id = uuid.uuid4().hex[:8]
+        for idx, p_clean in enumerate(parts):
+            is_last = (idx == len(parts) - 1)
+            kb = get_feedback_keyboard(turn_id) if is_last else None
 
             html_text, p_mode = format_telegram_text(p_clean)
             try:
-                await update.message.reply_text(html_text, parse_mode=p_mode)
+                await update.message.reply_text(html_text, parse_mode=p_mode, reply_markup=kb)
             except Exception as tg_err:
                 logger.warning(f"ParseMode HTML gagal ({tg_err}), fallback ke teks polos tanpa asteris")
                 plain_clean = re.sub(r"\*\*", "", p_clean)
-                await update.message.reply_text(plain_clean)
+                await update.message.reply_text(plain_clean, reply_markup=kb)
             await asyncio.sleep(0.5)
         typing_task.cancel()
 
@@ -226,6 +263,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
 
 
+async def feedback_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Menangani feedback jempol 👍 / 👎 dari pelanggan Telegram."""
+    query = update.callback_query
+    if not query or not query.data:
+        return
+
+    data = query.data
+    if data.startswith("fb:"):
+        parts = data.split(":")
+        rating_type = parts[1] if len(parts) > 1 else "unknown"
+        turn_id = parts[2] if len(parts) > 2 else ""
+
+        chat_id = update.effective_chat.id if update.effective_chat else "unknown"
+        user_id = query.from_user.id if query.from_user else "unknown"
+        session_id = f"tg_{chat_id}"
+
+        record_feedback(
+            session_id=session_id,
+            user_id=user_id,
+            rating=rating_type,
+            note=f"turn_{turn_id}"
+        )
+
+        ack_text = "Terima kasih atas tanggapan positifnya! 😊" if rating_type == "like" else "Terima kasih atas masukannya, kami akan terus meningkatkan kualitas rekomendasi 🙏"
+        await query.answer(ack_text)
+        try:
+            label = "👍 Tanggapan dicatat" if rating_type == "like" else "👎 Masukan dicatat"
+            await query.edit_message_reply_markup(
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(label, callback_data="none")]])
+            )
+        except Exception:
+            pass
+
+
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error('Exception while handling an update:', exc_info=context.error)
 
@@ -251,6 +322,7 @@ def main() -> None:
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("reset", reset_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CallbackQueryHandler(feedback_callback_handler, pattern=r"^fb:"))
     app.add_error_handler(error_handler)
 
     print("Bot berhasil berjalan dan mendengarkan pesan Telegram.")
