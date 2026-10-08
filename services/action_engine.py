@@ -325,31 +325,73 @@ class ActionEngine:
                 continue
 
             p_price = get_product_price(p)
-            if filters:
-                passed, failure_reason, penalty, report = apply_filters(p, filters)
-                unmet_desc = format_natural_unmet_requirements(report.get("tidak_terpenuhi", []))
-                eval_results.append({
-                    "kode": p.get("kode"),
-                    "nama": p.get("nama"),
-                    "harga": p_price,
-                    "harga_formatted": format_rupiah(p_price),
-                    "spesifikasi_aktual": clean_specs(p),
-                    "lolos": passed,
-                    "terpenuhi": report.get("terpenuhi", []),
-                    "tidak_terpenuhi": report.get("tidak_terpenuhi", []),
-                    "keterangan_belum_terpenuhi": unmet_desc or failure_reason or "Semua syarat terpenuhi",
-                    "kesimpulan": "Cocok dan mumpuni" if passed else "Kurang mumpuni untuk kebutuhan tersebut"
-                })
-            else:
-                eval_results.append({
-                    "kode": p.get("kode"),
-                    "nama": p.get("nama"),
-                    "harga": p_price,
-                    "harga_formatted": format_rupiah(p_price),
-                    "spesifikasi_aktual": clean_specs(p),
-                    "lolos": True,
-                    "kesimpulan": "Spesifikasi standar terverifikasi"
-                })
+            p_cpu_tier = p.get("cpu_tier") or 1
+            p_ram = p.get("ram_gb") or 8
+            p_ssd = p.get("storage_ssd_gb") or 256
+            p_vram = p.get("vram_gb") or p.get("gpu_vram_gb") or 0
+
+            # Target minimum dan rekomendasi dari profil
+            min_cpu = 1
+            min_ram = 8
+            min_ssd = 256
+            min_vram = 0
+
+            for f in filters:
+                f_field = f.get("field")
+                f_val = f.get("value")
+                if f_field == "cpu_tier" and isinstance(f_val, (int, float)):
+                    min_cpu = int(f_val)
+                elif f_field == "ram_gb" and isinstance(f_val, (int, float)):
+                    min_ram = int(f_val)
+                elif f_field == "storage_ssd_gb" and isinstance(f_val, (int, float)):
+                    min_ssd = int(f_val)
+                elif f_field == "vram_gb" and isinstance(f_val, (int, float)):
+                    min_vram = int(f_val)
+
+            rec_cpu = min(4, min_cpu + 1)
+            rec_ram = max(16, min_ram * 2) if min_ram < 16 else min_ram
+            rec_ssd = max(512, min_ssd * 2) if min_ssd < 512 else min_ssd
+            rec_vram = max(min_vram, 4 if min_vram > 0 else 0)
+
+            eval_results.append({
+                "kode": p.get("kode"),
+                "nama": p.get("nama"),
+                "harga": p_price,
+                "harga_formatted": format_rupiah(p_price),
+                "spesifikasi_aktual": clean_specs(p),
+                "angka_aktual": {
+                    "cpu_tier": p_cpu_tier,
+                    "ram_gb": p_ram,
+                    "ssd_gb": p_ssd,
+                    "gpu_vram_gb": p_vram
+                },
+                "standar_profil": {
+                    "minimum": {
+                        "cpu_tier": min_cpu,
+                        "ram_gb": min_ram,
+                        "ssd_gb": min_ssd,
+                        "gpu_vram_gb": min_vram
+                    },
+                    "rekomendasi": {
+                        "cpu_tier": rec_cpu,
+                        "ram_gb": rec_ram,
+                        "ssd_gb": rec_ssd,
+                        "gpu_vram_gb": rec_vram
+                    }
+                },
+                "selisih_terhadap_minimum": {
+                    "cpu_tier": p_cpu_tier - min_cpu,
+                    "ram_gb": p_ram - min_ram,
+                    "ssd_gb": p_ssd - min_ssd,
+                    "gpu_vram_gb": p_vram - min_vram
+                },
+                "selisih_terhadap_rekomendasi": {
+                    "cpu_tier": p_cpu_tier - rec_cpu,
+                    "ram_gb": p_ram - rec_ram,
+                    "ssd_gb": p_ssd - rec_ssd,
+                    "gpu_vram_gb": p_vram - rec_vram
+                }
+            })
 
         fakta = {
             "status": "sukses",

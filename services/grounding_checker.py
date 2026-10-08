@@ -74,6 +74,27 @@ class GroundingChecker:
 
         return valid_prices
 
+    @staticmethod
+    def extract_spec_numbers_from_facts(fakta: dict) -> set[int]:
+        """Ekstrak angka spesifikasi (RAM GB, SSD GB, tier, dll) dari fakta evaluasi."""
+        nums = set()
+        eval_prods = fakta.get("evaluasi_produk", [])
+        for ep in eval_prods:
+            angka = ep.get("angka_aktual", {})
+            for v in angka.values():
+                if isinstance(v, (int, float)) and v > 0:
+                    nums.add(int(v))
+            standar = ep.get("standar_profil", {})
+            for sub in ("minimum", "rekomendasi"):
+                for v in standar.get(sub, {}).values():
+                    if isinstance(v, (int, float)) and v > 0:
+                        nums.add(int(v))
+            for selisih in ("selisih_terhadap_minimum", "selisih_terhadap_rekomendasi"):
+                for v in ep.get(selisih, {}).values():
+                    if isinstance(v, (int, float)) and v > 0:
+                        nums.add(int(v))
+        return nums
+
     def check(self, teks: str, fakta: dict, state: dict | None = None) -> Tuple[bool, List[str]]:
         """
         Memeriksa apakah teks jawaban LLM mematuhi grounding dan keselamatan fakta.
@@ -117,6 +138,20 @@ class GroundingChecker:
                         break
                 if not is_grounded:
                     violations.append(f"Menyebutkan nominal harga Rp{p:,} yang tidak tercatat di fakta.")
+
+        # 6. Periksa kesahihan angka spesifikasi pada evaluasi_kecocokan
+        if fakta.get("evaluasi_produk"):
+            valid_nums = self.extract_spec_numbers_from_facts(fakta)
+            spec_matches = re.findall(r"(?:ram|ssd|vram|tier)\s*(\d+)", teks.lower())
+            for sm in spec_matches:
+                val = int(sm)
+                if val not in valid_nums:
+                    violations.append(f"Menyebutkan angka spesifikasi {val} yang tidak ada di fakta evaluasi produk.")
+            gb_matches = re.findall(r"(\d+)\s*gb\b", teks.lower())
+            for gm in gb_matches:
+                val = int(gm)
+                if val not in valid_nums:
+                    violations.append(f"Menyebutkan kapasitas memori {val} GB yang tidak ada di fakta.")
 
         is_valid = len(violations) == 0
         return is_valid, violations
