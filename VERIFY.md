@@ -2,8 +2,10 @@
 *Seluruh data dan metrik dalam dokumen ini dihasilkan secara programatik oleh `scripts/verify.py`.*
 
 ## 1. Status Repositori & Riwayat Commit
-- **Hash Commit Terkini (HEAD)**: `67d6467`
-- **Riwayat Commit sejak `1d65c32`** (25 commit):
+- **Hash Commit Terkini (HEAD)**: `5049f8a`
+- **Riwayat Commit sejak `1d65c32`** (27 commit):
+  - `5049f8a eval(replay): record 3-run replay transcript and evaluasi_kecocokan raw generator output`
+  - `9c04c7f docs(verify): generate VERIFY.md via automated verification script`
   - `67d6467 docs(backlog): record technical debt explanations and Phase 3 migration roadmap`
   - `dedcdaf feat(verify): enhance git commit range detection with fallback in verify.py`
   - `03d2dc5 feat(replay): update replay script with aligned test cases and track regression dataset`
@@ -31,7 +33,7 @@
   - `6a79c50 fix(parser): enforce state consistency with 1x reparse retry, split jenis enums, and clarify cari_produk`
 
 ## 2. Hasil Eksekusi Pytest Suite Penuh
-- **Baris Ringkasan Verbatim**: `172 passed, 20 skipped, 2 warnings in 152.62s (0:02:32)`
+- **Baris Ringkasan Verbatim**: `172 passed, 20 skipped, 2 warnings in 146.41s (0:02:26)`
 - **Status Exit Code**: `0` (SUKSES / HIJAU)
 - **Daftar Nodeid Tes yang Di-skip** (20 tes):
   - `SKIPPED [1] tests\test_conversational_rubric.py:43: Legacy v1 test: asserts obsolete route 'GREETING' instead of v2 ActionEnum 'sapa'; requires rewrite to v2 action & facts architecture`
@@ -89,24 +91,24 @@
 **Daftar Kebocoran Terdeteksi**:
 - `.\telegram_bot.py`: "Untuk kerja"
 - `.\core\acts.py`: "Printer tipe lain"
-- `.\core\engine.py`: "Lebih mahal ya?"
-- `.\core\engine.py`: "Untuk desain"
-- `.\core\engine.py`: "Buat mama sih"
-- `.\core\engine.py`: "Untuk kerja"
-- `.\core\engine.py`: "Ada yang core i7?"
-- `.\core\engine.py`: "buat mama sih"
 - `.\core\engine.py`: "Itu semua untuk kantoran?"
+- `.\core\engine.py`: "buat mama sih"
+- `.\core\engine.py`: "Ada yang core i7?"
+- `.\core\engine.py`: "Untuk desain"
+- `.\core\engine.py`: "Untuk kerja"
+- `.\core\engine.py`: "Buat mama sih"
+- `.\core\engine.py`: "Lebih mahal ya?"
 - `.\data\knowledge\panduan_kebutuhan_v2.md`: "Untuk desain"
 - `.\data\knowledge\panduan_kebutuhan_v2.md`: "Untuk kerja"
-- `.\docs\5_real_telegram_conversations.json`: "tokonya ada di mana ya lokasinya?"
-- `.\docs\5_real_telegram_conversations.json`: "yang kedua bagus nggak?"
 - `.\docs\5_real_telegram_conversations.json`: "Yang tanya HP 14 siapa?"
-- `.\docs\5_real_telegram_conversations.json`: "Untuk kerja"
 - `.\docs\5_real_telegram_conversations.json`: "Mau cari laptop"
-- `.\docs\5_real_telegram_conversations.json`: "Emang spek segitu cukup?"
+- `.\docs\5_real_telegram_conversations.json`: "yang kedua bagus nggak?"
+- `.\docs\5_real_telegram_conversations.json`: "Untuk kerja"
 - `.\docs\5_real_telegram_conversations.json`: "Buat hiburan"
-- `.\docs\ablation_study_results.json`: "tokonya ada di mana ya lokasinya?"
-- `.\docs\ablation_study_results.json`: "ada printer canon ga ya"
+- `.\docs\5_real_telegram_conversations.json`: "Emang spek segitu cukup?"
+- `.\docs\5_real_telegram_conversations.json`: "tokonya ada di mana ya lokasinya?"
+- `.\docs\ablation_study_results.json`: "bisa gosend instan hari ini?"
+- `.\docs\ablation_study_results.json`: "wkwkwk mantap"
 - ... dan 323 kebocoran lainnya.
 
 ## 6. Kunci Integritas Dataset Gold
