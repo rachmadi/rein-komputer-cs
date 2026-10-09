@@ -69,8 +69,18 @@ class GroundingChecker:
         recurse_extract(fakta)
         if state:
             recurse_extract(state.get("produk_tampil", []))
-            if state.get("budget"):
-                valid_prices.add(int(state["budget"]))
+            b_val = state.get("budget")
+            if b_val:
+                if isinstance(b_val, (int, float)):
+                    valid_prices.add(int(b_val))
+                elif isinstance(b_val, str):
+                    try:
+                        valid_prices.add(int(b_val.strip()))
+                    except ValueError:
+                        from services.catalog_search import parse_budget_from_text
+                        parsed_b = parse_budget_from_text(b_val)
+                        if parsed_b:
+                            valid_prices.add(parsed_b)
 
         return valid_prices
 

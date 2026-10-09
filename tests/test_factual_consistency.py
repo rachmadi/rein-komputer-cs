@@ -143,3 +143,12 @@ def test_fact_consistency_evaluasi_kecocokan_structured_penilaian():
     assert is_ok2 is False
     assert any("KB-L01" in v and "bertentangan dengan tanda selisih" in v for v in viols2)
 
+
+def test_fact_consistency_string_budget_handling():
+    checker = GroundingChecker()
+    fakta = {"status": "sukses", "produk": []}
+    prices = checker.extract_prices_from_facts(fakta, state={"budget": "lebih mahal"})
+    assert isinstance(prices, set)
+    prices2 = checker.extract_prices_from_facts(fakta, state={"budget": "10 juta"})
+    assert 10_000_000 in prices2
+
