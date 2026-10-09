@@ -2,8 +2,15 @@
 *Seluruh data dan metrik dalam dokumen ini dihasilkan secara programatik oleh `scripts/verify.py`.*
 
 ## 1. Status Repositori & Riwayat Commit
-- **Hash Commit Terkini (HEAD)**: `2fef42b`
-- **Riwayat Commit sejak `1d65c32`** (47 commit):
+- **Hash Commit Terkini (HEAD)**: `b5477c1`
+- **Riwayat Commit sejak `1d65c32`** (54 commit):
+  - `b5477c1 putaran7-tahap4-eval`
+  - `d168b6f putaran7-tahap3-threshold-rag`
+  - `a55399b putaran7-tahap3`
+  - `7c70329 putaran7-tahap2-tes-merah`
+  - `87b8411 putaran7-tahap2-label`
+  - `6d6de2e putaran7-tahap1-diagnosis`
+  - `ca97b76 putaran6-tahap6-laporan`
   - `2fef42b putaran6-tahap5`
   - `375ec2e putaran6-tahap4`
   - `bb64230 putaran6-tahap4-probe-labels`
@@ -53,7 +60,7 @@
   - `6a79c50 fix(parser): enforce state consistency with 1x reparse retry, split jenis enums, and clarify cari_produk`
 
 ## 2. Hasil Eksekusi Pytest Suite Penuh
-- **Baris Ringkasan Verbatim**: `223 passed, 20 skipped, 2 warnings in 179.27s (0:02:59)`
+- **Baris Ringkasan Verbatim**: `238 passed, 20 skipped, 2 warnings in 438.76s (0:07:18)`
 - **Status Exit Code**: `0` (SUKSES / HIJAU)
 - **Daftar Nodeid Tes yang Di-skip** (20 tes):
   - `SKIPPED [1] tests\test_conversational_rubric.py:43: Legacy v1 test: asserts obsolete route 'GREETING' instead of v2 ActionEnum 'sapa'; requires rewrite to v2 action & facts architecture`
@@ -132,7 +139,7 @@
 | `services/intent_router.py` | "yang ASUS aja" | `logs/chat_history.cleaned.jsonl` |
 | `services/slot_nlu_service.py` | "Untuk ibu saya yang sudah sepuh" | `eval/parse_gold.csv` |
 
-- **Kebocoran pada BERKAS LEGACY & DOKUMEN (`baseline/`, `docs/`, `dokumen/`, dll)**: `304 temuan`
+- **Kebocoran pada BERKAS LEGACY & DOKUMEN (`baseline/`, `docs/`, `dokumen/`, dll)**: `320 temuan`
 
 | Berkas Legacy / Dokumen | Potongan Kalimat | Sumber Bocoran |
 |---|---|---|
@@ -224,6 +231,22 @@
 | `docs/ablation_study_results.json` | "Buat mama sih" | `logs/chat_history.cleaned.jsonl` |
 | `docs/ablation_study_results.json` | "buat mama sih" | `logs/chat_history.cleaned.jsonl` |
 | `docs/ablation_study_results.json` | "laptop asus tuf" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Merek lain yang setara apa?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Pilihan lain ada?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Kalo yang di atas itu?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Yang lebih mahal dikit" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Yang di bawah 1 juta" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Mama bilang kemahalan" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Kalo acer nitro ada?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Merek asus ada tipe apa aja??" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "RTX 3050 bukan geforce?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Jangan terlalu mahal. Dananya cuma 14 juta" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Yakin itu speknya?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Lenovo gak ada yang cocok?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Ya pokoknya monitor eksternal buat dipakai sama laptop" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Kan aku minta monitor, bukan desktop?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/diagnosis_putaran7.md` | "Itu semua untuk kantoran?" | `logs/chat_history.cleaned.jsonl` |
+| `docs/laporan_putaran6.md` | "laptop buat edit video 4k" | `logs/chat_history.cleaned.jsonl` |
 | `docs/problem_sessions_report.json` | "ada yang lebih murah?" | `logs/chat_history.cleaned.jsonl` |
 | `docs/problem_sessions_report.json` | "Mau cari laptop" | `logs/chat_history.cleaned.jsonl` |
 | `docs/problem_sessions_report.json` | "Nitro cocok gak buat desain?" | `logs/chat_history.cleaned.jsonl` |
