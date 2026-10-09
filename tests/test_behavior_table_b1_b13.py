@@ -72,7 +72,7 @@ def test_b4_profil_tidak_ditemukan_berulang(engine):
     state = {"consecutive_profile_misses": 0}
     parsed = ParserOutput(
         aksi=ActionEnum.MINTA_REKOMENDASI,
-        argumen=ActionArguments(kebutuhan_teks="aktivitas_antariksa_eksotis_xyz_999"),
+        argumen=ActionArguments(kebutuhan_teks="aktivitas antariksa gravitasi nol planet mars"),
         pembaruan_state=StateUpdate()
     )
     res1 = engine.execute(parsed, session_state=state)
