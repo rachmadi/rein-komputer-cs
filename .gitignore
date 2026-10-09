@@ -1,5 +1,9 @@
 .env
-data/catalog.db*
+data/*.db
+data/*.db*
+!data/seed/
+logs/*.jsonl
+logs/eval/*.jsonl
 *.bak*
 scratch/
 __pycache__/
