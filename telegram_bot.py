@@ -48,7 +48,7 @@ from services.chat_service import process_chat_message, reset_chat_session
 
 FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
 
-from core.chat_logger import anonymize_id
+from core.chat_logger import anonymize_id, log_session_boundary
 
 def record_feedback(session_id: str, user_id: int | str, rating: str, note: str = "") -> None:
     """Simpan feedback pelanggan ke log secara teranonimasi dengan HMAC-SHA256."""
@@ -59,7 +59,6 @@ def record_feedback(session_id: str, user_id: int | str, rating: str, note: str 
         "timestamp": datetime.now().isoformat(),
         "anon_user_id": anon_user,
         "anon_session_id": anon_session,
-        "raw_session_id": session_id,
         "rating": rating,
         "note": note
     }
@@ -86,6 +85,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     """Menangani perintah /start dari pelanggan."""
     chat_id = update.effective_chat.id
     session_id = f"tg_{chat_id}"
+    try:
+        log_session_boundary(session_id, boundary_type="start", reason="slash_start")
+    except Exception as err:
+        logger.warning("Gagal catat boundary /start: %s", err)
     reset_chat_session(session_id)
     context.user_data["sent_photo_codes"] = set()
     context.user_data["last_mentioned_products"] = []

@@ -6,12 +6,15 @@ Menangani state percakapan multi-sesi untuk Web Chat dan Bot Telegram secara mod
 from __future__ import annotations
 
 import time
+import logging
 from datetime import datetime
 from typing import Any
 from core.state import new_state, reset_state
 from core.engine import step
 from services.catalog_service import get_active_catalog
-from core.chat_logger import log_turn
+from core.chat_logger import log_turn, log_session_boundary, record_log_failure
+
+logger = logging.getLogger("chat_service")
 
 class SessionManager:
     def __init__(self, ttl_seconds: int = 3600 * 24):
@@ -22,6 +25,13 @@ class SessionManager:
         now = time.time()
         sess = self._sessions.get(session_id)
         if not sess or (now - sess.get("last_active", 0) > self.ttl_seconds):
+            if sess and (now - sess.get("last_active", 0) > self.ttl_seconds):
+                try:
+                    log_session_boundary(session_id, boundary_type="expired", reason="ttl_exceeded_24h")
+                except Exception as err:
+                    logger.error("Gagal mencatat log session expired: %s", err, exc_info=True)
+                    record_log_failure()
+
             sess = {
                 "session_id": session_id,
                 "state": new_state(),
@@ -45,6 +55,12 @@ class SessionManager:
     def reset_session(self, session_id: str) -> dict[str, Any]:
         sess = self.get_session(session_id)
         reset_state(sess["state"])
+        try:
+            log_session_boundary(session_id, boundary_type="reset", reason="user_reset")
+        except Exception as err:
+            logger.error("Gagal mencatat log session reset: %s", err, exc_info=True)
+            record_log_failure()
+
         sess["messages"] = [
             {
                 "sender": "bot",
@@ -126,10 +142,12 @@ def process_chat_message(
                 bot_reply=reply,
                 route=route,
                 state_snapshot=new_state_dict,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                engine_mode=CHAT_ENGINE_MODE,
             )
-        except Exception:
-            pass
+        except Exception as err:
+            logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
+            record_log_failure()
 
         raw_tampil = new_state_dict.get("produk_tampil", [])
         enriched_products = []
@@ -211,10 +229,12 @@ def process_chat_message(
                 bot_reply=reply,
                 route=route,
                 state_snapshot=new_s,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                engine_mode=CHAT_ENGINE_MODE,
             )
-        except Exception:
-            pass
+        except Exception as err:
+            logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
+            record_log_failure()
 
         active_products = []
         for p in prods:
@@ -314,10 +334,12 @@ def process_chat_message(
                 bot_reply=reply,
                 route=route,
                 state_snapshot=new_s,
-                latency_ms=latency_ms
+                latency_ms=latency_ms,
+                engine_mode=CHAT_ENGINE_MODE,
             )
-        except Exception:
-            pass
+        except Exception as err:
+            logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
+            record_log_failure()
 
         active_products = []
         for p in prods:
@@ -373,10 +395,12 @@ def process_chat_message(
             bot_reply=reply,
             route=route,
             state_snapshot=new_s,
-            latency_ms=latency_ms
+            latency_ms=latency_ms,
+            engine_mode=CHAT_ENGINE_MODE,
         )
-    except Exception:
-        pass
+    except Exception as err:
+        logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
+        record_log_failure()
 
     # Ambil rincian produk aktif untuk ditampilkan sebagai kartu visual di Flutter
     active_codes = new_s.get("offered_products", []) or ([new_s["selected_product"]] if new_s.get("selected_product") else [])

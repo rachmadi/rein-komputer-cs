@@ -1,44 +1,116 @@
 # -*- coding: utf-8 -*-
 """
 Chat Logger System
-Mencatat seluruh percakapan Customer Care (Web Chat & Telegram Bot) secara persisten
-ke file JSON Lines (logs/chat_history.jsonl) dan database SQLite (data/catalog.db).
-Memungkinkan pemantauan langsung, audit kualitas jawaban CS, dan evaluasi berkala.
+Mencatat seluruh percakapan Customer Care secara persisten ke file JSON Lines
+dan database SQLite dengan perlindungan privasi penuh (HMAC anonimisasi).
+Mendukung isolasi pengujian (test/eval) agar data operasional tidak tercemar.
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import os
 import sqlite3
 import threading
 import uuid
-import hmac
-import hashlib
 from datetime import datetime
 from typing import Any
 
 logger = logging.getLogger("chat_logger")
 
-LOG_DIR = "logs"
-JSONL_LOG_PATH = os.path.join(LOG_DIR, "chat_history.jsonl")
-DB_PATH = os.getenv("DB_PATH", os.path.join("data", "catalog.db"))
-LOG_HMAC_SECRET = os.getenv("LOG_HMAC_SECRET", "bobby_computer_secure_salt_2026")
+_lock = threading.RLock()
+_log_failure_count = 0
 
-def anonymize_id(raw_id: str | int, length: int = 12) -> str:
-    """Anonymize user / session identifier using HMAC-SHA256."""
-    secret = LOG_HMAC_SECRET.encode("utf-8")
+
+def get_log_failure_count() -> int:
+    """Mengembalikan total kegagalan penulisan log sejak startup."""
+    with _lock:
+        return _log_failure_count
+
+
+def record_log_failure() -> None:
+    """Mencatat adanya kegagalan logging untuk pemantauan kesehatan sistem."""
+    global _log_failure_count
+    with _lock:
+        _log_failure_count += 1
+
+
+def reset_log_failure_count() -> None:
+    """Mereset counter kegagalan log (misal untuk pengujian)."""
+    global _log_failure_count
+    with _lock:
+        _log_failure_count = 0
+
+
+def is_test_mode() -> bool:
+    """Mendeteksi apakah eksekusi saat ini berada di lingkungan uji/evaluasi."""
+    return (
+        os.getenv("CHAT_LOG_TARGET") == "eval"
+        or "PYTEST_CURRENT_TEST" in os.environ
+        or os.getenv("TESTING") == "1"
+    )
+
+
+def get_hmac_secret(penguji: str = "manusia") -> bytes:
+    """
+    Mengambil kunci HMAC dari environment atau .env.
+    Di mode operasional (penguji='manusia' dan bukan mode uji), ketiadaan kunci
+    akan memicu RuntimeError eksplisit demi perlindungan privasi.
+    """
+    key = os.getenv("LOG_HMAC_KEY") or os.getenv("LOG_HMAC_SECRET")
+    if key and key.strip():
+        return key.strip().encode("utf-8")
+
+    # Jika sedang dalam test/eval mode, sediakan dummy test key aman
+    if is_test_mode() or penguji == "otomatis":
+        return b"test_hmac_secret_for_test_suite_2026"
+
+    raise RuntimeError(
+        "Kunci LOG_HMAC_KEY wajib diatur di file .env atau environment untuk mode operasional. "
+        "Silakan tambahkan 'LOG_HMAC_KEY=<kunci>' ke berkas .env Anda demi privasi pelanggan."
+    )
+
+
+def anonymize_id(raw_id: str | int, length: int = 12, penguji: str = "manusia") -> str:
+    """
+    Anonimisasi pengenal pengguna / sesi menggunakan HMAC-SHA256.
+    Session ID mentah (seperti ID Telegram) tidak boleh disimpan langsung.
+    """
+    secret = get_hmac_secret(penguji=penguji)
     return hmac.new(secret, str(raw_id).encode("utf-8"), hashlib.sha256).hexdigest()[:length]
 
-_lock = threading.Lock()
 
-def init_chat_log_storage():
-    """Inisialisasi direktori log dan tabel SQLite chat_logs."""
-    os.makedirs(LOG_DIR, exist_ok=True)
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    
+def get_log_paths(penguji: str = "manusia") -> tuple[str, str]:
+    """
+    Mengembalikan (jsonl_path, db_path) sesuai isolasi mode pengujian.
+    Semua tes dan skrip evaluasi menulis ke logs/eval/eval_chat_history.jsonl
+    dan database uji, tidak pernah ke logs/chat_history.jsonl.
+    """
+    if is_test_mode() or penguji == "otomatis":
+        jsonl_dir = os.path.join("logs", "eval")
+        os.makedirs(jsonl_dir, exist_ok=True)
+        jsonl_path = os.path.join(jsonl_dir, "eval_chat_history.jsonl")
+        db_path = os.getenv("DB_PATH", os.path.join("data", "test_catalog.db"))
+        return jsonl_path, db_path
+
+    jsonl_dir = "logs"
+    os.makedirs(jsonl_dir, exist_ok=True)
+    jsonl_path = os.path.join(jsonl_dir, "chat_history.jsonl")
+    db_path = os.getenv("DB_PATH", os.path.join("data", "catalog.db"))
+    return jsonl_path, db_path
+
+
+def init_chat_log_storage(db_path: str | None = None) -> None:
+    """Inisialisasi tabel SQLite chat_logs beserta migrasi kolom penguji & engine_mode."""
+    if db_path is None:
+        _, db_path = get_log_paths()
+    target_db = db_path
+    os.makedirs(os.path.dirname(target_db) or ".", exist_ok=True)
+
     with _lock:
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(target_db)
         cur = conn.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_logs (
@@ -56,20 +128,31 @@ def init_chat_log_storage():
                 needs_json TEXT,
                 constraints_json TEXT,
                 offered_products_json TEXT,
-                latency_ms REAL
+                latency_ms REAL,
+                penguji TEXT DEFAULT 'manusia',
+                engine_mode TEXT DEFAULT 'antigravity_v2'
             )
         """)
+        # Migrasi kolom jika tabel lama belum memiliki kolom penguji / engine_mode
+        cur.execute("PRAGMA table_info(chat_logs)")
+        existing_cols = {col[1] for col in cur.fetchall()}
+        if "penguji" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN penguji TEXT DEFAULT 'manusia'")
+        if "engine_mode" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN engine_mode TEXT DEFAULT 'antigravity_v2'")
+
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_channel ON chat_logs(channel)")
         conn.commit()
         conn.close()
 
-# Pastikan tabel dan direktori siap saat modul dimuat
+
+# Inisialisasi awal aman
 try:
     init_chat_log_storage()
-except Exception as e:
-    logger.warning("Gagal inisialisasi chat log storage: %s", e)
+except Exception as exc:
+    logger.warning("Gagal inisialisasi chat log storage pada modul load: %s", exc)
 
 
 def log_turn(
@@ -79,31 +162,40 @@ def log_turn(
     route: str | None = None,
     state_snapshot: dict[str, Any] | None = None,
     latency_ms: float = 0.0,
+    penguji: str | None = None,
+    engine_mode: str | None = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
-    Menyimpan ke file JSONL dan tabel SQLite secara aman.
+    Menyimpan ke file JSONL dan tabel SQLite secara aman dan terisolasi.
     """
+    effective_penguji = penguji or ("otomatis" if is_test_mode() else "manusia")
+    effective_engine = engine_mode or os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
+
+    # Anonimisasi session_id mentah dengan HMAC
+    anon_session = anonymize_id(session_id, penguji=effective_penguji)
+
     state = state_snapshot or {}
-    now_dt = datetime.now()
-    now_iso = now_dt.isoformat()
+    now_iso = datetime.now().isoformat()
     log_id = f"log_{uuid.uuid4().hex[:12]}"
-    
+
     # Deteksi channel
-    channel = "telegram" if session_id.startswith("tg_") else "web"
-    
+    channel = "telegram" if str(session_id).startswith("tg_") else "web"
+
     fsm_stage = state.get("fsm_stage", "UNKNOWN")
-    active_category = state.get("category")
-    persona_name = state.get("persona_name")
+    active_category = state.get("category") or state.get("kategori")
+    persona_name = state.get("persona_name") or state.get("persona")
     needs = state.get("needs", [])
     constraints = state.get("constraints", {})
     offered_products = state.get("offered_products", [])
-    
+
+    # Pastikan session_id mentah tidak pernah disimpan di record
     record = {
         "log_id": log_id,
+        "type": "chat_turn",
         "timestamp": now_iso,
-        "session_id": session_id,
-        "anon_session_id": anonymize_id(session_id),
+        "session_id": anon_session,
+        "anon_session_id": anon_session,
         "channel": channel,
         "user_text": user_text,
         "bot_reply": bot_reply,
@@ -114,32 +206,40 @@ def log_turn(
         "needs": needs,
         "constraints": constraints,
         "offered_products": offered_products,
-        "latency_ms": round(latency_ms, 2)
+        "latency_ms": round(latency_ms, 2),
+        "penguji": effective_penguji,
+        "engine_mode": effective_engine,
     }
-    
+
+    jsonl_path, db_path = get_log_paths(penguji=effective_penguji)
+
     with _lock:
         # 1. Tulis ke file JSONL
         try:
-            os.makedirs(LOG_DIR, exist_ok=True)
-            with open(JSONL_LOG_PATH, "a", encoding="utf-8") as f:
+            os.makedirs(os.path.dirname(jsonl_path) or ".", exist_ok=True)
+            with open(jsonl_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
         except Exception as e:
-            logger.error("Gagal menulis ke %s: %s", JSONL_LOG_PATH, e)
-            
+            logger.error("Gagal menulis ke %s: %s", jsonl_path, e)
+            record_log_failure()
+            raise
+
         # 2. Tulis ke SQLite
         try:
-            conn = sqlite3.connect(DB_PATH)
+            init_chat_log_storage(db_path)
+            conn = sqlite3.connect(db_path)
             cur = conn.cursor()
             cur.execute("""
                 INSERT INTO chat_logs (
                     log_id, timestamp, session_id, channel, user_text, bot_reply,
                     route, fsm_stage, active_category, persona_name,
-                    needs_json, constraints_json, offered_products_json, latency_ms
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    needs_json, constraints_json, offered_products_json, latency_ms,
+                    penguji, engine_mode
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
-                session_id,
+                anon_session,
                 channel,
                 user_text,
                 bot_reply,
@@ -150,50 +250,147 @@ def log_turn(
                 json.dumps(needs, ensure_ascii=False),
                 json.dumps(constraints, ensure_ascii=False),
                 json.dumps(offered_products, ensure_ascii=False),
-                latency_ms
+                latency_ms,
+                effective_penguji,
+                effective_engine,
             ))
             conn.commit()
             conn.close()
         except Exception as e:
-            logger.error("Gagal insert ke sqlite chat_logs: %s", e)
-            
+            logger.error("Gagal insert ke sqlite chat_logs (%s): %s", db_path, e)
+            record_log_failure()
+            raise
+
+    return record
+
+
+def log_session_boundary(
+    session_id: str,
+    boundary_type: str,
+    reason: str = "",
+    penguji: str | None = None,
+    engine_mode: str | None = None,
+) -> dict[str, Any]:
+    """
+    Mencatat perpindahan sesi eksplisit (/start, /reset, atau kedaluwarsa 24 jam)
+    sebagai entri log pembatas terpisah (tipe 'session_boundary').
+    """
+    effective_penguji = penguji or ("otomatis" if is_test_mode() else "manusia")
+    effective_engine = engine_mode or os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
+
+    anon_session = anonymize_id(session_id, penguji=effective_penguji)
+    now_iso = datetime.now().isoformat()
+    log_id = f"boundary_{uuid.uuid4().hex[:12]}"
+    channel = "telegram" if str(session_id).startswith("tg_") else "web"
+
+    record = {
+        "log_id": log_id,
+        "type": "session_boundary",
+        "boundary_type": boundary_type,
+        "reason": reason,
+        "timestamp": now_iso,
+        "session_id": anon_session,
+        "anon_session_id": anon_session,
+        "channel": channel,
+        "user_text": f"[{boundary_type.upper()}] {reason}".strip(),
+        "bot_reply": "",
+        "route": "session_boundary",
+        "fsm_stage": boundary_type,
+        "penguji": effective_penguji,
+        "engine_mode": effective_engine,
+    }
+
+    jsonl_path, db_path = get_log_paths(penguji=effective_penguji)
+
+    with _lock:
+        # 1. Tulis ke file JSONL
+        try:
+            os.makedirs(os.path.dirname(jsonl_path) or ".", exist_ok=True)
+            with open(jsonl_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.error("Gagal mencatat session_boundary ke %s: %s", jsonl_path, e)
+            record_log_failure()
+            raise
+
+        # 2. Tulis ke SQLite
+        try:
+            init_chat_log_storage(db_path)
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO chat_logs (
+                    log_id, timestamp, session_id, channel, user_text, bot_reply,
+                    route, fsm_stage, active_category, persona_name,
+                    needs_json, constraints_json, offered_products_json, latency_ms,
+                    penguji, engine_mode
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                log_id,
+                now_iso,
+                anon_session,
+                channel,
+                record["user_text"],
+                "",
+                "session_boundary",
+                boundary_type,
+                None,
+                None,
+                "[]",
+                "{}",
+                "[]",
+                0.0,
+                effective_penguji,
+                effective_engine,
+            ))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logger.error("Gagal insert boundary ke sqlite (%s): %s", db_path, e)
+            record_log_failure()
+            raise
+
     return record
 
 
 def get_recent_logs(
     limit: int = 50,
     session_id: str | None = None,
-    channel: str | None = None
+    channel: str | None = None,
+    penguji: str = "manusia",
 ) -> list[dict[str, Any]]:
     """Mengambil riwayat log terbaru untuk pemantauan dan evaluasi."""
+    _, db_path = get_log_paths(penguji=penguji)
+    init_chat_log_storage(db_path)
+
     query = "SELECT * FROM chat_logs"
     params: list[Any] = []
     clauses = []
-    
+
     if session_id:
+        anon_session = anonymize_id(session_id, penguji=penguji)
         clauses.append("session_id = ?")
-        params.append(session_id)
+        params.append(anon_session)
     if channel:
         clauses.append("channel = ?")
         params.append(channel)
-        
+
     if clauses:
         query += " WHERE " + " AND ".join(clauses)
-        
+
     query += " ORDER BY id DESC LIMIT ?"
     params.append(limit)
-    
-    conn = sqlite3.connect(DB_PATH)
+
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     cur.execute(query, params)
     rows = cur.fetchall()
     conn.close()
-    
+
     out = []
     for r in rows:
         d = dict(r)
-        # Parse JSON fields
         for field in ("needs_json", "constraints_json", "offered_products_json"):
             target_key = field.replace("_json", "")
             try:
@@ -204,32 +401,35 @@ def get_recent_logs(
     return out
 
 
-def get_log_stats() -> dict[str, Any]:
+def get_log_stats(penguji: str = "manusia") -> dict[str, Any]:
     """Mengambil statistik agregat percakapan pelanggan."""
-    conn = sqlite3.connect(DB_PATH)
+    _, db_path = get_log_paths(penguji=penguji)
+    init_chat_log_storage(db_path)
+
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    
+
     cur.execute("SELECT COUNT(*) FROM chat_logs")
     total_messages = cur.fetchone()[0]
-    
+
     cur.execute("SELECT COUNT(DISTINCT session_id) FROM chat_logs")
     total_sessions = cur.fetchone()[0]
-    
+
     cur.execute("SELECT channel, COUNT(*) FROM chat_logs GROUP BY channel")
     channel_counts = dict(cur.fetchall())
-    
+
     cur.execute("SELECT route, COUNT(*) FROM chat_logs GROUP BY route ORDER BY COUNT(*) DESC LIMIT 10")
     top_routes = dict(cur.fetchall())
-    
+
     cur.execute("SELECT AVG(latency_ms) FROM chat_logs WHERE latency_ms > 0")
     avg_latency = cur.fetchone()[0] or 0.0
-    
+
     conn.close()
-    
+
     return {
         "total_messages": total_messages,
         "total_sessions": total_sessions,
         "channels": channel_counts,
         "top_routes": top_routes,
-        "avg_latency_ms": round(avg_latency, 2)
+        "avg_latency_ms": round(avg_latency, 2),
     }
