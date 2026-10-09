@@ -188,3 +188,18 @@ def test_action_engine_bandingkan_produk_luar_katalog(engine):
     assert "MacBook Air M1" in res.fakta["produk_luar_katalog"]
     assert "tidak tersedia di katalog Bobby Computer" in res.fakta["catatan"]
 
+
+def test_action_engine_string_budget_handling(engine):
+    """Memastikan budget atau spesifikasi berupa string (misal '10 juta', '10jt', '14 inch') tidak memicu TypeError."""
+    parsed = ParserOutput(
+        aksi=ActionEnum.CARI_PRODUK,
+        argumen=ActionArguments(kategori="laptop"),
+        pembaruan_state=StateUpdate()
+    )
+    state = {"budget": "10 juta"}
+    res = engine.execute(parsed, session_state=state)
+    assert res.fakta["status"] == "sukses"
+    for p in res.produk_list:
+        assert p["harga"] <= 10_000_000
+
+

@@ -25,11 +25,45 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AtributSpesifikasiEnum
-from services.catalog_search import apply_filters, clean_specs, format_natural_unmet_requirements
+from services.catalog_search import apply_filters, clean_specs, format_natural_unmet_requirements, parse_budget_from_text
 from services.knowledge_service import get_usage_requirements, get_profile_by_id
 from core.catalog import Catalog
 
 logger = logging.getLogger(__name__)
+
+
+def parse_int_safe(val: Any) -> Optional[int]:
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return int(val)
+    val_str = str(val).strip().lower()
+    if not val_str:
+        return None
+    b = parse_budget_from_text(val_str)
+    if b is not None:
+        return b
+    digits = re.sub(r"[^\d]", "", val_str)
+    if digits:
+        try:
+            return int(digits)
+        except ValueError:
+            pass
+    return None
+
+
+def parse_float_safe(val: Any) -> Optional[float]:
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    m = re.search(r"(\d+(?:[.,]\d+)?)", str(val))
+    if m:
+        try:
+            return float(m.group(1).replace(",", "."))
+        except ValueError:
+            pass
+    return None
 
 
 def format_rupiah(nominal: int | float | None) -> str:
@@ -133,7 +167,7 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     def _handle_minta_rekomendasi(self, args: ActionArguments, state: dict) -> ActionResult:
         kebutuhan_teks = args.kebutuhan_teks or state.get("kebutuhan_teks") or ""
-        budget_max = args.budget_max or state.get("budget")
+        budget_max = parse_int_safe(args.budget_max or state.get("budget"))
         kategori = args.kategori or state.get("kategori") or "laptop"
 
         profil_id = None
@@ -227,11 +261,11 @@ class ActionEngine:
         merek_kecuali = args.merek_kecuali
         nama_model = args.nama_model
         gpu = args.gpu
-        min_harga = args.min_harga
-        max_harga = args.max_harga or state.get("budget")
-        ram_gb_min = args.ram_gb_min
-        storage_gb_min = args.storage_gb_min
-        ukuran_layar = args.ukuran_layar
+        min_harga = parse_int_safe(args.min_harga)
+        max_harga = parse_int_safe(args.max_harga or state.get("budget"))
+        ram_gb_min = parse_int_safe(args.ram_gb_min)
+        storage_gb_min = parse_int_safe(args.storage_gb_min)
+        ukuran_layar = parse_float_safe(args.ukuran_layar)
 
         matches = []
         for p in self.catalog.products:
@@ -261,9 +295,9 @@ class ActionEngine:
                 continue
             if storage_gb_min and (p.get("storage_ssd_gb") or 0) < storage_gb_min:
                 continue
-            if ukuran_layar:
+            if ukuran_layar is not None:
                 p_inch = get_product_screen_inch(p)
-                if p_inch is not None and abs(p_inch - float(ukuran_layar)) > 0.6:
+                if p_inch is not None and abs(p_inch - ukuran_layar) > 0.6:
                     continue
 
             matches.append(p)
