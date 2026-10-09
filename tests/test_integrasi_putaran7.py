@@ -68,10 +68,10 @@ class TestIntegrasiMultiGiliranPutaran7(unittest.TestCase):
         res1, state1 = self._execute_turn({}, "Cari laptop asus", t1_out)
         top_code = state1["produk_tampil"][0]["kode"]
 
-        # Giliran 2: Minta spek lengkap / spek umum (atribut LAINNYA atau None)
+        # Giliran 2: Minta spek lengkap / spek umum (atribut None)
         t2_out = ParserOutput(
             aksi=ActionEnum.TANYA_SPESIFIKASI,
-            argumen=ActionArguments(produk=[top_code], atribut=AtributSpesifikasiEnum.LAINNYA)
+            argumen=ActionArguments(produk=[top_code], atribut=None)
         )
         res2, state2 = self._execute_turn(state1, "Spek lengkapnya gimana?", t2_out)
 

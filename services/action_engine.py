@@ -820,7 +820,7 @@ class ActionEngine:
     def _handle_tanya_spesifikasi(self, args: ActionArguments, state: dict) -> ActionResult:
         # D1, D2, B14, B15, B16: Gunakan resolve_produk untuk mendapatkan produk katalog penuh
         catalog_products, resolved_codes = self.resolve_produk(args, state)
-        attr = args.atribut or AtributSpesifikasiEnum.LAINNYA
+        attr = args.atribut
 
         if not catalog_products and not resolved_codes:
             fakta = {
@@ -866,7 +866,42 @@ class ActionEngine:
             }
             return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
-        # B15, D1, D2: Mapping spesifikasi per kategori
+        # F3: Kasus 1 - Atribut None / kosong -> Permintaan spesifikasi umum -> Ringkasan spek utama katalog
+        if attr is None:
+            fakta_items = []
+            for p in catalog_products:
+                spek_ringkas = clean_specs(p) or f"{p.get('cpu', '')} | {p.get('ram', '')} | {p.get('storage', '')} | {p.get('display', '')}"
+                fakta_items.append({
+                    "kode": p.get("kode"),
+                    "nama": p.get("nama"),
+                    "atribut": "spek_umum",
+                    "nilai": spek_ringkas,
+                    "nilai_spesifikasi": spek_ringkas,
+                    "ringkasan_spek": spek_ringkas,
+                    "spesifikasi_ringkas": spek_ringkas
+                })
+            fakta = {
+                "status": "sukses",
+                "atribut_ditanya": "spek_umum",
+                "ringkasan_spek": fakta_items[0]["ringkasan_spek"] if fakta_items else "",
+                "spesifikasi_ringkas": fakta_items[0]["spesifikasi_ringkas"] if fakta_items else "",
+                "spesifikasi": fakta_items,
+                "spesifikasi_produk": fakta_items,
+                "rujukan_dipakai": [p.get("kode") for p in catalog_products]
+            }
+            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+
+        # F3: Kasus 2 - Atribut LAINNYA -> Atribut spesifik tidak dikenal / tidak ada di katalog -> B15
+        if attr == AtributSpesifikasiEnum.LAINNYA:
+            fakta = {
+                "status": "atribut_tidak_tersedia",
+                "atribut_ditanya": "lainnya",
+                "pesan": "Informasi mengenai spesifikasi tersebut belum tersedia di sistem kami. Kakak dapat langsung menanyakan ke staf toko kami di 0812-3456-7890 (WhatsApp).",
+                "rujukan_dipakai": [p.get("kode") for p in catalog_products]
+            }
+            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+
+        # F3: Kasus 3 - Atribut spesifik yang dikenal
         fakta_items = []
         ada_tidak_tersedia = False
 
@@ -904,9 +939,6 @@ class ActionEngine:
             elif attr == AtributSpesifikasiEnum.KAMERA:
                 if kategori == "laptop":
                     val = p.get("webcam") or p.get("kamera")
-            elif attr == AtributSpesifikasiEnum.LAINNYA:
-                # D2: Permintaan spek umum / spek lengkap
-                val = clean_specs(p) or f"{p.get('cpu', '')} | {p.get('ram', '')} | {p.get('storage', '')} | {p.get('display', '')}"
             else:
                 attr_key = attr.value if hasattr(attr, "value") else str(attr)
                 val = p.get(attr_key)
@@ -927,14 +959,16 @@ class ActionEngine:
             fakta = {
                 "status": "atribut_tidak_tersedia",
                 "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
-                "pesan": f"Informasi spesifikasi '{attr.value if hasattr(attr, 'value') else str(attr)}' tidak tersedia untuk produk tersebut."
+                "pesan": f"Informasi spesifikasi '{attr.value if hasattr(attr, 'value') else str(attr)}' tidak tersedia untuk produk tersebut.",
+                "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
         else:
             fakta = {
                 "status": "sukses",
                 "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
                 "spesifikasi": fakta_items,
-                "spesifikasi_produk": fakta_items
+                "spesifikasi_produk": fakta_items,
+                "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
 
         return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
