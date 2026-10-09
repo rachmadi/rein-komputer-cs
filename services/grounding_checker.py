@@ -21,9 +21,8 @@ logger = logging.getLogger(__name__)
 
 from core.config import KONTAK_STAF
 EMERGENCY_FALLBACK_TEXT = (
-    f"Sistem kami sedang mengalami kendala teknis sementara. "
-    f"Untuk bantuan langsung, silakan hubungi tim kami di {KONTAK_STAF}. "
-    f"Anda juga bisa mencoba mengulang pesan Anda."
+    f"Maaf Kak, saya belum bisa menjawab ini dengan tepat. "
+    f"Boleh dicoba sekali lagi, atau Kakak bisa menghubungi staf kami di {KONTAK_STAF}."
 )
 
 
@@ -144,11 +143,16 @@ class GroundingChecker:
         # 3. Periksa istilah skema fakta internal dinamis dan istilah teknis sistem
         system_leak_terms = [
             "tier", "cpu_tier", "selisih", "fakta", "score", "profil_id",
-            "ram_gb", "storage_ssd_gb", "gpu_vram_gb", "fakta_eksekusi"
+            "ram_gb", "storage_ssd_gb", "gpu_vram_gb", "fakta_eksekusi",
+            "filter"
         ]
         for term in system_leak_terms:
             if re.search(rf"\b{re.escape(term)}\b", teks, re.IGNORECASE):
                 violations.append(f"Menyebut istilah skema/sistem internal '{term}'.")
+
+        # Tolak "kendala teknis" kecuali pada sistem_error
+        if fakta.get("status") != "sistem_error" and "kendala teknis" in teks.lower():
+            violations.append("Menyebut 'kendala teknis' di luar status sistem_error.")
 
         schema_keys = self.extract_fact_schema_keys(fakta)
         forbidden_schema_terms = set()
@@ -277,6 +281,17 @@ class GroundingChecker:
                 if re.search(rf"\b{npm}\b", teks, re.IGNORECASE):
                     violations.append(f"Menyebutkan model produk '{npm}' pada giliran non-produk ({status_fakta}).")
                     break
+
+        # 12. Konsistensi kategori di jawaban
+        active_prods = fakta.get("produk") or (state.get("produk_tampil") if state else [])
+        if active_prods and isinstance(active_prods, list) and len(active_prods) > 0:
+            cats = {str(p.get("kategori", "")).lower() for p in active_prods if p.get("kategori")}
+            if len(cats) == 1:
+                cur_cat = list(cats)[0]
+                conflicting = {"laptop", "desktop", "printer", "monitor"} - {cur_cat}
+                for c_cat in conflicting:
+                    if re.search(rf"\b(?:berikut|ini|rekomendasi|pilihan|unit)\s+(?:adalah\s+)?{c_cat}\b", teks, re.IGNORECASE):
+                        violations.append(f"Menyebut kategori '{c_cat}' yang bertentangan dengan kategori produk aktif '{cur_cat}'.")
 
         is_valid = len(violations) == 0
         return is_valid, violations

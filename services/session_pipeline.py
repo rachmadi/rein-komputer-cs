@@ -182,7 +182,7 @@ class SessionPipeline:
         # 6. KARTU PRODUK HTML
         # ---------------------------------------------------------------------
         kartu_html = None
-        if action_res.produk_list and parsed.aksi in (ActionEnum.MINTA_REKOMENDASI, ActionEnum.CARI_PRODUK, ActionEnum.LANJUTAN_HASIL):
+        if action_res.produk_list:
             judul_rek = (action_res.fakta.get("profil") or {}).get("judul")
             kartu_html = format_product_cards_message(action_res.produk_list, judul_rekomendasi=judul_rek)
 

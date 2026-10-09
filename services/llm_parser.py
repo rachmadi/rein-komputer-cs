@@ -52,16 +52,16 @@ DEFINISI 12 AKSI:
 11. basa_basi: Menyampaikan ucapan penutup, terima kasih, pamit, atau obrolan santai yang tidak memerlukan tindakan katalog.
 12. tidak_jelas: Pesan yang tidak memiliki makna yang dapat diidentifikasi atau informasinya saling bertentangan sehingga membutuhkan klarifikasi lebih lanjut.
 
-KEBIJAKAN BATAS AKSI:
+KEBIJAKAN BATAS AKSI (B1, B2, B3):
 - 'minta_rekomendasi' HANYA jika ada aktivitas komputasi konkret atau skenario kerja nyata.
-- Jika pelanggan HANYA menyebut persona (misal dokter, guru, kerabat) atau HANYA menyebut kategori/merek/budget tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona/kategori/merek/budget).
-- 'jawab_pertanyaan_bot' HANYA sah jika bot sebelumnya mengajukan pertanyaan ('pending_question' ada di konteks sesi).
-- 'lanjutan_hasil' HANYA sah jika ada produk yang sedang tampil di layar ('produk_tampil' tidak kosong).
-- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama produk dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
+- Jika pelanggan HANYA menyebut persona (misal dokter, guru, kerabat, mahasiswa) tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona).
+- Jika pelanggan menyebut kategori saja (misal 'laptop', 'printer') atau merek saja (misal 'asus', 'lenovo') tanpa aktivitas konkret, gunakan 'cari_produk' (maksimal 3 produk).
+- Jika pelanggan menyebut budget saja (misal 'budget 8 juta', 'dana 7jt') dan kategori sudah ada di konteks state, gunakan 'cari_produk' memakai kategori tersebut.
+- 'lanjutan_hasil' HANYA sah jika ada produk yang sedang tampil di layar ('produk_tampil' tidak kosong). Ragam ungkapan informal: 'lebih murah', 'lebih mahal', 'yang lain', dsb.
+- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama/merek parsial (misal ['advan'], ['asus']) dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
+- Atribut spesifikasi pada 'tanya_spesifikasi' mendukung: 'harga', 'ram', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'storage'.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
 - 'persona' adalah pihak pemakai perangkat (seperti kerabat, profesi, atau rekan kerja), BUKAN lawan bicara. Jangan mengisi 'sebutan' dengan persona tersebut. Lawan bicara tetap disapa 'Kak' kecuali pelanggan menyebut sebutan untuk dirinya sendiri.
-- Parser boleh mengekstrak beberapa slot sekaligus dari satu kalimat di 'argumen' dan 'pembaruan_state' (misal: kategori dan persona dapat diisi bersamaan).
-- Untuk pengecualian merek pada 'cari_produk' atau 'lanjutan_hasil', masukkan ke 'merek_kecuali'.
 - Format 'kebutuhan_teks' harus ringkas berupa kata kunci aktivitas atau software utama (misal: 'edit video 4k', 'desain 3d revit', 'coding python', 'kasir toko kelontong'), BUKAN kalimat panjang bertele-tele.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
 """
@@ -401,7 +401,7 @@ def parse_user_message(
         else:
             validated_output = ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
-                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.SISTEM_ERROR),
+                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.TIDAK_DIPAHAMI),
                 pembaruan_state=StateUpdate()
             )
 

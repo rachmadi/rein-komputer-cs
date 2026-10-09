@@ -19,17 +19,27 @@ from typing import Any, Dict, List, Optional
 def format_product_card(product: dict, index: int | None = None) -> str:
     """Merakit 1 kartu produk dalam format Telegram HTML."""
     nama = html.escape(str(product.get("nama", "Produk Komputer")))
-    harga = html.escape(str(product.get("harga_formatted", "Harga hubungi kami")))
+    harga_val = product.get("harga_formatted")
+    if not harga_val:
+        p_price = product.get("harga") or product.get("harga_idr")
+        if p_price:
+            from services.action_engine import format_rupiah
+            harga_val = format_rupiah(p_price)
+        else:
+            harga_val = "Harga hubungi kami"
+    harga = html.escape(str(harga_val))
     spek = html.escape(str(product.get("spesifikasi", "")))
+    kode = html.escape(str(product.get("kode", "")))
 
     match_report = product.get("match_report") or {}
     lolos = match_report.get("lolos_semua") is True
 
     prefix = f"{index}. " if index is not None else ""
     check_badge = " ✅" if lolos else ""
+    kode_suffix = f" [{kode}]" if kode else ""
 
     lines = [
-        f"<b>{prefix}{nama}{check_badge}</b>",
+        f"<b>{prefix}{nama}{kode_suffix}{check_badge}</b>",
         f"💰 Harga: <b>{harga}</b>",
         f"⚙️ Spek: {spek}"
     ]

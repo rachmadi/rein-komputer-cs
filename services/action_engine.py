@@ -278,7 +278,7 @@ class ActionEngine:
             closest = candidates[0]
             closest_prod = closest["product"]
             rep = closest["report"]
-            unmet = rep.get("tidak_terpenuhi", [])
+            unmet = rep.get("tidak_terpenuhi", []) or [f"{r} tidak terpenuhi" for r in rep.get("tidak_diketahui", [])] or [str(closest.get("failure_reason") or "spesifikasi belum memenuhi")]
             fakta = {
                 "status": "belum_ada_yang_memenuhi",
                 "profil": {
@@ -461,6 +461,14 @@ class ActionEngine:
         target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
         kebutuhan_teks = args.kebutuhan_teks or state.get("kebutuhan_teks") or ""
 
+        # B14: Jika tidak ada produk yang dievaluasi
+        if not target_codes:
+            fakta = {
+                "status": "belum_ada_produk",
+                "pesan": "Belum ada produk yang dipilih atau ditampilkan untuk dievaluasi."
+            }
+            return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+
         profil_id = state.get("profil_aktif")
         prof_data = None
         if not profil_id and kebutuhan_teks:
@@ -476,14 +484,56 @@ class ActionEngine:
         if profil_id:
             prof_data = get_profile_by_id(profil_id)
 
+        # B14: Tanpa profil kebutuhan yang valid
+        if not profil_id or not prof_data:
+            fakta = {
+                "status": "profil_tidak_ditemukan",
+                "pesan": "Kebutuhan penggunaan belum ditentukan atau profil tidak ditemukan untuk evaluasi kelayakan."
+            }
+            return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+
+        # Cek ketersediaan produk di katalog (B16)
+        catalog_products = []
+        for code in target_codes:
+            p = None
+            for pt in state.get("produk_tampil", []):
+                if str(pt.get("kode", "")).upper() == str(code).strip().upper():
+                    p = pt
+                    break
+            if not p:
+                p = self.get_product_by_code(code)
+            if p:
+                catalog_products.append(p)
+
+        if not catalog_products:
+            # B16: Produk di luar katalog -> cari padanan terdekat deterministik
+            closest = None
+            for p in self.catalog.products:
+                if str(p.get("kategori", "")).lower() == "laptop":
+                    closest = p
+                    break
+            if not closest and self.catalog.products:
+                closest = self.catalog.products[0]
+            padanan = {
+                "kode": closest.get("kode"),
+                "nama": closest.get("nama"),
+                "kategori": closest.get("kategori"),
+                "harga": get_product_price(closest),
+                "harga_formatted": format_rupiah(get_product_price(closest)),
+                "spesifikasi": clean_specs(closest)
+            } if closest else {}
+            fakta = {
+                "status": "produk_tidak_di_katalog",
+                "produk_diminta": target_codes,
+                "padanan_terdekat": padanan,
+                "pesan": f"Produk {', '.join([str(c) for c in target_codes])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+            }
+            return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+
         filters = prof_data.get("filter", []) if prof_data else []
 
         eval_results = []
-        for code in target_codes:
-            p = self.get_product_by_code(code)
-            if not p:
-                continue
-
+        for p in catalog_products:
             p_price = get_product_price(p)
             p_cpu_tier = p.get("cpu_tier") or 1
             p_ram = p.get("ram_gb") or 8
@@ -583,41 +633,115 @@ class ActionEngine:
         target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
         attr = args.atribut or AtributSpesifikasiEnum.LAINNYA
 
-        attr_key_map = {
-            AtributSpesifikasiEnum.RAM: "ram",
-            AtributSpesifikasiEnum.STORAGE: "storage",
-            AtributSpesifikasiEnum.CPU: "cpu",
-            AtributSpesifikasiEnum.GPU: "gpu",
-            AtributSpesifikasiEnum.LAYAR: "display",
-            AtributSpesifikasiEnum.BATERAI: "baterai",
-            AtributSpesifikasiEnum.PORT: "ports",
-            AtributSpesifikasiEnum.BOBOT: "bobot",
-            AtributSpesifikasiEnum.KEYBOARD: "keyboard",
-            AtributSpesifikasiEnum.KAMERA: "webcam"
-        }
-        col = attr_key_map.get(attr)
+        if not target_codes:
+            fakta = {
+                "status": "belum_ada_produk",
+                "pesan": "Belum ada produk yang dipilih untuk ditanyakan spesifikasinya."
+            }
+            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
-        fakta_items = []
+        # Cek produk di katalog
+        catalog_products = []
         for code in target_codes:
-            p = self.get_product_by_code(code)
+            p = None
+            for pt in state.get("produk_tampil", []):
+                if str(pt.get("kode", "")).upper() == str(code).strip().upper():
+                    p = pt
+                    break
             if not p:
-                continue
-            val = p.get(col) if col else None
+                p = self.get_product_by_code(code)
+            if p:
+                catalog_products.append(p)
+
+        if not catalog_products:
+            # B16: Produk di luar katalog
+            closest = None
+            for p in self.catalog.products:
+                if str(p.get("kategori", "")).lower() == "laptop":
+                    closest = p
+                    break
+            if not closest and self.catalog.products:
+                closest = self.catalog.products[0]
+            padanan = {
+                "kode": closest.get("kode"),
+                "nama": closest.get("nama"),
+                "kategori": closest.get("kategori"),
+                "harga": get_product_price(closest),
+                "harga_formatted": format_rupiah(get_product_price(closest)),
+                "spesifikasi": clean_specs(closest)
+            } if closest else {}
+            fakta = {
+                "status": "produk_tidak_di_katalog",
+                "produk_diminta": target_codes,
+                "padanan_terdekat": padanan,
+                "pesan": f"Produk {', '.join([str(c) for c in target_codes])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+            }
+            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+
+        # B15: Mapping spesifikasi per kategori
+        fakta_items = []
+        ada_tidak_tersedia = False
+
+        for p in catalog_products:
+            kategori = str(p.get("kategori", "")).lower()
+            val = None
+
+            if attr == AtributSpesifikasiEnum.HARGA:
+                p_price = get_product_price(p)
+                val = format_rupiah(p_price)
+            elif attr == AtributSpesifikasiEnum.RAM:
+                if kategori in ("laptop", "desktop", "all-in-one"):
+                    val = p.get("ram") or (f"{p.get('ram_gb')} GB" if p.get("ram_gb") else None)
+            elif attr == AtributSpesifikasiEnum.STORAGE:
+                if kategori in ("laptop", "desktop", "all-in-one"):
+                    val = p.get("storage") or (f"{p.get('storage_ssd_gb')} GB" if p.get("storage_ssd_gb") else None)
+            elif attr == AtributSpesifikasiEnum.CPU:
+                if kategori in ("laptop", "desktop", "all-in-one"):
+                    val = p.get("cpu")
+            elif attr == AtributSpesifikasiEnum.GPU:
+                if kategori in ("laptop", "desktop", "all-in-one"):
+                    val = p.get("gpu")
+            elif attr == AtributSpesifikasiEnum.LAYAR:
+                if kategori in ("laptop", "monitor"):
+                    val = p.get("display") or (f"{p.get('screen_inch')} inci" if p.get("screen_inch") else None)
+            elif attr == AtributSpesifikasiEnum.BATERAI:
+                if kategori == "laptop":
+                    val = p.get("baterai")
+            elif attr == AtributSpesifikasiEnum.PORT:
+                val = p.get("ports") or p.get("port")
+            elif attr == AtributSpesifikasiEnum.BOBOT:
+                val = p.get("bobot")
+            elif attr == AtributSpesifikasiEnum.KEYBOARD:
+                val = p.get("keyboard")
+            elif attr == AtributSpesifikasiEnum.KAMERA:
+                if kategori == "laptop":
+                    val = p.get("webcam") or p.get("kamera")
+            else:
+                val = p.get(attr.value if hasattr(attr, "value") else str(attr))
+
             if not val:
-                val = clean_specs(p)
+                ada_tidak_tersedia = True
+            else:
+                fakta_items.append({
+                    "kode": p.get("kode"),
+                    "nama": p.get("nama"),
+                    "atribut": attr.value if hasattr(attr, "value") else str(attr),
+                    "nilai_spesifikasi": str(val)
+                })
 
-            fakta_items.append({
-                "kode": p.get("kode"),
-                "nama": p.get("nama"),
-                "atribut": attr.value,
-                "nilai_spesifikasi": str(val)
-            })
+        if ada_tidak_tersedia and not fakta_items:
+            fakta = {
+                "status": "atribut_tidak_tersedia",
+                "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
+                "pesan": f"Informasi spesifikasi '{attr.value if hasattr(attr, 'value') else str(attr)}' tidak tersedia untuk produk tersebut."
+            }
+        else:
+            fakta = {
+                "status": "sukses",
+                "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
+                "spesifikasi": fakta_items
+            }
 
-        fakta = {
-            "status": "sukses",
-            "atribut_ditanya": attr.value,
-            "spesifikasi": fakta_items
-        }
         return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
     # -------------------------------------------------------------------------
@@ -688,6 +812,7 @@ class ActionEngine:
 
         candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
 
+        batas_dipakai = None
         if jenis == "lebih_murah":
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             matches = [p for p in candidates if get_product_price(p) < lowest_p]
@@ -695,14 +820,20 @@ class ActionEngine:
 
             # B8: Tidak ada opsi lebih murah
             if not matches:
+                min_cat_price = min((get_product_price(p) for p in candidates), default=lowest_p)
                 fakta = {
                     "status": "tidak_ada_lebih_murah",
                     "harga_termurah_saat_ini": lowest_p,
                     "harga_termurah_saat_ini_formatted": format_rupiah(lowest_p),
+                    "harga_termurah_kategori": min_cat_price,
+                    "harga_termurah_kategori_formatted": format_rupiah(min_cat_price),
                     "kategori": kategori,
+                    "kategori_dipakai": kategori,
                     "pesan": f"Produk yang ditampilkan sebelumnya sudah merupakan opsi paling terjangkau di katalog kami ({format_rupiah(lowest_p)})."
                 }
                 return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
+            batas_dipakai = lowest_p
+            state["budget"] = get_product_price(matches[0])
 
         elif jenis == "lebih_mahal":
             highest_p = max((get_product_price(p) for p in tampil), default=5_000_000)
@@ -711,14 +842,20 @@ class ActionEngine:
 
             # B8: Tidak ada opsi lebih mahal
             if not matches:
+                max_cat_price = max((get_product_price(p) for p in candidates), default=highest_p)
                 fakta = {
                     "status": "tidak_ada_lebih_mahal",
                     "harga_termahal_saat_ini": highest_p,
                     "harga_termahal_saat_ini_formatted": format_rupiah(highest_p),
+                    "harga_termahal_kategori": max_cat_price,
+                    "harga_termahal_kategori_formatted": format_rupiah(max_cat_price),
                     "kategori": kategori,
+                    "kategori_dipakai": kategori,
                     "pesan": f"Produk yang ditampilkan sebelumnya sudah merupakan opsi tertinggi di katalog kami ({format_rupiah(highest_p)})."
                 }
                 return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
+            batas_dipakai = highest_p
+            state["budget"] = get_product_price(matches[-1]) if matches else highest_p
 
         elif jenis == "yang_lain" or jenis == "filter_tambahan" or args.merek_kecuali or args.filter:
             seen_kodes = {p.get("kode") for p in tampil}
@@ -755,6 +892,9 @@ class ActionEngine:
         fakta = {
             "status": "sukses",
             "jenis": jenis,
+            "kategori": kategori,
+            "kategori_dipakai": kategori,
+            "batas_harga": batas_dipakai,
             "merek_kecuali": args.merek_kecuali,
             "total_ditemukan": len(formatted),
             "produk": formatted

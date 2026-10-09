@@ -153,6 +153,8 @@ def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None,
             unknown_details.append(field)
             if mandatory:
                 failed_reasons.append(field)
+                report["tidak_terpenuhi"].append(f"{field} (tidak tersedia)")
+                penalty -= 50
             else:
                 penalty -= 5
             continue

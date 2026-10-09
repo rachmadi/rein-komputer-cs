@@ -90,6 +90,7 @@ class AtributSpesifikasiEnum(str, Enum):
     BOBOT = "bobot"
     KEYBOARD = "keyboard"
     KAMERA = "kamera"
+    HARGA = "harga"
     LAINNYA = "lainnya"
 
 
