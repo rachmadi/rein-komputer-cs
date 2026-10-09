@@ -34,19 +34,19 @@ def evaluate_three_evaluasi_kecocokan_cases(pipeline: SessionPipeline) -> List[D
         {
             "kasus": "Kasus 1: di_bawah_minimum",
             "kebutuhan": "editing video 4K dan animasi rendering 3D",
-            "produk_kode": "KB-L01",  # Acer Aspire Lite (Core i3, 8GB RAM, iGPU)
+            "produk_kode": "KB-L01",  # Acer Aspire Lite (N100, 8GB RAM, iGPU)
             "target": "di_bawah_minimum"
         },
         {
             "kasus": "Kasus 2: memenuhi_minimum",
-            "kebutuhan": "desain grafis dan editing video canva figma",
-            "produk_kode": "KB-L01",  # Acer Aspire Lite (Core i3 / 8GB)
+            "kebutuhan": "kuliah dan ngetik skripsi word excel",
+            "produk_kode": "KB-L01",  # Acer Aspire Lite (N100, 8GB RAM, SSD 512GB)
             "target": "memenuhi_minimum"
         },
         {
             "kasus": "Kasus 3: memenuhi_rekomendasi",
-            "kebutuhan": "game berat AAA dan render grafis tinggi",
-            "produk_kode": "KB-L04",  # ASUS TUF Gaming (Ryzen 7, 16GB, RTX 4060)
+            "kebutuhan": "kuliah dan ngetik skripsi word excel",
+            "produk_kode": "KB-L03",  # ASUS Vivobook 14 (Core i5, 16GB RAM, SSD 512GB)
             "target": "memenuhi_rekomendasi"
         }
     ]
@@ -181,12 +181,16 @@ def run_replay(regression_file: str, runs: int, output_md: str):
                     f"| {t_idx} | {clean_user} | `{t_res.aksi_terpilih}` | {fakta_summary} | {clean_bot} | {kartu_str} | {t_res.latensi_parse_ms:.1f} | {t_res.latensi_mesin_ms:.1f} | {t_res.latensi_generate_ms:.1f} | {t_res.latensi_total_ms:.1f} | {pelanggaran_cnt} | {darurat_str} |"
                 )
 
-                print(f"[Run {r}][{c_id} Turn {t_idx:02d}/{len(turns):02d}] {clean_user[:25]:25s} -> {t_res.aksi_terpilih:18s} ({t_res.latensi_total_ms:6.1f}ms)")
+                print(f"[Run {r}][{c_id} Turn {t_idx:02d}/{len(turns):02d}] {clean_user[:25]:25s} -> {t_res.aksi_terpilih:18s} ({t_res.latensi_total_ms:6.1f}ms)", flush=True)
 
             md_lines.append("")
+            # Simpan transkrip inkremental ke file
+            os.makedirs(os.path.dirname(output_md) or ".", exist_ok=True)
+            with open(output_md, "w", encoding="utf-8") as f_tmp:
+                f_tmp.write("\n".join(md_lines) + "\n")
 
     # Evaluasi 3 Kasus Evaluasi Kecocokan (Item B.5)
-    print("\nMenjalankan 3 kasus evaluasi_kecocokan untuk bukti keluaran mentah generator...")
+    print("\nMenjalankan 3 kasus evaluasi_kecocokan untuk bukti keluaran mentah generator...", flush=True)
     eval_cases = evaluate_three_evaluasi_kecocokan_cases(pipeline)
     md_lines.append("## Bukti Keluaran Mentah Generator: Evaluasi Kecocokan (B.5)")
     md_lines.append("Tiga kasus evaluasi spesifikasi perangkat keras terhadap profil kebutuhan komputasi:")
