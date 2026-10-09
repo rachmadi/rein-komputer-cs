@@ -1,11 +1,12 @@
 .env
+catalog.db
 data/*.db
 data/*.db*
 !data/seed/
-logs/*.jsonl
-logs/eval/*.jsonl
+logs/
 *.bak*
 scratch/
 __pycache__/
 *.pyc
 .pytest_cache/
+docs/problem_sessions_report.json
