@@ -1,0 +1,196 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0 -- D:\RAG\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\RAG
+configfile: pytest.ini
+plugins: anyio-4.15.1
+collecting ... collected 19 items / 12 deselected / 7 selected
+
+tests/test_integrasi_putaran9.py::test_f1_kriteria_pelanggan_vs_batas_bot_terpisah FAILED [ 14%]
+tests/test_integrasi_putaran9.py::test_f1b_syarat_spesifikasi_dan_kriteria_diabaikan FAILED [ 28%]
+tests/test_integrasi_putaran9.py::test_f2_rujukan_default_produk_terakhir FAILED [ 42%]
+tests/test_integrasi_putaran9.py::test_f3_spek_umum_vs_atribut_tidak_tersedia FAILED [ 57%]
+tests/test_integrasi_putaran9.py::test_f4_teks_memuat_nilai_fakta_spesifik FAILED [ 71%]
+tests/test_integrasi_putaran9.py::test_f5_fallback_deterministik_bebas_nominal FAILED [ 85%]
+tests/test_integrasi_putaran9.py::test_f6_rujukan_riwayat_produk_pernah_tampil FAILED [100%]
+
+================================== FAILURES ===================================
+______________ test_f1_kriteria_pelanggan_vs_batas_bot_terpisah _______________
+
+    def test_f1_kriteria_pelanggan_vs_batas_bot_terpisah():
+        """F1: kriteria_pelanggan (dari user) dan batas_bot (dari sistem) dilacak terpisah."""
+        engine = ActionEngine()
+        state = {
+            "kategori": "laptop",
+            "kriteria_pelanggan": {"merek": "asus", "max_harga": 10000000},
+            "batas_bot": {"max_harga": 8000000},
+            "produk_tampil": [
+                {"kode": "KB-L03", "nama": "ASUS Vivobook 14", "kategori": "laptop", "harga": 8499000}
+            ]
+        }
+        # User berganti meminta opsi merek lain (lanjutan_hasil)
+        args = ActionArguments(jenis=JenisEnum.YANG_LAIN)
+        res = engine.execute(ParserOutput(aksi=ActionEnum.LANJUTAN_HASIL, argumen=args), session_state=state)
+    
+        # Fakta wajib memuat field 'filter_dipakai'
+>       assert "filter_dipakai" in res.fakta, "Fakta harus mencatat filter_dipakai secara eksplisit"
+E       AssertionError: Fakta harus mencatat filter_dipakai secara eksplisit
+E       assert 'filter_dipakai' in {'status': 'sukses', 'jenis': 'yang_lain', 'kategori': 'laptop', 'kategori_dipakai': 'laptop', ...}
+E        +  where {'status': 'sukses', 'jenis': 'yang_lain', 'kategori': 'laptop', 'kategori_dipakai': 'laptop', ...} = ActionResult(aksi=<ActionEnum.LANJUTAN_HASIL: 'lanjutan_hasil'>, fakta={'status': 'sukses', 'jenis': 'yang_lain', 'kategori': 'laptop', 'kategori_dipakai': 'laptop', 'batas_harga': None, 'merek_kecuali': None, 'total_ditemukan': 3, 'produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'kategori': 'laptop', 'brand': 'acer', 'merek': 'acer', 'harga': 5199000, 'harga_formatted': 'Rp5.199.000', 'spesifikasi': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'cpu': 'Intel Processor N100', 'cpu_tier': 1, 'ram': '8 GB DDR5', 'ram_gb': 8, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'Intel UHD Graphics', 'display': '14 inci WUXGA IPS', 'screen_inch': 14.0, 'image_url': 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80'}, {'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3 14', 'kategori': 'laptop', 'brand': 'lenovo', 'merek': 'lenovo', 'harga': 7299000, 'harga_formatted': 'Rp7.299.000', 'spesifikasi': 'Intel Core i3-1215U | Intel UHD Graphics | RAM 8 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'Intel Core i3-1215U', 'cpu_tier': 1, 'ram': '8 GB DDR4', 'ram_gb': 8, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'Inte...age_url': 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80'}, {'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3 14', 'kategori': 'laptop', 'brand': 'lenovo', 'merek': 'lenovo', 'harga': 7299000, 'harga_formatted': 'Rp7.299.000', 'spesifikasi': 'Intel Core i3-1215U | Intel UHD Graphics | RAM 8 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'Intel Core i3-1215U', 'cpu_tier': 1, 'ram': '8 GB DDR4', 'ram_gb': 8, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'Intel UHD Graphics', 'display': '14 inci FHD', 'screen_inch': 14.0, 'image_url': 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80'}, {'kode': 'KB-L04', 'nama': 'HP 14s-fq1036AU', 'kategori': 'laptop', 'brand': 'hp', 'merek': 'hp', 'harga': 9499000, 'harga_formatted': 'Rp9.499.000', 'spesifikasi': 'AMD Ryzen 5 7530U | AMD Radeon Graphics | RAM 16 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'AMD Ryzen 5 7530U', 'cpu_tier': 2, 'ram': '16 GB DDR4', 'ram_gb': 16, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'AMD Radeon Graphics', 'display': '14 inci FHD IPS', 'screen_inch': 14.0, 'image_url': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80'}], profil_id=None).fakta
+
+tests\test_integrasi_putaran9.py:39: AssertionError
+_____________ test_f1b_syarat_spesifikasi_dan_kriteria_diabaikan ______________
+
+    def test_f1b_syarat_spesifikasi_dan_kriteria_diabaikan():
+        """F1b: Syarat spesifikasi (mis. DDR5) yang kolomnya tidak ada di katalog dicatat di kriteria_diabaikan_data_tak_ada."""
+        engine = ActionEngine()
+        state = {"kategori": "laptop"}
+        args = ActionArguments(kategori="laptop", ram_gb_min=16, filter={"tipe_ram": "ddr5"})
+        res = engine.execute(ParserOutput(aksi=ActionEnum.CARI_PRODUK, argumen=args), session_state=state)
+    
+        # Fakta wajib memuat kriteria_diabaikan_data_tak_ada jika data tidak memiliki kolom tipe RAM DDR
+>       assert "kriteria_diabaikan_data_tak_ada" in res.fakta, "Kriteria tanpa kolom katalog wajib dilaporkan di kriteria_diabaikan_data_tak_ada"
+E       AssertionError: Kriteria tanpa kolom katalog wajib dilaporkan di kriteria_diabaikan_data_tak_ada
+E       assert 'kriteria_diabaikan_data_tak_ada' in {'status': 'sukses', 'merek_kecuali': None, 'total_cocok': 8, 'total_ditemukan': 3, ...}
+E        +  where {'status': 'sukses', 'merek_kecuali': None, 'total_cocok': 8, 'total_ditemukan': 3, ...} = ActionResult(aksi=<ActionEnum.CARI_PRODUK: 'cari_produk'>, fakta={'status': 'sukses', 'merek_kecuali': None, 'total_cocok': 8, 'total_ditemukan': 3, 'produk': [{'kode': 'KB-L03', 'nama': 'ASUS Vivobook 14 A1405', 'kategori': 'laptop', 'brand': 'asus', 'merek': 'asus', 'harga': 8799000, 'harga_formatted': 'Rp8.799.000', 'spesifikasi': 'Intel Core i5-1235U | Intel Iris Xe | RAM 16 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'Intel Core i5-1235U', 'cpu_tier': 2, 'ram': '16 GB DDR4', 'ram_gb': 16, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'Intel Iris Xe', 'display': '14 inci WUXGA IPS', 'screen_inch': 14.0, 'image_url': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80'}, {'kode': 'KB-L04', 'nama': 'HP 14s-fq1036AU', 'kategori': 'laptop', 'brand': 'hp', 'merek': 'hp', 'harga': 9499000, 'harga_formatted': 'Rp9.499.000', 'spesifikasi': 'AMD Ryzen 5 7530U | AMD Radeon Graphics | RAM 16 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'AMD Ryzen 5 7530U', 'cpu_tier': 2, 'ram': '16 GB DDR4', 'ram_gb': 16, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'AMD Radeon Graphics', 'display': '14 inci FHD IPS', 'screen_inch': 14.0, 'image_url': 'https://images.unspl...tps://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80'}, {'kode': 'KB-L04', 'nama': 'HP 14s-fq1036AU', 'kategori': 'laptop', 'brand': 'hp', 'merek': 'hp', 'harga': 9499000, 'harga_formatted': 'Rp9.499.000', 'spesifikasi': 'AMD Ryzen 5 7530U | AMD Radeon Graphics | RAM 16 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'AMD Ryzen 5 7530U', 'cpu_tier': 2, 'ram': '16 GB DDR4', 'ram_gb': 16, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'AMD Radeon Graphics', 'display': '14 inci FHD IPS', 'screen_inch': 14.0, 'image_url': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80'}, {'kode': 'KB-L05', 'nama': 'Lenovo IdeaPad Slim 5 14', 'kategori': 'laptop', 'brand': 'lenovo', 'merek': 'lenovo', 'harga': 11499000, 'harga_formatted': 'Rp11.499.000', 'spesifikasi': 'AMD Ryzen 7 7730U | AMD Radeon Graphics | RAM 16 GB DDR4 | 512 GB NVMe SSD', 'cpu': 'AMD Ryzen 7 7730U', 'cpu_tier': 3, 'ram': '16 GB DDR4', 'ram_gb': 16, 'storage': '512 GB NVMe SSD', 'storage_ssd_gb': 512, 'gpu': 'AMD Radeon Graphics', 'display': '14 inci WUXGA OLED', 'screen_inch': 14.0, 'image_url': 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80'}], profil_id=None).fakta
+
+tests\test_integrasi_putaran9.py:51: AssertionError
+___________________ test_f2_rujukan_default_produk_terakhir ___________________
+
+    def test_f2_rujukan_default_produk_terakhir():
+        """F2: Pertanyaan atribut tanpa nama produk merujuk produk terakhir dibahas / produk tampil, mencatat rujukan_dipakai."""
+        engine = ActionEngine()
+        state = {
+            "kategori": "laptop",
+            "produk_tampil": [
+                {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "kategori": "laptop", "harga": 7299000}
+            ],
+            "produk_terakhir_dibahas": "KB-L02"
+        }
+        # User bertanya ukuran layar tanpa menyebut nama laptop
+        args = ActionArguments(atribut=AtributSpesifikasiEnum.LAYAR)
+        res = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args), session_state=state)
+    
+        assert res.fakta.get("status") == "sukses", "Harus sukses merujuk produk aktif"
+>       assert "rujukan_dipakai" in res.fakta, "Fakta wajib memuat field rujukan_dipakai"
+E       AssertionError: Fakta wajib memuat field rujukan_dipakai
+E       assert 'rujukan_dipakai' in {'status': 'sukses', 'atribut_ditanya': 'layar', 'spesifikasi': [{'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3', 'atribut': 'layar', 'nilai': '14 inci FHD', ...}], 'spesifikasi_produk': [{'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3', 'atribut': 'layar', 'nilai': '14 inci FHD', ...}]}
+E        +  where {'status': 'sukses', 'atribut_ditanya': 'layar', 'spesifikasi': [{'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3', 'atribut': 'layar', 'nilai': '14 inci FHD', ...}], 'spesifikasi_produk': [{'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3', 'atribut': 'layar', 'nilai': '14 inci FHD', ...}]} = ActionResult(aksi=<ActionEnum.TANYA_SPESIFIKASI: 'tanya_spesifikasi'>, fakta={'status': 'sukses', 'atribut_ditanya': 'layar', 'spesifikasi': [{'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3', 'atribut': 'layar', 'nilai': '14 inci FHD', 'nilai_spesifikasi': '14 inci FHD', 'ringkasan_spek': 'Intel Core i3-1215U | Intel UHD Graphics | RAM 8 GB DDR4 | 512 GB NVMe SSD'}], 'spesifikasi_produk': [{'kode': 'KB-L02', 'nama': 'Lenovo IdeaPad Slim 3', 'atribut': 'layar', 'nilai': '14 inci FHD', 'nilai_spesifikasi': '14 inci FHD', 'ringkasan_spek': 'Intel Core i3-1215U | Intel UHD Graphics | RAM 8 GB DDR4 | 512 GB NVMe SSD'}]}, produk_list=[], profil_id=None).fakta
+
+tests\test_integrasi_putaran9.py:70: AssertionError
+_________________ test_f3_spek_umum_vs_atribut_tidak_tersedia _________________
+
+    def test_f3_spek_umum_vs_atribut_tidak_tersedia():
+        """F3: Atribut None = ringkasan spek utama; Atribut LAINNYA = B15 atribut_tidak_tersedia (bukan spek lain)."""
+        engine = ActionEngine()
+        state = {
+            "kategori": "laptop",
+            "produk_tampil": [
+                {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000}
+            ]
+        }
+        # Kasus A: Atribut None / kosong -> Permintaan spek umum -> Ringkasan spek
+        args_umum = ActionArguments(produk=["KB-L01"], atribut=None)
+        res_umum = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args_umum), session_state=state)
+        assert res_umum.fakta.get("status") == "sukses"
+>       assert "spesifikasi_ringkas" in res_umum.fakta or "ringkasan_spek" in res_umum.fakta
+E       AssertionError: assert ('spesifikasi_ringkas' in {'status': 'sukses', 'atribut_ditanya': 'lainnya', 'spesifikasi': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}], 'spesifikasi_produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}]} or 'ringkasan_spek' in {'status': 'sukses', 'atribut_ditanya': 'lainnya', 'spesifikasi': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}], 'spesifikasi_produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}]})
+E        +  where {'status': 'sukses', 'atribut_ditanya': 'lainnya', 'spesifikasi': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}], 'spesifikasi_produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}]} = ActionResult(aksi=<ActionEnum.TANYA_SPESIFIKASI: 'tanya_spesifikasi'>, fakta={'status': 'sukses', 'atribut_ditanya': 'lainnya', 'spesifikasi': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'nilai_spesifikasi': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'ringkasan_spek': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD'}], 'spesifikasi_produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'nilai_spesifikasi': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'ringkasan_spek': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD'}]}, produk_list=[], profil_id=None).fakta
+E        +  and   {'status': 'sukses', 'atribut_ditanya': 'lainnya', 'spesifikasi': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}], 'spesifikasi_produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', ...}]} = ActionResult(aksi=<ActionEnum.TANYA_SPESIFIKASI: 'tanya_spesifikasi'>, fakta={'status': 'sukses', 'atribut_ditanya': 'lainnya', 'spesifikasi': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'nilai_spesifikasi': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'ringkasan_spek': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD'}], 'spesifikasi_produk': [{'kode': 'KB-L01', 'nama': 'Acer Aspire Lite 14', 'atribut': 'lainnya', 'nilai': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'nilai_spesifikasi': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD', 'ringkasan_spek': 'Intel Processor N100 | Intel UHD Graphics | RAM 8 GB DDR5 | 512 GB NVMe SSD'}]}, produk_list=[], profil_id=None).fakta
+
+tests\test_integrasi_putaran9.py:87: AssertionError
+__________________ test_f4_teks_memuat_nilai_fakta_spesifik ___________________
+
+    def test_f4_teks_memuat_nilai_fakta_spesifik():
+        """F4: GroundingChecker wajib menolak teks tanya_spesifikasi yang tidak memuat nilai fakta spesifik yang diminta."""
+        from services.grounding_checker import GroundingChecker
+        checker = GroundingChecker()
+        fakta = {
+            "status": "sukses",
+            "atribut_ditanya": "ram",
+            "spesifikasi_produk": [
+                {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "atribut": "ram", "nilai": "16 GB DDR4"}
+            ]
+        }
+        # Teks generator melupakan nilai 16 GB DDR4 dan hanya memberi rekomendasi umum
+        teks_tanpa_nilai = "Lenovo IdeaPad Slim 3 ini memiliki performa yang handal dan desain ringkas untuk kebutuhan harian."
+        is_valid, violations = checker.check(teks_tanpa_nilai, fakta)
+>       assert not is_valid, "GroundingChecker wajib menolak teks tanya_spesifikasi yang tidak memuat nilai spesifik (16 GB DDR4)"
+E       AssertionError: GroundingChecker wajib menolak teks tanya_spesifikasi yang tidak memuat nilai spesifik (16 GB DDR4)
+E       assert not True
+
+tests\test_integrasi_putaran9.py:109: AssertionError
+________________ test_f5_fallback_deterministik_bebas_nominal _________________
+
+    def test_f5_fallback_deterministik_bebas_nominal():
+        """F5: Jika generator gagal pada aksi berfakta, sistem menghasilkan fallback deterministik dari fakta, bukan B13."""
+        pipeline = SessionPipeline()
+        state = {
+            "kategori": "laptop",
+            "produk_tampil": [
+                {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "kategori": "laptop", "harga": 7299000}
+            ]
+        }
+        fakta = {
+            "status": "sukses",
+            "atribut_ditanya": "ram",
+            "spesifikasi_produk": [
+                {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "atribut": "ram", "nilai": "8 GB DDR4"}
+            ]
+        }
+        # Uji pembentukan fallback deterministik saat generator mengalami penolakan
+>       fallback_text = pipeline.action_engine.build_deterministic_fallback(ActionEnum.TANYA_SPESIFIKASI, fakta, state)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'ActionEngine' object has no attribute 'build_deterministic_fallback'
+
+tests\test_integrasi_putaran9.py:130: AttributeError
+________________ test_f6_rujukan_riwayat_produk_pernah_tampil _________________
+
+    def test_f6_rujukan_riwayat_produk_pernah_tampil():
+        """F6: Rujukan ke pilihan yang sudah tidak di layar dipetakan dari riwayat produk yang pernah tampil di sesi."""
+        engine = ActionEngine()
+        state = {
+            "kategori": "laptop",
+            "produk_tampil": [
+                {"kode": "KB-L06", "nama": "Acer Nitro V 15", "kategori": "laptop", "harga": 10999000}
+            ],
+            "history_produk_tampil": [
+                {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000},
+                {"kode": "KB-L06", "nama": "Acer Nitro V 15", "kategori": "laptop", "harga": 10999000}
+            ]
+        }
+        # Pelanggan merujuk opsi pertama di turn sebelumnya yang sekarang sudah tergeser dari layar
+        args = ActionArguments(rujukan_produk=["opsi 1 sebelumnya"], atribut=AtributSpesifikasiEnum.RAM)
+        res = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args), session_state=state)
+>       assert res.fakta.get("status") == "sukses", "Rujukan riwayat harus berhasil diselesaikan"
+E       AssertionError: Rujukan riwayat harus berhasil diselesaikan
+E       assert 'produk_tidak_di_katalog' == 'sukses'
+E         
+E         - sukses
+E         + produk_tidak_di_katalog
+
+tests\test_integrasi_putaran9.py:151: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\config\__init__.py:1464
+  D:\RAG\.venv\Lib\site-packages\_pytest\config\__init__.py:1464: PytestConfigWarning: Unknown config option: env
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+tests\test_integrasi_putaran9.py:159
+  D:\RAG\tests\test_integrasi_putaran9.py:159: PytestUnknownMarkWarning: Unknown pytest.mark.live - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.live
+
+tests\test_integrasi_putaran9.py:180
+  D:\RAG\tests\test_integrasi_putaran9.py:180: PytestUnknownMarkWarning: Unknown pytest.mark.live - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.live
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_integrasi_putaran9.py::test_f1_kriteria_pelanggan_vs_batas_bot_terpisah
+FAILED tests/test_integrasi_putaran9.py::test_f1b_syarat_spesifikasi_dan_kriteria_diabaikan
+FAILED tests/test_integrasi_putaran9.py::test_f2_rujukan_default_produk_terakhir
+FAILED tests/test_integrasi_putaran9.py::test_f3_spek_umum_vs_atribut_tidak_tersedia
+FAILED tests/test_integrasi_putaran9.py::test_f4_teks_memuat_nilai_fakta_spesifik
+FAILED tests/test_integrasi_putaran9.py::test_f5_fallback_deterministik_bebas_nominal
+FAILED tests/test_integrasi_putaran9.py::test_f6_rujukan_riwayat_produk_pernah_tampil
+================ 7 failed, 12 deselected, 3 warnings in 0.37s =================
