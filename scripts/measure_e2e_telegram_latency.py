@@ -111,7 +111,7 @@ def main():
             "teks_jawaban": res.teks_jawaban.replace("\n", " ")
         }
         output_rows.append(row)
-        print(f"[{idx:02d}/{len(TURNS_SCENARIOS)}] {sid} | Aksi: {res.aksi_terpilih:20s} | Total: {lat_total:7.1f} ms | Parse: {res.latensi_parse_ms:6.1f} ms | Gen: {res.latensi_generate_ms:6.1f} ms | Tokens: {res.prompt_eval_count} in / {res.eval_count} out | Re-parse: {res.re_parse}")
+        print(f"[{idx:02d}/{len(TURNS_SCENARIOS)}] {sid} | Aksi: {res.aksi_terpilih:20s} | Total: {lat_total:7.1f} ms | Parse: {res.latensi_parse_ms:6.1f} ms | Gen: {res.latensi_generate_ms:6.1f} ms | Tokens: {res.prompt_eval_count} in / {res.eval_count} out | Re-parse: {res.re_parse}", flush=True)
 
     # Tulis ke CSV
     fieldnames = [

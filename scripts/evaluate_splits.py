@@ -92,13 +92,24 @@ def main():
     dev_40 = dev_items[:40]
     dev_100 = dev_items[:100]
 
-    # Evaluasi dev 40
-    evaluate_items(dev_40, "eval/dev_40_predictions.csv")
+    # Evaluasi dev 100 (100 item)
+    correct_100, n_100, acc_100 = evaluate_items(dev_100, "eval/dev_100_predictions.csv")
 
-    # Evaluasi dev 100
-    evaluate_items(dev_100, "eval/dev_100_predictions.csv")
+    # Ekstrak dev 40 dari 40 item pertama dev 100
+    print("\nMenyimpan eval/dev_40_predictions.csv dari 40 item pertama dev_100...")
+    with open("eval/dev_100_predictions.csv", "r", encoding="utf-8") as f:
+        reader = list(csv.DictReader(f))
+        dev_40_rows = reader[:40]
+        correct_40 = sum(1 for r in dev_40_rows if r["benar_salah"].lower() == "true")
+        acc_40 = (correct_40 / len(dev_40_rows)) * 100.0 if dev_40_rows else 0.0
 
-    # Evaluasi held-out v1
+    with open("eval/dev_40_predictions.csv", "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=reader[0].keys())
+        writer.writeheader()
+        writer.writerows(dev_40_rows)
+    print(f"Akurasi eval/dev_40_predictions.csv: {correct_40}/{len(dev_40_rows)} = {acc_40:.2f}%")
+
+    # Evaluasi held-out v1 terpakai (50 item)
     evaluate_items(ho_items, "eval/heldout_v1_predictions.csv")
 
 
