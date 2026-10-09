@@ -146,8 +146,12 @@ def check_g07() -> Tuple[bool, str]:
     ev_path = "eval/evidence/merah_putaran8.txt"
     if not os.path.exists(ev_path):
         return False, "eval/evidence/merah_putaran8.txt belum ada"
-    with open(ev_path, "r", encoding="utf-8") as f:
-        text = f.read()
+    try:
+        with open(ev_path, "r", encoding="utf-8") as f:
+            text = f.read()
+    except Exception:
+        with open(ev_path, "r", encoding="utf-16", errors="ignore") as f:
+            text = f.read()
     missing_red = []
     for e_num in ["E3", "E4", "E5", "E6", "E7", "E8"]:
         if e_num not in text or ("FAILED" not in text and "FAILURE" not in text):
