@@ -233,3 +233,39 @@ def test_fase3_generator_rule_c_constraints():
         sentences = [s for s in re.split(r"(?<=[.!?])\s+", out.teks.strip()) if s]
         assert len(sentences) <= 3
 
+
+def test_fase5_reject_hardware_specs_on_non_product_turns():
+    """Fase 5: Menolak halusinasi spesifikasi hardware (harga, GB, model) pada giliran non-produk."""
+    from services.grounding_checker import GroundingChecker
+    checker = GroundingChecker()
+
+    # 1. Sapaan menyebut harga
+    valid, errs = checker.check("Halo Kak! Ada laptop seharga 7 juta rupiah.", fakta={"status": "sapaan"})
+    assert valid is False
+    assert any("non-produk" in e.lower() for e in errs)
+
+    # 2. Basa-basi menyebut spesifikasi GB
+    valid, errs = checker.check("Terima kasih Kak, perangkat ini punya 16GB RAM.", fakta={"status": "basa_basi"})
+    assert valid is False
+    assert any("non-produk" in e.lower() for e in errs)
+
+    # 3. Profil tidak ditemukan menyebut nama model laptop
+    valid, errs = checker.check("Kami belum menemukan kebutuhan Kakak, tapi ada Vivobook bagus.", fakta={"status": "profil_tidak_ditemukan"})
+    assert valid is False
+    assert any("non-produk" in e.lower() for e in errs)
+
+
+def test_fase5_reject_internal_system_terms_leak():
+    """Fase 5: Menolak teks respons yang membocorkan istilah skema internal (tier, selisih, fakta, score)."""
+    from services.grounding_checker import GroundingChecker
+    checker = GroundingChecker()
+
+    valid1, errs1 = checker.check("Laptop ini masuk cpu_tier 3 dengan performa tinggi.", fakta={"status": "sukses"})
+    assert valid1 is False
+    assert any("internal" in e.lower() for e in errs1)
+
+    valid2, errs2 = checker.check("Berdasarkan fakta dan selisih spesifikasi, unit ini cocok.", fakta={"status": "sukses"})
+    assert valid2 is False
+    assert any("internal" in e.lower() for e in errs2)
+
+

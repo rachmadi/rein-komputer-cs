@@ -142,21 +142,23 @@ class GroundingChecker:
             violations.append(f"Menyebut kode internal terlarang: {', '.join(leak_m)}.")
 
         # 3. Periksa istilah skema fakta internal dinamis dan istilah teknis sistem
+        system_leak_terms = [
+            "tier", "cpu_tier", "selisih", "fakta", "score", "profil_id",
+            "ram_gb", "storage_ssd_gb", "gpu_vram_gb", "fakta_eksekusi"
+        ]
+        for term in system_leak_terms:
+            if re.search(rf"\b{re.escape(term)}\b", teks, re.IGNORECASE):
+                violations.append(f"Menyebut istilah skema/sistem internal '{term}'.")
+
         schema_keys = self.extract_fact_schema_keys(fakta)
         forbidden_schema_terms = set()
         for sk in schema_keys:
             if "_" in sk:
                 forbidden_schema_terms.add(sk)
-            if "tier" in sk.lower():
-                forbidden_schema_terms.add("tier")
 
         for term in forbidden_schema_terms:
-            if term == "tier":
-                if re.search(r"\btier\b", teks, re.IGNORECASE):
-                    violations.append("Menyebut istilah skema fakta internal 'tier' (mis. tier 1, tier 2).")
-            else:
-                if re.search(rf"\b{re.escape(term)}\b", teks, re.IGNORECASE):
-                    violations.append(f"Menyebut nama field skema fakta internal '{term}'.")
+            if re.search(rf"\b{re.escape(term)}\b", teks, re.IGNORECASE):
+                violations.append(f"Menyebut nama field skema fakta internal '{term}'.")
 
         technical_words = ["none", "nan", "null", "db_path", "pydantic", "schema_valid", "session_state"]
         for tw in technical_words:
@@ -257,6 +259,24 @@ class GroundingChecker:
                         violations.append(
                             f"Penilaian untuk produk '{kode}' adalah '{actual_penilaian}' bertentangan dengan tanda selisih numerik yang menunjukkan '{expected_status}'."
                         )
+
+        # 11. Larangan halusinasi spesifikasi hardware pada giliran non-produk
+        non_product_statuses = (
+            "sapaan", "basa_basi", "tidak_jelas",
+            "profil_tidak_ditemukan", "profil_tidak_ditemukan_berulang",
+            "info_toko", "tanya_kebutuhan"
+        )
+        status_fakta = fakta.get("status")
+        if status_fakta in non_product_statuses:
+            if mentioned_prices:
+                violations.append(f"Menyebutkan nominal harga pada giliran non-produk ({status_fakta}).")
+            if re.search(r"\b\d+\s*(?:gb|tb|ghz|mhz|ram|ssd|vram|core)\b", teks, re.IGNORECASE):
+                violations.append(f"Menyebutkan spesifikasi perangkat keras pada giliran non-produk ({status_fakta}).")
+            non_prod_models = ["vivobook", "ideapad", "aspire", "legion", "tuf", "macbook", "pavilion", "thinkpad", "predator", "zenbook", "rog", "loq", "victus", "omen"]
+            for npm in non_prod_models:
+                if re.search(rf"\b{npm}\b", teks, re.IGNORECASE):
+                    violations.append(f"Menyebutkan model produk '{npm}' pada giliran non-produk ({status_fakta}).")
+                    break
 
         is_valid = len(violations) == 0
         return is_valid, violations
