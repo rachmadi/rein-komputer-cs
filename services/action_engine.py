@@ -128,7 +128,12 @@ class ActionEngine:
         return None
 
     def execute(self, parsed: ParserOutput, session_state: dict | None = None) -> ActionResult:
-        state = session_state or {}
+        state = session_state if session_state is not None else {}
+        if parsed.pembaruan_state:
+            for k, v in parsed.pembaruan_state.model_dump(exclude_unset=True).items():
+                if v is not None:
+                    state[k] = v
+
         aksi = parsed.aksi
         args = parsed.argumen
 
