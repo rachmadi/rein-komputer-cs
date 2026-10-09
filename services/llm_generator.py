@@ -66,8 +66,25 @@ EMERGENCY_FALLBACK_TEXT = (
 
 
 def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
-    """Merakit teks cadangan terstruktur langsung dari fakta_eksekusi secara deterministik (B10, B13)."""
+    """Merakit teks cadangan terstruktur langsung dari fakta_eksekusi secara deterministik (B10, B13, F5)."""
     status = fakta.get("status")
+    aksi_clean = str(aksi).lower().strip()
+
+    if aksi_clean in ("sapa", "sapaan") or status in ("sapa", "sapaan"):
+        return "Halo! Selamat datang di ReIn Komputer. Ada yang bisa kami bantu seputar kebutuhan laptop atau komputer hari ini?"
+
+    if aksi_clean == "basa_basi" or status == "basa_basi":
+        return "Sama-sama Kak! Senang bisa membantu di ReIn Komputer. Jangan ragu bertanya kembali jika butuh informasi lain seputar laptop atau komputer."
+
+    if aksi_clean == "tanya_spesifikasi" or status in ("atribut_tidak_tersedia", "spek_umum") or fakta.get("spesifikasi_produk"):
+        if status == "atribut_tidak_tersedia":
+            return f"Informasi mengenai spesifikasi tersebut belum tersedia di sistem kami, Kak. Kakak dapat langsung menanyakan ke staf toko kami di {KONTAK_STAF}."
+        prods = fakta.get("spesifikasi_produk") or fakta.get("spesifikasi") or []
+        if prods:
+            item = prods[0]
+            if item.get("atribut") == "spek_umum":
+                return f"Berikut spesifikasi {item.get('nama', 'produk ini')}: {item.get('nilai', '')}."
+            return f"Spesifikasi {item.get('atribut', 'perangkat')} untuk {item.get('nama', 'produk ini')} adalah {item.get('nilai', '')}."
 
     if status == "tidak_ada_dalam_anggaran":
         min_p = fakta.get("harga_termurah_kategori_formatted") or f"Rp{fakta.get('harga_termurah_kategori', 0):,}".replace(",", ".")

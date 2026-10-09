@@ -1270,3 +1270,9 @@ class ActionEngine:
             "pesan": pesan_map[alasan]
         }
         return ActionResult(aksi=ActionEnum.TIDAK_JELAS, fakta=fakta, produk_list=[])
+
+    def build_deterministic_fallback(self, aksi: ActionEnum | str, fakta: dict, state: dict = None) -> str:
+        """Merakit kalimat fallback deterministik dari fakta (F5)."""
+        from services.llm_generator import build_deterministic_fallback_text
+        aksi_str = aksi.value if hasattr(aksi, "value") else str(aksi)
+        return build_deterministic_fallback_text(aksi_str, fakta)

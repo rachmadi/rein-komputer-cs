@@ -322,5 +322,17 @@ class GroundingChecker:
                     violations.append("Mengklaim produk luar katalog tersedia di ReIn Komputer.")
                     break
 
+        # 15. Validasi nilai spesifikasi termuat pada tanya_spesifikasi (F4)
+        if status_fakta == "sukses" and (fakta.get("atribut_ditanya") or fakta.get("spesifikasi_produk")):
+            specs = fakta.get("spesifikasi_produk") or fakta.get("spesifikasi") or []
+            for sp in specs:
+                val = sp.get("nilai") or sp.get("nilai_spesifikasi")
+                attr = sp.get("atribut")
+                if val and attr != "spek_umum":
+                    val_str = str(val).lower()
+                    val_tokens = [tok for tok in re.split(r"[\s\|\,\;]+", val_str) if len(tok) >= 2 and tok not in ("inci", "fhd", "ips", "ram", "ssd", "ddr4", "ddr5", "tipe")]
+                    if val_str not in teks.lower() and not any(tok in teks.lower() for tok in val_tokens):
+                        violations.append(f"Teks tanya_spesifikasi tidak memuat nilai spesifikasi yang diminta ({val}).")
+
         is_valid = len(violations) == 0
         return is_valid, violations
