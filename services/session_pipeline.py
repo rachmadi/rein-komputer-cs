@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from services.llm_parser import parse_user_message
 from services.validator import validate_parser_output
 from services.action_engine import ActionEngine, ActionResult
-from services.llm_generator import generate_response, GeneratorOutput
+from services.llm_generator import generate_response, GeneratorOutput, build_deterministic_fallback_text
 from services.grounding_checker import GroundingChecker, EMERGENCY_FALLBACK_TEXT
 from services.product_card import format_product_cards_message
 from services.schema_actions import ParserOutput, ActionEnum
@@ -157,9 +157,10 @@ class SessionPipeline:
                 gen_out = gen_out_retry
                 violations = []
             else:
-                logger.error(f"Pemeriksa gagal setelah retry: {violations_retry}. Menggunakan kalimat darurat.")
+                logger.error(f"Pemeriksa gagal setelah retry: {violations_retry}. Menggunakan kalimat darurat berbasis fakta.")
+                fallback_teks = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
                 gen_out = GeneratorOutput(
-                    teks=EMERGENCY_FALLBACK_TEXT,
+                    teks=fallback_teks,
                     pertanyaan_diajukan=None
                 )
                 violations = violations_retry
@@ -168,8 +169,14 @@ class SessionPipeline:
         lat_gen = (time.perf_counter() - t_gen_0) * 1000.0
         lat_total = (time.perf_counter() - t_start) * 1000.0
 
-        # Update pending_question di state
-        state["pending_question"] = gen_out.pertanyaan_diajukan
+        # Update pending_question di state (A5, A6, A10: info murni tidak pernah membuka pertanyaan)
+        if parsed.aksi in (ActionEnum.TANYA_SPESIFIKASI, ActionEnum.TANYA_INFO_TOKO, ActionEnum.BANDINGKAN):
+            gen_out.pertanyaan_diajukan = None
+            state["pending_question"] = None
+        else:
+            state["pending_question"] = gen_out.pertanyaan_diajukan
+            if gen_out.pertanyaan_diajukan:
+                state["last_asked_slot"] = gen_out.pertanyaan_diajukan
 
         # ---------------------------------------------------------------------
         # 6. KARTU PRODUK HTML

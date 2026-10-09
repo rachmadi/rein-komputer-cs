@@ -56,6 +56,60 @@ Catatan untuk penilaian:
 """
 
 
+KONTAK_STAF = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
+EMERGENCY_FALLBACK_TEXT = (
+    f"Sistem kami sedang mengalami kendala teknis sementara. "
+    f"Untuk bantuan langsung, silakan hubungi tim kami di {KONTAK_STAF}. "
+    f"Anda juga bisa mencoba mengulang pesan Anda."
+)
+
+
+def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
+    """Merakit teks cadangan terstruktur langsung dari fakta_eksekusi secara deterministik (B10, B13)."""
+    status = fakta.get("status")
+
+    if status == "tidak_ada_dalam_anggaran":
+        min_p = fakta.get("harga_termurah_kategori_formatted") or f"Rp{fakta.get('harga_termurah_kategori', 0):,}".replace(",", ".")
+        return f"Belum ada produk dalam rentang anggaran tersebut, Kak. Pilihan paling terjangkau di katalog kami saat ini mulai dari {min_p}."
+
+    if status == "belum_ada_yang_memenuhi":
+        p_close = fakta.get("produk_terdekat", {})
+        nama = p_close.get("nama", "perangkat terdekat")
+        kekurangan = ", ".join(p_close.get("kekurangan", []))
+        return f"Saat ini belum ada produk yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Pilihan terdekat kami adalah {nama} ({kekurangan})."
+
+    if status == "tidak_ada_lebih_murah":
+        min_p = fakta.get("harga_termurah_saat_ini_formatted") or "harga tersebut"
+        return f"Produk yang ditampilkan sebelumnya sudah merupakan opsi paling terjangkau di katalog kami ({min_p}), Kak."
+
+    if status == "tidak_ada_lebih_mahal":
+        return "Produk yang ditampilkan sebelumnya sudah merupakan opsi spesifikasi tertinggi di katalog kami, Kak."
+
+    if status == "tanya_kebutuhan":
+        persona = fakta.get("persona", "pengguna")
+        return f"Baik Kak, kebutuhan untuk {persona} sudah dicatat. Boleh tahu biasanya akan lebih sering dipakai untuk aktivitas apa saja?"
+
+    if status == "profil_tidak_ditemukan":
+        return "Kami belum dapat memetakan kebutuhan tersebut ke rekomendasi spesifik, Kak. Boleh ceritakan aktivitas atau software utama yang akan sering digunakan?"
+
+    if status == "profil_tidak_ditemukan_berulang":
+        return f"Kebutuhan tersebut belum teridentifikasi di sistem kami, Kak. Kakak bisa menyebutkan kategori dan anggaran langsung, atau berkonsultasi ke staf di {KONTAK_STAF}."
+
+    if status == "info_toko":
+        return f"Untuk informasi operasional toko, silakan langsung hubungi tim kami di {KONTAK_STAF}, Kak."
+
+    if status == "rujukan_tidak_ada":
+        return "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil, Kak. Silakan sebutkan kebutuhan atau perangkat yang dicari."
+
+    prods = fakta.get("produk", [])
+    if prods:
+        nama_list = [p.get("nama") for p in prods[:3] if p.get("nama")]
+        if nama_list:
+            return f"Berikut beberapa pilihan yang sesuai di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+
+    return EMERGENCY_FALLBACK_TEXT
+
+
 class GeneratorOutput(BaseModel):
     teks: str = Field(description="Jawaban percakapan untuk pelanggan, maksimal 3 kalimat.")
     pertanyaan_diajukan: Optional[str] = Field(default=None, description="Slot yang ditanyakan bot jika ada, misal 'kebutuhan', 'budget', atau null.")
@@ -178,10 +232,15 @@ def generate_response(
     except Exception as e:
         logger.error(f"Gagal generate respons via Ollama: {e}")
         error_msg = str(e)
+        fallback_teks = build_deterministic_fallback_text(aksi, fakta)
         out = GeneratorOutput(
-            teks="Halo Kak, ada yang bisa kami bantu seputar produk laptop atau komputer hari ini?",
+            teks=fallback_teks,
             pertanyaan_diajukan=None
         )
+
+    # A5, A6, A10: Giliran informasi murni tidak menutup dengan pertanyaan bot
+    if aksi in ("tanya_spesifikasi", "tanya_info_toko", "bandingkan"):
+        out.pertanyaan_diajukan = None
 
     dt_ms = (time.perf_counter() - t0) * 1000.0
     metrics = {

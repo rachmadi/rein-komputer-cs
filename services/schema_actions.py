@@ -93,6 +93,13 @@ class AtributSpesifikasiEnum(str, Enum):
     LAINNYA = "lainnya"
 
 
+class AlasanTidakJelasEnum(str, Enum):
+    TIDAK_DIPAHAMI = "tidak_dipahami"
+    RUJUKAN_TIDAK_ADA = "rujukan_tidak_ada"
+    BERTENTANGAN = "bertentangan"
+    SISTEM_ERROR = "sistem_error"
+
+
 class ActionArguments(BaseModel):
     # cari_produk
     kategori: Optional[str] = None
@@ -132,8 +139,8 @@ class ActionArguments(BaseModel):
     # perbaiki_percakapan
     rujukan: Optional[str] = None
 
-    # tidak_jelas
-    alasan: Optional[str] = None
+    # tidak_jelas (HANYA salah satu dari 4 nilai tertutup B12)
+    alasan: Optional[AlasanTidakJelasEnum] = None
 
     model_config = {
         "extra": "ignore"

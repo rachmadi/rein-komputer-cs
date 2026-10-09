@@ -12,14 +12,18 @@ Aturan Pemeriksaan:
 """
 from __future__ import annotations
 
+import os
 import re
 import logging
 from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
+KONTAK_STAF = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
 EMERGENCY_FALLBACK_TEXT = (
-    "Maaf Kak, saya kurang menangkap maksudnya. Boleh diulang, atau mau saya hubungkan ke staf?"
+    f"Sistem kami sedang mengalami kendala teknis sementara. "
+    f"Untuk bantuan langsung, silakan hubungi tim kami di {KONTAK_STAF}. "
+    f"Anda juga bisa mencoba mengulang pesan Anda."
 )
 
 

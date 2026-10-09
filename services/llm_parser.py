@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Tuple
 from services.schema_actions import (
     ParserOutput, ActionEnum, ActionArguments, StateUpdate,
     SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum,
-    get_parser_json_schema
+    AlasanTidakJelasEnum, get_parser_json_schema
 )
 from services.validator import (
     validate_parser_output, check_state_consistency, get_allowed_actions_for_state,
@@ -323,7 +323,7 @@ def _call_ollama_chat(
         json_valid = True
     except Exception as e:
         logger.error(f"Gagal memanggil Ollama parser atau parse JSON: {e}")
-        raw_json = {"aksi": "tidak_jelas", "argumen": {"alasan": f"Error: {str(e)}"}}
+        raw_json = {"aksi": "tidak_jelas", "argumen": {"alasan": "sistem_error"}}
         error_msg = str(e)
 
     return (
@@ -351,7 +351,7 @@ def parse_user_message(
     """
     Mem-parse pesan pelanggan menjadi aksi terstruktur via Ollama (gemma4:e4b).
     Mengembalikan (ParserOutput_valid, metadata_metrik).
-    Jika aksi tidak konsisten dengan state, meminta parse ulang 1x dengan enum dibatasi.
+    Jika skema tidak valid (B11) atau tidak konsisten dengan state, meminta parse ulang 1x.
     """
     t0 = time.perf_counter()
     schema = get_parser_json_schema()
@@ -374,8 +374,38 @@ def parse_user_message(
     is_consistent, reason = check_state_consistency(validated_output, session_state=state)
     retried = False
 
+    # B11: Jika skema parser tidak valid / JSON rusak, coba parse ulang 1 KALI dengan pesan kesalahan skema spesifik
+    if not is_schema_valid:
+        retried = True
+        logger.warning(f"Skema JSON parser tidak valid ({error_msg}). Mencoba parse ulang 1x...")
+        correction_messages = list(messages) + [{
+            "role": "user",
+            "content": f"Koreksi kesalahan format sebelumnya: {error_msg}. Pastikan mengembalikan format JSON valid persis sesuai skema tertutup."
+        }]
+        res_call_sc = _call_ollama_chat(correction_messages, schema, model, ollama_url, timeout)
+        validated_output_sc, is_schema_valid_sc = validate_parser_output(res_call_sc[0], session_state=state)
+        p_eval_cnt += res_call_sc[4] if len(res_call_sc) > 4 else 0
+        eval_cnt += res_call_sc[5] if len(res_call_sc) > 5 else 0
+        load_dur += res_call_sc[6] if len(res_call_sc) > 6 else 0
+        p_eval_dur += res_call_sc[7] if len(res_call_sc) > 7 else 0
+        eval_dur += res_call_sc[8] if len(res_call_sc) > 8 else 0
+
+        if is_schema_valid_sc:
+            validated_output = validated_output_sc
+            is_schema_valid = True
+            json_valid = res_call_sc[1]
+            raw_content = res_call_sc[2]
+            error_msg = res_call_sc[3]
+            is_consistent, reason = check_state_consistency(validated_output, session_state=state)
+        else:
+            validated_output = ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.SISTEM_ERROR),
+                pembaruan_state=StateUpdate()
+            )
+
     # Jika aksi tak sah menurut state: minta parse ulang sekali dengan enum aksi dibatasi sesuai state
-    if is_schema_valid and not is_consistent:
+    if is_schema_valid and not is_consistent and not retried:
         retried = True
         logger.warning(
             f"Aksi '{validated_output.aksi.value}' tidak konsisten dengan state: {reason}. "
@@ -391,13 +421,12 @@ def parse_user_message(
         json_valid_2 = res_call_2[1]
         raw_content_2 = res_call_2[2]
         error_msg_2 = res_call_2[3]
-        p_eval_cnt_2 = res_call_2[4] if len(res_call_2) > 4 else 0
-        eval_cnt_2 = res_call_2[5] if len(res_call_2) > 5 else 0
+        p_eval_cnt += res_call_2[4] if len(res_call_2) > 4 else 0
+        eval_cnt += res_call_2[5] if len(res_call_2) > 5 else 0
         load_dur += res_call_2[6] if len(res_call_2) > 6 else 0
         p_eval_dur += res_call_2[7] if len(res_call_2) > 7 else 0
         eval_dur += res_call_2[8] if len(res_call_2) > 8 else 0
-        p_eval_cnt += p_eval_cnt_2
-        eval_cnt += eval_cnt_2
+
         validated_output_2, is_schema_valid_2 = validate_parser_output(raw_json_2, session_state=state)
         is_consistent_2, reason_2 = check_state_consistency(validated_output_2, session_state=state)
 
@@ -408,11 +437,16 @@ def parse_user_message(
             raw_content = raw_content_2
             error_msg = error_msg_2
         else:
-            # Jika tetap gagal: tidak_jelas
+            # Jika tetap gagal: tidak_jelas dengan alasan enum tertutup B12
             logger.warning(f"Parse ulang tetap tidak konsisten/tidak valid: {reason_2}. Menjadi tidak_jelas.")
+            alasan_final = (
+                AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA
+                if ("rujukan" in str(reason_2 or reason) or "produk_tampil" in str(reason_2 or reason))
+                else AlasanTidakJelasEnum.BERTENTANGAN
+            )
             validated_output = ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
-                argumen=ActionArguments(alasan=f"Aksi tidak konsisten dengan state: {reason_2 or reason}"),
+                argumen=ActionArguments(alasan=alasan_final),
                 pembaruan_state=StateUpdate()
             )
             is_schema_valid = False

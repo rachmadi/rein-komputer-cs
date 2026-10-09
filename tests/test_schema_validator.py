@@ -2,7 +2,7 @@
 import pytest
 from services.schema_actions import (
     ParserOutput, ActionEnum, ActionArguments, StateUpdate, get_parser_json_schema,
-    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum
+    SlotEnum, JenisEnum, TokoTopikEnum, AtributSpesifikasiEnum, AlasanTidakJelasEnum
 )
 from services.validator import validate_parser_output, resolve_product_references, get_catalog_brands, get_catalog_categories
 
@@ -63,7 +63,7 @@ def test_validator_invalid_json_type():
     res, is_valid = validate_parser_output("bukan dict")
     assert is_valid is False
     assert res.aksi == ActionEnum.TIDAK_JELAS
-    assert "bukan objek" in res.argumen.alasan.lower()
+    assert res.argumen.alasan == AlasanTidakJelasEnum.SISTEM_ERROR
 
 
 def test_validator_invalid_action_enum():
@@ -244,7 +244,7 @@ def test_validator_reject_slot_empty_or_negation():
     res1, is_valid1 = validate_parser_output(raw1, session_state={"pending_question": "kategori"})
     assert is_valid1 is False
     assert res1.aksi == ActionEnum.TIDAK_JELAS
-    assert "butuh klarifikasi" in res1.argumen.alasan.lower()
+    assert res1.argumen.alasan == AlasanTidakJelasEnum.BERTENTANGAN
 
     # 2. Negasi "-"
     raw2 = {
@@ -277,5 +277,5 @@ def test_validator_reject_rujukan_produk_when_produk_tampil_empty():
     res, is_valid = validate_parser_output(raw, session_state={"produk_tampil": []})
     assert is_valid is False
     assert res.aksi == ActionEnum.TIDAK_JELAS
-    assert "butuh klarifikasi" in res.argumen.alasan.lower()
+    assert res.argumen.alasan == AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA
 

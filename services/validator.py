@@ -6,7 +6,7 @@ Validator deterministik keluaran Parser LLM untuk Antigravity v2.
 Prinsip:
 - R2: Hanya memvalidasi skema, tipe, enum tertutup, rentang, dan keberadaan di katalog.
 - R3: Tidak menimpa aksi parser dengan aturan bahasa/regex. Jika tidak valid atau di luar enum tertutup,
-      hasilnya ditolak dan diubah menjadi `tidak_jelas` dengan alasan eksplisit.
+      hasilnya ditolak dan diubah menjadi `tidak_jelas` dengan alasan eksplisit tertutup (B12).
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from pydantic import ValidationError
 from services.schema_actions import (
     ParserOutput, ActionEnum, ActionArguments, StateUpdate,
     SlotEnum, JenisEnum, JenisLanjutanEnum, JenisPerbaikanEnum, JenisBasaBasiEnum,
-    TokoTopikEnum, AtributSpesifikasiEnum
+    TokoTopikEnum, AtributSpesifikasiEnum, AlasanTidakJelasEnum
 )
 
 logger = logging.getLogger(__name__)
@@ -70,33 +70,36 @@ def resolve_product_references(
     produk_tampil: List[Dict[str, Any]] | None
 ) -> Tuple[List[str], bool, str | None]:
     """
-    Menyelesaikan rujukan_produk (nomor urut, ordinal, nama produk)
+    Menyelesaikan rujukan_produk (nomor urut, ordinal, harga ekstrim, nama/merek)
     menjadi daftar kode produk katalog dari produk_tampil di state percakapan.
-    
+
     Mengembalikan: (resolved_codes, is_valid, failed_reference_str)
-    Jika rujukan tidak ditemukan atau tidak valid, is_valid = False.
+    Jika rujukan tidak ditemukan atau ambigu, is_valid = False.
     """
     tampil = produk_tampil or []
 
-    # Jika rujukan tidak disertakan
-    if not produk_refs:
-        if tampil:
-            # Default ke seluruh produk yang tampil jika ada
-            return [p.get("kode") for p in tampil if p.get("kode")], True, None
+    if not tampil:
         return [], False, "tidak_ada_produk_tampil"
 
+    # Jika rujukan tidak disertakan tapi aksi produk dipanggil
+    if not produk_refs:
+        # Default ke seluruh produk yang tampil jika ada
+        return [p.get("kode") for p in tampil if p.get("kode")], True, None
+
     ordinal_map = {
-        "1": 0, "pertama": 0, "yang pertama": 0, "kesatu": 0, "no 1": 0, "no. 1": 0,
-        "2": 1, "kedua": 1, "yang kedua": 1, "no 2": 1, "no. 2": 1,
-        "3": 2, "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2,
+        "1": 0, "pertama": 0, "yang pertama": 0, "kesatu": 0, "no 1": 0, "no. 1": 0, "ke-1": 0,
+        "2": 1, "kedua": 1, "yang kedua": 1, "no 2": 1, "no. 2": 1, "ke-2": 1,
+        "3": 2, "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2, "ke-3": 2,
     }
 
-    resolved = []
-    failed_refs = []
+    resolved: List[str] = []
+    failed_refs: List[str] = []
+
     for raw_ref in produk_refs:
         if raw_ref is None:
             continue
-        # Jika tipe int (misal 1, 2, 3)
+
+        # Jika tipe integer (1, 2, 3)
         if isinstance(raw_ref, int):
             idx = raw_ref - 1
             if 0 <= idx < len(tampil) and tampil[idx].get("kode"):
@@ -107,17 +110,26 @@ def resolve_product_references(
                 continue
 
         ref_clean = str(raw_ref).lower().strip()
-        
-        # Cek kata kunci 'semua'
-        if ref_clean in ("semua", "semuanya", "tampil", "seluruhnya"):
-            if tampil:
-                resolved.extend([p.get("kode") for p in tampil if p.get("kode")])
-                continue
-            else:
-                failed_refs.append(ref_clean)
-                continue
 
-        # Cek ordinal / nomor digit
+        # 1. Rujukan kata kunci 'semua'
+        if ref_clean in ("semua", "semuanya", "tampil", "seluruhnya"):
+            resolved.extend([p.get("kode") for p in tampil if p.get("kode")])
+            continue
+
+        # 2. Rujukan superlativ harga
+        if ref_clean in ("paling murah", "yang paling murah", "termurah", "yang termurah", "murah"):
+            cheapest = min(tampil, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0))
+            if cheapest.get("kode"):
+                resolved.append(cheapest["kode"])
+            continue
+
+        if ref_clean in ("paling mahal", "yang paling mahal", "termahal", "yang termahal", "mahal"):
+            priciest = max(tampil, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0))
+            if priciest.get("kode"):
+                resolved.append(priciest["kode"])
+            continue
+
+        # 3. Rujukan ordinal / nomor digit
         matched = False
         if ref_clean.isdigit():
             idx = int(ref_clean) - 1
@@ -132,26 +144,37 @@ def resolve_product_references(
                         matched = True
                         break
 
-        if not matched:
-            # Cek kecocokan nama atau kode produk yang ada di produk_tampil
-            for p in tampil:
-                p_kode = str(p.get("kode", "")).lower()
-                p_nama = str(p.get("nama", "")).lower()
-                if ref_clean == p_kode or (len(ref_clean) >= 3 and (ref_clean in p_nama or ref_clean in p_kode)):
-                    resolved.append(p.get("kode"))
-                    matched = True
-                    break
+        if matched:
+            continue
 
-        if not matched:
+        # 4. Rujukan nama / merek / kode produk
+        search_kw = ref_clean.replace("yang", "").replace("tadi", "").replace("itu", "").strip()
+        matched_candidates = []
+        for p in tampil:
+            p_kode = str(p.get("kode", "")).lower()
+            p_nama = str(p.get("nama", "")).lower()
+            p_brand = str(p.get("brand", "")).lower()
+
+            if search_kw and (search_kw == p_kode or search_kw == p_brand or search_kw in p_nama):
+                matched_candidates.append(p)
+
+        if len(matched_candidates) == 1:
+            resolved.append(matched_candidates[0]["kode"])
+        elif len(matched_candidates) > 1:
+            # Ambigu: ada lebih dari 1 produk yang cocok
+            return [], False, "rujukan_ambigu"
+        else:
             failed_refs.append(str(raw_ref))
 
-    # Hilangkan duplikasi dengan mempertahankan urutan
+    # Hilangkan duplikasi urut
     seen = set()
     dedup = [x for x in resolved if not (x in seen or seen.add(x))]
+
     if failed_refs:
-        return dedup, False, failed_refs[0] if len(failed_refs) == 1 else failed_refs
+        return dedup, False, failed_refs[0] if len(failed_refs) == 1 else "rujukan_tidak_ada"
     if not dedup:
         return [], False, "rujukan_kosong"
+
     return dedup, True, None
 
 
@@ -161,13 +184,11 @@ def validate_parser_output(
     db_path: str | None = None
 ) -> Tuple[ParserOutput, bool]:
     """
-    Memvalidasi keluaran parser LLM terhadap skema dan enum tertutup.
+    Memvalidasi keluaran parser LLM terhadap skema dan enum tertutup (B11, B12).
     Mengembalikan (ParserOutput, is_schema_valid).
-
-    - Nilai di luar enum tertutup ditolak dan ditandai is_schema_valid = False.
-    - Rujukan produk dipetakan ke kode; rujukan yang tidak cocok ditolak menjadi tidak_jelas.
     """
     state = session_state or {}
+    produk_tampil_list = state.get("produk_tampil", [])
 
     # 1. Validasi struktur JSON ke Pydantic
     if isinstance(raw_output, ParserOutput):
@@ -176,13 +197,11 @@ def validate_parser_output(
         try:
             parsed = ParserOutput.model_validate(raw_output)
         except ValidationError as ve:
-            err_field = ve.errors()[0].get("loc", [""])[-1]
-            err_msg = ve.errors()[0].get("msg", "invalid")
-            logger.warning(f"Validasi skema/enum parser gagal pada field '{err_field}': {err_msg}")
+            logger.warning(f"Validasi skema/enum parser gagal: {ve}")
             return (
                 ParserOutput(
                     aksi=ActionEnum.TIDAK_JELAS,
-                    argumen=ActionArguments(alasan=f"Enum/skema tidak valid pada {err_field}: {err_msg}"),
+                    argumen=ActionArguments(alasan=AlasanTidakJelasEnum.SISTEM_ERROR),
                     pembaruan_state=StateUpdate()
                 ),
                 False
@@ -191,7 +210,7 @@ def validate_parser_output(
         return (
             ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
-                argumen=ActionArguments(alasan="Format keluaran bukan objek JSON"),
+                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.SISTEM_ERROR),
                 pembaruan_state=StateUpdate()
             ),
             False
@@ -223,7 +242,7 @@ def validate_parser_output(
         if cat_clean in catalog_cats:
             state_up.kategori = cat_clean
 
-    # 3b. Validasi nilai slot: tolak nilai kosong atau negasi ("tidak ada", "-") -> tidak_jelas & butuh klarifikasi
+    # 3b. Validasi nilai slot: tolak nilai kosong atau negasi -> bertentangan
     if parsed.aksi == ActionEnum.JAWAB_PERTANYAAN_BOT:
         val_str = str(args.nilai).strip().lower() if args.nilai is not None else ""
         negation_set = {
@@ -235,20 +254,31 @@ def validate_parser_output(
             return (
                 ParserOutput(
                     aksi=ActionEnum.TIDAK_JELAS,
-                    argumen=ActionArguments(alasan=f"Nilai slot tidak valid (kosong atau negasi: '{args.nilai}'), butuh klarifikasi"),
+                    argumen=ActionArguments(alasan=AlasanTidakJelasEnum.BERTENTANGAN),
                     pembaruan_state=StateUpdate()
                 ),
                 False
             )
 
-    # 4. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
-    produk_tampil_list = state.get("produk_tampil", [])
-    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list:
-        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil kosong")
+    # 4. Validasi lanjutan_hasil saat tidak ada produk tampil (B9)
+    if parsed.aksi == ActionEnum.LANJUTAN_HASIL and not produk_tampil_list:
+        logger.warning("Aksi lanjutan_hasil dipanggil saat produk_tampil kosong (B9)")
         return (
             ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
-                argumen=ActionArguments(alasan="Rujukan produk tidak sah saat tidak ada produk yang tampil di sesi, butuh klarifikasi"),
+                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA),
+                pembaruan_state=StateUpdate()
+            ),
+            False
+        )
+
+    # 4b. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
+    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list:
+        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil kosong (B9)")
+        return (
+            ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA),
                 pembaruan_state=StateUpdate()
             ),
             False
@@ -257,11 +287,11 @@ def validate_parser_output(
     if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
         raw_refs = args.rujukan_produk if args.rujukan_produk is not None else args.produk
         resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil_list)
-        
+
         if not is_ref_valid:
             if parsed.aksi == ActionEnum.BANDINGKAN:
                 failed_list = [failed_ref] if isinstance(failed_ref, str) else list(failed_ref)
-                failed_clean = [f for f in failed_list if f != "rujukan_kosong"]
+                failed_clean = [f for f in failed_list if f not in ("rujukan_kosong", "rujukan_ambigu")]
                 args.produk = resolved_codes if resolved_codes else [p.get("kode") for p in produk_tampil_list if p.get("kode")]
                 if failed_clean:
                     args.produk_luar_katalog = failed_clean
@@ -269,7 +299,7 @@ def validate_parser_output(
                 return (
                     ParserOutput(
                         aksi=ActionEnum.TIDAK_JELAS,
-                        argumen=ActionArguments(alasan=f"Rujukan produk '{failed_ref}' tidak ditemukan di produk yang tampil, butuh klarifikasi"),
+                        argumen=ActionArguments(alasan=AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA),
                         pembaruan_state=StateUpdate()
                     ),
                     False
@@ -277,7 +307,7 @@ def validate_parser_output(
         else:
             args.produk = resolved_codes
 
-    # 4b. Validasi jenis per-aksi (mencegah kontaminasi antar-aksi, misal 'pamit' di lanjutan_hasil atau 'yang_lain' di basa_basi)
+    # 4c. Validasi jenis per-aksi
     if parsed.aksi in ACTION_JENIS_MAP and args.jenis is not None:
         jenis_str = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
         if jenis_str not in ACTION_JENIS_MAP[parsed.aksi]:
@@ -285,11 +315,24 @@ def validate_parser_output(
             return (
                 ParserOutput(
                     aksi=ActionEnum.TIDAK_JELAS,
-                    argumen=ActionArguments(alasan=f"Jenis '{jenis_str}' tidak valid untuk aksi {parsed.aksi.value}"),
+                    argumen=ActionArguments(alasan=AlasanTidakJelasEnum.BERTENTANGAN),
                     pembaruan_state=StateUpdate()
                 ),
                 False
             )
+
+    # 4d. Standarisasi alasan tidak_jelas ke enum tertutup (B12)
+    if parsed.aksi == ActionEnum.TIDAK_JELAS:
+        if not args.alasan or not isinstance(args.alasan, AlasanTidakJelasEnum):
+            raw_alasan_str = str(args.alasan or "").lower()
+            if "rujuk" in raw_alasan_str or "produk" in raw_alasan_str:
+                args.alasan = AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA
+            elif "tangan" in raw_alasan_str or "negasi" in raw_alasan_str or "konflik" in raw_alasan_str:
+                args.alasan = AlasanTidakJelasEnum.BERTENTANGAN
+            elif "error" in raw_alasan_str or "sistem" in raw_alasan_str or "skema" in raw_alasan_str:
+                args.alasan = AlasanTidakJelasEnum.SISTEM_ERROR
+            else:
+                args.alasan = AlasanTidakJelasEnum.TIDAK_DIPAHAMI
 
     # 5. Pembersihan deterministik: Hapus argumen yang tidak relevan dengan aksi yang dipilih
     action_allowed_args = {
@@ -313,12 +356,10 @@ def validate_parser_output(
                 setattr(args, field, None)
 
     # 6. Normalisasi persona & sebutan di state_update
-    # Persona adalah pengguna akhir perangkat, bukan lawan bicara.
     if state_up.persona:
         state_up.persona = state_up.persona.strip().lower()
     if state_up.sebutan:
         state_up.sebutan = state_up.sebutan.strip()
-        # Jika sebutan tidak sengaja disamakan dengan persona pengguna perangkat, hapus agar lawan bicara tetap disapa "Kak"
         if state_up.persona and state_up.sebutan.lower() == state_up.persona:
             state_up.sebutan = None
 

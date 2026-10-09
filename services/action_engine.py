@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 services/action_engine.py
-Mesin Deterministik Per Aksi untuk Bobby Computer (Antigravity v2).
+Mesin Deterministik Per Aksi untuk ReIn Komputer (Antigravity v2).
 
 Prinsip:
-- Fungsi murni deterministik, tidak menghasilkan kalimat percakapan.
+- Fungsi murni deterministik, tidak menghasilkan kalimat percakapan bebas.
 - Menghasilkan fakta terstruktur (JSON/dict) untuk dikonsumsi Generator LLM.
-- Menjalankan aksi:
-  1. minta_rekomendasi (RAG profil -> filter katalog -> ranking & match report)
-  2. cari_produk (filter katalog SQL/memory berparameter)
-  3. evaluasi_kecocokan (alat evaluasi spek vs syarat profil)
-  4. tanya_spesifikasi (fakta atribut produk katalog)
-  5. bandingkan (komparasi berdampingan produk)
-  6. lanjutan_hasil (lebih murah/mahal, yang lain, filter tambahan)
-  7. tanya_info_toko (info toko ke staf)
-  8. jawab_pertanyaan_bot, perbaiki_percakapan, sapa, basa_basi, tidak_jelas
+- Menegakkan seluruh aturan Tabel Perilaku ReIn Komputer (A1-A12 & B1-B13).
 """
 from __future__ import annotations
 
@@ -24,7 +16,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AtributSpesifikasiEnum
+from services.schema_actions import (
+    ParserOutput, ActionEnum, ActionArguments, AtributSpesifikasiEnum,
+    SlotEnum, AlasanTidakJelasEnum
+)
 from services.catalog_search import apply_filters, clean_specs, format_natural_unmet_requirements, parse_budget_from_text
 from services.knowledge_service import get_usage_requirements, get_profile_by_id
 from core.catalog import Catalog
@@ -163,34 +158,97 @@ class ActionEngine:
             return self._handle_tidak_jelas(args, state)
 
     # -------------------------------------------------------------------------
-    # 1. minta_rekomendasi
+    # 1. minta_rekomendasi (B1, B3, B4, B5, B6, B7)
     # -------------------------------------------------------------------------
     def _handle_minta_rekomendasi(self, args: ActionArguments, state: dict) -> ActionResult:
         kebutuhan_teks = args.kebutuhan_teks or state.get("kebutuhan_teks") or ""
+        persona = args.persona or state.get("persona")
         budget_max = parse_int_safe(args.budget_max or state.get("budget"))
-        kategori = args.kategori or state.get("kategori") or "laptop"
 
+        # B1: Pelanggan menyebut PERSONA SAJA tanpa aktivitas konkret
+        if persona and (not kebutuhan_teks or kebutuhan_teks.strip().lower() == persona.strip().lower()):
+            fakta = {
+                "status": "tanya_kebutuhan",
+                "persona": persona,
+                "slot_diisi": "persona",
+                "pesan": f"Persona '{persona}' telah dicatat. Tanyakan aktivitas atau kebutuhan spesifik yang akan dijalankan."
+            }
+            return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
+
+        # B3: Hapus default kategori 'laptop'. Simpulkan dari kebutuhan jika jelas, jika tidak biarkan None
+        kategori = args.kategori or state.get("kategori")
+        if not kategori and kebutuhan_teks:
+            k_low = kebutuhan_teks.lower()
+            if any(w in k_low for w in ["bawa-bawa", "mobile", "kuliah", "sekolah", "kampus", "kafe", "mobilitas", "baterai"]):
+                kategori = "laptop"
+            elif any(w in k_low for w in ["kasir", "pos", "toko kelontong", "pc tetap", "desktop"]):
+                kategori = "desktop"
+            elif "printer" in k_low or "cetak" in k_low:
+                kategori = "printer"
+            elif "monitor" in k_low or "layar tambahan" in k_low:
+                kategori = "monitor"
+
+        # B7: Anggaran di bawah harga terendah katalog
+        if budget_max:
+            cat_candidates = [p for p in self.catalog.products if not kategori or p.get("kategori", "").lower() == str(kategori).lower()]
+            if cat_candidates:
+                min_cat_price = min(get_product_price(p) for p in cat_candidates)
+                if budget_max < min_cat_price:
+                    fakta = {
+                        "status": "tidak_ada_dalam_anggaran",
+                        "budget_pelanggan": budget_max,
+                        "budget_pelanggan_formatted": format_rupiah(budget_max),
+                        "harga_termurah_kategori": min_cat_price,
+                        "harga_termurah_kategori_formatted": format_rupiah(min_cat_price),
+                        "kategori": kategori or "katalog",
+                        "pesan": f"Belum ada produk dalam rentang anggaran {format_rupiah(budget_max)}. Opsi termurah yang tersedia adalah {format_rupiah(min_cat_price)}."
+                    }
+                    return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
+
+        # B4 & B5: Penelusuran profil kebutuhan via RAG
         profil_id = None
         prof_data = None
         if kebutuhan_teks:
-            reqs = get_usage_requirements(kebutuhan_teks)
-            pls = reqs.get("profil", [])
-            valid_pls = [p for p in pls if str(p.get("profil_id", "")).startswith("P")]
-            if valid_pls:
-                profil_id = valid_pls[0]["profil_id"]
-                prof_data = get_profile_by_id(profil_id)
+            try:
+                reqs = get_usage_requirements(kebutuhan_teks)
+                pls = reqs.get("profil", [])
+                valid_pls = [p for p in pls if str(p.get("profil_id", "")).startswith("P")]
+                if valid_pls:
+                    profil_id = valid_pls[0]["profil_id"]
+                    prof_data = get_profile_by_id(profil_id)
+            except Exception as exc:
+                logger.error(f"Kegagalan Qdrant/embedding saat mengambil profil: {exc}")
+                fakta = {
+                    "status": "sistem_error",
+                    "kontak_staf": os.getenv("KONTAK_STAF", "@cs_reinkomputer"),
+                    "pesan": "Sistem basis data pengetahuan sedang mengalami gangguan sementara."
+                }
+                return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
 
         if not profil_id and state.get("profil_aktif"):
             profil_id = state.get("profil_aktif")
             prof_data = get_profile_by_id(profil_id)
 
+        # B4: Profil tidak ditemukan di RAG
         if not profil_id or not prof_data:
-            fakta = {
-                "status": "profil_tidak_ditemukan",
-                "kebutuhan_teks": kebutuhan_teks,
-                "pesan": "Kebutuhan belum terdaftar dalam basis pengetahuan profil toko."
-            }
-            return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta)
+            miss_count = state.get("consecutive_profile_misses", 0) + 1
+            state["consecutive_profile_misses"] = miss_count
+            if miss_count >= 2:
+                fakta = {
+                    "status": "profil_tidak_ditemukan_berulang",
+                    "kebutuhan_teks": kebutuhan_teks,
+                    "kontak_staf": os.getenv("KONTAK_STAF", "@cs_reinkomputer"),
+                    "pesan": "Kebutuhan belum terpetakan setelah 2 kali penelusuran. Tawarkan pencarian berbasis kategori/budget atau hubungi staf."
+                }
+            else:
+                fakta = {
+                    "status": "profil_tidak_ditemukan",
+                    "kebutuhan_teks": kebutuhan_teks,
+                    "pesan": "Kebutuhan belum dapat dipetakan secara spesifik ke profil katalog."
+                }
+            return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
+        else:
+            state["consecutive_profile_misses"] = 0
 
         filters = prof_data.get("filter", [])
         candidates = []
@@ -207,6 +265,33 @@ class ActionEngine:
                 "failure_reason": failure_reason,
                 "report": report
             })
+
+        # B6: Tidak ada produk yang memenuhi spesifikasi minimum
+        if candidates and all(not c["passed"] for c in candidates):
+            candidates.sort(key=lambda x: (-x["penalty"], get_product_price(x["product"])))
+            closest = candidates[0]
+            closest_prod = closest["product"]
+            rep = closest["report"]
+            unmet = rep.get("tidak_terpenuhi", [])
+            fakta = {
+                "status": "belum_ada_yang_memenuhi",
+                "profil": {
+                    "id": profil_id,
+                    "judul": prof_data.get("judul"),
+                    "minimum_spek": prof_data.get("minimum_spek")
+                },
+                "produk_terdekat": {
+                    "kode": closest_prod.get("kode"),
+                    "nama": closest_prod.get("nama"),
+                    "harga": get_product_price(closest_prod),
+                    "harga_formatted": format_rupiah(get_product_price(closest_prod)),
+                    "spesifikasi": clean_specs(closest_prod),
+                    "kekurangan": unmet
+                },
+                "kontak_staf": os.getenv("KONTAK_STAF", "@cs_reinkomputer"),
+                "pesan": "Saat ini belum ada stok produk yang memenuhi syarat minimum kebutuhan tersebut."
+            }
+            return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
 
         # Urutkan: lolos semua dulu, penalty tertinggi (paling sedikit penalti), harga termurah
         candidates.sort(key=lambda x: (not x["passed"], -x["penalty"], get_product_price(x["product"])))
@@ -253,7 +338,7 @@ class ActionEngine:
         )
 
     # -------------------------------------------------------------------------
-    # 2. cari_produk
+    # 2. cari_produk (B2, B7)
     # -------------------------------------------------------------------------
     def _handle_cari_produk(self, args: ActionArguments, state: dict) -> ActionResult:
         kategori = args.kategori or state.get("kategori")
@@ -266,6 +351,23 @@ class ActionEngine:
         ram_gb_min = parse_int_safe(args.ram_gb_min)
         storage_gb_min = parse_int_safe(args.storage_gb_min)
         ukuran_layar = parse_float_safe(args.ukuran_layar)
+
+        # B7: Anggaran di bawah harga terendah kategori
+        if max_harga:
+            cat_candidates = [p for p in self.catalog.products if not kategori or p.get("kategori", "").lower() == str(kategori).lower()]
+            if cat_candidates:
+                min_cat_price = min(get_product_price(p) for p in cat_candidates)
+                if max_harga < min_cat_price:
+                    fakta = {
+                        "status": "tidak_ada_dalam_anggaran",
+                        "budget_pelanggan": max_harga,
+                        "budget_pelanggan_formatted": format_rupiah(max_harga),
+                        "harga_termurah_kategori": min_cat_price,
+                        "harga_termurah_kategori_formatted": format_rupiah(min_cat_price),
+                        "kategori": kategori or "katalog",
+                        "pesan": f"Belum ada produk dalam rentang anggaran {format_rupiah(max_harga)}. Opsi termurah adalah {format_rupiah(min_cat_price)}."
+                    }
+                    return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[])
 
         matches = []
         for p in self.catalog.products:
@@ -329,12 +431,15 @@ class ActionEngine:
                 "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))))
             }
         else:
+            # B2: Kategori saja atau merek saja -> tandai butuh dipersempit
+            is_broad = bool((merek or kategori) and not (nama_model or gpu or ram_gb_min or max_harga))
             fakta = {
                 "status": "sukses",
                 "merek_kecuali": merek_kecuali,
                 "total_cocok": len(matches),
                 "total_ditemukan": len(formatted_prods),
-                "produk": formatted_prods
+                "produk": formatted_prods,
+                "butuh_persempit": is_broad
             }
 
         return ActionResult(
@@ -353,11 +458,14 @@ class ActionEngine:
         profil_id = state.get("profil_aktif")
         prof_data = None
         if not profil_id and kebutuhan_teks:
-            reqs = get_usage_requirements(kebutuhan_teks)
-            pls = reqs.get("profil", [])
-            valid_pls = [p for p in pls if str(p.get("profil_id", "")).startswith("P")]
-            if valid_pls:
-                profil_id = valid_pls[0]["profil_id"]
+            try:
+                reqs = get_usage_requirements(kebutuhan_teks)
+                pls = reqs.get("profil", [])
+                valid_pls = [p for p in pls if str(p.get("profil_id", "")).startswith("P")]
+                if valid_pls:
+                    profil_id = valid_pls[0]["profil_id"]
+            except Exception as e:
+                logger.warning(f"Error evaluasi profiling: {e}")
 
         if profil_id:
             prof_data = get_profile_by_id(profil_id)
@@ -376,7 +484,6 @@ class ActionEngine:
             p_ssd = p.get("storage_ssd_gb") or 256
             p_vram = p.get("vram_gb") or p.get("gpu_vram_gb") or 0
 
-            # Target minimum dan rekomendasi dari profil
             min_cpu = 1
             min_ram = 8
             min_ssd = 256
@@ -464,7 +571,7 @@ class ActionEngine:
         return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 
     # -------------------------------------------------------------------------
-    # 4. tanya_spesifikasi
+    # 4. tanya_spesifikasi (A5)
     # -------------------------------------------------------------------------
     def _handle_tanya_spesifikasi(self, args: ActionArguments, state: dict) -> ActionResult:
         target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
@@ -508,7 +615,7 @@ class ActionEngine:
         return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
     # -------------------------------------------------------------------------
-    # 5. bandingkan
+    # 5. bandingkan (A6)
     # -------------------------------------------------------------------------
     def _handle_bandingkan(self, args: ActionArguments, state: dict) -> ActionResult:
         target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
@@ -552,13 +659,16 @@ class ActionEngine:
         return ActionResult(aksi=ActionEnum.BANDINGKAN, fakta=fakta)
 
     # -------------------------------------------------------------------------
-    # 6. lanjutan_hasil
+    # 6. lanjutan_hasil (B3, B8, B9)
     # -------------------------------------------------------------------------
     def _handle_lanjutan_hasil(self, args: ActionArguments, state: dict) -> ActionResult:
         tampil = state.get("produk_tampil", [])
+
+        # B9: Jika belum ada produk tampil
         if not tampil:
             fakta = {
                 "status": "belum_ada_hasil",
+                "alasan": "rujukan_tidak_ada",
                 "pesan": "Belum ada produk yang ditampilkan sebelumnya untuk disesuaikan.",
                 "total_ditemukan": 0,
                 "produk": []
@@ -566,18 +676,44 @@ class ActionEngine:
             return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
 
         jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
-        kategori = state.get("kategori") or "laptop"
 
-        candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == kategori.lower()]
+        # B3: Kategori aktif diambil dari produk_tampil di sesi
+        kategori = tampil[0].get("kategori") or state.get("kategori") or "laptop"
+
+        candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
 
         if jenis == "lebih_murah":
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             matches = [p for p in candidates if get_product_price(p) < lowest_p]
-            matches.sort(key=lambda x: -get_product_price(x))  # harga tertinggi di bawah patokan
+            matches.sort(key=lambda x: -get_product_price(x))
+
+            # B8: Tidak ada opsi lebih murah
+            if not matches:
+                fakta = {
+                    "status": "tidak_ada_lebih_murah",
+                    "harga_termurah_saat_ini": lowest_p,
+                    "harga_termurah_saat_ini_formatted": format_rupiah(lowest_p),
+                    "kategori": kategori,
+                    "pesan": f"Produk yang ditampilkan sebelumnya sudah merupakan opsi paling terjangkau di katalog kami ({format_rupiah(lowest_p)})."
+                }
+                return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
+
         elif jenis == "lebih_mahal":
             highest_p = max((get_product_price(p) for p in tampil), default=5_000_000)
             matches = [p for p in candidates if get_product_price(p) > highest_p]
             matches.sort(key=lambda x: get_product_price(x))
+
+            # B8: Tidak ada opsi lebih mahal
+            if not matches:
+                fakta = {
+                    "status": "tidak_ada_lebih_mahal",
+                    "harga_termahal_saat_ini": highest_p,
+                    "harga_termahal_saat_ini_formatted": format_rupiah(highest_p),
+                    "kategori": kategori,
+                    "pesan": f"Produk yang ditampilkan sebelumnya sudah merupakan opsi tertinggi di katalog kami ({format_rupiah(highest_p)})."
+                }
+                return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
+
         elif jenis == "yang_lain" or jenis == "filter_tambahan" or args.merek_kecuali or args.filter:
             seen_kodes = {p.get("kode") for p in tampil}
             matches = [p for p in candidates if p.get("kode") not in seen_kodes]
@@ -586,6 +722,7 @@ class ActionEngine:
             matches.sort(key=lambda x: get_product_price(x))
         else:
             matches = []
+
         if args.merek_kecuali:
             mk_clean = str(args.merek_kecuali).strip().lower()
             matches = [
@@ -619,34 +756,46 @@ class ActionEngine:
         return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=formatted)
 
     # -------------------------------------------------------------------------
-    # 7. tanya_info_toko
+    # 7. tanya_info_toko (A9)
     # -------------------------------------------------------------------------
     def _handle_tanya_info_toko(self, args: ActionArguments, state: dict) -> ActionResult:
         topik = args.topik.value if hasattr(args.topik, "value") else str(args.topik)
         kontak_staf = os.getenv("KONTAK_STAF", "@cs_bobbycomputer")
-        arahan = f"Arahkan pelanggan menghubungi staf toko di {kontak_staf} untuk informasi operasional dan layanan resmi."
         fakta = {
+            "status": "info_toko",
             "topik": topik,
             "data_tersedia": False,
             "kontak_staf": kontak_staf,
-            "arahan": arahan
+            "arahan": f"Berikan kontak staf toko di {kontak_staf} secara sopan tanpa menyebut estimasi durasi respons atau janji spesifik."
         }
-        return ActionResult(aksi=ActionEnum.TANYA_INFO_TOKO, fakta=fakta)
+        return ActionResult(aksi=ActionEnum.TANYA_INFO_TOKO, fakta=fakta, produk_list=[])
 
     # -------------------------------------------------------------------------
-    # 8. jawab_pertanyaan_bot
+    # 8. jawab_pertanyaan_bot (A7)
     # -------------------------------------------------------------------------
     def _handle_jawab_pertanyaan_bot(self, args: ActionArguments, state: dict) -> ActionResult:
         slot = args.slot.value if hasattr(args.slot, "value") else str(args.slot)
-        fakta = {
-            "slot_dijawab": slot,
-            "nilai": args.nilai,
-            "kebutuhan_teks": state.get("kebutuhan_teks"),
-            "persona": state.get("persona"),
-            "budget": state.get("budget"),
-            "kategori": state.get("kategori")
-        }
-        return ActionResult(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, fakta=fakta)
+        slot_val = args.nilai
+
+        # Perbarui slot state yang relevan
+        if slot in ("kategori", "category"):
+            state["kategori"] = str(slot_val).strip().lower()
+        elif slot in ("budget", "anggaran"):
+            state["budget"] = parse_int_safe(slot_val)
+        elif slot in ("persona",):
+            state["persona"] = str(slot_val).strip().lower()
+        elif slot in ("kebutuhan", "aktivitas"):
+            state["kebutuhan_teks"] = str(slot_val).strip()
+        elif slot in ("merek", "brand"):
+            state["merek"] = str(slot_val).strip().lower()
+
+        state["pending_question"] = None
+
+        # Jalankan ulang aksi dengan slot yang baru
+        if state.get("kebutuhan_teks"):
+            return self._handle_minta_rekomendasi(args, state)
+        else:
+            return self._handle_cari_produk(args, state)
 
     # -------------------------------------------------------------------------
     # 9. perbaiki_percakapan
@@ -654,32 +803,46 @@ class ActionEngine:
     def _handle_perbaiki_percakapan(self, args: ActionArguments, state: dict) -> ActionResult:
         jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
         fakta = {
+            "status": "sukses",
             "jenis": jenis,
             "rujukan": args.rujukan,
             "kebutuhan_terekam": state.get("kebutuhan_teks"),
             "pertanyaan_terakhir_bot": state.get("pending_question")
         }
-        return ActionResult(aksi=ActionEnum.PERBAIKI_PERCAKAPAN, fakta=fakta)
+        return ActionResult(aksi=ActionEnum.PERBAIKI_PERCAKAPAN, fakta=fakta, produk_list=[])
 
     # -------------------------------------------------------------------------
-    # 10. sapa, basa_basi, tidak_jelas
+    # 10. sapa, basa_basi, tidak_jelas (B12)
     # -------------------------------------------------------------------------
     def _handle_sapa(self, args: ActionArguments, state: dict) -> ActionResult:
         fakta = {
             "status": "sapaan",
             "sebutan": state.get("sebutan")
         }
-        return ActionResult(aksi=ActionEnum.SAPA, fakta=fakta)
+        return ActionResult(aksi=ActionEnum.SAPA, fakta=fakta, produk_list=[])
 
     def _handle_basa_basi(self, args: ActionArguments, state: dict) -> ActionResult:
         jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
         fakta = {
+            "status": "basa_basi",
             "jenis": jenis
         }
-        return ActionResult(aksi=ActionEnum.BASA_BASI, fakta=fakta)
+        return ActionResult(aksi=ActionEnum.BASA_BASI, fakta=fakta, produk_list=[])
 
     def _handle_tidak_jelas(self, args: ActionArguments, state: dict) -> ActionResult:
-        fakta = {
-            "alasan": args.alasan or "Maksud pesan belum dapat dipastikan secara spesifik"
+        alasan = args.alasan.value if hasattr(args.alasan, "value") else str(args.alasan or "tidak_dipahami")
+        if alasan not in ("tidak_dipahami", "rujukan_tidak_ada", "bertentangan", "sistem_error"):
+            alasan = "tidak_dipahami"
+
+        pesan_map = {
+            "tidak_dipahami": "Maksud pesan belum dapat dipastikan secara spesifik. Silakan jelaskan kebutuhan perangkat yang dicari.",
+            "rujukan_tidak_ada": "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil.",
+            "bertentangan": "Informasi yang diberikan tidak konsisten atau bernilai kosong.",
+            "sistem_error": "Terjadi kendala teknis pada sistem pemrosesan pesan."
         }
-        return ActionResult(aksi=ActionEnum.TIDAK_JELAS, fakta=fakta)
+        fakta = {
+            "status": "tidak_jelas",
+            "alasan": alasan,
+            "pesan": pesan_map[alasan]
+        }
+        return ActionResult(aksi=ActionEnum.TIDAK_JELAS, fakta=fakta, produk_list=[])
