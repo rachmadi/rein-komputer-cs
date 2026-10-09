@@ -4,6 +4,7 @@ tests/test_behavior_table_b1_b13.py
 Uji unit komprehensif untuk aturan Tabel Perilaku ReIn Komputer B1-B13 dan A5-A10.
 Semua kalimat dan skenario menggunakan teks sintetis murni.
 """
+import json
 import pytest
 from services.schema_actions import (
     ParserOutput, ActionEnum, ActionArguments, StateUpdate,
@@ -193,3 +194,42 @@ def test_a9_tanya_info_toko_hanya_kontak_staf(engine):
     assert "kontak_staf" in res.fakta
     assert "5 menit" not in str(res.fakta).lower()
     assert "segera" not in str(res.fakta).lower()
+
+
+def test_fase3_synthetic_few_shots_clean():
+    """Fase 3: Few-shot parser tepat 8 contoh sintetis dan beragam batas aksi."""
+    from services.llm_parser import SYNTHETIC_8_BOUNDARY_FEW_SHOTS
+    # 8 pasang user-assistant = 16 pesan
+    assert len(SYNTHETIC_8_BOUNDARY_FEW_SHOTS) == 16
+    user_turns = [m for m in SYNTHETIC_8_BOUNDARY_FEW_SHOTS if m["role"] == "user"]
+    assert len(user_turns) == 8
+
+
+def test_fase3_generator_rule_c_constraints():
+    """Fase 3: Generator mematuhi Batasan Respons C (<=3 kalimat, <=420 char, info murni tanpa pertanyaan)."""
+    from services.llm_generator import generate_response
+    from unittest.mock import patch
+
+    # Mock raw response yang melebihi 3 kalimat dan mengandung pertanyaan di info murni
+    long_raw = {
+        "teks": "Laptop ini menggunakan GPU RTX 4060. Kapasitas VRAM sebesar 8GB GDDR6. Performa grafis sangat baik untuk rendering. Apakah Kakak mau membelinya?",
+        "pertanyaan_diajukan": "kebutuhan",
+        "penilaian": None
+    }
+    with patch("services.llm_generator.urllib.request.urlopen") as mock_url:
+        import io
+        mock_resp = io.BytesIO(f'{{"message": {{"content": {json.dumps(json.dumps(long_raw))}}}}}'.encode("utf-8"))
+        mock_url.return_value.__enter__.return_value.read.return_value = mock_resp.getvalue()
+
+        out, _ = generate_response(
+            aksi="tanya_spesifikasi",
+            fakta={"status": "sukses", "spesifikasi": []},
+            state={}
+        )
+        assert len(out.teks) <= 420
+        assert out.pertanyaan_diajukan is None
+        # Kalimat <= 3
+        import re
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+", out.teks.strip()) if s]
+        assert len(sentences) <= 3
+

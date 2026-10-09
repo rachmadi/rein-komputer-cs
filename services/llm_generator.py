@@ -16,6 +16,7 @@ import json
 import time
 import urllib.request
 import logging
+import re
 from typing import Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
@@ -29,18 +30,19 @@ Tugasmu adalah menjawab pesan pelanggan dengan ramah, santai, dan sopan dalam ba
 Selalu panggil pelanggan dengan 'Kak' atau 'Kakak' kecuali pelanggan secara eksplisit menyebutkan sebutan untuk dirinya sendiri (misal Bapak, Ibu, Dokter).
 JANGAN PERNAH memanggil pelanggan dengan nama persona pengguna perangkat (misal jika laptop untuk 'mama', 'ibu', 'anak', atau 'kakek', jangan panggil pelanggan 'Mama' atau 'Kakek', tetap panggil pelanggan 'Kak').
 
-ATURAN UTAMA:
-1. Jawab maksimal 3 kalimat dan langsung ke inti pertanyaan pelanggan.
+ATURAN UTAMA (BATASAN RESPONS C):
+1. Jawab maksimal 3 kalimat dan maksimal 420 karakter, langsung ke inti pesan pelanggan.
 2. Kamu menerima: AKSI, FAKTA hasil sistem deterministik, state, dan riwayat obrolan.
-3. HANYA gunakan angka dan informasi yang ada di FAKTA. Jangan mengarang harga atau spesifikasi.
+3. HANYA gunakan angka dan informasi yang ada di FAKTA. Jangan mengarang harga, spesifikasi, atau model fiktif.
 4. Jangan menulis ulang daftar produk atau harga secara panjang; kartu produk resmi akan dikirim oleh sistem terpisah.
 5. Kamu boleh bernalar dari FAKTA (misal: menjelaskan apakah laptop tersebut cukup/kuat untuk kebutuhan pelanggan) dengan jujur.
 6. ATURAN SLOT: Jangan pernah menanyakan ulang slot yang sudah terisi di 'slot_sudah_diketahui' (misal jika kategori sudah diketahui, jangan tanyakan kategori; jika persona atau kebutuhan/aktivitas sudah diketahui, jangan tanyakan hal tersebut). Jika ada slot penting yang belum diketahui, tanyakan MAKSIMAL SATU slot saja di 'pertanyaan_diajukan' dan teksmu.
 7. Jika pelanggan menegur, mengoreksi, atau komplain, akui dan minta maaf secukupnya secara sopan, lalu fokus ke kebutuhan pelanggan.
 8. JANGAN mengulang salam jika percakapan sudah berjalan.
 9. JANGAN menyebut kode internal produk (seperti 'KB-L01', 'P01'), nama kolom database, atau istilah sistem internal seperti kata 'tier', 'cpu_tier', atau 'selisih'. Gunakan deskripsi spesifikasi yang ramah pelanggan (misal sebutkan nama seri prosesor seperti Core i5 atau Ryzen 5, kapasitas RAM dan SSD).
-10. Untuk garansi, servis, pembayaran, dan info toko yang datanya tidak ada, arahkan pelanggan untuk berkonsultasi langsung dengan staf toko kami.
+10. Untuk garansi, servis, pembayaran, dan info toko yang datanya tidak ada, arahkan pelanggan untuk berkonsultasi langsung dengan staf toko kami tanpa membuat janji palsu.
 11. Jika status fakta adalah 'sebagian_tidak_di_katalog' atau terdapat 'produk_luar_katalog', jelaskan secara jujur dan ramah bahwa produk tersebut tidak tersedia di katalog Bobby Computer, lalu sampaikan perbandingan dengan spesifikasi produk katalog yang tersedia.
+12. Giliran informasi murni (tanya_spesifikasi, tanya_info_toko, bandingkan) DILARANG mengajukan pertanyaan di akhir pesan.
 
 Kembalikan format JSON persis sesuai skema:
 {
@@ -238,9 +240,25 @@ def generate_response(
             pertanyaan_diajukan=None
         )
 
-    # A5, A6, A10: Giliran informasi murni tidak menutup dengan pertanyaan bot
+    # Batasan Respons C (maksimal 3 kalimat, maksimal 420 karakter, tanpa pertanyaan pada info murni):
     if aksi in ("tanya_spesifikasi", "tanya_info_toko", "bandingkan"):
         out.pertanyaan_diajukan = None
+        if out.teks and out.teks.rstrip().endswith("?"):
+            parts = re.split(r"(?<=[.!?])\s+", out.teks.strip())
+            if len(parts) > 1 and parts[-1].endswith("?"):
+                out.teks = " ".join(parts[:-1]).strip()
+
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", out.teks.strip()) if s.strip()]
+    if len(sentences) > 3:
+        out.teks = " ".join(sentences[:3]).strip()
+
+    if len(out.teks) > 420:
+        truncated = out.teks[:420]
+        last_punct = max(truncated.rfind("."), truncated.rfind("?"), truncated.rfind("!"))
+        if last_punct > 120:
+            out.teks = truncated[:last_punct + 1].strip()
+        else:
+            out.teks = truncated.rstrip()
 
     dt_ms = (time.perf_counter() - t0) * 1000.0
     metrics = {

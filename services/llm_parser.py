@@ -62,6 +62,7 @@ KEBIJAKAN BATAS AKSI:
 - 'persona' adalah pihak pemakai perangkat (seperti kerabat, profesi, atau rekan kerja), BUKAN lawan bicara. Jangan mengisi 'sebutan' dengan persona tersebut. Lawan bicara tetap disapa 'Kak' kecuali pelanggan menyebut sebutan untuk dirinya sendiri.
 - Parser boleh mengekstrak beberapa slot sekaligus dari satu kalimat di 'argumen' dan 'pembaruan_state' (misal: kategori dan persona dapat diisi bersamaan).
 - Untuk pengecualian merek pada 'cari_produk' atau 'lanjutan_hasil', masukkan ke 'merek_kecuali'.
+- Format 'kebutuhan_teks' harus ringkas berupa kata kunci aktivitas atau software utama (misal: 'edit video 4k', 'desain 3d revit', 'coding python', 'kasir toko kelontong'), BUKAN kalimat panjang bertele-tele.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
 """
 
