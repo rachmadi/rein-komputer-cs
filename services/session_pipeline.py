@@ -108,6 +108,7 @@ class SessionPipeline:
                 state["profil_aktif"] = None
                 state["kebutuhan_teks"] = None
                 state["produk_tampil"] = []
+                state["produk_terakhir_dibahas"] = None
 
         # Deteksi kategori jika belum terisi di argumen maupun state
         if not parsed.argumen.kategori and not state.get("kategori"):
@@ -177,6 +178,12 @@ class SessionPipeline:
         # Simpan produk yang tampil jika aksi menghasilkan produk
         if action_res.produk_list:
             state["produk_tampil"] = action_res.produk_list
+            if len(action_res.produk_list) == 1:
+                state["produk_terakhir_dibahas"] = action_res.produk_list[0].get("kode")
+        elif action_res.fakta.get("rujukan_dipakai"):
+            rujukan_list = action_res.fakta.get("rujukan_dipakai")
+            if rujukan_list and len(rujukan_list) == 1:
+                state["produk_terakhir_dibahas"] = rujukan_list[0]
 
         # ---------------------------------------------------------------------
         # 4. GENERATOR LLM & 5. PEMERIKSA GROUNDING

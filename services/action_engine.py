@@ -138,9 +138,18 @@ class ActionEngine:
         raw_codes = args.produk or args.rujukan_produk or []
         tampil = state.get("produk_tampil", [])
 
-        # Jika args.produk dan args.rujukan_produk kosong, ambil semua produk yang sedang tampil di state
+        # Jika args.produk dan args.rujukan_produk kosong, ambil produk default:
         if not raw_codes:
-            raw_codes = [p.get("kode") for p in tampil if p.get("kode")]
+            ptd = state.get("produk_terakhir_dibahas")
+            if ptd:
+                if isinstance(ptd, list):
+                    raw_codes = [x.get("kode") if isinstance(x, dict) else str(x) for x in ptd]
+                elif isinstance(ptd, dict):
+                    raw_codes = [ptd.get("kode")] if ptd.get("kode") else []
+                else:
+                    raw_codes = [str(ptd)]
+            elif tampil:
+                raw_codes = [p.get("kode") for p in tampil if p.get("kode")]
 
         if not raw_codes:
             return [], []
@@ -810,7 +819,8 @@ class ActionEngine:
             "kebutuhan_teks": kebutuhan_teks,
             "profil_id": profil_id,
             "profil_judul": prof_data.get("judul") if prof_data else None,
-            "evaluasi_produk": eval_results
+            "evaluasi_produk": eval_results,
+            "rujukan_dipakai": [p.get("kode") for p in catalog_products]
         }
         return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 

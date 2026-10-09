@@ -58,17 +58,26 @@ def test_f2_rujukan_default_produk_terakhir():
     state = {
         "kategori": "laptop",
         "produk_tampil": [
+            {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000},
             {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "kategori": "laptop", "harga": 7299000}
         ],
         "produk_terakhir_dibahas": "KB-L02"
     }
     # User bertanya ukuran layar tanpa menyebut nama laptop
     args = ActionArguments(atribut=AtributSpesifikasiEnum.LAYAR)
-    res = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args), session_state=state)
+    raw_p = ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args)
 
+    # 1. Pastikan validator mengizinkan dan memetakan ke produk terakhir dibahas
+    from services.validator import validate_parser_output
+    val_out, is_valid = validate_parser_output(raw_p, session_state=state)
+    assert is_valid, "Validator harus mengizinkan tanya_spesifikasi tanpa rujukan eksplisit jika ada produk aktif"
+    assert val_out.argumen.produk == ["KB-L02"]
+
+    # 2. Pastikan ActionEngine mengeksekusi dengan rujukan_dipakai ke produk terakhir dibahas
+    res = engine.execute(val_out, session_state=state)
     assert res.fakta.get("status") == "sukses", "Harus sukses merujuk produk aktif"
     assert "rujukan_dipakai" in res.fakta, "Fakta wajib memuat field rujukan_dipakai"
-    assert "KB-L02" in res.fakta["rujukan_dipakai"]
+    assert res.fakta["rujukan_dipakai"] == ["KB-L02"]
 
 
 def test_f3_spek_umum_vs_atribut_tidak_tersedia():

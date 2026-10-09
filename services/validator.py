@@ -345,6 +345,18 @@ def validate_parser_output(
 
     if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
         raw_refs = args.rujukan_produk if args.rujukan_produk is not None else args.produk
+        if not raw_refs and produk_tampil_list:
+            ptd = state.get("produk_terakhir_dibahas")
+            if ptd:
+                if isinstance(ptd, list):
+                    raw_refs = [x.get("kode") if isinstance(x, dict) else str(x) for x in ptd]
+                elif isinstance(ptd, dict):
+                    raw_refs = [ptd.get("kode")] if ptd.get("kode") else []
+                else:
+                    raw_refs = [str(ptd)]
+            else:
+                raw_refs = [p.get("kode") for p in produk_tampil_list if p.get("kode")]
+
         resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil_list)
 
         if not is_ref_valid:
