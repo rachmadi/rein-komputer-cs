@@ -128,6 +128,85 @@ class ActionEngine:
                 return p
         return None
 
+    def resolve_produk(self, args: ActionArguments, state: dict) -> Tuple[List[Dict[str, Any]], List[str]]:
+        """
+        Resolusi produk satu pintu (D1, D2, D3, B14, B15, B16, A5-A7):
+        Mengembalikan (daftar produk katalog penuh, daftar kode rujukan).
+        Membaca nilai lengkap dari self.catalog.products. state['produk_tampil']
+        hanya digunakan untuk rujukan urutan nomor atau pemetaan rujukan.
+        """
+        raw_codes = args.produk or []
+        tampil = state.get("produk_tampil", [])
+
+        # Jika args.produk kosong, ambil semua produk yang sedang tampil di state
+        if not raw_codes:
+            raw_codes = [p.get("kode") for p in tampil if p.get("kode")]
+
+        if not raw_codes:
+            return [], []
+
+        resolved_products = []
+        resolved_codes = []
+
+        for ref in raw_codes:
+            ref_str = str(ref).strip()
+            matched_code = None
+
+            # 1. Cek rujukan numerik (indeks 1-based, misal 1, '1', 'nomor 1')
+            m_num = re.search(r"^(?:nomor\s*|unit\s*)?(\d+)$", ref_str, re.IGNORECASE)
+            if m_num:
+                idx = int(m_num.group(1)) - 1
+                if 0 <= idx < len(tampil):
+                    matched_code = tampil[idx].get("kode")
+
+            # 2. Cek rujukan kode langsung di katalog (misal 'KB-L01')
+            if not matched_code:
+                if self.get_product_by_code(ref_str):
+                    matched_code = ref_str.upper()
+
+            # 3. Cek rujukan nama sebagian / merek terhadap produk_tampil
+            if not matched_code and tampil:
+                ref_clean = ref_str.lower()
+                for pt in tampil:
+                    pt_nama = str(pt.get("nama", "")).lower()
+                    pt_brand = get_product_brand(pt)
+                    if ref_clean in pt_nama or ref_clean == pt_brand:
+                        matched_code = pt.get("kode")
+                        break
+
+            # 4. Cek rujukan nama sebagian / merek terhadap seluruh katalog
+            if not matched_code:
+                ref_clean = ref_str.lower()
+                for p_cat in self.catalog.products:
+                    p_nama = str(p_cat.get("nama", "")).lower()
+                    p_brand = get_product_brand(p_cat)
+                    if ref_clean in p_nama or ref_clean == p_brand:
+                        matched_code = p_cat.get("kode")
+                        break
+
+            if matched_code:
+                full_p = self.get_product_by_code(matched_code)
+                if full_p:
+                    matched_pt = None
+                    if tampil:
+                        for pt in tampil:
+                            if str(pt.get("kode", "")).upper() == matched_code.upper():
+                                matched_pt = pt
+                                break
+                    if matched_pt:
+                        merged_p = dict(full_p)
+                        merged_p.update({k: v for k, v in matched_pt.items() if v is not None})
+                    else:
+                        merged_p = full_p
+
+                    if merged_p not in resolved_products:
+                        resolved_products.append(merged_p)
+                        resolved_codes.append(matched_code)
+            else:
+                resolved_codes.append(ref_str)
+
+        return resolved_products, resolved_codes
+
     def execute(self, parsed: ParserOutput, session_state: dict | None = None) -> ActionResult:
         state = session_state if session_state is not None else {}
         if parsed.pembaruan_state:
@@ -420,9 +499,20 @@ class ActionEngine:
                 "kode": p.get("kode"),
                 "nama": p.get("nama"),
                 "kategori": p.get("kategori"),
+                "brand": get_product_brand(p),
+                "merek": get_product_brand(p),
                 "harga": p_price,
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi": clean_specs(p),
+                "cpu": p.get("cpu"),
+                "cpu_tier": p.get("cpu_tier"),
+                "ram": p.get("ram"),
+                "ram_gb": p.get("ram_gb"),
+                "storage": p.get("storage"),
+                "storage_ssd_gb": p.get("storage_ssd_gb"),
+                "gpu": p.get("gpu"),
+                "display": p.get("display"),
+                "screen_inch": p.get("screen_inch"),
                 "image_url": p.get("image_url")
             })
 
@@ -458,19 +548,43 @@ class ActionEngine:
     # 3. evaluasi_kecocokan
     # -------------------------------------------------------------------------
     def _handle_evaluasi_kecocokan(self, args: ActionArguments, state: dict) -> ActionResult:
-        target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
+        # D1, D3, B14, B16: Gunakan resolve_produk untuk mendapatkan produk katalog lengkap
+        catalog_products, resolved_codes = self.resolve_produk(args, state)
         kebutuhan_teks = args.kebutuhan_teks or state.get("kebutuhan_teks") or ""
 
         # B14: Jika tidak ada produk yang dievaluasi
-        if not target_codes:
+        if not catalog_products and not resolved_codes:
             fakta = {
                 "status": "belum_ada_produk",
                 "pesan": "Belum ada produk yang dipilih atau ditampilkan untuk dievaluasi."
             }
             return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 
-        profil_id = state.get("profil_aktif")
+        # D4: Jika ada kebutuhan_teks di giliran ini (args.kebutuhan_teks), prioritaskan resolusi baru
+        # jangan gunakan profil lama yang basi di state.
+        profil_id = None
         prof_data = None
+        if args.kebutuhan_teks:
+            try:
+                reqs = get_usage_requirements(args.kebutuhan_teks)
+                pls = reqs.get("profil", [])
+                valid_pls = [p for p in pls if str(p.get("profil_id", "")).startswith("P")]
+                if valid_pls:
+                    profil_id = valid_pls[0]["profil_id"]
+                    state["profil_aktif"] = profil_id
+                    state["kebutuhan_teks"] = args.kebutuhan_teks
+            except Exception as e:
+                logger.error(f"Kegagalan Qdrant/embedding saat evaluasi kecocokan: {e}")
+                fakta = {
+                    "status": "sistem_error",
+                    "kontak_staf": KONTAK_STAF,
+                    "pesan": "Sistem basis data pengetahuan sedang mengalami gangguan sementara."
+                }
+                return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+
+        if not profil_id and state.get("profil_aktif"):
+            profil_id = state.get("profil_aktif")
+
         if not profil_id and kebutuhan_teks:
             try:
                 reqs = get_usage_requirements(kebutuhan_teks)
@@ -478,8 +592,15 @@ class ActionEngine:
                 valid_pls = [p for p in pls if str(p.get("profil_id", "")).startswith("P")]
                 if valid_pls:
                     profil_id = valid_pls[0]["profil_id"]
+                    state["profil_aktif"] = profil_id
             except Exception as e:
-                logger.warning(f"Error evaluasi profiling: {e}")
+                logger.error(f"Kegagalan Qdrant/embedding saat evaluasi kecocokan: {e}")
+                fakta = {
+                    "status": "sistem_error",
+                    "kontak_staf": KONTAK_STAF,
+                    "pesan": "Sistem basis data pengetahuan sedang mengalami gangguan sementara."
+                }
+                return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 
         if profil_id:
             prof_data = get_profile_by_id(profil_id)
@@ -491,19 +612,6 @@ class ActionEngine:
                 "pesan": "Kebutuhan penggunaan belum ditentukan atau profil tidak ditemukan untuk evaluasi kelayakan."
             }
             return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
-
-        # Cek ketersediaan produk di katalog (B16)
-        catalog_products = []
-        for code in target_codes:
-            p = None
-            for pt in state.get("produk_tampil", []):
-                if str(pt.get("kode", "")).upper() == str(code).strip().upper():
-                    p = pt
-                    break
-            if not p:
-                p = self.get_product_by_code(code)
-            if p:
-                catalog_products.append(p)
 
         if not catalog_products:
             # B16: Produk di luar katalog -> cari padanan terdekat deterministik
@@ -524,9 +632,9 @@ class ActionEngine:
             } if closest else {}
             fakta = {
                 "status": "produk_tidak_di_katalog",
-                "produk_diminta": target_codes,
+                "produk_diminta": resolved_codes or args.produk,
                 "padanan_terdekat": padanan,
-                "pesan": f"Produk {', '.join([str(c) for c in target_codes])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+                "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
             }
             return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 
@@ -535,14 +643,15 @@ class ActionEngine:
         eval_results = []
         for p in catalog_products:
             p_price = get_product_price(p)
-            p_cpu_tier = p.get("cpu_tier") or 1
-            p_ram = p.get("ram_gb") or 8
-            p_ssd = p.get("storage_ssd_gb") or 256
+            # D3: Gunakan nilai aktual dari katalog secara ketat, jangan gunakan fallback fiktif
+            p_cpu_tier = p.get("cpu_tier") or (1 if p.get("cpu") else None)
+            p_ram = p.get("ram_gb")
+            p_ssd = p.get("storage_ssd_gb")
             p_vram = p.get("vram_gb") or p.get("gpu_vram_gb") or 0
 
             min_cpu = 1
-            min_ram = 8
-            min_ssd = 256
+            min_ram = 4
+            min_ssd = 128
             min_vram = 0
 
             for f in filters:
@@ -562,8 +671,26 @@ class ActionEngine:
             rec_ssd = max(512, min_ssd * 2) if min_ssd < 512 else min_ssd
             rec_vram = max(min_vram, 4 if min_vram > 0 else 0)
 
-            diff_min = [p_cpu_tier - min_cpu, p_ram - min_ram, p_ssd - min_ssd, p_vram - min_vram]
-            diff_rec = [p_cpu_tier - rec_cpu, p_ram - rec_ram, p_ssd - rec_ssd, p_vram - rec_vram]
+            diff_min = []
+            if p_cpu_tier is not None:
+                diff_min.append(p_cpu_tier - min_cpu)
+            if p_ram is not None:
+                diff_min.append(p_ram - min_ram)
+            if p_ssd is not None:
+                diff_min.append(p_ssd - min_ssd)
+            if p_vram is not None:
+                diff_min.append(p_vram - min_vram)
+
+            diff_rec = []
+            if p_cpu_tier is not None:
+                diff_rec.append(p_cpu_tier - rec_cpu)
+            if p_ram is not None:
+                diff_rec.append(p_ram - rec_ram)
+            if p_ssd is not None:
+                diff_rec.append(p_ssd - rec_ssd)
+            if p_vram is not None:
+                diff_rec.append(p_vram - rec_vram)
+
             if any(d < 0 for d in diff_min):
                 status_kecocokan = "di_bawah_minimum"
             elif all(d >= 0 for d in diff_rec):
@@ -604,16 +731,16 @@ class ActionEngine:
                     }
                 },
                 "selisih_terhadap_minimum": {
-                    "cpu_tier": p_cpu_tier - min_cpu,
-                    "ram_gb": p_ram - min_ram,
-                    "ssd_gb": p_ssd - min_ssd,
-                    "gpu_vram_gb": p_vram - min_vram
+                    "cpu_tier": (p_cpu_tier - min_cpu) if p_cpu_tier is not None else 0,
+                    "ram_gb": (p_ram - min_ram) if p_ram is not None else 0,
+                    "ssd_gb": (p_ssd - min_ssd) if p_ssd is not None else 0,
+                    "gpu_vram_gb": (p_vram - min_vram) if p_vram is not None else 0
                 },
                 "selisih_terhadap_rekomendasi": {
-                    "cpu_tier": p_cpu_tier - rec_cpu,
-                    "ram_gb": p_ram - rec_ram,
-                    "ssd_gb": p_ssd - rec_ssd,
-                    "gpu_vram_gb": p_vram - rec_vram
+                    "cpu_tier": (p_cpu_tier - rec_cpu) if p_cpu_tier is not None else 0,
+                    "ram_gb": (p_ram - rec_ram) if p_ram is not None else 0,
+                    "ssd_gb": (p_ssd - rec_ssd) if p_ssd is not None else 0,
+                    "gpu_vram_gb": (p_vram - rec_vram) if p_vram is not None else 0
                 }
             })
 
@@ -630,28 +757,16 @@ class ActionEngine:
     # 4. tanya_spesifikasi (A5)
     # -------------------------------------------------------------------------
     def _handle_tanya_spesifikasi(self, args: ActionArguments, state: dict) -> ActionResult:
-        target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
+        # D1, D2, B14, B15, B16: Gunakan resolve_produk untuk mendapatkan produk katalog penuh
+        catalog_products, resolved_codes = self.resolve_produk(args, state)
         attr = args.atribut or AtributSpesifikasiEnum.LAINNYA
 
-        if not target_codes:
+        if not catalog_products and not resolved_codes:
             fakta = {
                 "status": "belum_ada_produk",
                 "pesan": "Belum ada produk yang dipilih untuk ditanyakan spesifikasinya."
             }
             return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
-
-        # Cek produk di katalog
-        catalog_products = []
-        for code in target_codes:
-            p = None
-            for pt in state.get("produk_tampil", []):
-                if str(pt.get("kode", "")).upper() == str(code).strip().upper():
-                    p = pt
-                    break
-            if not p:
-                p = self.get_product_by_code(code)
-            if p:
-                catalog_products.append(p)
 
         if not catalog_products:
             # B16: Produk di luar katalog
@@ -672,13 +787,13 @@ class ActionEngine:
             } if closest else {}
             fakta = {
                 "status": "produk_tidak_di_katalog",
-                "produk_diminta": target_codes,
+                "produk_diminta": resolved_codes or args.produk,
                 "padanan_terdekat": padanan,
-                "pesan": f"Produk {', '.join([str(c) for c in target_codes])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+                "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
             }
             return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
-        # B15: Mapping spesifikasi per kategori
+        # B15, D1, D2: Mapping spesifikasi per kategori
         fakta_items = []
         ada_tidak_tersedia = False
 
@@ -716,8 +831,12 @@ class ActionEngine:
             elif attr == AtributSpesifikasiEnum.KAMERA:
                 if kategori == "laptop":
                     val = p.get("webcam") or p.get("kamera")
+            elif attr == AtributSpesifikasiEnum.LAINNYA:
+                # D2: Permintaan spek umum / spek lengkap
+                val = clean_specs(p) or f"{p.get('cpu', '')} | {p.get('ram', '')} | {p.get('storage', '')} | {p.get('display', '')}"
             else:
-                val = p.get(attr.value if hasattr(attr, "value") else str(attr))
+                attr_key = attr.value if hasattr(attr, "value") else str(attr)
+                val = p.get(attr_key)
 
             if not val:
                 ada_tidak_tersedia = True
@@ -726,7 +845,9 @@ class ActionEngine:
                     "kode": p.get("kode"),
                     "nama": p.get("nama"),
                     "atribut": attr.value if hasattr(attr, "value") else str(attr),
-                    "nilai_spesifikasi": str(val)
+                    "nilai": str(val),
+                    "nilai_spesifikasi": str(val),
+                    "ringkasan_spek": clean_specs(p)
                 })
 
         if ada_tidak_tersedia and not fakta_items:
@@ -739,7 +860,8 @@ class ActionEngine:
             fakta = {
                 "status": "sukses",
                 "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
-                "spesifikasi": fakta_items
+                "spesifikasi": fakta_items,
+                "spesifikasi_produk": fakta_items
             }
 
         return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
@@ -812,11 +934,38 @@ class ActionEngine:
 
         candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
 
+        user_max_harga = parse_int_safe(args.max_harga)
         batas_dipakai = None
-        if jenis == "lebih_murah":
+        if jenis == "lebih_murah" or user_max_harga is not None:
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
-            matches = [p for p in candidates if get_product_price(p) < lowest_p]
+            target_max = user_max_harga if user_max_harga is not None else lowest_p
+            matches = [p for p in candidates if get_product_price(p) <= target_max and (user_max_harga is not None or get_product_price(p) < lowest_p)]
             matches.sort(key=lambda x: -get_product_price(x))
+
+            # B7: Jika ada batas anggaran eksplisit dan tidak ada yang cocok
+            if not matches and user_max_harga is not None:
+                min_cat_price = min((get_product_price(p) for p in candidates), default=lowest_p)
+                cheapest_p = min(candidates, key=lambda x: get_product_price(x)) if candidates else None
+                formatted_cheap = [{
+                    "kode": cheapest_p.get("kode"), "nama": cheapest_p.get("nama"),
+                    "kategori": cheapest_p.get("kategori"),
+                    "brand": get_product_brand(cheapest_p),
+                    "merek": get_product_brand(cheapest_p),
+                    "harga": get_product_price(cheapest_p),
+                    "harga_formatted": format_rupiah(get_product_price(cheapest_p)),
+                    "spesifikasi": clean_specs(cheapest_p)
+                }] if cheapest_p else []
+                fakta = {
+                    "status": "tidak_ada_dalam_anggaran",
+                    "budget_pelanggan": user_max_harga,
+                    "budget_pelanggan_formatted": format_rupiah(user_max_harga),
+                    "batas_dipakai": user_max_harga,
+                    "harga_termurah_kategori": min_cat_price,
+                    "harga_termurah_kategori_formatted": format_rupiah(min_cat_price),
+                    "kategori": kategori,
+                    "pesan": f"Belum ada opsi produk di bawah {format_rupiah(user_max_harga)}. Pilihan paling terjangkau yang tersedia adalah {format_rupiah(min_cat_price)}."
+                }
+                return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=formatted_cheap)
 
             # B8: Tidak ada opsi lebih murah
             if not matches:
@@ -832,7 +981,7 @@ class ActionEngine:
                     "pesan": f"Produk yang ditampilkan sebelumnya sudah merupakan opsi paling terjangkau di katalog kami ({format_rupiah(lowest_p)})."
                 }
                 return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
-            batas_dipakai = lowest_p
+            batas_dipakai = target_max
             state["budget"] = get_product_price(matches[0])
 
         elif jenis == "lebih_mahal":
@@ -883,9 +1032,20 @@ class ActionEngine:
                 "kode": p.get("kode"),
                 "nama": p.get("nama"),
                 "kategori": p.get("kategori"),
+                "brand": get_product_brand(p),
+                "merek": get_product_brand(p),
                 "harga": p_price,
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi": clean_specs(p),
+                "cpu": p.get("cpu"),
+                "cpu_tier": p.get("cpu_tier"),
+                "ram": p.get("ram"),
+                "ram_gb": p.get("ram_gb"),
+                "storage": p.get("storage"),
+                "storage_ssd_gb": p.get("storage_ssd_gb"),
+                "gpu": p.get("gpu"),
+                "display": p.get("display"),
+                "screen_inch": p.get("screen_inch"),
                 "image_url": p.get("image_url")
             })
 
@@ -987,8 +1147,9 @@ class ActionEngine:
             "sistem_error": "Terjadi kendala teknis pada sistem pemrosesan pesan."
         }
         fakta = {
-            "status": "tidak_jelas",
+            "status": "sistem_error" if alasan == "sistem_error" else "tidak_jelas",
             "alasan": alasan,
+            "kontak_staf": KONTAK_STAF,
             "pesan": pesan_map[alasan]
         }
         return ActionResult(aksi=ActionEnum.TIDAK_JELAS, fakta=fakta, produk_list=[])

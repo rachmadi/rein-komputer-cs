@@ -23,11 +23,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from services.llm_parser import parse_user_message
 from services.validator import validate_parser_output
-from services.action_engine import ActionEngine, ActionResult
+from services.action_engine import ActionEngine, ActionResult, parse_int_safe
 from services.llm_generator import generate_response, GeneratorOutput, build_deterministic_fallback_text
 from services.grounding_checker import GroundingChecker, EMERGENCY_FALLBACK_TEXT
 from services.product_card import format_product_cards_message
-from services.schema_actions import ParserOutput, ActionEnum
+from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AlasanTidakJelasEnum
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +84,29 @@ class SessionPipeline:
         # ---------------------------------------------------------------------
         # 1. PARSER LLM & 2. VALIDATOR
         # ---------------------------------------------------------------------
-        parsed, parse_metrics = parse_user_message(pesan_pelanggan, state=state, history=history)
-        lat_parse = parse_metrics.get("latency_ms", 0.0)
+        try:
+            parsed, parse_metrics = parse_user_message(pesan_pelanggan, state=state, history=history)
+            lat_parse = parse_metrics.get("latency_ms", 0.0)
+        except Exception as exc:
+            logger.error(f"Kegagalan parser LLM: {exc}")
+            parsed = ParserOutput(
+                aksi=ActionEnum.TIDAK_JELAS,
+                argumen=ActionArguments(alasan=AlasanTidakJelasEnum.SISTEM_ERROR)
+            )
+            parse_metrics = {"latency_ms": 0.0, "json_valid": False}
+            lat_parse = 0.0
+
+        # D6: Pergantian kategori mereset slot anggaran, merek, profil aktif, dan produk tampil
+        if parsed.argumen.kategori:
+            new_kat_str = str(parsed.argumen.kategori).strip().lower()
+            old_kat_str = str(state.get("kategori", "")).strip().lower() if state.get("kategori") else None
+            if old_kat_str and new_kat_str != old_kat_str:
+                state["kategori"] = new_kat_str
+                state["budget"] = None
+                state["merek"] = None
+                state["profil_aktif"] = None
+                state["kebutuhan_teks"] = None
+                state["produk_tampil"] = []
 
         # ---------------------------------------------------------------------
         # 3. MESIN DETERMINISTIK
@@ -99,8 +120,12 @@ class SessionPipeline:
             state["merek"] = parsed.argumen.merek
         if parsed.argumen.kategori:
             state["kategori"] = parsed.argumen.kategori
+        if parsed.argumen.max_harga is not None:
+            state["budget"] = parse_int_safe(parsed.argumen.max_harga)
         if parsed.argumen.persona:
             state["persona"] = parsed.argumen.persona
+        if parsed.argumen.kebutuhan_teks:
+            state["kebutuhan_teks"] = parsed.argumen.kebutuhan_teks
         if parsed.argumen.slot and parsed.argumen.nilai:
             slot_name = parsed.argumen.slot.value if hasattr(parsed.argumen.slot, "value") else str(parsed.argumen.slot)
             state[slot_name] = parsed.argumen.nilai
