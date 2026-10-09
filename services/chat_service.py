@@ -91,12 +91,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_CHAT_MODEL = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
-CHAT_ENGINE_MODE = os.getenv("CHAT_ENGINE_MODE", "agentic_tool")
+CHAT_ENGINE_MODE = os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
+
+logger.info(
+    "ChatService initialized: CHAT_ENGINE_MODE=%s, DEFAULT_CHAT_MODEL=%s",
+    CHAT_ENGINE_MODE, DEFAULT_CHAT_MODEL
+)
 
 _session_manager = SessionManager()
+_session_pipeline = None
 
 def get_session_manager() -> SessionManager:
     return _session_manager
+
+def get_session_pipeline():
+    global _session_pipeline
+    if _session_pipeline is None:
+        from services.session_pipeline import SessionPipeline
+        _session_pipeline = SessionPipeline()
+    return _session_pipeline
 
 def process_chat_message(
     session_id: str,
@@ -119,8 +132,7 @@ def process_chat_message(
 
     # OPSI 0: ANTIGRAVITY V2 PIPELINE (LLM PARSER + DETERMINISTIC ENGINE + LLM GENERATOR)
     if CHAT_ENGINE_MODE == "antigravity_v2":
-        from services.session_pipeline import SessionPipeline
-        pipeline = SessionPipeline()
+        pipeline = get_session_pipeline()
         prior_history = sess["messages"][:-1] if sess["messages"] else []
         turn_res, new_state_dict = pipeline.process_turn(
             pesan_pelanggan=user_text,

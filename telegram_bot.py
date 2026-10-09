@@ -328,6 +328,18 @@ def main() -> None:
         sys.exit(1)
 
     print("Memulai Bobby Computer Telegram Bot...")
+    engine_mode = os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
+    model_name = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
+    rag_threshold = os.getenv("RAG_SCORE_THRESHOLD", "0.45")
+    kontak_staf = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
+    print(f"[STARTUP] Engine: {engine_mode} | Model: {model_name} | RAG Ambang: {rag_threshold} | Kontak: {kontak_staf}")
+    logger.info("=== KONFIGURASI STARTUP BOT ===")
+    logger.info("Engine Mode    : %s", engine_mode)
+    logger.info("LLM Model      : %s", model_name)
+    logger.info("RAG Threshold  : %s", rag_threshold)
+    logger.info("Kontak Staf    : %s", kontak_staf)
+    logger.info("===============================")
+
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("start", start_command))
