@@ -68,18 +68,20 @@ def get_catalog_categories(db_path: str | None = None) -> list[str]:
 
 def resolve_product_references(
     produk_refs: List[Any] | None,
-    produk_tampil: List[Dict[str, Any]] | None
+    produk_tampil: List[Dict[str, Any]] | None,
+    history_tampil: List[Dict[str, Any]] | None = None
 ) -> Tuple[List[str], bool, str | None]:
     """
-    Menyelesaikan rujukan_produk (nomor urut, ordinal, harga ekstrim, nama/merek)
-    menjadi daftar kode produk katalog dari produk_tampil di state percakapan.
+    Menyelesaikan rujukan_produk (nomor urut, ordinal, harga ekstrim, nama/merek, atau riwayat sesi)
+    menjadi daftar kode produk katalog dari produk_tampil atau history_produk_tampil di state percakapan.
 
     Mengembalikan: (resolved_codes, is_valid, failed_reference_str)
     Jika rujukan tidak ditemukan atau ambigu, is_valid = False.
     """
     tampil = produk_tampil or []
+    hist = history_tampil or []
 
-    if not tampil:
+    if not tampil and not hist:
         return [], False, "tidak_ada_produk_tampil"
 
     # Jika rujukan tidak disertakan tapi aksi produk dipanggil
@@ -101,6 +103,14 @@ def resolve_product_references(
             norm_tampil.append({"kode": p, "nama": p})
     tampil = norm_tampil
 
+    norm_hist = []
+    for idx, p in enumerate(hist):
+        if isinstance(p, dict):
+            norm_hist.append(p)
+        elif isinstance(p, str):
+            norm_hist.append({"kode": p, "nama": p})
+    hist = norm_hist
+
     resolved: List[str] = []
     failed_refs: List[str] = []
 
@@ -114,11 +124,15 @@ def resolve_product_references(
             if 0 <= idx < len(tampil) and tampil[idx].get("kode"):
                 resolved.append(tampil[idx]["kode"])
                 continue
+            elif hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
+                resolved.append(hist[idx]["kode"])
+                continue
             else:
                 failed_refs.append(str(raw_ref))
                 continue
 
         ref_clean = str(raw_ref).lower().strip()
+        is_prev = bool(re.search(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", ref_clean))
 
         # 1. Rujukan kata kunci 'semua'
         if ref_clean in ("semua", "semuanya", "tampil", "seluruhnya"):
@@ -127,37 +141,55 @@ def resolve_product_references(
 
         # 2. Rujukan superlativ harga
         if ref_clean in ("paling murah", "yang paling murah", "termurah", "yang termurah", "murah"):
-            cheapest = min(tampil, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0))
+            target_list = hist if (is_prev and hist) else tampil
+            cheapest = min(target_list, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0)) if target_list else {}
             if cheapest.get("kode"):
                 resolved.append(cheapest["kode"])
             continue
 
         if ref_clean in ("paling mahal", "yang paling mahal", "termahal", "yang termahal", "mahal"):
-            priciest = max(tampil, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0))
+            target_list = hist if (is_prev and hist) else tampil
+            priciest = max(target_list, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0)) if target_list else {}
             if priciest.get("kode"):
                 resolved.append(priciest["kode"])
             continue
 
-        # 3. Rujukan ordinal / nomor digit
+        # 3. Rujukan ordinal / nomor digit (misal: '1', 'opsi 1', 'opsi 1 sebelumnya')
         matched = False
-        m_digit = re.match(r"^(?:produk\s+|unit\s+|opsi\s+|no\.?\s*|nomor\s+|#)?\[?(\d+)\]?$", ref_clean)
+        m_digit = re.search(r"(?:produk\s+|unit\s+|opsi\s+|no\.?\s*|nomor\s+|pilihan\s+|#)?\[?(\d+)\]?", ref_clean)
         if m_digit:
             idx = int(m_digit.group(1)) - 1
-            if 0 <= idx < len(tampil) and tampil[idx].get("kode"):
+            if is_prev and hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
+                resolved.append(hist[idx]["kode"])
+                matched = True
+            elif not is_prev and 0 <= idx < len(tampil) and tampil[idx].get("kode"):
                 resolved.append(tampil[idx]["kode"])
+                matched = True
+            elif hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
+                resolved.append(hist[idx]["kode"])
+                matched = True
             else:
                 failed_refs.append(str(raw_ref))
-            matched = True
+                matched = True
         else:
             for ord_key, idx in ordinal_map.items():
-                if ref_clean == ord_key or f"yang {ord_key}" in ref_clean:
-                    if idx < len(tampil) and tampil[idx].get("kode"):
+                if ord_key in ref_clean:
+                    if is_prev and hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
+                        resolved.append(hist[idx]["kode"])
+                        matched = True
+                        break
+                    elif not is_prev and 0 <= idx < len(tampil) and tampil[idx].get("kode"):
                         resolved.append(tampil[idx]["kode"])
                         matched = True
+                        break
+                    elif hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
+                        resolved.append(hist[idx]["kode"])
+                        matched = True
+                        break
                     else:
                         failed_refs.append(str(raw_ref))
                         matched = True
-                    break
+                        break
 
         if matched:
             continue
@@ -332,8 +364,9 @@ def validate_parser_output(
         parsed.pembaruan_state.kebutuhan_teks = args.kebutuhan_teks
 
     # 4b. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
-    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list:
-        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil kosong (B9)")
+    history_tampil_list = state.get("history_produk_tampil", [])
+    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list and not history_tampil_list:
+        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil dan riwayat kosong (B9)")
         return (
             ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
@@ -357,7 +390,9 @@ def validate_parser_output(
             else:
                 raw_refs = [p.get("kode") for p in produk_tampil_list if p.get("kode")]
 
-        resolved_codes, is_ref_valid, failed_ref = resolve_product_references(raw_refs, produk_tampil_list)
+        resolved_codes, is_ref_valid, failed_ref = resolve_product_references(
+            raw_refs, produk_tampil_list, history_tampil=history_tampil_list
+        )
 
         if not is_ref_valid:
             if parsed.aksi == ActionEnum.BANDINGKAN:

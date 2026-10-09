@@ -156,7 +156,14 @@ def test_f6_rujukan_riwayat_produk_pernah_tampil():
     }
     # Pelanggan merujuk opsi pertama di turn sebelumnya yang sekarang sudah tergeser dari layar
     args = ActionArguments(rujukan_produk=["opsi 1 sebelumnya"], atribut=AtributSpesifikasiEnum.RAM)
-    res = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args), session_state=state)
+    raw_p = ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args)
+
+    from services.validator import validate_parser_output
+    val_out, is_valid = validate_parser_output(raw_p, session_state=state)
+    assert is_valid, "Validator harus berhasil menyelesaikan rujukan dari riwayat produk tampil"
+    assert val_out.argumen.produk == ["KB-L01"]
+
+    res = engine.execute(val_out, session_state=state)
     assert res.fakta.get("status") == "sukses", "Rujukan riwayat harus berhasil diselesaikan"
     assert "KB-L01" in str(res.fakta), "Produk riwayat KB-L01 harus terpilih"
 

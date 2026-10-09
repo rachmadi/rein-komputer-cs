@@ -109,6 +109,7 @@ class SessionPipeline:
                 state["kebutuhan_teks"] = None
                 state["produk_tampil"] = []
                 state["produk_terakhir_dibahas"] = None
+                state["history_produk_tampil"] = []
 
         # Deteksi kategori jika belum terisi di argumen maupun state
         if not parsed.argumen.kategori and not state.get("kategori"):
@@ -178,6 +179,14 @@ class SessionPipeline:
         # Simpan produk yang tampil jika aksi menghasilkan produk
         if action_res.produk_list:
             state["produk_tampil"] = action_res.produk_list
+            if "history_produk_tampil" not in state or not isinstance(state["history_produk_tampil"], list):
+                state["history_produk_tampil"] = []
+            hist_codes = {p.get("kode") for p in state["history_produk_tampil"] if isinstance(p, dict) and p.get("kode")}
+            for p in action_res.produk_list:
+                if isinstance(p, dict) and p.get("kode") and p.get("kode") not in hist_codes:
+                    state["history_produk_tampil"].append(p)
+                    hist_codes.add(p.get("kode"))
+
             if len(action_res.produk_list) == 1:
                 state["produk_terakhir_dibahas"] = action_res.produk_list[0].get("kode")
         elif action_res.fakta.get("rujukan_dipakai"):

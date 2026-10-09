@@ -137,6 +137,7 @@ class ActionEngine:
         """
         raw_codes = args.produk or args.rujukan_produk or []
         tampil = state.get("produk_tampil", [])
+        history_tampil = state.get("history_produk_tampil", [])
 
         # Jika args.produk dan args.rujukan_produk kosong, ambil produk default:
         if not raw_codes:
@@ -161,36 +162,68 @@ class ActionEngine:
             ref_str = str(ref).strip()
             matched_code = None
 
-            # 1. Cek rujukan numerik (indeks 1-based, misal 1, '1', 'nomor 1')
-            m_num = re.search(r"^(?:nomor\s*|unit\s*)?(\d+)$", ref_str, re.IGNORECASE)
-            if m_num:
-                idx = int(m_num.group(1)) - 1
-                if 0 <= idx < len(tampil):
-                    matched_code = tampil[idx].get("kode")
-                else:
-                    # Index di luar rentang tampil (E8)
-                    resolved_codes.append(ref_str)
-                    continue
+            # Cek apakah rujukan ditujukan ke riwayat/sebelumnya (F6)
+            is_history_ref = bool(re.search(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", ref_str, re.IGNORECASE))
 
-            # 2. Cek rujukan kode langsung di katalog (misal 'KB-L01')
+            # 1. Cek rujukan kode langsung di katalog (misal 'KB-L01')
+            if self.get_product_by_code(ref_str):
+                matched_code = ref_str.upper()
+
+            # 2. Cek rujukan numerik (indeks 1-based, misal 1, '1', 'nomor 1', 'opsi 1 sebelumnya')
             if not matched_code:
-                if self.get_product_by_code(ref_str):
-                    matched_code = ref_str.upper()
+                m_num = re.search(r"^(?:nomor\s*|unit\s*|opsi\s*|produk\s*|pilihan\s*|ke-?\s*)?\[?(\d+)\]?(?:\s+(?:sebelumnya|tadi|kemarin|lalu|riwayat|dulu))?$", ref_str, re.IGNORECASE)
+                if m_num:
+                    idx = int(m_num.group(1)) - 1
+                    if is_history_ref and history_tampil and 0 <= idx < len(history_tampil):
+                        matched_code = history_tampil[idx].get("kode")
+                    elif not is_history_ref and 0 <= idx < len(tampil):
+                        matched_code = tampil[idx].get("kode")
+                    elif history_tampil and 0 <= idx < len(history_tampil):
+                        matched_code = history_tampil[idx].get("kode")
+                    else:
+                        # Index di luar rentang tampil maupun riwayat (E8)
+                        resolved_codes.append(ref_str)
+                        continue
 
-            # 3. Cek rujukan nama sebagian / merek terhadap produk_tampil
-            if not matched_code and tampil:
+            # 2b. Cek rujukan kata ordinal ('pertama', 'kedua', 'ketiga')
+            if not matched_code:
+                ord_map = {"pertama": 0, "kesatu": 0, "kedua": 1, "ketiga": 2}
+                for w_ord, o_idx in ord_map.items():
+                    if re.search(rf"\b(opsi|nomor|unit|pilihan|produk)?\s*{w_ord}\b", ref_str, re.IGNORECASE):
+                        if is_history_ref and history_tampil and 0 <= o_idx < len(history_tampil):
+                            matched_code = history_tampil[o_idx].get("kode")
+                            break
+                        elif not is_history_ref and 0 <= o_idx < len(tampil):
+                            matched_code = tampil[o_idx].get("kode")
+                            break
+                        elif history_tampil and 0 <= o_idx < len(history_tampil):
+                            matched_code = history_tampil[o_idx].get("kode")
+                            break
+
+            # 3. Cek rujukan nama sebagian / merek terhadap produk_tampil lalu history_tampil (F6)
+            if not matched_code:
                 ref_clean = ref_str.lower()
-                for pt in tampil:
+                clean_kw = re.sub(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", "", ref_clean).strip()
+                search_targets = (history_tampil if is_history_ref else tampil) or []
+                fallback_targets = (tampil if is_history_ref else history_tampil) or []
+                for pt in search_targets:
                     pt_nama = str(pt.get("nama", "")).lower()
                     pt_brand = get_product_brand(pt)
-                    if ref_clean in pt_nama or ref_clean == pt_brand:
+                    if (clean_kw and clean_kw in pt_nama) or clean_kw == pt_brand:
                         matched_code = pt.get("kode")
                         break
+                if not matched_code:
+                    for pt in fallback_targets:
+                        pt_nama = str(pt.get("nama", "")).lower()
+                        pt_brand = get_product_brand(pt)
+                        if (clean_kw and clean_kw in pt_nama) or clean_kw == pt_brand:
+                            matched_code = pt.get("kode")
+                            break
 
             # 4. Cek rujukan nama sebagian / merek terhadap seluruh katalog (E7)
             if not matched_code:
                 ref_clean = ref_str.lower()
-                clean_ref = re.sub(r"\b(desktop|laptop|komputer|pc|unit|seri|tipe|model|printer)\b", "", ref_clean, flags=re.IGNORECASE).strip()
+                clean_ref = re.sub(r"\b(desktop|laptop|komputer|pc|unit|seri|tipe|model|printer|sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", "", ref_clean, flags=re.IGNORECASE).strip()
                 tokens = [t for t in re.split(r"\s+", clean_ref) if len(t) >= 2]
                 for p_cat in self.catalog.products:
                     p_nama = str(p_cat.get("nama", "")).lower()
@@ -203,11 +236,11 @@ class ActionEngine:
                 full_p = self.get_product_by_code(matched_code)
                 if full_p:
                     matched_pt = None
-                    if tampil:
-                        for pt in tampil:
-                            if str(pt.get("kode", "")).upper() == matched_code.upper():
-                                matched_pt = pt
-                                break
+                    all_session_prods = list(tampil) + [p for p in (history_tampil or []) if p not in tampil]
+                    for pt in all_session_prods:
+                        if str(pt.get("kode", "")).upper() == matched_code.upper():
+                            matched_pt = pt
+                            break
                     if matched_pt:
                         merged_p = dict(full_p)
                         merged_p.update({k: v for k, v in matched_pt.items() if v is not None})
