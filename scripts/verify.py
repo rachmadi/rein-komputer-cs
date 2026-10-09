@@ -30,16 +30,33 @@ def get_git_info():
     except Exception:
         commit_hash = "unknown"
 
-    try:
-        log_res = subprocess.run(
-            ["git", "log", "--oneline", "1d65c32..HEAD"],
-            capture_output=True, text=True, check=True
-        ).stdout.strip()
-        log_lines = log_res.splitlines() if log_res else []
-    except Exception:
-        log_lines = []
+    log_lines = []
+    base_commit_used = ""
+    for base in ["1583d73", "1d65c32"]:
+        try:
+            log_res = subprocess.run(
+                ["git", "log", "--oneline", f"{base}..HEAD"],
+                capture_output=True, text=True, check=True
+            ).stdout.strip()
+            if log_res:
+                log_lines = log_res.splitlines()
+                base_commit_used = base
+                break
+        except Exception:
+            continue
 
-    return commit_hash, log_lines
+    if not log_lines:
+        try:
+            log_res = subprocess.run(
+                ["git", "log", "--oneline", "-n", "30"],
+                capture_output=True, text=True, check=True
+            ).stdout.strip()
+            log_lines = log_res.splitlines() if log_res else []
+            base_commit_used = "recent (last 30)"
+        except Exception:
+            base_commit_used = "unknown"
+
+    return commit_hash, log_lines, base_commit_used
 
 
 def run_pytest_summary():
@@ -209,8 +226,8 @@ def get_sha256(filepath):
 
 def main():
     print("Memulai verifikasi otomatis sistem Bobby Computer...")
-    commit_hash, log_lines = get_git_info()
-    print(f"- Commit HEAD: {commit_hash}")
+    commit_hash, log_lines, base_commit_used = get_git_info()
+    print(f"- Commit HEAD: {commit_hash} (sejak {base_commit_used})")
 
     print("- Menjalankan pytest suite penuh...")
     pytest_summary, skipped_nodeids, exit_code = run_pytest_summary()
@@ -240,7 +257,7 @@ def main():
     # 1. Git Info
     md.append("## 1. Status Repositori & Riwayat Commit")
     md.append(f"- **Hash Commit Terkini (HEAD)**: `{commit_hash}`")
-    md.append(f"- **Riwayat Commit sejak `1d65c32`** ({len(log_lines)} commit):")
+    md.append(f"- **Riwayat Commit sejak `{base_commit_used}`** ({len(log_lines)} commit):")
     for cl in log_lines:
         md.append(f"  - `{cl}`")
     md.append("")
