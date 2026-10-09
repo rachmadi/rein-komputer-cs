@@ -152,3 +152,59 @@ def test_fact_consistency_string_budget_handling():
     prices2 = checker.extract_prices_from_facts(fakta, state={"budget": "10 juta"})
     assert 10_000_000 in prices2
 
+
+def test_fact_consistency_tidak_ada_dalam_anggaran():
+    """Uji konsistensi mekanis: status tidak_ada_dalam_anggaran vs klaim ketersediaan / nominal palsu."""
+    checker = GroundingChecker()
+    fakta = {
+        "status": "tidak_ada_dalam_anggaran",
+        "budget_pelanggan": 4000000,
+        "harga_termurah_kategori": 5199000,
+        "produk": []
+    }
+    # Pelanggaran: mengklaim ada produk di bawah anggaran
+    viol_text = "Ada laptop dengan harga 3 juta yang pas untuk Kakak."
+    ok, viols = checker.check(viol_text, fakta=fakta)
+    assert ok is False
+    assert any("tidak_ada_dalam_anggaran" in v or "termurah katalog" in v for v in viols)
+
+    # Valid: menyampaikan secara jujur tidak ada di bawah anggaran
+    valid_text = "Belum ada produk di rentang anggaran tersebut Kak, opsi termurah mulai Rp5.199.000."
+    ok2, viols2 = checker.check(valid_text, fakta=fakta)
+    assert ok2 is True
+
+
+def test_fact_consistency_produk_tidak_di_katalog():
+    """Uji konsistensi mekanis: status produk_tidak_di_katalog tidak boleh mengklaim unit tersedia di toko."""
+    checker = GroundingChecker()
+    fakta = {
+        "status": "produk_tidak_di_katalog",
+        "produk_diminta": ["Dell Inspiron"],
+        "padanan_terdekat": {"nama": "Asus Vivobook 14"}
+    }
+    # Pelanggaran: mengklaim produk luar katalog tersedia
+    viol_text = "Dell Inspiron tersedia di toko kami dan bisa langsung dipesan."
+    ok, viols = checker.check(viol_text, fakta=fakta)
+    assert ok is False
+    assert any("luar katalog" in v for v in viols)
+
+    # Valid: jujur menyatakan belum tersedia dan tawarkan padanan
+    valid_text = "Dell Inspiron belum tersedia di katalog ReIn Komputer Kak, alternatifnya adalah Asus Vivobook 14."
+    ok2, viols2 = checker.check(valid_text, fakta=fakta)
+    assert ok2 is True
+
+
+def test_fact_consistency_unrecorded_price_nominal():
+    """Uji konsistensi mekanis: nominal harga rupiah yang disebut harus ada di fakta."""
+    checker = GroundingChecker()
+    fakta = {
+        "status": "sukses",
+        "produk": [{"nama": "Acer Aspire Lite 14", "harga": 5199000}]
+    }
+    # Pelanggaran: mengarang harga Rp8.500.000 padahal fakta Rp5.199.000
+    viol_text = "Laptop Acer Aspire Lite 14 ini dibanderol dengan harga Rp8.500.000 ya Kak."
+    ok, viols = checker.check(viol_text, fakta=fakta)
+    assert ok is False
+    assert any("nominal harga" in v for v in viols)
+
+

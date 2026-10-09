@@ -57,12 +57,23 @@ KEBIJAKAN BATAS AKSI (B1, B2, B3):
 - Jika pelanggan HANYA menyebut persona (misal dokter, guru, kerabat, mahasiswa) tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona).
 - Jika pelanggan menyebut kategori saja (misal 'laptop', 'printer') atau merek saja (misal 'asus', 'lenovo') tanpa aktivitas konkret, gunakan 'cari_produk' (maksimal 3 produk).
 - Jika pelanggan menyebut budget saja (misal 'budget 8 juta', 'dana 7jt') dan kategori sudah ada di konteks state, gunakan 'cari_produk' memakai kategori tersebut.
-- 'lanjutan_hasil' HANYA sah jika ada produk yang sedang tampil di layar ('produk_tampil' tidak kosong). Ragam ungkapan informal: 'lebih murah', 'lebih mahal', 'yang lain', dsb.
+- 'lanjutan_hasil': Permintaan alternatif atau perbandingan RELATIF terhadap hasil pencarian sebelumnya ('produk_tampil' tidak kosong).
+  * Lebih murah / lebih miring / hemat / di bawah produk tersebut / pagu dana lebih rendah -> 'jenis': 'lebih_murah'.
+  * Lebih mahal / lebih premium / kelas di atas produk tersebut -> 'jenis': 'lebih_mahal'.
+  * Pilihan lain / merek lain / produk kompetitor / yang setara / alternatif berikutnya / produk pembanding -> 'jenis': 'yang_lain'.
+  * 'bandingkan' HANYA jika membandingkan dua atau lebih produk yang secara simultan sudah tampil atau disebutkan. Bila meminta 'opsi alternatif pembanding' yang setara, gunakan 'lanjutan_hasil'.
+  * Jika 'produk_tampil' kosong di awal sesi, DILARANG mengeluarkan 'lanjutan_hasil' (keluarkan 'tidak_jelas' dengan alasan 'rujukan_tidak_ada').
+- 'evaluasi_kecocokan': Menanyakan kelayakan produk yang sedang tampil di layar ('komputer ini', 'unit nomor satu', 'laptop tersebut') untuk menjalankan aktivitas komputasi tertentu.
+  * 'rujukan_produk' WAJIB diisi (misal [1]) dan 'kebutuhan_teks' WAJIB diisi dengan aktivitas komputasi tersebut.
+- Penyebutan eksplisit kriteria baru saat produk tampil:
+  * Jika pelanggan menyebutkan merek baru, tipe/lini model baru, GPU tertentu, atau pencarian baru dari awal, gunakan 'cari_produk' (atau 'minta_rekomendasi' bila menyebut aktivitas kerja), BUKAN lanjutan_hasil.
+- 'tanya_spesifikasi': Menanyakan fakta spesifikasi teknis tunggal atau harga dari produk tertentu (baik disebut nama model, nomor urut 1/2, atau 'unit tersebut').
+  * 'rujukan_produk' WAJIB diisi (misal [1] untuk 'unit tersebut' atau 'nomor satu', atau nama parsial produk).
+  * Atribut: 'harga', 'ram', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'storage', 'lainnya'.
+- Kebutuhan baru di pesan:
+  * Jika pelanggan menyebutkan aktivitas atau software komputasi baru (misal: 'editing video 4K', 'animasi blender', 'programming docker', 'render 3D', 'kasir toko'), argumen 'kebutuhan_teks' WAJIB terisi dengan ringkasan aktivitas tersebut!
 - Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama/merek parsial (misal ['advan'], ['asus']) dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
-- Atribut spesifikasi pada 'tanya_spesifikasi' mendukung: 'harga', 'ram', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'storage'.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
-- 'persona' adalah pihak pemakai perangkat (seperti kerabat, profesi, atau rekan kerja), BUKAN lawan bicara. Jangan mengisi 'sebutan' dengan persona tersebut. Lawan bicara tetap disapa 'Kak' kecuali pelanggan menyebut sebutan untuk dirinya sendiri.
-- Format 'kebutuhan_teks' harus ringkas berupa kata kunci aktivitas atau software utama (misal: 'edit video 4k', 'desain 3d revit', 'coding python', 'kasir toko kelontong'), BUKAN kalimat panjang bertele-tele.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
 """
 
@@ -199,7 +210,58 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
     }
 ]
 
-CURRENT_FEW_SHOTS = SYNTHETIC_8_BOUNDARY_FEW_SHOTS
+SYNTHETIC_PUTARAN8_EXTRA_FEW_SHOTS = [
+    # 9. Batas: Lanjutan Hasil Opsi Lain / Lebih Murah (lanjutan_hasil)
+    {
+        "role": "user",
+        "content": (
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut unit yang tersedia\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Apex Alpha 15\", \"harga\": 14500000}], \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Bisa tolong perlihatkan opsi alternatif yang posisinya di bawah model itu?\""
+        )
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "lanjutan_hasil",
+            "argumen": {"jenis": "lebih_murah"},
+            "pembaruan_state": {}
+        })
+    },
+    # 10. Batas: Tanya Spesifikasi Unit Tersebut (tanya_spesifikasi)
+    {
+        "role": "user",
+        "content": (
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Pilihan notebook untuk Kakak\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Titan Book 14\", \"harga\": 9200000}], \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Berapa harga jual resmi untuk perangkat tersebut?\""
+        )
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "tanya_spesifikasi",
+            "argumen": {"rujukan_produk": [1], "atribut": "harga"},
+            "pembaruan_state": {}
+        })
+    },
+    # 11. Batas: Kebutuhan Baru di Tengah Percakapan (evaluasi_kecocokan / kebutuhan_teks)
+    {
+        "role": "user",
+        "content": (
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut rekomendasi untuk kantor\", \"kebutuhan_diketahui\": \"kantoran\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Office Lite 14\", \"harga\": 5300000}], \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Kalau perangkat ini hendak saya pakai simulasi fisika fluida komputasi apakah kuat?\""
+        )
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "evaluasi_kecocokan",
+            "argumen": {"rujukan_produk": [1], "kebutuhan_teks": "simulasi fisika fluida komputasi"},
+            "pembaruan_state": {"kebutuhan_teks": "simulasi fisika fluida komputasi"}
+        })
+    }
+]
+
+CURRENT_FEW_SHOTS = SYNTHETIC_8_BOUNDARY_FEW_SHOTS + SYNTHETIC_PUTARAN8_EXTRA_FEW_SHOTS
 
 
 def build_parser_messages(
@@ -248,14 +310,22 @@ def build_parser_messages(
         or s.get("profil_aktif")
     )
 
-    produk_tampil = [
-        {
-            "no": p.get("no", idx + 1),
-            "nama": p.get("nama"),
-            "harga": p.get("harga_idr") or p.get("harga")
-        }
-        for idx, p in enumerate(s.get("produk_tampil", []))
-    ]
+    raw_pt = s.get("produk_tampil", [])
+    produk_tampil = []
+    for idx, p in enumerate(raw_pt):
+        if isinstance(p, dict):
+            produk_tampil.append({
+                "no": p.get("no", idx + 1),
+                "nama": p.get("nama") or p.get("kode"),
+                "harga": p.get("harga_idr") or p.get("harga")
+            })
+        elif isinstance(p, str):
+            produk_tampil.append({
+                "no": idx + 1,
+                "nama": p,
+                "harga": None
+            })
+
 
     context_data = {
         "teks_pesan_terakhir_bot": last_bot_msg,

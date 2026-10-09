@@ -113,7 +113,7 @@ def test_integrasi_e4_batas_dan_merek_dipertahankan():
             {"kode": "KB-L05", "nama": "Lenovo IdeaPad Slim 5", "kategori": "laptop", "harga": 11499000}
         ]
     }
-    # Minta yang lebih murah dengan batas 8 juta
+    # Opsi hemat beranggaran 8 juta
     args = ActionArguments(
         jenis="lebih_murah",
         max_harga=8000000

@@ -18,6 +18,7 @@ import os
 import time
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -107,6 +108,35 @@ class SessionPipeline:
                 state["profil_aktif"] = None
                 state["kebutuhan_teks"] = None
                 state["produk_tampil"] = []
+
+        # Deteksi kategori jika belum terisi di argumen maupun state
+        if not parsed.argumen.kategori and not state.get("kategori"):
+            if re.search(r"\b(laptop|notebook|komputer jinjing)\b", pesan_pelanggan, re.IGNORECASE):
+                parsed.argumen.kategori = "laptop"
+                state["kategori"] = "laptop"
+            elif re.search(r"\b(desktop|pc|komputer meja)\b", pesan_pelanggan, re.IGNORECASE):
+                parsed.argumen.kategori = "desktop"
+                state["kategori"] = "desktop"
+            elif re.search(r"\b(printer)\b", pesan_pelanggan, re.IGNORECASE):
+                parsed.argumen.kategori = "printer"
+                state["kategori"] = "printer"
+
+        # E3: Deteksi jika pesan pelanggan membawa kebutuhan komputasi baru yang belum terisi di argumen
+        if not parsed.argumen.kebutuhan_teks and parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.MINTA_REKOMENDASI):
+            m_keb = re.search(r"(?:dipakai|buat|untuk|kebutuhan)\s+([a-zA-Z0-9\s\+\#]{4,40}?)(?:\s+apakah|\s+bisa|\s+kuat|\?|$)", pesan_pelanggan, re.IGNORECASE)
+            if m_keb:
+                extracted_keb = m_keb.group(1).strip()
+                if len(extracted_keb) >= 4:
+                    parsed.argumen.kebutuhan_teks = extracted_keb
+                    parsed.pembaruan_state.kebutuhan_teks = extracted_keb
+
+        # E4: Ekstrak batas anggaran jika ada pada lanjutan_hasil
+        if parsed.aksi == ActionEnum.LANJUTAN_HASIL and not parsed.argumen.max_harga:
+            from services.catalog_search import parse_budget_from_text
+            b_text = parse_budget_from_text(pesan_pelanggan)
+            if b_text:
+                parsed.argumen.max_harga = b_text
+                state["budget"] = b_text
 
         # ---------------------------------------------------------------------
         # 3. MESIN DETERMINISTIK

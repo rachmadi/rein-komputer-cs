@@ -1,0 +1,40 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0 -- D:\RAG\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\RAG
+configfile: pytest.ini
+plugins: anyio-4.15.1
+collecting ... collected 11 items
+
+tests/test_integrasi_putaran8.py::test_live_e1_lanjutan_murni PASSED     [  9%]
+tests/test_integrasi_putaran8.py::test_live_e2_tanya_spesifikasi_unit_tersebut PASSED [ 18%]
+tests/test_integrasi_putaran8.py::test_live_e3_kebutuhan_baru PASSED     [ 27%]
+tests/test_integrasi_putaran8.py::test_integrasi_e3_profil_id_persis PASSED [ 36%]
+tests/test_integrasi_putaran8.py::test_integrasi_e3_profil_tidak_ditemukan PASSED [ 45%]
+tests/test_integrasi_putaran8.py::test_integrasi_e4_batas_dan_merek_dipertahankan PASSED [ 54%]
+tests/test_integrasi_putaran8.py::test_integrasi_e4_kosong_b7_termurah_merek_tersebut PASSED [ 63%]
+tests/test_integrasi_putaran8.py::test_integrasi_e5_gpu_generik_dedicated PASSED [ 72%]
+tests/test_integrasi_putaran8.py::test_integrasi_e6_produk_luar_katalog_cari_produk PASSED [ 81%]
+tests/test_integrasi_putaran8.py::test_integrasi_e7_resolusi_nama_model_sebagian PASSED [ 90%]
+tests/test_integrasi_putaran8.py::test_integrasi_e8_rujukan_nomor_di_luar_jangkauan PASSED [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\config\__init__.py:1464
+  D:\RAG\.venv\Lib\site-packages\_pytest\config\__init__.py:1464: PytestConfigWarning: Unknown config option: env
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+tests\test_integrasi_putaran8.py:22
+  D:\RAG\tests\test_integrasi_putaran8.py:22: PytestUnknownMarkWarning: Unknown pytest.mark.live - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.live
+
+tests\test_integrasi_putaran8.py:38
+  D:\RAG\tests\test_integrasi_putaran8.py:38: PytestUnknownMarkWarning: Unknown pytest.mark.live - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.live
+
+tests\test_integrasi_putaran8.py:53
+  D:\RAG\tests\test_integrasi_putaran8.py:53: PytestUnknownMarkWarning: Unknown pytest.mark.live - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.live
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 11 passed, 4 warnings in 51.91s =======================

@@ -11,6 +11,7 @@ Prinsip:
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 import logging
 from typing import Any, List, Dict, Tuple
@@ -92,6 +93,14 @@ def resolve_product_references(
         "3": 2, "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2, "ke-3": 2,
     }
 
+    norm_tampil = []
+    for idx, p in enumerate(tampil or []):
+        if isinstance(p, dict):
+            norm_tampil.append(p)
+        elif isinstance(p, str):
+            norm_tampil.append({"kode": p, "nama": p})
+    tampil = norm_tampil
+
     resolved: List[str] = []
     failed_refs: List[str] = []
 
@@ -131,18 +140,24 @@ def resolve_product_references(
 
         # 3. Rujukan ordinal / nomor digit
         matched = False
-        if ref_clean.isdigit():
-            idx = int(ref_clean) - 1
+        m_digit = re.match(r"^(?:produk\s+|unit\s+|opsi\s+|no\.?\s*|nomor\s+|#)?\[?(\d+)\]?$", ref_clean)
+        if m_digit:
+            idx = int(m_digit.group(1)) - 1
             if 0 <= idx < len(tampil) and tampil[idx].get("kode"):
                 resolved.append(tampil[idx]["kode"])
-                matched = True
+            else:
+                failed_refs.append(str(raw_ref))
+            matched = True
         else:
             for ord_key, idx in ordinal_map.items():
                 if ref_clean == ord_key or f"yang {ord_key}" in ref_clean:
                     if idx < len(tampil) and tampil[idx].get("kode"):
                         resolved.append(tampil[idx]["kode"])
                         matched = True
-                        break
+                    else:
+                        failed_refs.append(str(raw_ref))
+                        matched = True
+                    break
 
         if matched:
             continue
@@ -155,14 +170,49 @@ def resolve_product_references(
             p_nama = str(p.get("nama", "")).lower()
             p_brand = str(p.get("brand", "")).lower()
 
-            if search_kw and (search_kw == p_kode or search_kw == p_brand or search_kw in p_nama):
+            # Hidrasi nama dan brand dari katalog jika tampil hanya memuat kode
+            if (not p_brand or p_nama == p_kode) and p_kode:
+                try:
+                    from services.catalog_service import get_active_catalog
+                    cat = get_active_catalog()
+                    full_p = cat.by_code.get(p_kode.upper()) or cat.by_code.get(p_kode)
+                    if full_p:
+                        p_nama = str(full_p.get("nama", "")).lower()
+                        p_brand = str(full_p.get("brand", "")).lower()
+                except Exception:
+                    pass
+
+            if search_kw and (search_kw == p_kode or search_kw == p_brand or search_kw in p_nama or (p_brand and p_brand in search_kw)):
                 matched_candidates.append(p)
 
         if len(matched_candidates) == 1:
             resolved.append(matched_candidates[0]["kode"])
+            continue
         elif len(matched_candidates) > 1:
             # Ambigu: ada lebih dari 1 produk yang cocok
             return [], False, "rujukan_ambigu"
+
+        # 5. Cek apakah rujukan cocok dengan produk di seluruh katalog (E7: ASUS D500, dll)
+        cat_matches = []
+        try:
+            from services.catalog_service import get_active_catalog
+            cat = get_active_catalog()
+            clean_search = re.sub(r"\b(desktop|laptop|komputer|pc|unit|seri|tipe|model|printer)\b", "", search_kw, flags=re.IGNORECASE).strip()
+            tokens = [t for t in re.split(r"\s+", clean_search) if len(t) >= 2]
+            for p_cat in cat.products:
+                p_c_kode = str(p_cat.get("kode", "")).lower()
+                p_c_nama = str(p_cat.get("nama", "")).lower()
+                p_c_brand = str(p_cat.get("brand", "")).lower()
+                if search_kw == p_c_kode or clean_search == p_c_kode:
+                    cat_matches.append(p_cat)
+                    break
+                if tokens and all((tok in p_c_nama or tok in p_c_brand) for tok in tokens):
+                    cat_matches.append(p_cat)
+        except Exception as e:
+            logger.warning(f"Gagal cek katalog pada resolve_product_references: {e}")
+
+        if cat_matches:
+            resolved.append(cat_matches[0]["kode"])
         else:
             failed_refs.append(str(raw_ref))
 
@@ -171,7 +221,10 @@ def resolve_product_references(
     dedup = [x for x in resolved if not (x in seen or seen.add(x))]
 
     if failed_refs:
-        return dedup, False, failed_refs[0] if len(failed_refs) == 1 else "rujukan_tidak_ada"
+        first_fail = failed_refs[0]
+        if re.match(r"^(?:produk\s+|unit\s+|opsi\s+|no\.?\s*|nomor\s+|#)?\[?(\d+)\]?$", first_fail.strip().lower()):
+            first_fail = "rujukan_tidak_ada"
+        return dedup, False, first_fail if len(failed_refs) == 1 else "rujukan_tidak_ada"
     if not dedup:
         return [], False, "rujukan_kosong"
 
@@ -272,6 +325,12 @@ def validate_parser_output(
             False
         )
 
+    # Sinkronisasi kebutuhan_teks antara pembaruan_state dan argumen
+    if parsed.pembaruan_state.kebutuhan_teks and not args.kebutuhan_teks:
+        args.kebutuhan_teks = parsed.pembaruan_state.kebutuhan_teks
+    elif args.kebutuhan_teks and not parsed.pembaruan_state.kebutuhan_teks:
+        parsed.pembaruan_state.kebutuhan_teks = args.kebutuhan_teks
+
     # 4b. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
     if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list:
         logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil kosong (B9)")
@@ -291,7 +350,7 @@ def validate_parser_output(
         if not is_ref_valid:
             if parsed.aksi == ActionEnum.BANDINGKAN:
                 failed_list = [failed_ref] if isinstance(failed_ref, str) else list(failed_ref)
-                failed_clean = [f for f in failed_list if f not in ("rujukan_kosong", "rujukan_ambigu")]
+                failed_clean = [f for f in failed_list if f not in ("rujukan_kosong", "rujukan_ambigu", "rujukan_tidak_ada")]
                 args.produk = resolved_codes if resolved_codes else [p.get("kode") for p in produk_tampil_list if p.get("kode")]
                 if failed_clean:
                     args.produk_luar_katalog = failed_clean
@@ -309,7 +368,18 @@ def validate_parser_output(
 
     # 4c. Validasi jenis per-aksi
     if parsed.aksi in ACTION_JENIS_MAP and args.jenis is not None:
-        jenis_str = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
+        jenis_str = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis).lower()
+        if parsed.aksi == ActionEnum.LANJUTAN_HASIL:
+            if jenis_str in ("lainnya", "merek_lain", "yang_setara", "setara", "alternatif", "varian_lain"):
+                args.jenis = JenisEnum.YANG_LAIN
+                jenis_str = JenisEnum.YANG_LAIN.value
+            elif jenis_str in ("di_bawah_itu", "murah", "lebih_hemat"):
+                args.jenis = JenisEnum.LEBIH_MURAH
+                jenis_str = JenisEnum.LEBIH_MURAH.value
+            elif jenis_str in ("di_atas_itu", "mahal", "premium", "tinggi"):
+                args.jenis = JenisEnum.LEBIH_MAHAL
+                jenis_str = JenisEnum.LEBIH_MAHAL.value
+
         if jenis_str not in ACTION_JENIS_MAP[parsed.aksi]:
             logger.warning(f"Jenis '{jenis_str}' tidak sah untuk aksi '{parsed.aksi.value}'")
             return (
@@ -320,6 +390,7 @@ def validate_parser_output(
                 ),
                 False
             )
+
 
     # 4d. Standarisasi alasan tidak_jelas ke enum tertutup (B12)
     if parsed.aksi == ActionEnum.TIDAK_JELAS:
@@ -343,7 +414,7 @@ def validate_parser_output(
         ActionEnum.EVALUASI_KECOCOKAN: {"rujukan_produk", "produk", "kebutuhan_teks"},
         ActionEnum.TANYA_SPESIFIKASI: {"rujukan_produk", "produk", "atribut"},
         ActionEnum.BANDINGKAN: {"rujukan_produk", "produk", "produk_luar_katalog"},
-        ActionEnum.LANJUTAN_HASIL: {"jenis", "merek_kecuali", "filter"},
+        ActionEnum.LANJUTAN_HASIL: {"jenis", "merek_kecuali", "filter", "max_harga", "min_harga"},
         ActionEnum.TANYA_INFO_TOKO: {"topik"},
         ActionEnum.PERBAIKI_PERCAKAPAN: {"jenis", "rujukan"},
         ActionEnum.BASA_BASI: {"jenis"},
@@ -354,6 +425,12 @@ def validate_parser_output(
         for field in ActionArguments.model_fields.keys():
             if field not in allowed and getattr(args, field, None) is not None:
                 setattr(args, field, None)
+
+    # Sanitasi CPU salah masuk ke field GPU
+    if args.gpu:
+        raw_gpu = str(args.gpu).lower()
+        if any(cpu_kw in raw_gpu for cpu_kw in ["core i", "ryzen", "intel core", "processor n", "celeron", "pentium", "snapdragon"]):
+            args.gpu = None
 
     # 6. Normalisasi persona & sebutan di state_update
     if state_up.persona:

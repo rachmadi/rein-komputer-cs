@@ -102,6 +102,15 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
     if status == "rujukan_tidak_ada":
         return "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil, Kak. Silakan sebutkan kebutuhan atau perangkat yang dicari."
 
+    if status == "produk_tidak_di_katalog":
+        prod_diminta = fakta.get("produk_diminta", [])
+        nama_diminta = ", ".join([str(p) for p in prod_diminta]) if prod_diminta else "tersebut"
+        padanan = fakta.get("padanan_terdekat", {})
+        nama_padanan = padanan.get("nama")
+        if nama_padanan:
+            return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer, Kak. Sebagai alternatif terdekat yang tersedia, kami merekomendasikan {nama_padanan}."
+        return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer saat ini, Kak."
+
     prods = fakta.get("produk", [])
     if prods:
         nama_list = [p.get("nama") for p in prods[:3] if p.get("nama")]

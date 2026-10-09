@@ -135,10 +135,10 @@ class ActionEngine:
         Membaca nilai lengkap dari self.catalog.products. state['produk_tampil']
         hanya digunakan untuk rujukan urutan nomor atau pemetaan rujukan.
         """
-        raw_codes = args.produk or []
+        raw_codes = args.produk or args.rujukan_produk or []
         tampil = state.get("produk_tampil", [])
 
-        # Jika args.produk kosong, ambil semua produk yang sedang tampil di state
+        # Jika args.produk dan args.rujukan_produk kosong, ambil semua produk yang sedang tampil di state
         if not raw_codes:
             raw_codes = [p.get("kode") for p in tampil if p.get("kode")]
 
@@ -158,6 +158,10 @@ class ActionEngine:
                 idx = int(m_num.group(1)) - 1
                 if 0 <= idx < len(tampil):
                     matched_code = tampil[idx].get("kode")
+                else:
+                    # Index di luar rentang tampil (E8)
+                    resolved_codes.append(ref_str)
+                    continue
 
             # 2. Cek rujukan kode langsung di katalog (misal 'KB-L01')
             if not matched_code:
@@ -174,13 +178,15 @@ class ActionEngine:
                         matched_code = pt.get("kode")
                         break
 
-            # 4. Cek rujukan nama sebagian / merek terhadap seluruh katalog
+            # 4. Cek rujukan nama sebagian / merek terhadap seluruh katalog (E7)
             if not matched_code:
                 ref_clean = ref_str.lower()
+                clean_ref = re.sub(r"\b(desktop|laptop|komputer|pc|unit|seri|tipe|model|printer)\b", "", ref_clean, flags=re.IGNORECASE).strip()
+                tokens = [t for t in re.split(r"\s+", clean_ref) if len(t) >= 2]
                 for p_cat in self.catalog.products:
                     p_nama = str(p_cat.get("nama", "")).lower()
                     p_brand = get_product_brand(p_cat)
-                    if ref_clean in p_nama or ref_clean == p_brand:
+                    if ref_clean in p_nama or ref_clean == p_brand or (tokens and all((tok in p_nama or tok in p_brand) for tok in tokens)):
                         matched_code = p_cat.get("kode")
                         break
 
@@ -472,8 +478,20 @@ class ActionEngine:
                     continue
             if nama_model and nama_model.strip().lower() not in p_nama:
                 continue
-            if gpu and gpu.strip().lower() not in str(p.get("gpu", "")).strip().lower():
-                continue
+            if gpu:
+                gpu_req = gpu.strip().lower()
+                p_gpu = str(p.get("gpu", "")).strip().lower()
+                is_discrete_req = any(kw in gpu_req for kw in ["dedicated", "diskrit", "kartu grafis", "vga eksternal", "vga terpisah"])
+                is_discrete_prod = bool(
+                    (p.get("vram_gb") and p.get("vram_gb") > 0) or
+                    any(kw in p_gpu for kw in ["rtx", "gtx", "geforce", "radeon rx", "arc a"])
+                )
+                if is_discrete_req:
+                    if not is_discrete_prod:
+                        continue
+                else:
+                    if gpu_req not in p_gpu:
+                        continue
             if min_harga and get_product_price(p) < min_harga:
                 continue
             if max_harga and get_product_price(p) > max_harga:
@@ -517,6 +535,37 @@ class ActionEngine:
             })
 
         if not formatted_prods:
+            # E6 / B16: Jika merek atau nama_model di luar katalog, kembalikan status produk_tidak_di_katalog + padanan terdekat
+            all_brands = set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))
+            is_brand_outside = bool(merek and str(merek).strip().lower() not in all_brands)
+
+            if is_brand_outside or (nama_model and not matches):
+                target_cat = str(kategori).lower() if kategori else "laptop"
+                cat_prods = [p for p in self.catalog.products if str(p.get("kategori", "")).lower() == target_cat]
+                if not cat_prods:
+                    cat_prods = [p for p in self.catalog.products if str(p.get("kategori", "")).lower() == "laptop"]
+                if not cat_prods and self.catalog.products:
+                    cat_prods = list(self.catalog.products)
+                closest = min(cat_prods, key=lambda x: get_product_price(x)) if cat_prods else None
+                padanan = {
+                    "kode": closest.get("kode"),
+                    "nama": closest.get("nama"),
+                    "kategori": closest.get("kategori"),
+                    "brand": get_product_brand(closest),
+                    "merek": get_product_brand(closest),
+                    "harga": get_product_price(closest),
+                    "harga_formatted": format_rupiah(get_product_price(closest)),
+                    "spesifikasi": clean_specs(closest)
+                } if closest else {}
+                prod_diminta = merek or nama_model
+                fakta = {
+                    "status": "produk_tidak_di_katalog",
+                    "produk_diminta": [prod_diminta],
+                    "padanan_terdekat": padanan,
+                    "pesan": f"Produk/merek {prod_diminta} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+                }
+                return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[padanan] if padanan else [])
+
             fakta = {
                 "status": "tidak_ditemukan",
                 "kriteria": {
@@ -614,6 +663,18 @@ class ActionEngine:
             return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 
         if not catalog_products:
+            # E8 / B9: Jika rujukan adalah nomor ordinal di luar rentang atau rujukan_tidak_ada
+            is_ordinal_fail = any(
+                re.search(r"^(?:nomor\s*|unit\s*)?\d+$", str(c).strip(), re.IGNORECASE) or str(c) == "rujukan_tidak_ada"
+                for c in (resolved_codes or args.rujukan_produk or [])
+            )
+            if is_ordinal_fail:
+                fakta = {
+                    "status": "rujukan_tidak_ada",
+                    "pesan": "Nomor produk yang dirujuk tidak ada dalam daftar yang sedang ditampilkan."
+                }
+                return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+
             # B16: Produk di luar katalog -> cari padanan terdekat deterministik
             closest = None
             for p in self.catalog.products:
@@ -769,6 +830,18 @@ class ActionEngine:
             return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
         if not catalog_products:
+            # E8 / B9: Jika rujukan adalah nomor ordinal di luar rentang atau rujukan_tidak_ada
+            is_ordinal_fail = any(
+                re.search(r"^(?:nomor\s*|unit\s*)?\d+$", str(c).strip(), re.IGNORECASE) or str(c) == "rujukan_tidak_ada"
+                for c in (resolved_codes or args.rujukan_produk or [])
+            )
+            if is_ordinal_fail:
+                fakta = {
+                    "status": "rujukan_tidak_ada",
+                    "pesan": "Nomor produk yang dirujuk tidak ada dalam daftar yang sedang ditampilkan."
+                }
+                return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+
             # B16: Produk di luar katalog
             closest = None
             for p in self.catalog.products:
@@ -934,12 +1007,22 @@ class ActionEngine:
 
         candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
 
+        # E4: Pertahankan filter merek jika ada di args atau state
+        merek = args.merek or state.get("merek")
+        if merek:
+            m_clean = str(merek).strip().lower()
+            candidates = [p for p in candidates if m_clean == get_product_brand(p) or m_clean in str(p.get("nama", "")).lower()]
+
         user_max_harga = parse_int_safe(args.max_harga)
         batas_dipakai = None
         if jenis == "lebih_murah" or user_max_harga is not None:
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             target_max = user_max_harga if user_max_harga is not None else lowest_p
             matches = [p for p in candidates if get_product_price(p) <= target_max and (user_max_harga is not None or get_product_price(p) < lowest_p)]
+            # Jika user_max_harga is None dan merek tidak punya opsi lebih murah, cari opsi lebih murah di seluruh kategori
+            if not matches and user_max_harga is None and merek and not args.merek:
+                cat_candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
+                matches = [p for p in cat_candidates if get_product_price(p) < lowest_p]
             matches.sort(key=lambda x: -get_product_price(x))
 
             # B7: Jika ada batas anggaran eksplisit dan tidak ada yang cocok

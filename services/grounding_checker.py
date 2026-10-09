@@ -61,7 +61,12 @@ class GroundingChecker:
         def recurse_extract(obj):
             if isinstance(obj, dict):
                 for k, v in obj.items():
-                    if k in ("harga", "harga_idr", "budget", "min_harga", "max_harga") and isinstance(v, (int, float)):
+                    if k in (
+                        "harga", "harga_idr", "budget", "min_harga", "max_harga",
+                        "harga_termurah_kategori", "harga_termurah_saat_ini",
+                        "harga_termahal_kategori", "harga_termahal_saat_ini",
+                        "budget_pelanggan", "batas_dipakai"
+                    ) and isinstance(v, (int, float)):
                         valid_prices.add(int(v))
                     elif isinstance(v, (dict, list)):
                         recurse_extract(v)
@@ -292,6 +297,30 @@ class GroundingChecker:
                 for c_cat in conflicting:
                     if re.search(rf"\b(?:berikut|ini|rekomendasi|pilihan|unit)\s+(?:adalah\s+)?{c_cat}\b", teks, re.IGNORECASE):
                         violations.append(f"Menyebut kategori '{c_cat}' yang bertentangan dengan kategori produk aktif '{cur_cat}'.")
+
+        # 13. Pemeriksaan konsistensi status tidak_ada_dalam_anggaran (anggaran vs min_cat_price)
+        if status_fakta == "tidak_ada_dalam_anggaran":
+            min_cat_val = fakta.get("harga_termurah_kategori")
+            klaim_ada_anggaran = [
+                r"\b(?:tersedia|ada|bisa dapat|dapat)\s+(?:laptop|desktop|unit|produk)?\s*(?:di bawah|dengan harga|seharga)\b"
+            ]
+            for pat in klaim_ada_anggaran:
+                if re.search(pat, teks, re.IGNORECASE) and not re.search(r"\b(?:belum|tidak|bukan)\s+ada\b", teks, re.IGNORECASE):
+                    violations.append("Mengklaim produk tersedia dalam anggaran padahal status tidak_ada_dalam_anggaran.")
+                    break
+            for mp in mentioned_prices:
+                if min_cat_val and mp < min_cat_val:
+                    violations.append(f"Menyebut nominal harga Rp{mp:,} di bawah harga termurah katalog Rp{min_cat_val:,}.")
+
+        # 14. Pemeriksaan status produk_tidak_di_katalog
+        if status_fakta == "produk_tidak_di_katalog":
+            klaim_tersedia_katalog = [
+                r"\b(?:tersedia di katalog|tersedia di toko kami|kami menjual|stok kami ada)\b"
+            ]
+            for pat in klaim_tersedia_katalog:
+                if re.search(pat, teks, re.IGNORECASE) and not re.search(r"\b(?:tidak|belum)\s+tersedia\b", teks, re.IGNORECASE):
+                    violations.append("Mengklaim produk luar katalog tersedia di ReIn Komputer.")
+                    break
 
         is_valid = len(violations) == 0
         return is_valid, violations
