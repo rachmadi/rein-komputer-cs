@@ -9,7 +9,7 @@
 
 ## 1. Ringkasan Eksekutif Putaran 5
 
-Putaran 5 mengimplementasikan seluruh keputusan final perilaku sistem sesuai **Tabel Perilaku ReIn Komputer** (A1–A12 dan B1–B13; seluruh butir berstatus Setuju), merapikan privasi log transaksi Telegram, membersihkan kamus heuristik sementara, menetapkan ambang RAG berbasis probe empiris, serta melakukan re-branding menyeluruh dari "Bobby Computer" ke "ReIn Komputer" dengan kontak staf mock `@cs_reinkomputer`.
+Putaran 5 mengimplementasikan seluruh keputusan final perilaku sistem sesuai **Tabel Perilaku ReIn Komputer** (A1–A12 dan B1–B13; seluruh butir berstatus Setuju), merapikan privasi log transaksi Telegram, membersihkan kamus heuristik sementara, menetapkan ambang RAG berbasis probe empiris, serta melakukan re-branding menyeluruh dari "Bobby Computer" ke "ReIn Komputer" dengan kontak staf fiktif ("staf toko kami").
 
 Semua pekerjaan diselesaikan secara bertahap dalam rangkaian commit terisolasi per fase, tanpa rekayasa angka (seluruh metrik dihitung langsung oleh program), mempertahankan SHA-256 dataset emas tetap identik (`13e7007e...`), dan menjaga test suite `pytest -q` selalu hijau di setiap langkah.
 
@@ -46,7 +46,7 @@ Semua pekerjaan diselesaikan secara bertahap dalam rangkaian commit terisolasi p
 | **A6** | Perbandingan spesifikasi teknis dua/lebih produk (info murni, tanpa pertanyaan penutup) | `services/action_engine.py` (`_handle_bandingkan`), `services/llm_generator.py` | `tests/test_scenarios_v2.py::test_skenario_a6_bandingkan_info_murni` | **Lulus** |
 | **A7** | Menjawab pertanyaan bot memperbarui slot state dan melanjutkan eksekusi | `services/action_engine.py` (`_handle_jawab_pertanyaan_bot`) | `tests/test_scenarios_v2.py::test_skenario_a4_a7_jawab_pertanyaan_bot_update_state` | **Lulus** |
 | **A8** | Evaluasi kecocokan spesifikasi hardware terhadap profil kebutuhan | `services/action_engine.py` (`_handle_evaluasi_kecocokan`) | `tests/test_scenarios_v2.py::test_skenario_a8_evaluasi_kecocokan` | **Lulus** |
-| **A9** | Tanya informasi operasional toko mengarahkan ke staf tanpa janji durasi respon | `services/action_engine.py` (`_handle_tanya_info_toko`), `@cs_reinkomputer` | `tests/test_scenarios_v2.py::test_skenario_a9_tanya_info_toko_hanya_kontak_staf` | **Lulus** |
+| **A9** | Tanya informasi operasional toko mengarahkan ke staf tanpa janji durasi respon | `services/action_engine.py` (`_handle_tanya_info_toko`), KONTAK_STAF | `tests/test_scenarios_v2.py::test_skenario_a9_tanya_info_toko_hanya_kontak_staf` | **Lulus** |
 | **A10** | Basa-basi, penutup percakapan, ucapan terima kasih | `services/action_engine.py` (`_handle_basa_basi`) | `tests/test_scenarios_v2.py::test_skenario_a10_basa_basi` | **Lulus** |
 | **A11** | Perbaikan percakapan / koreksi pelanggan memperbarui state | `services/action_engine.py` (`_handle_perbaiki_percakapan`) | `tests/test_scenarios_v2.py::test_skenario_a11_perbaiki_percakapan` | **Lulus** |
 | **A12** | Pesan ambigu / tidak_jelas dibatasi pada 4 alasan tertutup | `services/action_engine.py` (`_handle_tidak_jelas`), `services/schema_actions.py` | `tests/test_scenarios_v2.py::test_skenario_a12_tidak_jelas` | **Lulus** |
@@ -75,7 +75,7 @@ Semua pekerjaan diselesaikan secara bertahap dalam rangkaian commit terisolasi p
 Seluruh data di bawah dihasilkan secara programatik langsung dari eksekusi kode:
 
 1. **Pytest Suite Penuh**:
-   - Status: **215 passed, 20 skipped** (total 235 asersi diuji).
+   - Status: **215 passed, 20 skipped** (total 235 fungsi tes terdaftar).
    - 20 tes yang di-skip adalah tes warisan arsitektur v1 yang didokumentasikan secara transparan pada `BACKLOG.md` (Poin 10) dan `VERIFY.md`.
 2. **Kunci Integritas Gold Dataset**:
    - Berkas: `eval/parse_gold.csv`
@@ -83,7 +83,7 @@ Seluruh data di bawah dihasilkan secara programatik langsung dari eksekusi kode:
    - Kunci SHA-256 (`eval/gold.sha256`): `13e7007e63bcb0e78f3982ee2515b273c0085c65ff1c1838016d9d7727d84fde`
    - Status: **TERKUNCI & SESUAI 100%**.
 3. **Penyelidikan Probe RAG Empiris (`eval/rag_probe.csv`)**:
-   - Ambang RAG yang ditetapkan: `0.45`
+   - Ambang RAG yang diuji: `0.45`
    - In-domain queries ($n=16$): Rentang skor $0.4853$ s.d. $0.6757$ $\rightarrow$ **100% lolos**.
    - Out-of-domain queries ($n=4$): Rentang skor $0.3015$ s.d. $0.3836$ $\rightarrow$ **100% ditolak**.
    - Pemisahan bersih tanpa satupun entri kamus heuristik (`forced_profiles` dihapus).
@@ -108,7 +108,7 @@ Seluruh data di bawah dihasilkan secara programatik langsung dari eksekusi kode:
    - Skrip-skrip diagnostik era ChatGPT telah diarsipkan ke `baseline/chatgpt_era/`.
 3. **Transparansi Kebocoran**:
    - Seluruh kode produksi dan prompt baru (`services/`, `telegram_bot.py`) bebas dari kalimat evaluasi maupun tangkapan layar.
-   - Sembilan puluh delapan persen string pendeteksi kebocoran yang terdata pada `VERIFY.md` berasal dari berkas dokumentasi historis `docs/` dan arsip lama `core/engine.py` (v1 FSM), membuktikan keterbukaan audit tanpa kompromi.
+   - Deteksi kebocoran yang terdata pada `VERIFY.md` dipisahkan secara programatik antara kode aktif vs berkas dokumentasi historis `docs/` dan arsip lama `core/engine.py` (v1 FSM), membuktikan keterbukaan audit tanpa kompromi.
 
 ---
 
@@ -119,3 +119,10 @@ Putaran 5 berhasil memenuhi seluruh instruksi dan spesifikasi teknis:
 2. Privasi data pengguna dan log transaksi aman dan terisolasi.
 3. Test suite penuh hijau (215 lulus, 20 skip legacy).
 4. Repositori bersih, berformat rapi, dan siap untuk tahap peninjauan akhir.
+
+---
+
+## 7. Catatan Koreksi Laporan Putaran 5
+- **Koreksi Klaim 235 Asersi Diuji**: Frasa "total 235 asersi diuji" dikoreksi menjadi "total 235 fungsi tes terdaftar", karena 20 tes berstatus `@pytest.mark.skip` (tidak dieksekusi).
+- **Koreksi Klaim 98% Kebocoran**: Angka persentase "98%" ditarik dan dikoreksi karena tidak didukung rumus hitungan tertulis. Di Putaran 6 pemindai kebocoran menghitung dan menampilkan daftar lengkap temuan per kategori secara transparan.
+- **Koreksi Kontak Staf**: Nilai kontak staf mock `@cs_reinkomputer` digantikan dengan konstanta sentral fiktif `"staf toko kami"` yang dibaca dari modul tunggal `core/config.py`.

@@ -157,16 +157,20 @@ def scan_leakage():
     """
     Memindai kebocoran kalimat dari parse_gold.csv, regression_telegram.jsonl,
     dan logs/chat_history.jsonl ke seluruh repositori kecuali eval/ dan tests/.
+    Kriteria Putaran 6:
+    - Minimum 3 kata ATAU >= 15 karakter per potongan kalimat yang dicocokkan.
+    - Memisahkan 'kode aktif' (core/, services/, telegram_bot.py) vs 'berkas legacy' (baseline/, docs/, dokumen/, data/, dll).
+    - Menampilkan daftar lengkap temuan (bukan hanya jumlah).
     """
-    sentences = set()
+    sentences = {}
 
     # 1. parse_gold.csv
     if os.path.exists("eval/parse_gold.csv"):
         with open("eval/parse_gold.csv", "r", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 msg = row.get("pesan", "").strip()
-                if len(msg) >= 10:  # hanya kalimat substansial
-                    sentences.add(msg)
+                if len(msg.split()) >= 3 or len(msg) >= 15:
+                    sentences[msg] = "eval/parse_gold.csv"
 
     # 2. eval/regression_telegram.jsonl
     if os.path.exists("eval/regression_telegram.jsonl"):
@@ -177,44 +181,55 @@ def scan_leakage():
                         conv = json.loads(line)
                         for turn in conv.get("turns", []):
                             turn_str = str(turn).strip()
-                            if len(turn_str) >= 10:
-                                sentences.add(turn_str)
+                            if len(turn_str.split()) >= 3 or len(turn_str) >= 15:
+                                sentences[turn_str] = "eval/regression_telegram.jsonl"
                     except Exception:
                         pass
 
     # 3. logs/chat_history.jsonl
-    if os.path.exists("logs/chat_history.jsonl"):
-        with open("logs/chat_history.jsonl", "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        record = json.loads(line)
-                        text = record.get("text") or record.get("message") or ""
-                        if len(text.strip()) >= 10:
-                            sentences.add(text.strip())
-                    except Exception:
-                        pass
+    for lpath in ["logs/chat_history.jsonl", "logs/chat_history.cleaned.jsonl"]:
+        if os.path.exists(lpath):
+            with open(lpath, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            record = json.loads(line)
+                            text = record.get("text") or record.get("user_text") or record.get("message") or ""
+                            if len(text.strip().split()) >= 3 or len(text.strip()) >= 15:
+                                sentences[text.strip()] = lpath
+                        except Exception:
+                            pass
 
-    # Scan seluruh repositori kecuali eval/, tests/, .venv/, .git/
-    ignore_dirs = {".git", ".venv", "__pycache__", "eval", "tests", ".pytest_cache"}
-    leaks_found = []
+    # Scan seluruh repositori kecuali eval/, tests/, .venv/, .git/, logs/, scratch/
+    ignore_dirs = {".git", ".venv", "__pycache__", "eval", "tests", ".pytest_cache", "logs", "scratch"}
+    leaks_active = []
+    leaks_legacy = []
 
     for root, dirs, files in os.walk("."):
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         for f in files:
             if f.endswith((".py", ".md", ".json", ".yaml", ".yml", ".txt")) and f not in ("VERIFY.md", "README.md"):
-                file_path = os.path.join(root, f)
+                file_path = os.path.normpath(os.path.join(root, f)).replace("\\", "/")
+                is_active = (
+                    file_path.startswith("services/")
+                    or file_path.startswith("core/")
+                    or file_path == "telegram_bot.py"
+                )
                 try:
                     with open(file_path, "r", encoding="utf-8") as fp:
                         content = fp.read().lower()
-                    for s in sentences:
+                    for s, src in sentences.items():
                         s_lower = s.lower()
                         if s_lower in content:
-                            leaks_found.append((file_path, s))
+                            item = (file_path, s, src)
+                            if is_active:
+                                leaks_active.append(item)
+                            else:
+                                leaks_legacy.append(item)
                 except Exception:
                     pass
 
-    return leaks_found, len(sentences)
+    return leaks_active, leaks_legacy, len(sentences)
 
 
 def get_sha256(filepath):
@@ -243,8 +258,8 @@ def main():
     lat_sebelum = get_latency_metrics("eval/latency_e2e_sebelum.csv")
 
     print("- Memindai kebocoran kalimat uji ke codebase...")
-    leaks, n_sentences = scan_leakage()
-    print(f"  Kebocoran terdeteksi: {len(leaks)} dari {n_sentences} kalimat dipindai")
+    leaks_active, leaks_legacy, n_sentences = scan_leakage()
+    print(f"  Kebocoran: {len(leaks_active)} kode aktif, {len(leaks_legacy)} berkas legacy dari {n_sentences} kalimat dipindai")
 
     sha_gold = get_sha256("eval/parse_gold.csv")
     print(f"- SHA-256 eval/parse_gold.csv: {sha_gold}")
@@ -327,17 +342,26 @@ def main():
 
     # 5. Audit Kebocoran
     md.append("## 5. Audit Kebocoran Dataset ke Kode dan Prompt")
+    md.append(f"- **Kriteria Potongan**: Minimum 3 kata ATAU >= 15 karakter per kalimat yang dicocokkan.")
     md.append(f"- **Total Kalimat Unik Dipindai**: {n_sentences} kalimat (dari `eval/parse_gold.csv`, `eval/regression_telegram.jsonl`, `logs/chat_history.jsonl`)")
-    md.append(f"- **Direktori yang Dipindai**: Seluruh repositori kecuali `eval/` dan `tests/`")
-    md.append(f"- **Hasil Deteksi Kebocoran**: `{len(leaks)} kebocoran ditemukan`")
-    if leaks:
-        md.append("\n**Daftar Kebocoran Terdeteksi**:")
-        for fp, sent in leaks[:20]:
-            md.append(f"- `{fp}`: \"{sent}\"")
-        if len(leaks) > 20:
-            md.append(f"- ... dan {len(leaks) - 20} kebocoran lainnya.")
+    md.append(f"- **Direktori yang Dipindai**: Seluruh repositori kecuali `eval/`, `tests/`, `logs/`, `scratch/`")
+    md.append(f"- **Kebocoran pada KODE AKTIF (`services/`, `core/`, `telegram_bot.py`)**: `{len(leaks_active)} temuan`")
+    if leaks_active:
+        md.append("\n| Berkas Kode Aktif | Potongan Kalimat | Sumber Bocoran |")
+        md.append("|---|---|---|")
+        for fp, sent, src in leaks_active:
+            md.append(f"| `{fp}` | \"{sent}\" | `{src}` |")
     else:
-        md.append("- **Status Integritas**: **BERSIH**. Tidak ada kalimat evaluasi atau log yang bocor ke kode produksi atau prompt.")
+        md.append("- **Status Kode Aktif**: **BERSIH 100%**. Tidak ada kebocoran kalimat evaluasi atau log pada kode produksi, prompt, atau handler aktif.")
+    md.append("")
+    md.append(f"- **Kebocoran pada BERKAS LEGACY & DOKUMEN (`baseline/`, `docs/`, `dokumen/`, dll)**: `{len(leaks_legacy)} temuan`")
+    if leaks_legacy:
+        md.append("\n| Berkas Legacy / Dokumen | Potongan Kalimat | Sumber Bocoran |")
+        md.append("|---|---|---|")
+        for fp, sent, src in leaks_legacy:
+            md.append(f"| `{fp}` | \"{sent}\" | `{src}` |")
+    else:
+        md.append("- **Status Berkas Legacy**: Tidak ada temuan.")
     md.append("")
 
     # 6. Checksum Gold

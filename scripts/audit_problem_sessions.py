@@ -20,9 +20,9 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-CHAT_HISTORY_FILE = "logs/chat_history.jsonl"
-FEEDBACK_FILE = "logs/feedback.jsonl"
-OUTPUT_REPORT_FILE = "docs/problem_sessions_report.json"
+CHAT_HISTORY_FILE = os.getenv("CHAT_HISTORY_FILE", "logs/chat_history.jsonl")
+FEEDBACK_FILE = os.getenv("FEEDBACK_FILE", "logs/feedback.jsonl")
+OUTPUT_REPORT_FILE = os.getenv("OUTPUT_REPORT_FILE", "docs/problem_sessions_report.json")
 
 OBJECTION_PATTERN = re.compile(r"\b(kok|bukan|kenapa|loh|lah|salah|ngawur)\b", re.IGNORECASE)
 
@@ -40,10 +40,26 @@ def load_jsonl(filepath: str) -> list[dict]:
                     pass
     return records
 
-def audit_sessions():
+def audit_sessions(
+    chat_file: str | None = None,
+    feedback_file: str | None = None,
+    output_file: str | None = None
+) -> dict:
+    target_chat = chat_file or os.getenv("CHAT_HISTORY_FILE", CHAT_HISTORY_FILE)
+    target_fb = feedback_file or os.getenv("FEEDBACK_FILE", FEEDBACK_FILE)
+    target_out = output_file or os.getenv("OUTPUT_REPORT_FILE", OUTPUT_REPORT_FILE)
+
+    is_test = (
+        os.getenv("CHAT_LOG_TARGET") == "eval"
+        or "PYTEST_CURRENT_TEST" in os.environ
+        or os.getenv("TESTING") == "1"
+    )
+    if is_test and target_out == "docs/problem_sessions_report.json":
+        target_out = os.path.join("logs", "eval", "eval_problem_sessions_report.json")
+
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Memulai Audit Sesi Percakapan...")
-    chat_logs = load_jsonl(CHAT_HISTORY_FILE)
-    feedback_logs = load_jsonl(FEEDBACK_FILE)
+    chat_logs = load_jsonl(target_chat)
+    feedback_logs = load_jsonl(target_fb)
 
     print(f"Total log giliran percakapan: {len(chat_logs)}")
     print(f"Total log feedback pelanggan: {len(feedback_logs)}")
@@ -156,7 +172,8 @@ def audit_sessions():
         "sessions": problem_reports
     }
 
-    with open(OUTPUT_REPORT_FILE, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(target_out) or ".", exist_ok=True)
+    with open(target_out, "w", encoding="utf-8") as f:
         json.dump(report_data, f, indent=2, ensure_ascii=False)
 
     print("\n=== RINGKASAN AUDIT SESI BERMASALAH ===")
@@ -167,7 +184,7 @@ def audit_sessions():
     print(f"  - Daftar Produk Berulang   : {category_counts['repeated_offerings']}")
     print(f"  - ✅ Tanpa Kebutuhan        : {category_counts['invalid_checkmark']}")
     print(f"  - Keberatan Pelanggan      : {category_counts['customer_objection']}")
-    print(f"\nLaporan lengkap tersimpan di: {OUTPUT_REPORT_FILE}\n")
+    print(f"\nLaporan lengkap tersimpan di: {target_out}\n")
     return report_data
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ from services.schema_actions import (
 from services.catalog_search import apply_filters, clean_specs, format_natural_unmet_requirements, parse_budget_from_text
 from services.knowledge_service import get_usage_requirements, get_profile_by_id
 from core.catalog import Catalog
+from core.config import KONTAK_STAF
 
 logger = logging.getLogger(__name__)
 
@@ -225,7 +226,7 @@ class ActionEngine:
                 logger.error(f"Kegagalan Qdrant/embedding saat mengambil profil: {exc}")
                 fakta = {
                     "status": "sistem_error",
-                    "kontak_staf": os.getenv("KONTAK_STAF", "@cs_reinkomputer"),
+                    "kontak_staf": KONTAK_STAF,
                     "pesan": "Sistem basis data pengetahuan sedang mengalami gangguan sementara."
                 }
                 return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
@@ -242,7 +243,7 @@ class ActionEngine:
                 fakta = {
                     "status": "profil_tidak_ditemukan_berulang",
                     "kebutuhan_teks": kebutuhan_teks,
-                    "kontak_staf": os.getenv("KONTAK_STAF", "@cs_reinkomputer"),
+                    "kontak_staf": KONTAK_STAF,
                     "pesan": "Kebutuhan belum terpetakan setelah 2 kali penelusuran. Tawarkan pencarian berbasis kategori/budget atau hubungi staf."
                 }
             else:
@@ -293,7 +294,7 @@ class ActionEngine:
                     "spesifikasi": clean_specs(closest_prod),
                     "kekurangan": unmet
                 },
-                "kontak_staf": os.getenv("KONTAK_STAF", "@cs_reinkomputer"),
+                "kontak_staf": KONTAK_STAF,
                 "pesan": "Saat ini belum ada stok produk yang memenuhi syarat minimum kebutuhan tersebut."
             }
             return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
@@ -765,7 +766,7 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     def _handle_tanya_info_toko(self, args: ActionArguments, state: dict) -> ActionResult:
         topik = args.topik.value if hasattr(args.topik, "value") else str(args.topik)
-        kontak_staf = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
+        kontak_staf = KONTAK_STAF
         fakta = {
             "status": "info_toko",
             "topik": topik,

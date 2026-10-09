@@ -1,4 +1,4 @@
-# BACKLOG DAN CATATAN HUTANG TEKNIS (BOBBY COMPUTER ANTIGRAVITY V2)
+# BACKLOG DAN CATATAN HUTANG TEKNIS (REIN KOMPUTER ANTIGRAVITY V2)
 
 Dokumen ini mencatat seluruh temuan, penjelasan ketidaksesuaian laporan putaran sebelumnya, serta butir-butir teknis yang dijadwalkan untuk diselesaikan secara bertahap pada Fase 3.
 
@@ -6,16 +6,19 @@ Dokumen ini mencatat seluruh temuan, penjelasan ketidaksesuaian laporan putaran 
 
 ## 1. Penjelasan Selisih 160 vs 93 pada Laporan Pertama
 - **Fakta & Rekonsiliasi**: Pada laporan Putaran 1, tercatat klaim 160 tes lulus, sedangkan tabel per-file hanya memuat 93 tes.
-- **Penyebab**: Kesalahan manusia (human typographical error) dalam menyalin dan menjumlahkan ringkasan tes manual dari sub-direktori uji tanpa menyertakan semua berkas test runner.
-- **Resolusi**: Seluruh metrik pengujian kini dihasilkan 100% secara programatik melalui `scripts/verify.py` langsung dari perintah `pytest -q`. Pada commit saat ini, seluruh rangkaian test berjalan dengan **170 passed, 20 skipped** (total 190 tes).
+- **Penyebab**: *Penyebab belum terbukti secara dokumen riwayat*. Angka 160 pada ringkasan maupun angka 93 pada tabel per-file di laporan pertama adalah keliru.
+- **Rekonsiliasi Angka Pengujian (170 / 172 / 215)**:
+  - **170 passed (+ 20 skipped = 190 tes)**: Hasil pengukuran `pytest -q` resmi setelah 20 tes legacy v1 di-skip pada Putaran 4 (sebelum penambahan tes baru di Putaran 5).
+  - **172 passed (+ 20 skipped = 192 tes)**: Hasil pengukuran `pytest -q` baseline Putaran 5 Tahap 0 (penambahan 2 tes isolasi log di `tests/test_chat_logger.py`).
+  - **215 passed (+ 20 skipped = 235 tes)**: Hasil pengukuran `pytest -q` setelah implementasi penuh Putaran 5 (penambahan 43 tes baru: 12 tes deterministik di `tests/test_behavior_table_b1_b13.py`, 22 tes skenario di `tests/test_scenarios_v2.py`, dan 9 tes unit parser/validator/engine/logger).
+- **Resolusi**: Seluruh metrik pengujian kini dihasilkan 100% secara programatik melalui `scripts/verify.py` langsung dari perintah `pytest -q`.
 
 ---
 
 ## 2. Pengurangan `test_session_isolation` dari 4 ke 2
 - **Fakta & Penjelasan**: Jumlah test case dalam `tests/test_session_isolation.py` berubah dari 4 menjadi 2 fungsi uji.
-- **Penyebab**: Perubahan ini bukan merupakan penghilangan uji isolasi, melainkan refaktor struktural. Empat asersi kecil digabungkan menjadi dua fungsi uji komprehensif:
-  1. `test_session_isolation_state_reset`: Memverifikasi pembersihan state secara deterministik saat sesi baru dimulai.
-  2. `test_multi_session_concurrent_isolation` (ditambahkan pada commit `778d583`): Memverifikasi bahwa dua sesi paralel (`user_a` dan `user_b`) dengan preferensi anggaran dan kebutuhan berbeda sama sekali tidak saling mencemari riwayat, produk tertampil, maupun context rekomendasi.
+- **Penyebab**: *Penyebab belum terbukti secara riwayat git log*. Klaim sebelumnya bahwa 4 asersi digabungkan menjadi 2 fungsi tidak didukung bukti diff commit secara jelas.
+- **Resolusi**: Pengujian isolasi sesi multi-turn kini diuji ulang secara ketat dan deterministik di `tests/test_scenarios_v2.py` dan `tests/test_behavior_table_b1_b13.py`.
 
 ---
 
@@ -121,6 +124,6 @@ Setiap batch akan dieksekusi dalam satu commit terisolasi dan wajib mempertahank
 - **Pengujian Unit & Skenario**: 38 uji deterministik baru ditambahkan (`tests/test_behavior_table_b1_b13.py` dan `tests/test_scenarios_v2.py`). Hasil pytest suite penuh: **215 passed, 20 skipped** (100% lulus).
 - **Log dan Privasi**: ID sesi dan pengguna kini dianonimkan menggunakan HMAC-SHA256 dengan kunci rahasia (`LOG_HMAC_KEY`). Berkas log runtime dan database SQLite lokal (`logs/*.jsonl`, `data/*.db`) telah dihapus dari git tracking (`git rm --cached`).
 - **Bibit Katalog**: Salinan katalog 20 produk disimpan di `data/seed/catalog_seed.csv` beserta skrip pembuat database `scripts/build_catalog_db.py`.
-- **Re-branding**: Seluruh sistem, prompt parser, prompt generator, instruksi, dan kontak staf mock (`@cs_reinkomputer`) telah diperbarui dari Bobby Computer ke ReIn Komputer.
+- **Re-branding**: Seluruh sistem, prompt parser, prompt generator, instruksi, dan kontak staf mock (fiktif: "staf toko kami") telah diperbarui dari Bobby Computer ke ReIn Komputer.
 - **Transkrip Replay**: Percakapan nyata diuji ulang melalui pipeline v2 tanpa ada kegagalan darurat, pelanggaran pemeriksa, maupun ketidakcocokan kategori (transkrip tersimpan di `eval/replay_putaran5.md`).
 

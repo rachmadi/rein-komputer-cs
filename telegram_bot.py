@@ -46,13 +46,18 @@ load_dotenv()
 # Integrasi dengan Unified Chat Service
 from services.chat_service import process_chat_message, reset_chat_session
 
-FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
-
+from core.config import KONTAK_STAF
 from core.chat_logger import anonymize_id, log_session_boundary
+
+FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
 
 def record_feedback(session_id: str, user_id: int | str, rating: str, note: str = "") -> None:
     """Simpan feedback pelanggan ke log secara teranonimasi dengan HMAC-SHA256."""
-    os.makedirs("logs", exist_ok=True)
+    target_path = os.getenv("FEEDBACK_FILE", FEEDBACK_LOG_PATH)
+    if os.getenv("CHAT_LOG_TARGET") == "eval" or "PYTEST_CURRENT_TEST" in os.environ or os.getenv("TESTING") == "1":
+        if target_path == "logs/feedback.jsonl":
+            target_path = os.path.join("logs", "eval", "eval_feedback.jsonl")
+    os.makedirs(os.path.dirname(target_path) or ".", exist_ok=True)
     anon_user = anonymize_id(str(user_id), length=12)
     anon_session = anonymize_id(str(session_id), length=12)
     record = {
@@ -62,7 +67,7 @@ def record_feedback(session_id: str, user_id: int | str, rating: str, note: str 
         "rating": rating,
         "note": note
     }
-    with open(FEEDBACK_LOG_PATH, "a", encoding="utf-8") as f:
+    with open(target_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 def get_feedback_keyboard(turn_id: str) -> InlineKeyboardMarkup:
@@ -330,8 +335,8 @@ def main() -> None:
     print("Memulai ReIn Komputer Telegram Bot...")
     engine_mode = os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
     model_name = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
-    rag_threshold = os.getenv("RAG_SCORE_THRESHOLD", "0.45")
-    kontak_staf = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
+    rag_threshold = os.getenv("RAG_SCORE_THRESHOLD", "0.40")
+    kontak_staf = KONTAK_STAF
     print(f"[STARTUP] Engine: {engine_mode} | Model: {model_name} | RAG Ambang: {rag_threshold} | Kontak: {kontak_staf}")
     logger.info("=== KONFIGURASI STARTUP BOT ===")
     logger.info("Engine Mode    : %s", engine_mode)

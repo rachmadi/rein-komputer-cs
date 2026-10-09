@@ -8,7 +8,7 @@ from services.catalog_service import QDRANT_URL, get_embedding
 logger = logging.getLogger(__name__)
 
 KNOWLEDGE_COLLECTION = os.getenv("QDRANT_KNOWLEDGE_COLLECTION", "computer_knowledge")
-RAG_SCORE_THRESHOLD = float(os.getenv("RAG_SCORE_THRESHOLD", "0.45"))
+RAG_SCORE_THRESHOLD = float(os.getenv("RAG_SCORE_THRESHOLD", "0.40"))
 
 _PROFILE_CACHE = {}
 

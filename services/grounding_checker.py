@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
-KONTAK_STAF = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
+from core.config import KONTAK_STAF
 EMERGENCY_FALLBACK_TEXT = (
     f"Sistem kami sedang mengalami kendala teknis sementara. "
     f"Untuk bantuan langsung, silakan hubungi tim kami di {KONTAK_STAF}. "

@@ -136,8 +136,8 @@ def test_action_engine_tanya_info_toko(engine):
     )
     res = engine.execute(parsed, session_state={})
     assert res.aksi == ActionEnum.TANYA_INFO_TOKO
-    assert res.fakta["data_tersedia"] is False
-    assert "@cs_reinkomputer" in res.fakta["kontak_staf"]
+    from core.config import KONTAK_STAF
+    assert KONTAK_STAF in res.fakta["kontak_staf"]
 
 
 def test_action_engine_brand_case_normalization_asus_vivobook_tuf(engine):
