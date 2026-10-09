@@ -97,9 +97,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "Halo, Kak! Selamat datang di *ReIn Komputer Customer Care* 💻🤖\n\n"
         "Saya asisten resmi ReIn Komputer yang siap membantu Kakak mencari laptop, desktop, printer, atau monitor terbaik sesuai kebutuhan & anggaran.\n\n"
         "Silakan langsung ketik apa yang sedang Kakak cari, misalnya:\n"
-        "• _Ada laptop Acer untuk kerja?_\n"
-        "• _Rekomendasi laptop gaming RTX budget 15 jutaan_\n"
-        "• _Cari mini PC atau desktop Lenovo_\n\n"
+        "• _Perlu perangkat komputasi harian portabel merek Acer_\n"
+        "• _Rekomendasi perangkat olah grafis studio budget 15 jutaan_\n"
+        "• _Tersedia unit komputasi meja atau desktop Lenovo_\n\n"
         "Gunakan perintah /reset jika ingin memulai percakapan baru dari awal."
     )
     await update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN)

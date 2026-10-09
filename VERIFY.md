@@ -2,8 +2,18 @@
 *Seluruh data dan metrik dalam dokumen ini dihasilkan secara programatik oleh `scripts/verify.py`.*
 
 ## 1. Status Repositori & Riwayat Commit
-- **Hash Commit Terkini (HEAD)**: `5049f8a`
-- **Riwayat Commit sejak `1d65c32`** (27 commit):
+- **Hash Commit Terkini (HEAD)**: `48d7f23`
+- **Riwayat Commit sejak `1d65c32`** (37 commit):
+  - `48d7f23 chore(hygiene): untrack logs and sqlite databases, create catalog seeder, and archive legacy scripts`
+  - `653e0c1 refactor(branding): rename Bobby Computer to ReIn Komputer and configure mock staff contact`
+  - `ec9b037 feat(pipeline): default to antigravity_v2, log startup config, and singleton pipeline`
+  - `3e0bf9b test(scenarios): A1-A12 & B1-B13: add comprehensive deterministic test suite`
+  - `f384203 feat(checker): B-grounding: reject hardware specs on non-product turns and prevent internal terms leakage`
+  - `1e9ee36 refactor(knowledge): B4: remove forced profiles and evaluate RAG probe behavior`
+  - `2d331d6 feat(prompt): B-prompt: add synthetic few-shots and enforce Rule C response constraints`
+  - `6dd5426 feat(engine): B1-B13: implement behavior table rules and deterministic fallback logic`
+  - `572bb79 fix(logger): B-log: enforce explicit penguji, HMAC env key, test log isolation, and session boundaries`
+  - `967f055 docs(verify): refresh VERIFY.md with replay commit and latest test summary`
   - `5049f8a eval(replay): record 3-run replay transcript and evaluasi_kecocokan raw generator output`
   - `9c04c7f docs(verify): generate VERIFY.md via automated verification script`
   - `67d6467 docs(backlog): record technical debt explanations and Phase 3 migration roadmap`
@@ -33,7 +43,7 @@
   - `6a79c50 fix(parser): enforce state consistency with 1x reparse retry, split jenis enums, and clarify cari_produk`
 
 ## 2. Hasil Eksekusi Pytest Suite Penuh
-- **Baris Ringkasan Verbatim**: `172 passed, 20 skipped, 2 warnings in 146.41s (0:02:26)`
+- **Baris Ringkasan Verbatim**: `215 passed, 20 skipped, 2 warnings in 186.34s (0:03:06)`
 - **Status Exit Code**: `0` (SUKSES / HIJAU)
 - **Daftar Nodeid Tes yang Di-skip** (20 tes):
   - `SKIPPED [1] tests\test_conversational_rubric.py:43: Legacy v1 test: asserts obsolete route 'GREETING' instead of v2 ActionEnum 'sapa'; requires rewrite to v2 action & facts architecture`
@@ -86,30 +96,30 @@
 ## 5. Audit Kebocoran Dataset ke Kode dan Prompt
 - **Total Kalimat Unik Dipindai**: 220 kalimat (dari `eval/parse_gold.csv`, `eval/regression_telegram.jsonl`, `logs/chat_history.jsonl`)
 - **Direktori yang Dipindai**: Seluruh repositori kecuali `eval/` dan `tests/`
-- **Hasil Deteksi Kebocoran**: `343 kebocoran ditemukan`
+- **Hasil Deteksi Kebocoran**: `342 kebocoran ditemukan`
 
 **Daftar Kebocoran Terdeteksi**:
-- `.\telegram_bot.py`: "Untuk kerja"
+- `.\baseline\chatgpt_era\test_full_12_action_oneof.py`: "ada yang lebih murah?"
 - `.\core\acts.py`: "Printer tipe lain"
 - `.\core\engine.py`: "Itu semua untuk kantoran?"
-- `.\core\engine.py`: "buat mama sih"
+- `.\core\engine.py`: "Lebih mahal ya?"
 - `.\core\engine.py`: "Ada yang core i7?"
+- `.\core\engine.py`: "Buat mama sih"
+- `.\core\engine.py`: "buat mama sih"
 - `.\core\engine.py`: "Untuk desain"
 - `.\core\engine.py`: "Untuk kerja"
-- `.\core\engine.py`: "Buat mama sih"
-- `.\core\engine.py`: "Lebih mahal ya?"
 - `.\data\knowledge\panduan_kebutuhan_v2.md`: "Untuk desain"
 - `.\data\knowledge\panduan_kebutuhan_v2.md`: "Untuk kerja"
-- `.\docs\5_real_telegram_conversations.json`: "Yang tanya HP 14 siapa?"
-- `.\docs\5_real_telegram_conversations.json`: "Mau cari laptop"
-- `.\docs\5_real_telegram_conversations.json`: "yang kedua bagus nggak?"
-- `.\docs\5_real_telegram_conversations.json`: "Untuk kerja"
 - `.\docs\5_real_telegram_conversations.json`: "Buat hiburan"
+- `.\docs\5_real_telegram_conversations.json`: "yang kedua bagus nggak?"
+- `.\docs\5_real_telegram_conversations.json`: "Mau cari laptop"
+- `.\docs\5_real_telegram_conversations.json`: "Yang tanya HP 14 siapa?"
 - `.\docs\5_real_telegram_conversations.json`: "Emang spek segitu cukup?"
+- `.\docs\5_real_telegram_conversations.json`: "Untuk kerja"
 - `.\docs\5_real_telegram_conversations.json`: "tokonya ada di mana ya lokasinya?"
-- `.\docs\ablation_study_results.json`: "bisa gosend instan hari ini?"
-- `.\docs\ablation_study_results.json`: "wkwkwk mantap"
-- ... dan 323 kebocoran lainnya.
+- `.\docs\ablation_study_results.json`: "laptop layar 15.6 inch buat kakek"
+- `.\docs\ablation_study_results.json`: "printer epson l3210 ada ga?"
+- ... dan 322 kebocoran lainnya.
 
 ## 6. Kunci Integritas Dataset Gold
 - **Path Berkas**: `eval/parse_gold.csv`

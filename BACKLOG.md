@@ -113,3 +113,14 @@ Saat ini 20 tes legacy v1 ditandai `@pytest.mark.skip` dengan alasan arsitektura
 | **Batch 4** | `tests/test_held_out_conversations.py` | 6 tes | Refaktor asersi percakapan multi-turn held-out end-to-end ke `SessionPipeline` v2. |
 
 Setiap batch akan dieksekusi dalam satu commit terisolasi dan wajib mempertahankan 100% test lulus pada `pytest -q`.
+
+---
+
+## 11. Status Implementasi Putaran 5 (Tabel Perilaku ReIn Komputer)
+- **Implementasi Tabel Perilaku**: Seluruh 13 butir aturan deterministik B1–B13 dan 12 skenario percakapan A1–A12 telah diimplementasikan penuh pada `ActionEngine`, `Validator`, `GroundingChecker`, dan `SessionPipeline`.
+- **Pengujian Unit & Skenario**: 38 uji deterministik baru ditambahkan (`tests/test_behavior_table_b1_b13.py` dan `tests/test_scenarios_v2.py`). Hasil pytest suite penuh: **215 passed, 20 skipped** (100% lulus).
+- **Log dan Privasi**: ID sesi dan pengguna kini dianonimkan menggunakan HMAC-SHA256 dengan kunci rahasia (`LOG_HMAC_KEY`). Berkas log runtime dan database SQLite lokal (`logs/*.jsonl`, `data/*.db`) telah dihapus dari git tracking (`git rm --cached`).
+- **Bibit Katalog**: Salinan katalog 20 produk disimpan di `data/seed/catalog_seed.csv` beserta skrip pembuat database `scripts/build_catalog_db.py`.
+- **Re-branding**: Seluruh sistem, prompt parser, prompt generator, instruksi, dan kontak staf mock (`@cs_reinkomputer`) telah diperbarui dari Bobby Computer ke ReIn Komputer.
+- **Transkrip Replay**: Percakapan nyata diuji ulang melalui pipeline v2 tanpa ada kegagalan darurat, pelanggaran pemeriksa, maupun ketidakcocokan kategori (transkrip tersimpan di `eval/replay_putaran5.md`).
+

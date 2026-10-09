@@ -87,12 +87,15 @@ def evaluate_three_evaluasi_kecocokan_cases(pipeline: SessionPipeline) -> List[D
     return results
 
 
-def run_replay(regression_file: str, runs: int, output_md: str):
+def run_replay(regression_file: str, runs: int, output_md: str, limit_convs: int | None = None):
     print(f"Memuat skenario regresi dari {regression_file}...")
     with open(regression_file, "r", encoding="utf-8") as f:
         conversations = [json.loads(line) for line in f if line.strip()]
 
-    print(f"Ditemukan {len(conversations)} percakapan. Menjalankan {runs} repetisi...")
+    if limit_convs:
+        conversations = conversations[:limit_convs]
+
+    print(f"Ditemukan {len(conversations)} percakapan untuk diuji. Menjalankan {runs} repetisi...")
     pipeline = SessionPipeline()
 
     md_lines = []
@@ -226,8 +229,9 @@ def run_replay(regression_file: str, runs: int, output_md: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", default="eval/regression_telegram.jsonl", help="Path berkas regression jsonl")
-    parser.add_argument("--runs", type=int, default=3, help="Jumlah repetisi pengujian")
-    parser.add_argument("--output", default="eval/replay_transcript.md", help="Path berkas output markdown")
+    parser.add_argument("--runs", type=int, default=1, help="Jumlah repetisi pengujian")
+    parser.add_argument("--output", default="eval/replay_putaran5.md", help="Path berkas output markdown")
+    parser.add_argument("--limit-convs", type=int, default=3, help="Jumlah percakapan yang diuji")
     args = parser.parse_args()
 
-    run_replay(args.file, args.runs, args.output)
+    run_replay(args.file, args.runs, args.output, limit_convs=args.limit_convs)
