@@ -110,6 +110,8 @@ class SessionPipeline:
                 state["produk_tampil"] = []
                 state["produk_terakhir_dibahas"] = None
                 state["history_produk_tampil"] = []
+                state["kriteria_pelanggan"] = {"kategori": new_kat_str}
+                state["batas_bot"] = {}
 
         # Deteksi kategori jika belum terisi di argumen maupun state
         if not parsed.argumen.kategori and not state.get("kategori"):
@@ -139,6 +141,26 @@ class SessionPipeline:
             if b_text:
                 parsed.argumen.max_harga = b_text
                 state["budget"] = b_text
+
+        # Update kriteria_pelanggan & batas_bot terpisah di state (F1)
+        if "kriteria_pelanggan" not in state or not isinstance(state["kriteria_pelanggan"], dict):
+            state["kriteria_pelanggan"] = {}
+        if "batas_bot" not in state or not isinstance(state["batas_bot"], dict):
+            state["batas_bot"] = {}
+
+        if parsed.argumen.max_harga is not None:
+            state["kriteria_pelanggan"]["max_harga"] = parse_int_safe(parsed.argumen.max_harga)
+        elif parsed.pembaruan_state.budget is not None:
+            state["kriteria_pelanggan"]["max_harga"] = parsed.pembaruan_state.budget
+
+        if parsed.argumen.merek:
+            state["kriteria_pelanggan"]["merek"] = parsed.argumen.merek
+        if parsed.argumen.kategori:
+            state["kriteria_pelanggan"]["kategori"] = parsed.argumen.kategori
+        if parsed.argumen.kebutuhan_teks:
+            state["kriteria_pelanggan"]["kebutuhan_teks"] = parsed.argumen.kebutuhan_teks
+        if parsed.argumen.ram_gb_min:
+            state["kriteria_pelanggan"]["ram_gb_min"] = parsed.argumen.ram_gb_min
 
         # ---------------------------------------------------------------------
         # 3. MESIN DETERMINISTIK

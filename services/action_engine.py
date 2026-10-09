@@ -479,11 +479,66 @@ class ActionEngine:
         merek_kecuali = args.merek_kecuali
         nama_model = args.nama_model
         gpu = args.gpu
-        min_harga = parse_int_safe(args.min_harga)
-        max_harga = parse_int_safe(args.max_harga or state.get("budget"))
-        ram_gb_min = parse_int_safe(args.ram_gb_min)
-        storage_gb_min = parse_int_safe(args.storage_gb_min)
-        ukuran_layar = parse_float_safe(args.ukuran_layar)
+
+        kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
+        batas_bot = state.get("batas_bot", {}) or {}
+
+        # Prioritaskan budget pelanggan di atas batas bot (F1)
+        cust_max_harga = kriteria_pelanggan.get("max_harga")
+        arg_max_harga = parse_int_safe(args.max_harga)
+        state_budget = parse_int_safe(state.get("budget"))
+
+        if arg_max_harga is not None:
+            max_harga = arg_max_harga
+        elif cust_max_harga is not None:
+            max_harga = cust_max_harga
+        elif state_budget is not None and (not batas_bot.get("max_harga") or state_budget != batas_bot.get("max_harga")):
+            max_harga = state_budget
+        elif batas_bot.get("max_harga") is not None:
+            max_harga = batas_bot.get("max_harga")
+        else:
+            max_harga = None
+
+        min_harga = parse_int_safe(args.min_harga or kriteria_pelanggan.get("min_harga"))
+        ram_gb_min = parse_int_safe(args.ram_gb_min or kriteria_pelanggan.get("ram_gb_min"))
+        storage_gb_min = parse_int_safe(args.storage_gb_min or kriteria_pelanggan.get("storage_gb_min"))
+        ukuran_layar = parse_float_safe(args.ukuran_layar or kriteria_pelanggan.get("ukuran_layar"))
+
+        # F1b: Deteksi kriteria spesifikasi yang tidak memiliki kolom di katalog
+        kriteria_diabaikan = []
+        if args.filter:
+            known_cols = {
+                "kode", "nama", "kategori", "harga", "harga_idr", "cpu", "cpu_tier",
+                "ram", "ram_gb", "storage", "storage_ssd_gb", "gpu", "vram_gb",
+                "display", "screen_inch", "brand", "merek"
+            }
+            if isinstance(args.filter, dict):
+                for k_f, v_f in args.filter.items():
+                    if str(k_f).strip().lower() not in known_cols:
+                        kriteria_diabaikan.append(str(v_f))
+            elif isinstance(args.filter, list):
+                for item_f in args.filter:
+                    kriteria_diabaikan.append(str(item_f))
+            else:
+                kriteria_diabaikan.append(str(args.filter))
+
+        filter_dipakai = {
+            "kategori": kategori,
+        }
+        if max_harga is not None:
+            filter_dipakai["max_harga"] = max_harga
+        if min_harga is not None:
+            filter_dipakai["min_harga"] = min_harga
+        if merek:
+            filter_dipakai["merek"] = merek
+        if merek_kecuali:
+            filter_dipakai["merek_kecuali"] = merek_kecuali
+        if ram_gb_min:
+            filter_dipakai["ram_gb_min"] = ram_gb_min
+        if storage_gb_min:
+            filter_dipakai["storage_gb_min"] = storage_gb_min
+        if gpu:
+            filter_dipakai["gpu"] = gpu
 
         # B7: Anggaran di bawah harga terendah kategori
         if max_harga:
@@ -493,6 +548,7 @@ class ActionEngine:
                 if max_harga < min_cat_price:
                     fakta = {
                         "status": "tidak_ada_dalam_anggaran",
+                        "filter_dipakai": filter_dipakai,
                         "budget_pelanggan": max_harga,
                         "budget_pelanggan_formatted": format_rupiah(max_harga),
                         "harga_termurah_kategori": min_cat_price,
@@ -500,6 +556,8 @@ class ActionEngine:
                         "kategori": kategori or "katalog",
                         "pesan": f"Belum ada produk dalam rentang anggaran {format_rupiah(max_harga)}. Opsi termurah adalah {format_rupiah(min_cat_price)}."
                     }
+                    if kriteria_diabaikan:
+                        fakta["kriteria_diabaikan_data_tak_ada"] = kriteria_diabaikan
                     return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[])
 
         matches = []
@@ -610,6 +668,7 @@ class ActionEngine:
 
             fakta = {
                 "status": "tidak_ditemukan",
+                "filter_dipakai": filter_dipakai,
                 "kriteria": {
                     "kategori": kategori, "merek": merek, "merek_kecuali": merek_kecuali,
                     "gpu": gpu, "max_harga": max_harga, "ram_gb_min": ram_gb_min
@@ -617,17 +676,22 @@ class ActionEngine:
                 "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
                 "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))))
             }
+            if kriteria_diabaikan:
+                fakta["kriteria_diabaikan_data_tak_ada"] = kriteria_diabaikan
         else:
             # B2: Kategori saja atau merek saja -> tandai butuh dipersempit
             is_broad = bool((merek or kategori) and not (nama_model or gpu or ram_gb_min or max_harga))
             fakta = {
                 "status": "sukses",
+                "filter_dipakai": filter_dipakai,
                 "merek_kecuali": merek_kecuali,
                 "total_cocok": len(matches),
                 "total_ditemukan": len(formatted_prods),
                 "produk": formatted_prods,
                 "butuh_persempit": is_broad
             }
+            if kriteria_diabaikan:
+                fakta["kriteria_diabaikan_data_tak_ada"] = kriteria_diabaikan
 
         return ActionResult(
             aksi=ActionEnum.CARI_PRODUK,
@@ -1090,7 +1154,41 @@ class ActionEngine:
             m_clean = str(merek).strip().lower()
             candidates = [p for p in candidates if m_clean == get_product_brand(p) or m_clean in str(p.get("nama", "")).lower()]
 
-        user_max_harga = parse_int_safe(args.max_harga)
+        kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
+        batas_bot = state.get("batas_bot", {}) or {}
+
+        # Prioritaskan batas harga pelanggan di atas batas bot (F1)
+        cust_max_harga = kriteria_pelanggan.get("max_harga")
+        arg_max_harga = parse_int_safe(args.max_harga)
+        state_budget = parse_int_safe(state.get("budget"))
+
+        if arg_max_harga is not None:
+            user_max_harga = arg_max_harga
+        elif cust_max_harga is not None:
+            user_max_harga = cust_max_harga
+        elif state_budget is not None and (not batas_bot.get("max_harga") or state_budget != batas_bot.get("max_harga")):
+            user_max_harga = state_budget
+        elif batas_bot.get("max_harga") is not None:
+            user_max_harga = batas_bot.get("max_harga")
+        else:
+            user_max_harga = None
+
+        merek_kecuali = args.merek_kecuali
+        if jenis == "yang_lain" and not merek_kecuali:
+            curr_brand = get_product_brand(tampil[0]) if tampil else None
+            if curr_brand and not args.merek:
+                merek_kecuali = curr_brand
+
+        filter_dipakai = {
+            "kategori": kategori,
+        }
+        if user_max_harga is not None:
+            filter_dipakai["max_harga"] = user_max_harga
+        if merek:
+            filter_dipakai["merek"] = merek
+        if merek_kecuali:
+            filter_dipakai["merek_kecuali"] = merek_kecuali
+
         batas_dipakai = None
         if jenis == "lebih_murah" or user_max_harga is not None:
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
@@ -1117,6 +1215,7 @@ class ActionEngine:
                 }] if cheapest_p else []
                 fakta = {
                     "status": "tidak_ada_dalam_anggaran",
+                    "filter_dipakai": filter_dipakai,
                     "budget_pelanggan": user_max_harga,
                     "budget_pelanggan_formatted": format_rupiah(user_max_harga),
                     "batas_dipakai": user_max_harga,
@@ -1132,6 +1231,7 @@ class ActionEngine:
                 min_cat_price = min((get_product_price(p) for p in candidates), default=lowest_p)
                 fakta = {
                     "status": "tidak_ada_lebih_murah",
+                    "filter_dipakai": filter_dipakai,
                     "harga_termurah_saat_ini": lowest_p,
                     "harga_termurah_saat_ini_formatted": format_rupiah(lowest_p),
                     "harga_termurah_kategori": min_cat_price,
@@ -1154,6 +1254,7 @@ class ActionEngine:
                 max_cat_price = max((get_product_price(p) for p in candidates), default=highest_p)
                 fakta = {
                     "status": "tidak_ada_lebih_mahal",
+                    "filter_dipakai": filter_dipakai,
                     "harga_termahal_saat_ini": highest_p,
                     "harga_termahal_saat_ini_formatted": format_rupiah(highest_p),
                     "harga_termahal_kategori": max_cat_price,
@@ -1166,17 +1267,27 @@ class ActionEngine:
             batas_dipakai = highest_p
             state["budget"] = get_product_price(matches[-1]) if matches else highest_p
 
-        elif jenis == "yang_lain" or jenis == "filter_tambahan" or args.merek_kecuali or args.filter:
+        elif jenis == "yang_lain" or jenis == "filter_tambahan" or merek_kecuali or args.filter:
             seen_kodes = {p.get("kode") for p in tampil}
             matches = [p for p in candidates if p.get("kode") not in seen_kodes]
+            if user_max_harga is not None:
+                matches = [p for p in matches if get_product_price(p) <= user_max_harga]
             if not matches:
-                matches = list(candidates)
+                matches = [p for p in candidates if user_max_harga is None or get_product_price(p) <= user_max_harga]
+            if merek_kecuali:
+                mk_clean = str(merek_kecuali).strip().lower()
+                matches = [
+                    p for p in matches
+                    if mk_clean != get_product_brand(p)
+                    and mk_clean not in get_product_brand(p)
+                    and mk_clean not in str(p.get("nama", "")).lower()
+                ]
             matches.sort(key=lambda x: get_product_price(x))
         else:
             matches = []
 
-        if args.merek_kecuali:
-            mk_clean = str(args.merek_kecuali).strip().lower()
+        if merek_kecuali and jenis != "yang_lain":
+            mk_clean = str(merek_kecuali).strip().lower()
             matches = [
                 p for p in matches
                 if mk_clean != get_product_brand(p)
@@ -1211,11 +1322,12 @@ class ActionEngine:
 
         fakta = {
             "status": "sukses",
+            "filter_dipakai": filter_dipakai,
             "jenis": jenis,
             "kategori": kategori,
             "kategori_dipakai": kategori,
-            "batas_harga": batas_dipakai,
-            "merek_kecuali": args.merek_kecuali,
+            "batas_harga": batas_dipakai or user_max_harga,
+            "merek_kecuali": merek_kecuali,
             "total_ditemukan": len(formatted),
             "produk": formatted
         }
