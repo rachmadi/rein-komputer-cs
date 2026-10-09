@@ -1,0 +1,81 @@
+{
+  "dataset": "eval/dev_multi_putaran7_koreksi.jsonl",
+  "total_conversations": 12,
+  "conversations_passed": 6,
+  "conversation_accuracy_percent": 50.0,
+  "total_turns": 51,
+  "turns_passed": 42,
+  "turn_accuracy_percent": 82.35,
+  "aksi_correct": 50,
+  "aksi_accuracy_percent": 98.04,
+  "status_correct": 45,
+  "status_accuracy_percent": 88.24,
+  "assertions_passed": 44,
+  "assertion_accuracy_percent": 86.27,
+  "checker_violations": 0,
+  "emergency_fallbacks": 0,
+  "latency_p50_ms": 9815.5,
+  "latency_p95_ms": 17696.8,
+  "conversations": [
+    {
+      "conv_id": "conv-dev7-01",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev7-02",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev7-03",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev7-04",
+      "total_turns": 5,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev7-05",
+      "total_turns": 5,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev7-06",
+      "total_turns": 5,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev7-07",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev7-08",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev7-09",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev7-10",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev7-11",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev7-12",
+      "total_turns": 4,
+      "all_turns_pass": false
+    }
+  ]
+}

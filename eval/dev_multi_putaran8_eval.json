@@ -1,0 +1,81 @@
+{
+  "dataset": "eval/dev_multi_putaran8.jsonl",
+  "total_conversations": 12,
+  "conversations_passed": 4,
+  "conversation_accuracy_percent": 33.33,
+  "total_turns": 49,
+  "turns_passed": 38,
+  "turn_accuracy_percent": 77.55,
+  "aksi_correct": 43,
+  "aksi_accuracy_percent": 87.76,
+  "status_correct": 46,
+  "status_accuracy_percent": 93.88,
+  "assertions_passed": 43,
+  "assertion_accuracy_percent": 87.76,
+  "checker_violations": 0,
+  "emergency_fallbacks": 0,
+  "latency_p50_ms": 10378.8,
+  "latency_p95_ms": 18874.3,
+  "conversations": [
+    {
+      "conv_id": "conv-dev8-01",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-02",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev8-03",
+      "total_turns": 5,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-04",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev8-05",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev8-06",
+      "total_turns": 4,
+      "all_turns_pass": true
+    },
+    {
+      "conv_id": "conv-dev8-07",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-08",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-09",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-10",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-11",
+      "total_turns": 4,
+      "all_turns_pass": false
+    },
+    {
+      "conv_id": "conv-dev8-12",
+      "total_turns": 4,
+      "all_turns_pass": false
+    }
+  ]
+}

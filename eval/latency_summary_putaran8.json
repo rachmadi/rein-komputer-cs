@@ -1,0 +1,16 @@
+{
+  "total_turns": 134,
+  "concurrent_processes": 1,
+  "parser_median_ms": 2159.9,
+  "parser_p95_ms": 4081.8,
+  "parser_max_ms": 4805.6,
+  "engine_median_ms": 0.1,
+  "engine_p95_ms": 4232.3,
+  "engine_max_ms": 4324.1,
+  "generator_median_ms": 4289.1,
+  "generator_p95_ms": 7182.8,
+  "generator_max_ms": 12138.7,
+  "total_median_ms": 6664.3,
+  "total_p95_ms": 14668.0,
+  "total_max_ms": 17521.4
+}
