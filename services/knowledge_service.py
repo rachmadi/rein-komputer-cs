@@ -13,56 +13,11 @@ RAG_SCORE_THRESHOLD = float(os.getenv("RAG_SCORE_THRESHOLD", "0.45"))
 _PROFILE_CACHE = {}
 
 def normalize_query(text: str) -> str:
-    replacements = {
-        r"\blepi\b": "laptop",
-        r"\blptop\b": "laptop",
-        r"\bmureh\b": "murah",
-        r"\bwat\b": "buat",
-        r"\bbt\b": "buat",
-        r"\bmaen\b": "main",
-        r"\bgeiming\b": "gaming",
-        r"\bpideo\b": "video",
-        r"\bngedit\b": "edit",
-        r"\brakitsn\b": "rakitan",
-        r"\bpepes\b": "fps",
-        r"\bepep\b": "free fire",
-        r"\bpc\b": "desktop",
-    }
-    t = text.lower()
-    for k, v in replacements.items():
-        t = re.sub(k, v, t)
-    return t
+    """Normalisasi sederhana teks kueri kebutuhan."""
+    return text.strip().lower()
 
 def get_usage_requirements(kebutuhan: str, limit: int = 2) -> dict[str, Any]:
     try:
-        k = kebutuhan.lower()
-        # =====================================================================
-        # DOKUMENTASI KAMUS SEMENTARA (TEMPORARY HEURISTIC DICTIONARY):
-        # forced_profiles berfungsi sebagai fast-lookup pemetaan kata kunci
-        # kebutuhan deterministik (misal: "game berat" -> P05, "edit video 4k" -> P03,
-        # "kasir" -> P15) untuk memangkas latensi embedding & menjamin akurasi profil
-        # sebelum model perute semantik / zero-shot classifier mencapai 100% generalisasi.
-        # =====================================================================
-        forced_profiles = []
-        if "game berat" in k or "game aaa" in k: forced_profiles.append("P05")
-        if "edit video" in k and "4k" in k: forced_profiles.append("P03")
-        elif "edit video" in k: forced_profiles.append("P02")
-        if "kasir" in k or "pos toko" in k: forced_profiles.append("P15")
-        
-        if forced_profiles:
-            profil_list = []
-            for pid in forced_profiles[:limit]:
-                pdata = get_profile_by_id(pid)
-                if pdata:
-                    profil_list.append({
-                        "profil_id": pid,
-                        "nama": pdata.get("judul"),
-                        "ringkasan": pdata.get("text"),
-                        "tipe": pdata.get("tipe", "profil")
-                    })
-            if profil_list:
-                return {"profil": profil_list, "alasan": None}
-        
         vec = get_embedding(normalize_query(kebutuhan))
         if not vec:
             return {"profil": [], "alasan": "layanan_pengetahuan_error"}
