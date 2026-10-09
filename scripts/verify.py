@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 scripts/verify.py
-Alat Verifikasi Otomatis untuk Laporan Bobby Computer Antigravity v2.
+Alat Verifikasi Otomatis untuk Laporan ReIn Komputer Antigravity v2.
 Semua angka dan teks dihasilkan secara programatik dan disimpan ke VERIFY.md:
 - Hash commit dan git log --oneline sejak commit 1d65c32
 - Ringkasan pytest -q penuh (lulus, gagal, skip) beserta daftar nodeid yang di-skip
@@ -225,7 +225,7 @@ def get_sha256(filepath):
 
 
 def main():
-    print("Memulai verifikasi otomatis sistem Bobby Computer...")
+    print("Memulai verifikasi otomatis sistem ReIn Komputer...")
     commit_hash, log_lines, base_commit_used = get_git_info()
     print(f"- Commit HEAD: {commit_hash} (sejak {base_commit_used})")
 

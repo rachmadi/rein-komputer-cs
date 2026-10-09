@@ -41,7 +41,7 @@ class SessionManager:
                     {
                         "sender": "bot",
                         "role": "assistant",
-                        "text": "Halo, Kak! Selamat datang di Customer Care Bobby Computer. Ada yang bisa saya bantu cari hari ini? 😊",
+                        "text": "Halo, Kak! Selamat datang di Customer Care ReIn Komputer. Ada yang bisa saya bantu cari hari ini? 😊",
                         "time": datetime.now().strftime("%H:%M"),
                         "route": "DIRECT"
                     }

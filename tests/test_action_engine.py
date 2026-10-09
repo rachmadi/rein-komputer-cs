@@ -137,7 +137,7 @@ def test_action_engine_tanya_info_toko(engine):
     res = engine.execute(parsed, session_state={})
     assert res.aksi == ActionEnum.TANYA_INFO_TOKO
     assert res.fakta["data_tersedia"] is False
-    assert "@cs_bobbycomputer" in res.fakta["kontak_staf"]
+    assert "@cs_reinkomputer" in res.fakta["kontak_staf"]
 
 
 def test_action_engine_brand_case_normalization_asus_vivobook_tuf(engine):
@@ -186,7 +186,7 @@ def test_action_engine_bandingkan_produk_luar_katalog(engine):
     assert res.fakta["status"] == "sebagian_tidak_di_katalog"
     assert res.fakta["total_dibandingkan"] == 1
     assert "MacBook Air M1" in res.fakta["produk_luar_katalog"]
-    assert "tidak tersedia di katalog Bobby Computer" in res.fakta["catatan"]
+    assert "tidak tersedia di katalog ReIn Komputer" in res.fakta["catatan"]
 
 
 def test_action_engine_string_budget_handling(engine):

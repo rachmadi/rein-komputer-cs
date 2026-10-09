@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 services/grounding_checker.py
-Pemeriksa Grounding dan Keselamatan Fakta untuk Bobby Computer (Antigravity v2).
+Pemeriksa Grounding dan Keselamatan Fakta untuk ReIn Komputer (Antigravity v2).
 
 Aturan Pemeriksaan:
 1. Nominal harga ("Rp ...") yang disebut dalam teks harus ada di FAKTA atau produk_tampil.

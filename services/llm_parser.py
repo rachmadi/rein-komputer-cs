@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 PARSER_MODEL = os.getenv("PARSER_MODEL", "gemma4:e4b")
 
-SYSTEM_PARSER_PROMPT = """Kamu adalah NLU Parser untuk customer care Bobby Computer di Telegram.
+SYSTEM_PARSER_PROMPT = """Kamu adalah NLU Parser untuk customer care ReIn Komputer di Telegram.
 Tugas: Memahami pesan pelanggan secara akurat dan mengembalikan JSON terstruktur sesuai skema tertutup.
 
 DEFINISI 12 AKSI:

@@ -78,7 +78,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
-logger = logging.getLogger("bobby_telegram_bot")
+logger = logging.getLogger("reinkomputer_telegram_bot")
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -94,8 +94,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     context.user_data["last_mentioned_products"] = []
 
     welcome_text = (
-        "Halo, Kak! Selamat datang di *Bobby Computer Customer Care* 💻🤖\n\n"
-        "Saya asisten resmi Bobby Computer yang siap membantu Kakak mencari laptop, desktop, printer, atau monitor terbaik sesuai kebutuhan & anggaran.\n\n"
+        "Halo, Kak! Selamat datang di *ReIn Komputer Customer Care* 💻🤖\n\n"
+        "Saya asisten resmi ReIn Komputer yang siap membantu Kakak mencari laptop, desktop, printer, atau monitor terbaik sesuai kebutuhan & anggaran.\n\n"
         "Silakan langsung ketik apa yang sedang Kakak cari, misalnya:\n"
         "• _Ada laptop Acer untuk kerja?_\n"
         "• _Rekomendasi laptop gaming RTX budget 15 jutaan_\n"
@@ -113,7 +113,7 @@ async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     context.user_data["sent_photo_codes"] = set()
     context.user_data["last_mentioned_products"] = []
     await update.message.reply_text(
-        "Sesi percakapan Kakak telah direset! Ada yang bisa kami bantu seputar produk Bobby Computer hari ini?",
+        "Sesi percakapan Kakak telah direset! Ada yang bisa kami bantu seputar produk ReIn Komputer hari ini?",
         parse_mode=ParseMode.MARKDOWN
     )
 
@@ -327,7 +327,7 @@ def main() -> None:
         )
         sys.exit(1)
 
-    print("Memulai Bobby Computer Telegram Bot...")
+    print("Memulai ReIn Komputer Telegram Bot...")
     engine_mode = os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
     model_name = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
     rag_threshold = os.getenv("RAG_SCORE_THRESHOLD", "0.45")

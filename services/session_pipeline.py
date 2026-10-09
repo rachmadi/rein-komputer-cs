@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 services/session_pipeline.py
-Orkestrator Sesi Percakapan Antigravity v2 untuk Bobby Computer.
+Orkestrator Sesi Percakapan Antigravity v2 untuk ReIn Komputer.
 
 Menjalankan alur per giliran secara terukur:
 Pesan pelanggan

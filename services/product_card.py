@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 services/product_card.py
-Perakit Kartu Produk Telegram HTML untuk Bobby Computer (Antigravity v2).
+Perakit Kartu Produk Telegram HTML untuk ReIn Komputer (Antigravity v2).
 
 Aturan:
 - Format Telegram HTML aman (dengan html.escape).

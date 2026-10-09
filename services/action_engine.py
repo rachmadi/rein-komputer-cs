@@ -649,10 +649,10 @@ class ActionEngine:
             nama_luar_str = ", ".join(produk_luar)
             if items:
                 status = "sebagian_tidak_di_katalog"
-                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer. Berikut spesifikasi produk di katalog kami untuk perbandingan."
+                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog ReIn Komputer. Berikut spesifikasi produk di katalog kami untuk perbandingan."
             else:
                 status = "tidak_di_katalog"
-                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog Bobby Computer."
+                catatan = f"Produk '{nama_luar_str}' tidak tersedia di katalog ReIn Komputer."
 
         fakta = {
             "status": status,
@@ -765,7 +765,7 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     def _handle_tanya_info_toko(self, args: ActionArguments, state: dict) -> ActionResult:
         topik = args.topik.value if hasattr(args.topik, "value") else str(args.topik)
-        kontak_staf = os.getenv("KONTAK_STAF", "@cs_bobbycomputer")
+        kontak_staf = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
         fakta = {
             "status": "info_toko",
             "topik": topik,
