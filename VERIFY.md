@@ -2,8 +2,14 @@
 *Seluruh data dan metrik dalam dokumen ini dihasilkan secara programatik oleh `scripts/verify.py`.*
 
 ## 1. Status Repositori & Riwayat Commit
-- **Hash Commit Terkini (HEAD)**: `b5477c1`
-- **Riwayat Commit sejak `1d65c32`** (54 commit):
+- **Hash Commit Terkini (HEAD)**: `45dbfa6`
+- **Riwayat Commit sejak `1d65c32`** (60 commit):
+  - `45dbfa6 putaran8-tahap4-eval`
+  - `171aa1c putaran8-tahap3-akar`
+  - `906f8ba putaran8-tahap2-tes-merah`
+  - `e25d064 putaran8-tahap1-label`
+  - `dad9274 putaran7-tahap6-laporan`
+  - `34c32a5 putaran7-tahap5-verify`
   - `b5477c1 putaran7-tahap4-eval`
   - `d168b6f putaran7-tahap3-threshold-rag`
   - `a55399b putaran7-tahap3`
@@ -60,7 +66,7 @@
   - `6a79c50 fix(parser): enforce state consistency with 1x reparse retry, split jenis enums, and clarify cari_produk`
 
 ## 2. Hasil Eksekusi Pytest Suite Penuh
-- **Baris Ringkasan Verbatim**: `238 passed, 20 skipped, 2 warnings in 438.76s (0:07:18)`
+- **Baris Ringkasan Verbatim**: `252 passed, 20 skipped, 5 warnings in 405.56s (0:06:45)`
 - **Status Exit Code**: `0` (SUKSES / HIJAU)
 - **Daftar Nodeid Tes yang Di-skip** (20 tes):
   - `SKIPPED [1] tests\test_conversational_rubric.py:43: Legacy v1 test: asserts obsolete route 'GREETING' instead of v2 ActionEnum 'sapa'; requires rewrite to v2 action & facts architecture`
