@@ -70,9 +70,11 @@ KEBIJAKAN BATAS AKSI (B1, B2, B3):
 - 'tanya_spesifikasi': Menanyakan fakta spesifikasi teknis tunggal atau harga dari produk tertentu (baik disebut nama model, nomor urut 1/2, atau 'unit tersebut').
   * 'rujukan_produk' WAJIB diisi (misal [1] untuk 'unit tersebut' atau 'nomor satu', atau nama parsial produk).
   * Atribut: 'harga', 'ram', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'storage', 'lainnya'.
+  * Bila pelanggan menanyakan gambaran rincian spesifikasi secara umum atau ringkasan teknis tanpa menyebut satu komponen khusus, isi 'atribut' dengan null (BUKAN 'lainnya', BUKAN 'spek_umum').
+  * Gunakan 'lainnya' HANYA jika menanyakan fitur teknis khusus yang tidak ada pada daftar atribut di atas (seperti pena digital stylus, sensor khusus, bahan sasis).
 - Kebutuhan baru di pesan:
   * Jika pelanggan menyebutkan aktivitas atau software komputasi baru (misal: 'editing video 4K', 'animasi blender', 'programming docker', 'render 3D', 'kasir toko'), argumen 'kebutuhan_teks' WAJIB terisi dengan ringkasan aktivitas tersebut!
-- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama/merek parsial (misal ['advan'], ['asus']) dari daftar yang sedang tampil. JANGAN mengeluarkan kode produk internal katalog.
+- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama/merek parsial (misal ['advan'], ['asus']) dari daftar yang ada pada layar. JANGAN mengeluarkan kode produk internal katalog.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
 - DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
 """
@@ -116,15 +118,15 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut unit yang tersedia\", \"kebutuhan_diketahui\": \"rendering 3D Revit\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Workstation Alpha\", \"harga\": 18500000}], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Apakah unit pertama ini sanggup memproses render interior yang berat?\""
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut unit yang tersedia\", \"kebutuhan_diketahui\": \"arsitektur BIM ArchiCAD\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Workstation Alpha\", \"harga\": 18500000}], \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Apakah unit pertama ini sanggup memproses kalkulasi struktur BIM yang kompleks?\""
         )
     },
     {
         "role": "assistant",
         "content": json.dumps({
             "aksi": "evaluasi_kecocokan",
-            "argumen": {"rujukan_produk": [1], "kebutuhan_teks": "rendering 3D Revit"},
+            "argumen": {"rujukan_produk": [1], "kebutuhan_teks": "kalkulasi struktur BIM"},
             "pembaruan_state": {}
         })
     },
@@ -180,8 +182,8 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Pilihan tersedia saat ini\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Model Pro A\", \"harga\": 11000000}, {\"no\": 2, \"nama\": \"Model Pro B\", \"harga\": 13500000}], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Berikan opsi alternatif lain yang harganya lebih terjangkau dari daftar itu\""
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Pilihan tersedia saat ini\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Alpha Pro Max\", \"harga\": 11000000}, {\"no\": 2, \"nama\": \"Delta Work Pro\", \"harga\": 13500000}], \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Berikan opsi alternatif lain yang banderolnya lebih terjangkau dari daftar tersebut\""
         )
     },
     {
@@ -210,58 +212,7 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
     }
 ]
 
-SYNTHETIC_PUTARAN8_EXTRA_FEW_SHOTS = [
-    # 9. Batas: Lanjutan Hasil Opsi Lain / Lebih Murah (lanjutan_hasil)
-    {
-        "role": "user",
-        "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut unit yang tersedia\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Apex Alpha 15\", \"harga\": 14500000}], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Bisa tolong perlihatkan opsi alternatif yang posisinya di bawah model itu?\""
-        )
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "lanjutan_hasil",
-            "argumen": {"jenis": "lebih_murah"},
-            "pembaruan_state": {}
-        })
-    },
-    # 10. Batas: Tanya Spesifikasi Unit Tersebut (tanya_spesifikasi)
-    {
-        "role": "user",
-        "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Pilihan notebook untuk Kakak\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Titan Book 14\", \"harga\": 9200000}], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Berapa harga jual resmi untuk perangkat tersebut?\""
-        )
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "tanya_spesifikasi",
-            "argumen": {"rujukan_produk": [1], "atribut": "harga"},
-            "pembaruan_state": {}
-        })
-    },
-    # 11. Batas: Kebutuhan Baru di Tengah Percakapan (evaluasi_kecocokan / kebutuhan_teks)
-    {
-        "role": "user",
-        "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut rekomendasi untuk kantor\", \"kebutuhan_diketahui\": \"kantoran\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Office Lite 14\", \"harga\": 5300000}], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Kalau perangkat ini hendak saya pakai simulasi fisika fluida komputasi apakah kuat?\""
-        )
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "evaluasi_kecocokan",
-            "argumen": {"rujukan_produk": [1], "kebutuhan_teks": "simulasi fisika fluida komputasi"},
-            "pembaruan_state": {"kebutuhan_teks": "simulasi fisika fluida komputasi"}
-        })
-    }
-]
-
-CURRENT_FEW_SHOTS = SYNTHETIC_8_BOUNDARY_FEW_SHOTS + SYNTHETIC_PUTARAN8_EXTRA_FEW_SHOTS
+CURRENT_FEW_SHOTS = SYNTHETIC_8_BOUNDARY_FEW_SHOTS
 
 
 def build_parser_messages(

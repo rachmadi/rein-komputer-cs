@@ -28,7 +28,7 @@ def test_f1_kriteria_pelanggan_vs_batas_bot_terpisah():
         "kriteria_pelanggan": {"merek": "asus", "max_harga": 10000000},
         "batas_bot": {"max_harga": 8000000},
         "produk_tampil": [
-            {"kode": "KB-L03", "nama": "ASUS Vivobook 14", "kategori": "laptop", "harga": 8499000}
+            {"kategori": "laptop", "harga": 8450000, "kode": "KB-L03", "varian": "standard", "nama": "Vivobook 14 X"}
         ]
     }
     # User berganti meminta opsi merek lain (lanjutan_hasil)
@@ -41,10 +41,10 @@ def test_f1_kriteria_pelanggan_vs_batas_bot_terpisah():
 
 
 def test_f1b_syarat_spesifikasi_dan_kriteria_diabaikan():
-    """F1b: Syarat spesifikasi (mis. DDR5) yang kolomnya tidak ada di katalog dicatat di kriteria_diabaikan_data_tak_ada."""
+    """F1b: Syarat spesifikasi (mis. DDR5) yang kolomnya belum tercakup pada tabel spesifikasi dicatat di kriteria_diabaikan_data_tak_ada."""
     engine = ActionEngine()
     state = {"kategori": "laptop"}
-    args = ActionArguments(kategori="laptop", ram_gb_min=16, filter={"tipe_ram": "ddr5"})
+    args = ActionArguments(kategori="laptop", filter={"tipe_ram": "ddr5"}, ram_gb_min=16)
     res = engine.execute(ParserOutput(aksi=ActionEnum.CARI_PRODUK, argumen=args), session_state=state)
 
     # Fakta wajib memuat kriteria_diabaikan_data_tak_ada jika data tidak memiliki kolom tipe RAM DDR
@@ -58,8 +58,8 @@ def test_f2_rujukan_default_produk_terakhir():
     state = {
         "kategori": "laptop",
         "produk_tampil": [
-            {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000},
-            {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "kategori": "laptop", "harga": 7299000}
+            {"kategori": "laptop", "harga": 5250000, "kode": "KB-L01", "varian": "standard", "nama": "Notebook Alpha 14"},
+            {"kategori": "laptop", "harga": 7350000, "kode": "KB-L02", "varian": "standard", "nama": "Ultrabook Beta 15"}
         ],
         "produk_terakhir_dibahas": "KB-L02"
     }
@@ -86,17 +86,17 @@ def test_f3_spek_umum_vs_atribut_tidak_tersedia():
     state = {
         "kategori": "laptop",
         "produk_tampil": [
-            {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000}
+            {"kategori": "laptop", "harga": 5250000, "kode": "KB-L01", "varian": "standard", "nama": "Notebook Alpha 14"}
         ]
     }
     # Kasus A: Atribut None / kosong -> Permintaan spek umum -> Ringkasan spek
-    args_umum = ActionArguments(produk=["KB-L01"], atribut=None)
+    args_umum = ActionArguments(atribut=None, produk=["KB-L01"])
     res_umum = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args_umum), session_state=state)
     assert res_umum.fakta.get("status") == "sukses"
     assert "spesifikasi_ringkas" in res_umum.fakta or "ringkasan_spek" in res_umum.fakta
 
     # Kasus B: Atribut LAINNYA (atribut tak dikenal) -> Wajib B15 atribut_tidak_tersedia
-    args_asing = ActionArguments(produk=["KB-L01"], atribut=AtributSpesifikasiEnum.LAINNYA)
+    args_asing = ActionArguments(atribut=AtributSpesifikasiEnum.LAINNYA, produk=["KB-L01"])
     res_asing = engine.execute(ParserOutput(aksi=ActionEnum.TANYA_SPESIFIKASI, argumen=args_asing), session_state=state)
     assert res_asing.fakta.get("status") == "atribut_tidak_tersedia", "Atribut lainnya wajib berstatus atribut_tidak_tersedia sesuai B15"
 
@@ -109,13 +109,13 @@ def test_f4_teks_memuat_nilai_fakta_spesifik():
         "status": "sukses",
         "atribut_ditanya": "ram",
         "spesifikasi_produk": [
-            {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "atribut": "ram", "nilai": "16 GB DDR4"}
+            {"kategori": "laptop", "kode": "KB-L02", "varian": "standard", "atribut": "ram", "nilai": "16 GB DDR4", "nama": "Ultrabook Beta 15"}
         ]
     }
-    # Teks generator melupakan nilai 16 GB DDR4 dan hanya memberi rekomendasi umum
-    teks_tanpa_nilai = "Lenovo IdeaPad Slim 3 ini memiliki performa yang handal dan desain ringkas untuk kebutuhan harian."
+    # Teks generator melupakan nilai fakta spesifik dan hanya memberi ulasan umum
+    teks_tanpa_nilai = "Ultrabook Beta 15 ini memiliki rancang bangun kokoh dan efisiensi tinggi untuk mobilitas kantor."
     is_valid, violations = checker.check(teks_tanpa_nilai, fakta)
-    assert not is_valid, "GroundingChecker wajib menolak teks tanya_spesifikasi yang tidak memuat nilai spesifik (16 GB DDR4)"
+    assert not is_valid, "GroundingChecker wajib menolak teks tanya_spesifikasi yang tidak memuat nilai fakta spesifik"
     assert any("nilai" in v.lower() or "spesifikasi" in v.lower() or "ram" in v.lower() for v in violations)
 
 
@@ -125,14 +125,14 @@ def test_f5_fallback_deterministik_bebas_nominal():
     state = {
         "kategori": "laptop",
         "produk_tampil": [
-            {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "kategori": "laptop", "harga": 7299000}
+            {"kategori": "laptop", "harga": 7350000, "kode": "KB-L02", "varian": "standard", "nama": "Ultrabook Beta 15"}
         ]
     }
     fakta = {
         "status": "sukses",
         "atribut_ditanya": "ram",
         "spesifikasi_produk": [
-            {"kode": "KB-L02", "nama": "Lenovo IdeaPad Slim 3", "atribut": "ram", "nilai": "8 GB DDR4"}
+            {"kategori": "laptop", "kode": "KB-L02", "varian": "standard", "atribut": "ram", "nilai": "8 GB DDR4", "nama": "Ultrabook Beta 15"}
         ]
     }
     # Uji pembentukan fallback deterministik saat generator mengalami penolakan
@@ -147,11 +147,11 @@ def test_f6_rujukan_riwayat_produk_pernah_tampil():
     state = {
         "kategori": "laptop",
         "produk_tampil": [
-            {"kode": "KB-L06", "nama": "Acer Nitro V 15", "kategori": "laptop", "harga": 10999000}
+            {"kategori": "laptop", "harga": 11200000, "kode": "KB-L06", "varian": "standard", "nama": "Gaming Station 15"}
         ],
         "history_produk_tampil": [
-            {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000},
-            {"kode": "KB-L06", "nama": "Acer Nitro V 15", "kategori": "laptop", "harga": 10999000}
+            {"kategori": "laptop", "harga": 5250000, "kode": "KB-L01", "varian": "standard", "nama": "Notebook Alpha 14"},
+            {"kategori": "laptop", "harga": 11200000, "kode": "KB-L06", "varian": "standard", "nama": "Gaming Station 15"}
         ]
     }
     # Pelanggan merujuk opsi pertama di turn sebelumnya yang sekarang sudah tergeser dari layar
@@ -186,7 +186,7 @@ def test_live_smoke_f2_rujukan_default_tanpa_nama_produk(kalimat_uji, expected_a
     from services.llm_parser import parse_user_message
     state = {
         "kategori": "laptop",
-        "produk_tampil": [{"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop"}]
+        "produk_tampil": [{"kategori": "laptop", "harga": 5250000, "kode": "KB-L01", "varian": "standard", "nama": "Notebook Alpha 14"}]
     }
     parsed, _ = parse_user_message(kalimat_uji, state=state)
     assert parsed.aksi == ActionEnum.TANYA_SPESIFIKASI
@@ -198,16 +198,16 @@ def test_live_smoke_f2_rujukan_default_tanpa_nama_produk(kalimat_uji, expected_a
     ("Bisa jelaskan gambaran spek perangkat itu?", True),
     ("Tolong jabarkan rincian teknis lengkapnya dong", True),
     ("Bagaimana parameter spesifikasi barang ini?", True),
-    ("Apakah perangkat ini dibekali sensor sidik jari?", False),
-    ("Apakah memiliki lapisan pelindung anti air?", False),
-    ("Apakah casingnya memakai bahan serat karbon?", False),
+    ("Apakah dibekali pena stylus magnetik dalam paketnya?", False),
+    ("Apakah memiliki sertifikasi ketahanan uji jatuh militer?", False),
+    ("Apakah dilengkapi pendingin ruang uap vapor chamber?", False),
 ])
 def test_live_smoke_f3_spek_umum_vs_atribut_asing(kalimat_uji, is_umum):
     """Smoke Test F3: Membedakan permintaan spesifikasi umum (atribut None) vs atribut tak dikenal (atribut lainnya)."""
     from services.llm_parser import parse_user_message
     state = {
         "kategori": "laptop",
-        "produk_tampil": [{"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop"}]
+        "produk_tampil": [{"kategori": "laptop", "harga": 5250000, "kode": "KB-L01", "varian": "standard", "nama": "Notebook Alpha 14"}]
     }
     parsed, _ = parse_user_message(kalimat_uji, state=state)
     assert parsed.aksi == ActionEnum.TANYA_SPESIFIKASI
@@ -215,4 +215,3 @@ def test_live_smoke_f3_spek_umum_vs_atribut_asing(kalimat_uji, is_umum):
         assert parsed.argumen.atribut is None
     else:
         assert parsed.argumen.atribut == AtributSpesifikasiEnum.LAINNYA
-
