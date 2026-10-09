@@ -156,7 +156,7 @@ def resolve_product_references(
 
         # 3. Rujukan ordinal / nomor digit (misal: '1', 'opsi 1', 'opsi 1 sebelumnya')
         matched = False
-        m_digit = re.search(r"(?:produk\s+|unit\s+|opsi\s+|no\.?\s*|nomor\s+|pilihan\s+|#)?\[?(\d+)\]?", ref_clean)
+        m_digit = re.match(r"^(?:produk\s+|unit\s+|opsi\s+|no\.?\s*|nomor\s+|pilihan\s+|#)?\[?(\d+)\]?(?:\s+(?:ini|itu|tadi|sebelumnya))?$", ref_clean)
         if m_digit:
             idx = int(m_digit.group(1)) - 1
             if is_prev and hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
@@ -173,7 +173,7 @@ def resolve_product_references(
                 matched = True
         else:
             for ord_key, idx in ordinal_map.items():
-                if ord_key in ref_clean:
+                if re.search(rf"\b{re.escape(ord_key)}\b", ref_clean):
                     if is_prev and hist and 0 <= idx < len(hist) and hist[idx].get("kode"):
                         resolved.append(hist[idx]["kode"])
                         matched = True
