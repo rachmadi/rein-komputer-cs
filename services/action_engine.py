@@ -579,6 +579,25 @@ class ActionEngine:
             })
 
         if not candidates:
+            # Putaran 13b Butir 2: Jika ada batas budget dan tidak ada produk dalam budget (B7)
+            if budget_max:
+                cat_prods = [p for p in self.catalog.products if not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower()]
+                min_cat_price = min((get_product_price(p) for p in cat_prods), default=budget_max)
+                fakta = {
+                    "status": "tidak_ada_dalam_anggaran",
+                    "filter_dipakai": {"kategori": kategori, "max_harga": budget_max, "merek": merek},
+                    "budget_pelanggan": budget_max,
+                    "budget_pelanggan_formatted": format_rupiah(budget_max),
+                    "batas_dipakai": budget_max,
+                    "harga_termurah_kategori": min_cat_price,
+                    "harga_termurah_kategori_formatted": format_rupiah(min_cat_price),
+                    "kategori": kategori,
+                    "merek": merek,
+                    "belum_dicari": False,
+                    "pesan": f"Belum ada produk dalam rentang anggaran {format_rupiah(budget_max)}, Kak. Pilihan paling terjangkau di katalog kami mulai dari {format_rupiah(min_cat_price)}."
+                }
+                return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
+
             all_brands = set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))
             is_brand_outside = bool(merek and str(merek).strip().lower() not in all_brands)
             if is_brand_outside:
@@ -618,13 +637,33 @@ class ActionEngine:
                 candidates.sort(key=lambda x: (get_product_price(x["product"]), -x["penalty"]))
             else:
                 candidates.sort(key=lambda x: (-x["penalty"], get_product_price(x["product"])))
-            closest = candidates[0]
-            closest_prod = closest["product"]
-            rep = closest["report"]
+            
             from services.catalog_search import format_natural_unmet_list
-            unmet_raw = rep.get("tidak_terpenuhi", []) or [f"{r} tidak terpenuhi" for r in rep.get("tidak_diketahui", [])] or [str(closest.get("failure_reason") or "spesifikasi belum memenuhi")]
-            unmet = format_natural_unmet_list(unmet_raw)
-            alasan_terdekat = f"Belum memenuhi: {', '.join(unmet)}" if unmet else "Belum memenuhi spesifikasi minimum"
+            formatted_closest = []
+            for item in candidates[:3]:
+                cp = item["product"]
+                c_rep = item["report"]
+                c_price = get_product_price(cp)
+                c_unmet_raw = c_rep.get("tidak_terpenuhi", [])
+                c_unmet = format_natural_unmet_list(c_unmet_raw)
+                c_alasan = f"Belum memenuhi: {', '.join(c_unmet)}" if c_unmet else "Belum memenuhi sebagian spesifikasi"
+                formatted_closest.append({
+                    "kode": cp.get("kode"),
+                    "nama": cp.get("nama"),
+                    "kategori": cp.get("kategori"),
+                    "harga": c_price,
+                    "harga_formatted": format_rupiah(c_price),
+                    "spesifikasi": clean_specs(cp),
+                    "lembar_spesifikasi": build_lembar_spesifikasi(cp),
+                    "catatan_minimum": {
+                        "memenuhi": False,
+                        "alasan": c_alasan
+                    },
+                    "image_url": cp.get("image_url"),
+                    "kekurangan": c_unmet
+                })
+
+            closest_prod = formatted_closest[0]
             fakta = {
                 "status": "belum_ada_yang_memenuhi",
                 "profil": {
@@ -632,26 +671,16 @@ class ActionEngine:
                     "judul": prof_data.get("judul"),
                     "minimum_spek": prof_data.get("minimum_spek")
                 },
-                "produk_terdekat": {
-                    "kode": closest_prod.get("kode"),
-                    "nama": closest_prod.get("nama"),
-                    "harga": get_product_price(closest_prod),
-                    "harga_formatted": format_rupiah(get_product_price(closest_prod)),
-                    "spesifikasi": clean_specs(closest_prod),
-                    "lembar_spesifikasi": build_lembar_spesifikasi(closest_prod),
-                    "catatan_minimum": {
-                        "memenuhi": False,
-                        "alasan": alasan_terdekat
-                    },
-                    "kekurangan": unmet
-                },
+                "produk_terdekat": closest_prod,
+                "produk": formatted_closest,
+                "total_ditemukan": len(formatted_closest),
                 "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
                 "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
                 "belum_dicari": False,
                 "kontak_staf": KONTAK_STAF,
-                "pesan": "Saat ini belum ada stok produk yang memenuhi syarat minimum kebutuhan tersebut."
+                "pesan": "Saat ini belum ada produk dalam budget tersebut yang memenuhi seluruh spesifikasi minimum. Berikut produk dalam budget yang paling mendekati kebutuhan."
             }
-            return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
+            return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=formatted_closest)
 
         # Urutkan: lolos semua dulu. Jika ada intensi termurah -> urutkan harga menaik lebih dulu!
         if is_termurah:

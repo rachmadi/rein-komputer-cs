@@ -592,6 +592,20 @@ class SessionPipeline:
         if action_res.profil_id:
             state["profil_aktif"] = action_res.profil_id
 
+        # Putaran 13b Butir 2: Budget sebagai filter keras pada produk_tampil & kartu
+        cur_budget = state.get("budget")
+        if cur_budget and isinstance(cur_budget, (int, float)) and cur_budget > 0:
+            if action_res.produk_list:
+                action_res.produk_list = [
+                    p for p in action_res.produk_list
+                    if (p.get("harga") or p.get("harga_idr") or 0) <= cur_budget
+                ]
+            if state.get("produk_tampil"):
+                state["produk_tampil"] = [
+                    p for p in state["produk_tampil"]
+                    if (p.get("harga") or p.get("harga_idr") or 0) <= cur_budget
+                ]
+
         # Simpan produk yang tampil jika aksi menghasilkan produk
         if action_res.produk_list:
             if action_res.fakta.get("jenis_lanjutan") != "termurah_dari_tampil":
@@ -877,6 +891,11 @@ class SessionPipeline:
             p for p in raw_candidates
             if (p.get("kode") in fakta_codes if fakta_codes else True)
         ]
+        if cur_budget and isinstance(cur_budget, (int, float)) and cur_budget > 0:
+            valid_products = [
+                p for p in valid_products
+                if (p.get("harga") or p.get("harga_idr") or 0) <= cur_budget
+            ]
 
         aksi_name = parsed.aksi.value if hasattr(parsed.aksi, "value") else str(parsed.aksi)
         should_show_card = False

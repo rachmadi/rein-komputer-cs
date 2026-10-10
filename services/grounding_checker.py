@@ -106,6 +106,12 @@ class GroundingChecker:
                         if parsed_b:
                             valid_prices.add(parsed_b)
 
+        # Putaran 13b Butir 2: Batasi harga sah di bawah budget (kecuali tidak_ada_dalam_anggaran)
+        user_budget = state.get("budget") if state else None
+        if user_budget and isinstance(user_budget, (int, float)) and user_budget > 0:
+            if fakta.get("status") != "tidak_ada_dalam_anggaran":
+                valid_prices = {p for p in valid_prices if p <= user_budget + 100_000}
+
         return valid_prices
 
     @staticmethod
@@ -280,6 +286,14 @@ class GroundingChecker:
                         break
                 if not is_grounded:
                     violations.append(f"Menyebutkan nominal harga Rp{p:,} yang tidak tercatat di fakta.")
+
+            # Putaran 13b Butir 2: Batas anggaran adalah filter keras
+            user_budget = state.get("budget") if state else None
+            if user_budget and isinstance(user_budget, (int, float)) and user_budget > 0:
+                if fakta.get("status") != "tidak_ada_dalam_anggaran":
+                    for p in mentioned_prices:
+                        if p > user_budget + 100_000:
+                            violations.append(f"Menyebutkan harga di atas batas budget pelanggan (Rp{p:,} > Rp{int(user_budget):,}).")
 
         # 6. Periksa kesahihan angka spesifikasi pada evaluasi_kecocokan
         if fakta.get("evaluasi_produk"):

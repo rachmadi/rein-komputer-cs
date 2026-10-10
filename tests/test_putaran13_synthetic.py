@@ -103,6 +103,9 @@ def test_budget_dan_kebutuhan_menjalankan_rekomendasi(engine):
     assert state["budget"] == 7000000
     assert res.aksi == ActionEnum.MINTA_REKOMENDASI
     assert res.fakta.get("status") in ("sukses", "belum_ada_yang_memenuhi", "tidak_ada_dalam_anggaran")
+    # Pastikan tidak ada produk berharga di atas budget yang lolos ke produk_list
+    for p in res.produk_list:
+        assert p.get("harga", 0) <= 7000000
 
 
 # 5. C: Printer punya lembar spesifikasi dari raw_data

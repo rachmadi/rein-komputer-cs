@@ -86,3 +86,75 @@ def test_butir1_skenario_budget_15jt_ai_lokal_bebas_pola():
 
     for pat in LEAK_PATTERNS:
         assert pat not in teks_balasan, f"Pola internal '{pat}' bocor ke pelanggan: {teks_balasan}"
+
+
+def test_butir2_action_engine_minta_rekomendasi_budget_15jt():
+    """Butir 2: ActionEngine dengan budget 15 juta harus mengembalikan produk terdekat dalam budget (<= 15 jt)."""
+    engine = ActionEngine()
+    state = {
+        "kategori": "laptop",
+        "budget": 15000000,
+        "kebutuhan_teks": "bikin model bisnis pakai AI lokal"
+    }
+    args = ActionArguments(
+        kategori="laptop",
+        max_harga=15000000,
+        kebutuhan_teks="bikin model bisnis pakai AI lokal"
+    )
+    res = engine._handle_minta_rekomendasi(args, state)
+    assert res.fakta["status"] == "belum_ada_yang_memenuhi"
+    assert len(res.produk_list) > 0, "Harus mengembalikan produk terdekat dalam budget"
+    for p in res.produk_list:
+        assert p.get("harga") <= 15000000, f"Produk {p.get('nama')} melebihi batas budget: {p.get('harga')}"
+        assert p["catatan_minimum"]["memenuhi"] is False, "Harus mencatat jujur bahwa spesifikasi belum memenuhi"
+
+
+def test_butir2_session_pipeline_budget_15jt_tidak_menampilkan_di_atas_15jt():
+    """Butir 2: Begitu pelanggan menyebut budget 15 juta, tidak ada produk > 15 juta di produk_tampil, kartu, maupun balasan."""
+    pipe = SessionPipeline()
+    # State awal memuat produk mahal (> 15 juta) dari giliran sebelumnya
+    state = {
+        "kategori": "laptop",
+        "kebutuhan_teks": "bikin model bisnis pakai AI lokal",
+        "produk_tampil": [
+            {"kode": "KB-L09", "nama": "ASUS TUF Gaming A15", "harga": 16999000, "kategori": "laptop"},
+            {"kode": "KB-L10", "nama": "Lenovo Legion Pro 5 16", "harga": 23999000, "kategori": "laptop"}
+        ]
+    }
+    res, state_after = pipe.process_turn("Tapi dananya cuma maksimal 15 juta", state)
+
+    # 1. Pastikan produk_tampil setelah giliran ini tidak memuat produk di atas 15 juta
+    prods_tampil = state_after.get("produk_tampil", [])
+    for p in prods_tampil:
+        p_price = p.get("harga") if isinstance(p, dict) else 0
+        assert p_price <= 15000000, f"Produk {p.get('nama')} dengan harga {p_price} ada di produk_tampil"
+
+    # 2. Pastikan kartu_isi tidak memuat produk di atas 15 juta
+    if res.kartu_isi:
+        for card_item in res.kartu_isi:
+            c_price = card_item.get("harga") or 0
+            assert c_price <= 15000000, f"Kartu memuat produk {card_item.get('nama')} dengan harga {c_price}"
+
+    # 3. Pastikan balasan tidak menyebut nominal harga di atas 15 juta sebagai pilihan
+    prices_in_reply = GroundingChecker.extract_prices_from_text(res.teks_jawaban)
+    for pr in prices_in_reply:
+        assert pr <= 15000000, f"Balasan menyebut harga Rp{pr:,} yang di atas budget 15 juta: {res.teks_jawaban}"
+
+
+def test_butir2_budget_rendah_tidak_ada_dalam_anggaran():
+    """Butir 2: Jika budget benar-benar tidak ada yang memenuhi di katalog, kembalikan tidak_ada_dalam_anggaran."""
+    engine = ActionEngine()
+    state = {
+        "kategori": "laptop",
+        "budget": 2000000,
+        "kebutuhan_teks": "bikin model bisnis pakai AI lokal"
+    }
+    args = ActionArguments(
+        kategori="laptop",
+        max_harga=2000000,
+        kebutuhan_teks="bikin model bisnis pakai AI lokal"
+    )
+    res = engine._handle_minta_rekomendasi(args, state)
+    assert res.fakta["status"] == "tidak_ada_dalam_anggaran"
+    assert len(res.produk_list) == 0
+    assert res.fakta["harga_termurah_kategori"] > 2000000

@@ -36,6 +36,7 @@ Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
 7. Format jawaban mengalir alami, wajar (maksimal sekitar 600 karakter), tanpa daftar butir berpoin.
 8. Jaring pengaman: jika FAKTA terasa tidak nyambung dengan pesan pelanggan, utamakan memahami maksud pesan pelanggan, jangan mengarang fakta, dan ajukan klarifikasi secara sopan.
 9. Gaya & Variasi: Maaf paling banyak sekali per beberapa giliran, lalu langsung bertindak; jika 'sudah_minta_maaf' bernilai true, jangan minta maaf lagi; jangan mengulang pembuka yang sama dengan daftar 'pembuka_terakhir'.
+10. Batas budget pelanggan adalah FILTER KERAS: DILARANG menawarkan, menyebut, atau merekomendasikan produk dengan harga di atas budget pelanggan sebagai pilihan. Jika tidak ada yang memenuhi seluruh syarat minimum, tampilkan produk di dalam budget yang paling mendekati dengan catatan jujur kekurangannya. Jika tidak ada produk sama sekali di dalam budget, katakan jujur dan tanyakan apakah pelanggan bersedia menaikkan budget — jangan menawarkan produk di luar budget tanpa diminta.
 
 Contoh respons sintetis saat pelanggan kecewa:
 - Contoh 1: Pelanggan: "Lama sekali responnya, butuh laptop kerja segera!" | FAKTA: {"status": "sukses", "produk_list": [{"nama": "Acro 14", "harga": 7000000, "ram": "16 GB"}]}
@@ -80,6 +81,19 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         return f"Belum ada produk dalam rentang anggaran tersebut, Kak. Pilihan paling terjangkau di katalog kami saat ini mulai dari {min_p}."
 
     if status == "belum_ada_yang_memenuhi":
+        prods = fakta.get("produk", [])
+        if prods and isinstance(prods, list):
+            top_p = prods[0]
+            nama = top_p.get("nama", "perangkat terdekat")
+            raw_kekurangan = top_p.get("kekurangan", [])
+            from services.catalog_search import format_natural_unmet_list
+            if isinstance(raw_kekurangan, list):
+                natural_k = format_natural_unmet_list([str(x) for x in raw_kekurangan])
+                kek_str = ", ".join(natural_k) if natural_k else "spesifikasi masih di bawah kebutuhan minimum"
+            else:
+                kek_str = str(raw_kekurangan)
+            return f"Saat ini belum ada produk dalam budget tersebut yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Pilihan dalam budget yang paling mendekati adalah {nama} ({kek_str})."
+
         p_close = fakta.get("produk_terdekat", {})
         nama = p_close.get("nama", "perangkat terdekat")
         raw_kekurangan = p_close.get("kekurangan", [])
@@ -199,6 +213,12 @@ def build_generator_messages(
 
     # Format produk_tampil (nama, harga; tanpa kode internal)
     raw_prods = state.get("produk_tampil", []) or fakta.get("produk", [])
+    user_budget = state.get("budget")
+    if user_budget and isinstance(user_budget, (int, float)) and user_budget > 0:
+        raw_prods = [
+            p for p in raw_prods
+            if (p.get("harga") or p.get("harga_idr") or 0) <= user_budget
+        ]
     prods_clean = []
     if isinstance(raw_prods, list):
         for idx, p in enumerate(raw_prods[:5]):
