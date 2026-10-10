@@ -133,10 +133,16 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
                 engine_mode TEXT DEFAULT 'antigravity_v2',
                 jalur TEXT DEFAULT 'model',
                 aksi_parser TEXT,
-                jenis TEXT
+                jenis TEXT,
+                state_ringkas TEXT,
+                produk_tampil TEXT,
+                parser_raw TEXT,
+                kartu_ditampilkan INTEGER,
+                keluhan_beruntun INTEGER,
+                tanya_beruntun INTEGER
             )
         """)
-        # Migrasi kolom jika tabel lama belum memiliki kolom penguji / engine_mode / jalur / aksi_parser / jenis
+        # Migrasi kolom jika tabel lama belum memiliki kolom baru
         cur.execute("PRAGMA table_info(chat_logs)")
         existing_cols = {col[1] for col in cur.fetchall()}
         if "penguji" not in existing_cols:
@@ -149,6 +155,18 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN aksi_parser TEXT")
         if "jenis" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN jenis TEXT")
+        if "state_ringkas" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN state_ringkas TEXT")
+        if "produk_tampil" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN produk_tampil TEXT")
+        if "parser_raw" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN parser_raw TEXT")
+        if "kartu_ditampilkan" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN kartu_ditampilkan INTEGER")
+        if "keluhan_beruntun" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN keluhan_beruntun INTEGER")
+        if "tanya_beruntun" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN tanya_beruntun INTEGER")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -176,6 +194,12 @@ def log_turn(
     jalur: str | None = None,
     aksi_parser: str | None = None,
     jenis: str | None = None,
+    state_ringkas: dict[str, Any] | None = None,
+    produk_tampil: list[str] | None = None,
+    parser_raw: Any = None,
+    kartu_ditampilkan: bool | None = None,
+    keluhan_beruntun: int | None = None,
+    tanya_beruntun: int | None = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
@@ -201,6 +225,28 @@ def log_turn(
     constraints = state.get("constraints", {})
     offered_products = state.get("offered_products", [])
 
+    if state_ringkas is None:
+        state_ringkas = {
+            "kategori": state.get("kategori") or state.get("category"),
+            "budget": state.get("budget"),
+            "merek": state.get("merek"),
+            "kebutuhan_teks": state.get("kebutuhan_teks"),
+            "pemakai": state.get("persona") or state.get("pemakai") or state.get("sebutan") or state.get("persona_name"),
+        }
+
+    if produk_tampil is None:
+        raw_tampil = state.get("produk_tampil", [])
+        produk_tampil = [p.get("kode") for p in raw_tampil if isinstance(p, dict) and p.get("kode")]
+
+    if kartu_ditampilkan is None:
+        kartu_ditampilkan = False
+
+    if keluhan_beruntun is None:
+        keluhan_beruntun = int(state.get("keluhan_beruntun", 0) or 0)
+
+    if tanya_beruntun is None:
+        tanya_beruntun = int(state.get("tanya_beruntun", 0) or 0)
+
     # Pastikan session_id mentah tidak pernah disimpan di record
     record = {
         "log_id": log_id,
@@ -215,6 +261,12 @@ def log_turn(
         "jalur": jalur or "model",
         "aksi_parser": aksi_parser,
         "jenis": jenis,
+        "state_ringkas": state_ringkas,
+        "produk_tampil": produk_tampil,
+        "parser_raw": parser_raw,
+        "kartu_ditampilkan": bool(kartu_ditampilkan),
+        "keluhan_beruntun": int(keluhan_beruntun),
+        "tanya_beruntun": int(tanya_beruntun),
         "fsm_stage": fsm_stage,
         "active_category": active_category,
         "persona_name": persona_name,
@@ -249,8 +301,10 @@ def log_turn(
                     log_id, timestamp, session_id, channel, user_text, bot_reply,
                     route, fsm_stage, active_category, persona_name,
                     needs_json, constraints_json, offered_products_json, latency_ms,
-                    penguji, engine_mode, jalur, aksi_parser, jenis
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    penguji, engine_mode, jalur, aksi_parser, jenis,
+                    state_ringkas, produk_tampil, parser_raw, kartu_ditampilkan,
+                    keluhan_beruntun, tanya_beruntun
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
@@ -271,6 +325,12 @@ def log_turn(
                 jalur or "model",
                 aksi_parser,
                 jenis,
+                json.dumps(state_ringkas, ensure_ascii=False) if state_ringkas else None,
+                json.dumps(produk_tampil, ensure_ascii=False) if produk_tampil else None,
+                json.dumps(parser_raw, ensure_ascii=False) if parser_raw else None,
+                1 if kartu_ditampilkan else 0,
+                keluhan_beruntun,
+                tanya_beruntun,
             ))
             conn.commit()
             conn.close()

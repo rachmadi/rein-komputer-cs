@@ -429,6 +429,50 @@ def test_butir14_kebutuhan_paling_murah_sorting():
         assert prices[0] <= prices[1]
 
 
+def test_butir15_log_diagnostik_tambahan(tmp_path):
+    """Butir 15: Penulisan log diagnostik tambahan pada baris chat_history.jsonl."""
+    from core.chat_logger import log_turn
+    import json
+
+    state_ringkas_input = {
+        "kategori": "laptop",
+        "budget": 7000000,
+        "merek": "asus",
+        "kebutuhan_teks": "desain grafis ringan",
+        "pemakai": "kakak"
+    }
+    produk_tampil_input = ["KB-001", "KB-002"]
+    parser_raw_input = {
+        "aksi": "minta_rekomendasi",
+        "argumen": {"kategori": "laptop"},
+        "pembaruan_state": {}
+    }
+
+    rec = log_turn(
+        session_id="tg_test_session_diag",
+        user_text="tes pesan diagnostik",
+        bot_reply="jawaban bot diagnostik",
+        route="minta_rekomendasi",
+        state_ringkas=state_ringkas_input,
+        produk_tampil=produk_tampil_input,
+        parser_raw=parser_raw_input,
+        kartu_ditampilkan=True,
+        keluhan_beruntun=1,
+        tanya_beruntun=2
+    )
+
+    assert rec["state_ringkas"] == state_ringkas_input
+    assert rec["produk_tampil"] == ["KB-001", "KB-002"]
+    assert rec["parser_raw"] == parser_raw_input
+    assert rec["kartu_ditampilkan"] is True
+    assert rec["keluhan_beruntun"] == 1
+    assert rec["tanya_beruntun"] == 2
+    # Anonimisasi HMAC terjaga
+    assert "tg_test_session_diag" not in rec["session_id"]
+    assert len(rec["session_id"]) == 12
+
+
+
 
 
 

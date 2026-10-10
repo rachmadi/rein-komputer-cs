@@ -481,6 +481,7 @@ def parse_user_message(
         "schema_valid": is_schema_valid,
         "retried": retried,
         "raw_content": raw_content,
+        "parser_raw": raw_json,
         "error": error_msg,
         "prompt_eval_count": p_eval_cnt,
         "eval_count": eval_cnt,

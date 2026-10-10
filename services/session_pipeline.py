@@ -65,6 +65,8 @@ class TurnExecutionResult:
     jalur: str = "model"
     aksi_parser: Optional[str] = None
     jenis: Optional[str] = None
+    parser_raw: Optional[Any] = None
+    kartu_ditampilkan: bool = False
 
 
 def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None) -> Optional[Tuple[str, str, str]]:
@@ -165,7 +167,9 @@ class SessionPipeline:
                 latensi_total_ms=round(lat_total, 1),
                 jalur="aturan",
                 aksi_parser=r_aksi,
-                jenis=None
+                jenis=None,
+                parser_raw=None,
+                kartu_ditampilkan=False
             )
             return turn_result, state
 
@@ -580,7 +584,9 @@ class SessionPipeline:
             raw_llm_content=parse_metrics.get("raw_content"),
             jalur="model",
             aksi_parser=parsed.aksi.value,
-            jenis=(parsed.argumen.jenis.value if hasattr(parsed.argumen.jenis, "value") else str(parsed.argumen.jenis)) if getattr(parsed.argumen, "jenis", None) is not None else None
+            jenis=(parsed.argumen.jenis.value if hasattr(parsed.argumen.jenis, "value") else str(parsed.argumen.jenis)) if getattr(parsed.argumen, "jenis", None) is not None else None,
+            parser_raw=parse_metrics.get("parser_raw") or parse_metrics.get("raw_content"),
+            kartu_ditampilkan=bool(kartu_html is not None and len(str(kartu_html).strip()) > 0)
         )
 
         return turn_result, state

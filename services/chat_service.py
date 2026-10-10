@@ -147,6 +147,16 @@ def process_chat_message(
         sess["state"] = new_state_dict
         _session_manager.add_message(session_id, "bot", reply, route=route)
 
+        raw_tampil = new_state_dict.get("produk_tampil", [])
+        produk_tampil_codes = [p.get("kode") for p in raw_tampil if isinstance(p, dict) and p.get("kode")]
+        state_ringkas = {
+            "kategori": new_state_dict.get("kategori"),
+            "budget": new_state_dict.get("budget"),
+            "merek": new_state_dict.get("merek"),
+            "kebutuhan_teks": new_state_dict.get("kebutuhan_teks"),
+            "pemakai": new_state_dict.get("persona") or new_state_dict.get("pemakai") or new_state_dict.get("sebutan")
+        }
+
         try:
             log_turn(
                 session_id=session_id,
@@ -159,6 +169,12 @@ def process_chat_message(
                 jalur=turn_res.jalur,
                 aksi_parser=turn_res.aksi_parser,
                 jenis=turn_res.jenis,
+                state_ringkas=state_ringkas,
+                produk_tampil=produk_tampil_codes,
+                parser_raw=getattr(turn_res, "parser_raw", None),
+                kartu_ditampilkan=getattr(turn_res, "kartu_ditampilkan", False),
+                keluhan_beruntun=int(new_state_dict.get("keluhan_beruntun", 0) or 0),
+                tanya_beruntun=int(new_state_dict.get("tanya_beruntun", 0) or 0),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
