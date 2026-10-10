@@ -27,7 +27,16 @@ def test_feedback_logging_and_anonymization(tmp_path, monkeypatch):
     assert str(test_uid) not in last_record["anon_user_id"]
     assert len(last_record["anon_user_id"]) == 12  # hash terpotong 12 digit
 
-def test_feedback_keyboard_structure():
+def test_feedback_keyboard_structure(monkeypatch):
+    # Saat FEEDBACK_BUTTONS mati (default)
+    monkeypatch.delenv("FEEDBACK_BUTTONS", raising=False)
+    assert get_feedback_keyboard("turn_abc") is None
+
+    monkeypatch.setenv("FEEDBACK_BUTTONS", "0")
+    assert get_feedback_keyboard("turn_abc") is None
+
+    # Saat FEEDBACK_BUTTONS diaktifkan
+    monkeypatch.setenv("FEEDBACK_BUTTONS", "1")
     kb = get_feedback_keyboard("turn_abc")
     assert kb is not None
     assert len(kb.inline_keyboard) == 1

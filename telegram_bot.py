@@ -70,8 +70,15 @@ def record_feedback(session_id: str, user_id: int | str, rating: str, note: str 
     with open(target_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-def get_feedback_keyboard(turn_id: str) -> InlineKeyboardMarkup:
-    """Inline keyboard 👍/👎 untuk feedback percakapan."""
+def is_feedback_enabled() -> bool:
+    """Mengecek apakah tombol umpan balik jempol diaktifkan via env FEEDBACK_BUTTONS."""
+    val = os.getenv("FEEDBACK_BUTTONS", "0").strip().lower()
+    return val in ("1", "true", "yes", "on")
+
+def get_feedback_keyboard(turn_id: str, force: bool = False) -> Optional[InlineKeyboardMarkup]:
+    """Inline keyboard 👍/👎 untuk feedback percakapan. Mengembalikan None jika dinonaktifkan."""
+    if not force and not is_feedback_enabled():
+        return None
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("👍", callback_data=f"fb:like:{turn_id}"),
