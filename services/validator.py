@@ -66,6 +66,29 @@ def get_catalog_categories(db_path: str | None = None) -> list[str]:
     return ["laptop", "desktop", "printer", "monitor"]
 
 
+def is_valid_kebutuhan_teks(text: str | None, db_path: str | None = None) -> bool:
+    """
+    Putaran 13 Butir E:
+    kebutuhan_teks tidak boleh hanya berisi kata kategori atau merek yang ada di katalog
+    (bandingkan token dengan nilai katalog dinamis, bukan regex bahasa);
+    jika setelah dibuang kosong -> abaikan pembaruan (return False).
+    """
+    if not text or not str(text).strip():
+        return False
+    raw_tokens = [re.sub(r"^[^\w]+|[^\w]+$", "", t.lower()) for t in str(text).split()]
+    tokens = [t for t in raw_tokens if t]
+    if not tokens:
+        return False
+
+    catalog_cats = set(get_catalog_categories(db_path))
+    catalog_brands = set(get_catalog_brands(db_path))
+    catalog_words = {c.lower() for c in catalog_cats} | {b.lower() for b in catalog_brands}
+
+    remaining_tokens = [t for t in tokens if t not in catalog_words]
+    return len(remaining_tokens) > 0
+
+
+
 def resolve_product_references(
     produk_refs: List[Any] | None,
     produk_tampil: List[Dict[str, Any]] | None,
@@ -491,6 +514,10 @@ def validate_parser_output(
             if val_str not in catalog_brands:
                 logger.warning(f"B1: Nilai slot merek tak dikenal diabaikan: '{args.nilai}'")
                 args.nilai = None
+        elif slot_key in ("kebutuhan", "aktivitas"):
+            if not is_valid_kebutuhan_teks(val_str, db_path):
+                logger.warning(f"E: Nilai slot kebutuhan hanya berisi kategori/merek katalog diabaikan: '{args.nilai}'")
+                args.nilai = None
 
     # 4. Validasi lanjutan_hasil saat tidak ada produk tampil (B9)
     if parsed.aksi == ActionEnum.LANJUTAN_HASIL and not produk_tampil_list:
@@ -503,6 +530,14 @@ def validate_parser_output(
             ),
             False
         )
+
+    # Putaran 13 Butir E: Validasi kebersihan kebutuhan_teks
+    if args.kebutuhan_teks and not is_valid_kebutuhan_teks(args.kebutuhan_teks, db_path):
+        logger.warning(f"E: Argumen kebutuhan_teks '{args.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
+        args.kebutuhan_teks = None
+    if parsed.pembaruan_state.kebutuhan_teks and not is_valid_kebutuhan_teks(parsed.pembaruan_state.kebutuhan_teks, db_path):
+        logger.warning(f"E: Pembaruan state kebutuhan_teks '{parsed.pembaruan_state.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
+        parsed.pembaruan_state.kebutuhan_teks = None
 
     # Sinkronisasi kebutuhan_teks antara pembaruan_state dan argumen
     if parsed.pembaruan_state.kebutuhan_teks and not args.kebutuhan_teks:

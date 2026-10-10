@@ -276,7 +276,7 @@ class SessionPipeline:
             lat_parse = 0.0
 
         # B2: Deteksi kategori yang diminta pada giliran ini & reset state saat kategori berganti
-        from services.validator import get_catalog_categories, get_catalog_brands
+        from services.validator import get_catalog_categories, get_catalog_brands, is_valid_kebutuhan_teks
         catalog_cats = set(get_catalog_categories())
         catalog_brands = set(get_catalog_brands())
 
@@ -347,7 +347,7 @@ class SessionPipeline:
 
                 # Kebutuhan di pesan yang sama
                 m_keb = re.search(r"(?:dipakai|buat|untuk|kebutuhan)\s+([a-zA-Z0-9\s\+\#]{4,40}?)(?:\s+apakah|\s+bisa|\s+kuat|\?|$)", pesan_pelanggan, re.IGNORECASE)
-                if m_keb and len(m_keb.group(1).strip()) >= 4:
+                if m_keb and len(m_keb.group(1).strip()) >= 4 and is_valid_kebutuhan_teks(m_keb.group(1).strip()):
                     state["kebutuhan_teks"] = m_keb.group(1).strip()
                     parsed.argumen.kebutuhan_teks = state["kebutuhan_teks"]
                 else:
@@ -393,7 +393,7 @@ class SessionPipeline:
             m_keb = re.search(r"(?:dipakai|buat|untuk|kebutuhan)\s+([a-zA-Z0-9\s\+\#]{4,40}?)(?:\s+apakah|\s+bisa|\s+kuat|\?|$)", pesan_pelanggan, re.IGNORECASE)
             if m_keb:
                 extracted_keb = m_keb.group(1).strip()
-                if len(extracted_keb) >= 4:
+                if len(extracted_keb) >= 4 and is_valid_kebutuhan_teks(extracted_keb):
                     parsed.argumen.kebutuhan_teks = extracted_keb
                     parsed.pembaruan_state.kebutuhan_teks = extracted_keb
 
@@ -465,7 +465,10 @@ class SessionPipeline:
         if parsed.argumen.kategori:
             state["kriteria_pelanggan"]["kategori"] = parsed.argumen.kategori
         if parsed.argumen.kebutuhan_teks:
-            state["kriteria_pelanggan"]["kebutuhan_teks"] = parsed.argumen.kebutuhan_teks
+            if is_valid_kebutuhan_teks(parsed.argumen.kebutuhan_teks):
+                state["kriteria_pelanggan"]["kebutuhan_teks"] = parsed.argumen.kebutuhan_teks
+            else:
+                parsed.argumen.kebutuhan_teks = None
         if parsed.argumen.ram_gb_min:
             state["kriteria_pelanggan"]["ram_gb_min"] = parsed.argumen.ram_gb_min
 
@@ -500,10 +503,14 @@ class SessionPipeline:
         if parsed.argumen.persona:
             state["persona"] = parsed.argumen.persona
         if parsed.argumen.kebutuhan_teks:
-            state["kebutuhan_teks"] = parsed.argumen.kebutuhan_teks
+            if is_valid_kebutuhan_teks(parsed.argumen.kebutuhan_teks):
+                state["kebutuhan_teks"] = parsed.argumen.kebutuhan_teks
         if parsed.argumen.slot and parsed.argumen.nilai:
             slot_name = parsed.argumen.slot.value if hasattr(parsed.argumen.slot, "value") else str(parsed.argumen.slot)
-            state[slot_name] = parsed.argumen.nilai
+            if slot_name in ("kebutuhan", "aktivitas") and not is_valid_kebutuhan_teks(parsed.argumen.nilai):
+                pass
+            else:
+                state[slot_name] = parsed.argumen.nilai
 
         state_up = parsed.pembaruan_state
         if state_up.persona:
@@ -511,7 +518,8 @@ class SessionPipeline:
         if state_up.sebutan:
             state["sebutan"] = state_up.sebutan
         if state_up.kebutuhan_teks:
-            state["kebutuhan_teks"] = state_up.kebutuhan_teks
+            if is_valid_kebutuhan_teks(state_up.kebutuhan_teks):
+                state["kebutuhan_teks"] = state_up.kebutuhan_teks
         if not is_cabut_budget and state_up.budget:
             state["budget"] = state_up.budget
         if state_up.kategori:

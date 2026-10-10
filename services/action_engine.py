@@ -22,6 +22,7 @@ from services.schema_actions import (
 )
 from services.catalog_search import apply_filters, clean_specs, format_natural_unmet_requirements, parse_budget_from_text
 from services.knowledge_service import get_usage_requirements, get_profile_by_id
+from services.validator import get_catalog_categories, is_valid_kebutuhan_teks
 from core.catalog import Catalog
 from core.config import KONTAK_STAF
 
@@ -1710,7 +1711,8 @@ class ActionEngine:
         # Perbarui slot state yang relevan
         if slot in ("kategori", "category"):
             val_cat = str(slot_val).strip().lower()
-            if val_cat in ("laptop", "desktop", "printer"):
+            catalog_cats = set(get_catalog_categories())
+            if val_cat in catalog_cats:
                 old_kat = state.get("kategori")
                 state["kategori"] = val_cat
                 if old_kat and val_cat != old_kat:
@@ -1731,7 +1733,10 @@ class ActionEngine:
         elif slot in ("persona",):
             state["persona"] = str(slot_val).strip().lower()
         elif slot in ("kebutuhan", "aktivitas"):
-            state["kebutuhan_teks"] = str(slot_val).strip()
+            if is_valid_kebutuhan_teks(slot_val):
+                state["kebutuhan_teks"] = str(slot_val).strip()
+            else:
+                logger.warning(f"E: Kebutuhan '{slot_val}' hanya berisi kategori/merek katalog, diabaikan.")
         elif slot in ("merek", "brand"):
             all_brands = set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))
             val_m = str(slot_val).strip().lower()
@@ -1797,7 +1802,7 @@ class ActionEngine:
         state_up = parsed.pembaruan_state if parsed else None
 
         # Terapkan pembaruan state jika ada
-        catalog_cats = {"laptop", "desktop", "printer"}
+        catalog_cats = set(get_catalog_categories())
         new_kategori = None
         if args.kategori and str(args.kategori).lower() in catalog_cats:
             new_kategori = str(args.kategori).lower()
@@ -1836,7 +1841,10 @@ class ActionEngine:
             if state_up.persona:
                 state["persona"] = state_up.persona
             if state_up.kebutuhan_teks:
-                state["kebutuhan_teks"] = state_up.kebutuhan_teks
+                if is_valid_kebutuhan_teks(state_up.kebutuhan_teks):
+                    state["kebutuhan_teks"] = state_up.kebutuhan_teks
+                else:
+                    logger.warning(f"E: Kebutuhan di pembaruan_state '{state_up.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
         if args.merek:
             state["merek"] = args.merek
         if args.max_harga in (0, -1):
@@ -1848,7 +1856,10 @@ class ActionEngine:
         if args.persona:
             state["persona"] = args.persona
         if args.kebutuhan_teks:
-            state["kebutuhan_teks"] = args.kebutuhan_teks
+            if is_valid_kebutuhan_teks(args.kebutuhan_teks):
+                state["kebutuhan_teks"] = args.kebutuhan_teks
+            else:
+                logger.warning(f"E: Kebutuhan '{args.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
 
         has_criteria = bool(
             args.kategori or args.merek or (args.max_harga is not None) or args.kebutuhan_teks or args.persona or args.gpu or args.ram_gb_min or
