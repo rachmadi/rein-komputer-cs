@@ -200,4 +200,40 @@ def test_butir5_tolak_atribusi_kriteria_tanpa_disebut_pelanggan():
     assert any("Mengatribusikan kriteria" in v for v in violations)
 
 
+# =============================================================================
+# BUTIR 6 — Pencatatan Log
+# =============================================================================
+def test_butir6_log_mencatat_permintaan_asli_argumen_ditolak_konteks_toko_fakta():
+    """Log mencatat permintaan_asli, argumen_ditolak tanpa truncate, konteks_toko, status, dan fakta_lengkap."""
+    from core.chat_logger import log_turn
+    permintaan_asli = {"kategori": "monitor", "merek": "apple"}
+    argumen_ditolak = [
+        {"field": "kategori", "nilai": "monitor", "alasan": "tidak_ada_di_katalog"},
+        {"field": "merek", "nilai": "apple", "alasan": "tidak_ada_di_katalog"}
+    ]
+    konteks_toko = {"kategori_dijual": ["laptop", "desktop", "printer"], "merek_dijual": ["asus", "acer"]}
+    fakta_lengkap = {"status": "tidak_dijual", "belum_dicari": True, "pesan": "Tidak dijual"}
+
+    rec = log_turn(
+        session_id="test_putaran14_session_logging",
+        user_text="ada monitor apple?",
+        bot_reply="Mohon maaf, monitor dan Apple tidak dijual di ReIn Komputer.",
+        status_fakta="tidak_dijual",
+        permintaan_asli=permintaan_asli,
+        argumen_ditolak=argumen_ditolak,
+        konteks_toko=konteks_toko,
+        fakta_lengkap=fakta_lengkap,
+    )
+
+    assert rec["permintaan_asli"] == permintaan_asli
+    assert rec["argumen_ditolak"] == argumen_ditolak
+    assert len(rec["argumen_ditolak"]) == 2
+    assert rec["argumen_ditolak"][0]["nilai"] == "monitor"
+    assert rec["argumen_ditolak"][1]["nilai"] == "apple"
+    assert rec["konteks_toko"] == konteks_toko
+    assert rec["fakta_lengkap"] == fakta_lengkap
+    assert rec["status_hasil"] == "tidak_dijual"
+
+
+
 

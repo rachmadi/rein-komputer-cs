@@ -193,6 +193,14 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN produk_dibahas_sebelumnya TEXT")
         if "catatan_minimum" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN catatan_minimum TEXT")
+        if "permintaan_asli" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN permintaan_asli TEXT")
+        if "argumen_ditolak" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN argumen_ditolak TEXT")
+        if "konteks_toko" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN konteks_toko TEXT")
+        if "fakta_lengkap" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN fakta_lengkap TEXT")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -235,6 +243,10 @@ def log_turn(
     produk_dibahas: Any = None,
     produk_dibahas_sebelumnya: list[dict[str, Any]] | None = None,
     catatan_minimum: Any = None,
+    permintaan_asli: dict[str, Any] | None = None,
+    argumen_ditolak: list[dict[str, Any]] | None = None,
+    konteks_toko: dict[str, Any] | None = None,
+    fakta_lengkap: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
@@ -334,6 +346,11 @@ def log_turn(
         "produk_dibahas": produk_dibahas,
         "produk_dibahas_sebelumnya": produk_dibahas_sebelumnya,
         "catatan_minimum": catatan_minimum,
+        "permintaan_asli": permintaan_asli,
+        "argumen_ditolak": argumen_ditolak,
+        "konteks_toko": konteks_toko,
+        "fakta_lengkap": fakta_lengkap,
+        "status_hasil": status_fakta,
     }
 
     jsonl_path, db_path = get_log_paths(penguji=effective_penguji)
@@ -364,8 +381,9 @@ def log_turn(
                     state_ringkas, produk_tampil, parser_raw, kartu_ditampilkan,
                     keluhan_beruntun, tanya_beruntun,
                     is_emergency_fallback, jumlah_retry, pelanggaran, kartu_isi,
-                    produk_dibahas, produk_dibahas_sebelumnya, catatan_minimum
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    produk_dibahas, produk_dibahas_sebelumnya, catatan_minimum,
+                    permintaan_asli, argumen_ditolak, konteks_toko, fakta_lengkap
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
@@ -401,6 +419,10 @@ def log_turn(
                 json.dumps(produk_dibahas, ensure_ascii=False) if isinstance(produk_dibahas, (list, dict)) else (str(produk_dibahas) if produk_dibahas else None),
                 json.dumps(produk_dibahas_sebelumnya, ensure_ascii=False) if produk_dibahas_sebelumnya else None,
                 json.dumps(catatan_minimum, ensure_ascii=False) if isinstance(catatan_minimum, (list, dict)) else (str(catatan_minimum) if catatan_minimum else None),
+                json.dumps(permintaan_asli, ensure_ascii=False) if permintaan_asli else None,
+                json.dumps(argumen_ditolak, ensure_ascii=False) if argumen_ditolak else None,
+                json.dumps(konteks_toko, ensure_ascii=False) if konteks_toko else None,
+                json.dumps(fakta_lengkap, ensure_ascii=False) if fakta_lengkap else None,
             ))
             conn.commit()
             conn.close()

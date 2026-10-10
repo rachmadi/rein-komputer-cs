@@ -183,6 +183,10 @@ def process_chat_message(
                 produk_dibahas=getattr(turn_res, "produk_dibahas", new_state_dict.get("produk_dibahas")),
                 produk_dibahas_sebelumnya=getattr(turn_res, "produk_dibahas_sebelumnya", new_state_dict.get("produk_dibahas_sebelumnya")),
                 catatan_minimum=getattr(turn_res, "catatan_minimum", None),
+                permintaan_asli=getattr(turn_res, "permintaan_asli", None),
+                argumen_ditolak=getattr(turn_res, "argumen_ditolak", None),
+                konteks_toko=getattr(turn_res, "konteks_toko", None),
+                fakta_lengkap=getattr(turn_res, "fakta_eksekusi", None),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)

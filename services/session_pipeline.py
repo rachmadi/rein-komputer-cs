@@ -76,6 +76,10 @@ class TurnExecutionResult:
     kartu_ditampilkan: bool = False
     status_fakta: Optional[str] = None
     state_setelah: Optional[Dict[str, Any]] = None
+    permintaan_asli: Optional[Dict[str, Any]] = None
+    argumen_ditolak: Optional[List[Dict[str, Any]]] = None
+    konteks_toko: Optional[Dict[str, Any]] = None
+    fakta_lengkap: Optional[Dict[str, Any]] = None
 
 
 def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None) -> Optional[Tuple[str, str, str]]:
@@ -1010,7 +1014,11 @@ class SessionPipeline:
                 "merek": state.get("merek"),
                 "kebutuhan_teks": state.get("kebutuhan_teks"),
                 "budget": state.get("budget"),
-            }
+            },
+            permintaan_asli=kontrak.get("permintaan_asli", {}),
+            argumen_ditolak=kontrak.get("argumen_ditolak", []),
+            konteks_toko={"kategori_dijual": sorted(list(catalog_cats)), "merek_dijual": sorted(list(catalog_brands))},
+            fakta_lengkap=action_res.fakta
         )
 
         return turn_result, state
