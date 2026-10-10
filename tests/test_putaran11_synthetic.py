@@ -143,5 +143,33 @@ def test_butir5_token_prompt_dan_gpu():
     assert est_g_tokens < 4096, f"Estimasi token generator terlalu besar: {est_g_tokens}"
 
 
+def test_butir6_budget_tidak_tertimpa_pada_lanjutan_hasil():
+    """Butir 6: action_engine _handle_lanjutan_hasil tidak menimpa state['budget'] pada lebih_murah."""
+    from services.action_engine import ActionEngine
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, JenisEnum, StateUpdate
+
+    engine = ActionEngine()
+    initial_budget = 15000000
+    state = {
+        "kategori": "laptop",
+        "budget": initial_budget,
+        "produk_tampil": [
+            {"kode": "KB-L03", "nama": "Laptop Menengah", "harga": 12000000}
+        ]
+    }
+
+    parsed = ParserOutput(
+        aksi=ActionEnum.LANJUTAN_HASIL,
+        argumen=ActionArguments(jenis=JenisEnum.LEBIH_MURAH),
+        pembaruan_state=StateUpdate()
+    )
+
+    res = engine.execute(parsed, session_state=state)
+    assert res.aksi == ActionEnum.LANJUTAN_HASIL
+    # Budget pelanggan di state HARUS tetap 15000000, tidak tertimpa harga produk
+    assert state.get("budget") == initial_budget
+
+
+
 
 

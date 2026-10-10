@@ -1299,7 +1299,6 @@ class ActionEngine:
                 }
                 return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
             batas_dipakai = target_max
-            state["budget"] = get_product_price(matches[0])
 
         elif jenis == "lebih_mahal":
             highest_p = max((get_product_price(p) for p in tampil), default=5_000_000)
@@ -1322,7 +1321,6 @@ class ActionEngine:
                 }
                 return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
             batas_dipakai = highest_p
-            state["budget"] = get_product_price(matches[-1]) if matches else highest_p
 
         elif jenis in ("yang_lain", "filter_tambahan") or merek_kecuali or args.filter:
             seen_kodes = {p.get("kode") for p in tampil}
