@@ -119,4 +119,29 @@ def test_butir4_kartu_produk_tanpa_kode_internal():
     assert "KB-L05" not in msg
 
 
+def test_butir5_token_prompt_dan_gpu():
+    """Menguji bahwa prompt parser dan generator tetap berada di bawah batas konteks 4096."""
+    from services.llm_parser import build_parser_messages
+    from services.llm_generator import build_generator_messages
+
+    state = {
+        "persona": "Dokter",
+        "kebutuhan_teks": "olah data pasien",
+        "merek": "lenovo",
+        "budget": 10000000,
+        "produk_tampil": [{"no": 1, "nama": "Laptop Bisnis 14", "harga": 9500000}]
+    }
+    # Perkiraan kasar rasio karakter ke token ~3-4 char per token
+    p_msgs = build_parser_messages("Cari laptop lenovo 10 juta", state=state)
+    total_p_chars = sum(len(m["content"]) for m in p_msgs)
+    est_p_tokens = total_p_chars / 3.0
+    assert est_p_tokens < 4096, f"Estimasi token parser terlalu besar: {est_p_tokens}"
+
+    g_msgs = build_generator_messages("cari_produk", {"status": "sukses"}, state=state, pesan_pelanggan="Cari laptop")
+    total_g_chars = sum(len(m["content"]) for m in g_msgs)
+    est_g_tokens = total_g_chars / 3.0
+    assert est_g_tokens < 4096, f"Estimasi token generator terlalu besar: {est_g_tokens}"
+
+
+
 
