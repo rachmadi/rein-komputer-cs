@@ -128,3 +128,64 @@ def test_klaim_ketiadaan_tanpa_lookup_dicegah():
     is_valid_kosong, viol_kosong = checker.check(teks_klaim_kosong, fakta_belum_dicari)
     assert is_valid_kosong is False
     assert any("belum_dicari" in v for v in viol_kosong)
+
+
+def test_trace_a2_printer_canon_kebutuhan(action_engine, capsys):
+    """Trace A2: Menelusuri jalur jawab_pertanyaan_bot untuk printer Canon dengan kebutuhan cetak dokumen."""
+    from services.action_engine import get_product_brand
+    from services.knowledge_service import get_usage_requirements, get_profile_by_id
+    from services.catalog_search import apply_filters
+
+    state = {
+        "kategori": "printer",
+        "merek": "canon",
+        "kebutuhan_teks": "cetak dokumen hemat tinta"
+    }
+    args = ActionArguments(slot=SlotEnum.KEBUTUHAN, nilai="cetak dokumen hemat tinta")
+
+    # Tahap 1: Ambang RAG
+    reqs = get_usage_requirements("cetak dokumen hemat tinta")
+    pls = reqs.get("profil", [])
+    print(f"\n[TRACE A2] Tahap 1 - Ambang RAG: Ditemukan {len(pls)} profil: {[p.get('profil_id') for p in pls]}")
+
+    # Tahap 2: Filter Kategori
+    kategori = state["kategori"]
+    cands_cat = [p for p in action_engine.catalog.products if p.get("kategori", "").lower() == kategori.lower()]
+    print(f"[TRACE A2] Tahap 2 - Filter Kategori ({kategori}): {len(cands_cat)} kandidat")
+
+    # Tahap 3: Filter Merek
+    merek = state["merek"]
+    cands_merek = [p for p in cands_cat if merek == get_product_brand(p) or merek in str(p.get("nama", "")).lower()]
+    print(f"[TRACE A2] Tahap 3 - Filter Merek ({merek}): {len(cands_merek)} kandidat ({[p.get('nama') for p in cands_merek]})")
+
+    # Tahap 4: Filter Profil (apply_filters)
+    prof_id = pls[0]["profil_id"] if pls else None
+    prof_data = get_profile_by_id(prof_id)
+    filters = prof_data.get("filter", [])
+    print(f"[TRACE A2] Tahap 4 - Profil {prof_id} ({prof_data.get('judul')}) filter: {filters}")
+
+    cands_passed = []
+    gugur = []
+    for p in cands_merek:
+        passed, reason, penalty, report = apply_filters(p, filters)
+        if passed:
+            cands_passed.append(p)
+        else:
+            gugur.append((p.get("nama"), reason, report.get("tidak_terpenuhi")))
+        print(f"  Produk {p.get('nama')}: passed={passed}, alasan={reason}")
+
+    print(f"[TRACE A2] Kandidat lolos apply_filters: {len(cands_passed)}, gugur: {len(gugur)}")
+
+    # Eksekusi riil lewat _handle_jawab_pertanyaan_bot
+    res = action_engine._handle_jawab_pertanyaan_bot(args, state)
+    print(f"[TRACE A2] Status fakta akhir: {res.fakta.get('status')}")
+
+    # Bukti diagnostik:
+    # 1. Kandidat masih ada sampai tahap merek (2 unit)
+    assert len(cands_merek) == 2
+    # 2. Tahap profil/apply_filters menghabiskan seluruh kandidat karena printer tidak punya spek PC (ram/ssd/cpu)
+    assert len(cands_passed) == 0
+    assert len(gugur) == 2
+    # 3. Status akhir adalah 'belum_ada_yang_memenuhi'
+    assert res.fakta.get("status") == "belum_ada_yang_memenuhi"
+
