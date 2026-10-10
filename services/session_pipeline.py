@@ -574,7 +574,45 @@ class SessionPipeline:
         elif has_clear_direction:
             keluhan_beruntun = 0
 
-        # tanya_beruntun: bertambah bila bot menanyakan kebutuhan/arah belum jelas
+        # Putaran 13 Butir F: Pelacakan pertanyaan slot berulang (budget & kebutuhan)
+        tanya_budget_beruntun = int(state.get("tanya_budget_beruntun", 0) or 0)
+        tanya_kebutuhan_beruntun = int(state.get("tanya_kebutuhan_beruntun", 0) or 0)
+
+        # Cek apakah budget atau kebutuhan dijawab pada giliran ini
+        from services.catalog_search import parse_budget_from_text
+        pesan_has_budget = bool(parse_budget_from_text(pesan_pelanggan) is not None or parsed.argumen.max_harga is not None)
+        pesan_has_kebutuhan = bool(parsed.argumen.kebutuhan_teks and len(parsed.argumen.kebutuhan_teks.strip()) >= 4)
+
+        if pesan_has_budget or state.get("budget") is not None or state.get("_cabut_budget"):
+            tanya_budget_beruntun = 0
+        if pesan_has_kebutuhan or (state.get("kebutuhan_teks") and not action_res.fakta.get("status") in ("tanya_kebutuhan", "profil_tidak_ditemukan")):
+            tanya_kebutuhan_beruntun = 0
+
+        prev_asked = state.get("pending_question") or state.get("last_asked_slot")
+
+        # Deteksi apakah giliran ini menanyakan budget
+        is_asking_budget = (
+            (prev_asked == "budget" and not pesan_has_budget)
+            or action_res.fakta.get("status") in ("tidak_ada_dalam_anggaran", "tanya_budget")
+            or (state.get("kebutuhan_teks") and state.get("budget") is None and not state.get("_cabut_budget") and action_res.aksi in (ActionEnum.MINTA_REKOMENDASI, ActionEnum.CARI_PRODUK))
+        )
+        if is_asking_budget and not (pesan_has_budget or state.get("_cabut_budget")):
+            tanya_budget_beruntun += 1
+        else:
+            tanya_budget_beruntun = 0
+
+        # Deteksi apakah giliran ini menanyakan kebutuhan
+        is_asking_kebutuhan = (
+            action_res.fakta.get("status") in ("tanya_kebutuhan", "profil_tidak_ditemukan")
+            or (prev_asked in ("kebutuhan", "aktivitas") and not pesan_has_kebutuhan)
+            or (not state.get("kebutuhan_teks") and action_res.aksi in (ActionEnum.MINTA_REKOMENDASI, ActionEnum.CARI_PRODUK))
+        )
+        if is_asking_kebutuhan and not pesan_has_kebutuhan:
+            tanya_kebutuhan_beruntun += 1
+        else:
+            tanya_kebutuhan_beruntun = 0
+
+        # tanya_beruntun umum
         if has_clear_direction:
             tanya_beruntun = 0
         else:
@@ -588,32 +626,55 @@ class SessionPipeline:
             action_res.fakta["tawarkan_staf"] = True
             action_res.fakta["kontak_staf"] = KONTAK_STAF
 
-        if tanya_beruntun >= 2 and not action_res.produk_list:
-            profiles_raw = []
-            try:
-                from services.knowledge_service import get_all_profiles
-                profiles_raw = get_all_profiles()
-            except Exception:
-                pass
-            pilihan = []
-            for pr in profiles_raw:
-                j = pr.get("judul") or pr.get("nama")
-                if j:
-                    j_clean = re.sub(r"^[A-Z]\d{2}\s*[-–—:]\s*", "", str(j)).strip()
-                    if j_clean and j_clean not in pilihan:
-                        pilihan.append(j_clean)
-                    if len(pilihan) >= 3:
-                        break
-            if not pilihan:
-                pilihan = [
-                    "Kantoran, Belajar, dan Penggunaan Harian",
-                    "Desain Grafis dan Ilustrasi Digital",
-                    "Gaming dan Pemrosesan Grafis Berat"
+        kat_aktif = state.get("kategori")
+        if tanya_budget_beruntun >= 3:
+            if kat_aktif == "printer":
+                action_res.fakta["pilihan_konkret"] = [
+                    "Di bawah Rp2 juta",
+                    "Rp2 juta - Rp4 juta",
+                    "Di atas Rp4 juta"
                 ]
-            action_res.fakta["pilihan_konkret"] = pilihan[:3]
+            else:
+                action_res.fakta["pilihan_konkret"] = [
+                    "Di bawah Rp7 juta",
+                    "Rp7 juta - Rp12 juta",
+                    "Di atas Rp12 juta"
+                ]
+        elif (tanya_kebutuhan_beruntun >= 3) or (tanya_beruntun >= 2 and not action_res.produk_list):
+            if kat_aktif == "printer":
+                action_res.fakta["pilihan_konkret"] = [
+                    "Cetak Dokumen & Tugas Harian",
+                    "Cetak Foto & Stiker Warna",
+                    "Cetak Volume Tinggi & Usaha"
+                ]
+            else:
+                profiles_raw = []
+                try:
+                    from services.knowledge_service import get_all_profiles
+                    profiles_raw = get_all_profiles()
+                except Exception:
+                    pass
+                pilihan = []
+                for pr in profiles_raw:
+                    j = pr.get("judul") or pr.get("nama")
+                    if j:
+                        j_clean = re.sub(r"^[A-Z]\d{2}\s*[-–—:]\s*", "", str(j)).strip()
+                        if j_clean and j_clean not in pilihan:
+                            pilihan.append(j_clean)
+                        if len(pilihan) >= 3:
+                            break
+                if not pilihan:
+                    pilihan = [
+                        "Kantoran, Belajar, dan Penggunaan Harian",
+                        "Desain Grafis dan Ilustrasi Digital",
+                        "Gaming dan Pemrosesan Grafis Berat"
+                    ]
+                action_res.fakta["pilihan_konkret"] = pilihan[:3]
 
         state["keluhan_beruntun"] = keluhan_beruntun
         state["tanya_beruntun"] = tanya_beruntun
+        state["tanya_budget_beruntun"] = tanya_budget_beruntun
+        state["tanya_kebutuhan_beruntun"] = tanya_kebutuhan_beruntun
 
         # ---------------------------------------------------------------------
         # 4. GENERATOR LLM & 5. PEMERIKSA GROUNDING
@@ -680,6 +741,10 @@ class SessionPipeline:
         state["pending_question"] = gen_out.pertanyaan_diajukan
         if gen_out.pertanyaan_diajukan:
             state["last_asked_slot"] = gen_out.pertanyaan_diajukan
+            if gen_out.pertanyaan_diajukan == "budget":
+                state["tanya_budget_beruntun"] = max(1, int(state.get("tanya_budget_beruntun", 0) or 0))
+            elif gen_out.pertanyaan_diajukan in ("kebutuhan", "aktivitas"):
+                state["tanya_kebutuhan_beruntun"] = max(1, int(state.get("tanya_kebutuhan_beruntun", 0) or 0))
 
         # ---------------------------------------------------------------------
         # 6. KARTU PRODUK HTML (Butir 4)
@@ -689,6 +754,11 @@ class SessionPipeline:
         # Ekstrak semua kode produk yang secara sah ada di fakta eksekusi
         fakta_codes = set()
         for p in action_res.fakta.get("produk", []):
+            if isinstance(p, dict) and p.get("kode"):
+                fakta_codes.add(p["kode"])
+            elif isinstance(p, str):
+                fakta_codes.add(p)
+        for p in action_res.fakta.get("alternatif_cocok", []):
             if isinstance(p, dict) and p.get("kode"):
                 fakta_codes.add(p["kode"])
             elif isinstance(p, str):
@@ -710,6 +780,10 @@ class SessionPipeline:
             fakta_codes.add(action_res.fakta["kode_produk"])
 
         raw_candidates = list(action_res.produk_list or [])
+        if action_res.fakta.get("alternatif_cocok"):
+            for alt in action_res.fakta["alternatif_cocok"]:
+                if alt not in raw_candidates:
+                    raw_candidates.append(alt)
         if not raw_candidates and action_res.fakta.get("produk"):
             catalog = getattr(self.engine, "catalog", None)
             if catalog:
@@ -728,7 +802,9 @@ class SessionPipeline:
         aksi_name = parsed.aksi.value if hasattr(parsed.aksi, "value") else str(parsed.aksi)
         should_show_card = False
 
-        if aksi_name in ("tanya_spesifikasi", "bandingkan"):
+        if action_res.fakta.get("tampilkan_kartu") is True:
+            should_show_card = True
+        elif aksi_name in ("tanya_spesifikasi", "bandingkan"):
             should_show_card = True
         elif aksi_name in ("cari_produk", "minta_rekomendasi"):
             if gen_out.tampilkan_kartu is not None:

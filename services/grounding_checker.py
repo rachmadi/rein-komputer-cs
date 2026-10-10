@@ -133,6 +133,8 @@ class GroundingChecker:
                         nums.add(int(v))
 
         raw_prods = list(fakta.get("produk_list", []) or fakta.get("produk", []) or [])
+        if fakta.get("alternatif_cocok"):
+            raw_prods.extend(fakta.get("alternatif_cocok", []))
         if state and state.get("produk_tampil"):
             raw_prods.extend(state.get("produk_tampil", []))
         if fakta.get("produk_tampil"):

@@ -1158,6 +1158,56 @@ class ActionEngine:
                 }
             })
 
+        # Putaran 13 Butir F: alternatif_cocok jika hasil evaluasi kurang cocok / di_bawah_minimum
+        any_kurang_cocok = any(e.get("status_kecocokan") == "di_bawah_minimum" for e in eval_results)
+        alternatif_cocok = []
+        if any_kurang_cocok and prof_data:
+            user_budget = state.get("budget")
+            if not user_budget and "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                user_budget = state["kriteria_pelanggan"].get("max_harga")
+
+            kategori_eval = args.kategori or state.get("kategori") or (catalog_products[0].get("kategori") if catalog_products else None)
+            evaluated_codes = {p.get("kode") for p in catalog_products if p.get("kode")}
+            alt_candidates = []
+            for cp in self.catalog.products:
+                if cp.get("kode") in evaluated_codes:
+                    continue
+                cp_kat = cp.get("kategori")
+                if kategori_eval and cp_kat and cp_kat.lower() != str(kategori_eval).lower():
+                    continue
+
+                c_cpu = cp.get("cpu_tier") or 0
+                c_ram = cp.get("ram") or cp.get("ram_gb") or 0
+                c_ssd = cp.get("ssd_gb") or cp.get("storage_ssd_gb") or 0
+                c_vram = cp.get("gpu_vram_gb") or 0
+
+                memenuhi = (c_cpu >= min_cpu and c_ram >= min_ram and c_ssd >= min_ssd and c_vram >= min_vram)
+                if not memenuhi:
+                    continue
+
+                c_price = get_product_price(cp)
+                alt_candidates.append((c_price, cp))
+
+            if user_budget is not None:
+                budget_matches = [item for item in alt_candidates if item[0] <= user_budget]
+                if budget_matches:
+                    alt_candidates = budget_matches
+
+            alt_candidates.sort(key=lambda x: x[0])
+            for c_price, cp in alt_candidates[:3]:
+                alternatif_cocok.append({
+                    "kode": cp.get("kode"),
+                    "nama": cp.get("nama"),
+                    "harga": c_price,
+                    "harga_formatted": format_rupiah(c_price),
+                    "spesifikasi": clean_specs(cp),
+                    "lembar_spesifikasi": build_lembar_spesifikasi(cp),
+                    "catatan_minimum": {
+                        "memenuhi": True,
+                        "alasan": f"Memenuhi spesifikasi minimum profil {prof_data.get('judul', '')}"
+                    }
+                })
+
         fakta = {
             "status": "sukses",
             "kebutuhan_teks": kebutuhan_teks,
@@ -1167,7 +1217,15 @@ class ActionEngine:
             "produk": eval_results,
             "rujukan_dipakai": [p.get("kode") for p in catalog_products]
         }
-        return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+        if any_kurang_cocok and alternatif_cocok:
+            fakta["alternatif_cocok"] = alternatif_cocok
+            fakta["tampilkan_kartu"] = True
+
+        return ActionResult(
+            aksi=ActionEnum.EVALUASI_KECOCOKAN,
+            fakta=fakta,
+            produk_list=alternatif_cocok if (any_kurang_cocok and alternatif_cocok) else []
+        )
 
     # -------------------------------------------------------------------------
     # 4. tanya_spesifikasi (A5)
