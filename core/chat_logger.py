@@ -130,10 +130,13 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
                 offered_products_json TEXT,
                 latency_ms REAL,
                 penguji TEXT DEFAULT 'manusia',
-                engine_mode TEXT DEFAULT 'antigravity_v2'
+                engine_mode TEXT DEFAULT 'antigravity_v2',
+                jalur TEXT DEFAULT 'model',
+                aksi_parser TEXT,
+                jenis TEXT
             )
         """)
-        # Migrasi kolom jika tabel lama belum memiliki kolom penguji / engine_mode
+        # Migrasi kolom jika tabel lama belum memiliki kolom penguji / engine_mode / jalur / aksi_parser / jenis
         cur.execute("PRAGMA table_info(chat_logs)")
         existing_cols = {col[1] for col in cur.fetchall()}
         if "penguji" not in existing_cols:
@@ -142,6 +145,10 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN engine_mode TEXT DEFAULT 'antigravity_v2'")
         if "jalur" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN jalur TEXT DEFAULT 'model'")
+        if "aksi_parser" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN aksi_parser TEXT")
+        if "jenis" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN jenis TEXT")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -167,6 +174,8 @@ def log_turn(
     penguji: str | None = None,
     engine_mode: str | None = None,
     jalur: str | None = None,
+    aksi_parser: str | None = None,
+    jenis: str | None = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
@@ -204,6 +213,8 @@ def log_turn(
         "bot_reply": bot_reply,
         "route": route,
         "jalur": jalur or "model",
+        "aksi_parser": aksi_parser,
+        "jenis": jenis,
         "fsm_stage": fsm_stage,
         "active_category": active_category,
         "persona_name": persona_name,
@@ -238,8 +249,8 @@ def log_turn(
                     log_id, timestamp, session_id, channel, user_text, bot_reply,
                     route, fsm_stage, active_category, persona_name,
                     needs_json, constraints_json, offered_products_json, latency_ms,
-                    penguji, engine_mode
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    penguji, engine_mode, jalur, aksi_parser, jenis
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
@@ -257,6 +268,9 @@ def log_turn(
                 latency_ms,
                 effective_penguji,
                 effective_engine,
+                jalur or "model",
+                aksi_parser,
+                jenis,
             ))
             conn.commit()
             conn.close()

@@ -171,3 +171,48 @@ def test_butir4_teks_emergency_tanpa_di_kontak_staf():
         assert text.endswith(f"atau Kakak bisa menghubungi {KONTAK_STAF}.")
 
 
+def test_butir6_log_diagnostik_aksi_parser_dan_jenis():
+    """Menguji bahwa log_turn menyimpan aksi_parser dan jenis ke record JSONL dan DB SQLite."""
+    import json
+    import os
+    import sqlite3
+    from core.chat_logger import log_turn, get_log_paths
+
+    res = log_turn(
+        session_id="synthetic_diag_sess_99",
+        user_text="sintetis cari perlengkapan",
+        bot_reply="sintetis jawaban bot",
+        route="cari_produk",
+        penguji="otomatis",
+        jalur="model",
+        aksi_parser="cari_produk",
+        jenis="termurah_dari_tampil",
+    )
+
+    assert res["jalur"] == "model"
+    assert res["aksi_parser"] == "cari_produk"
+    assert res["jenis"] == "termurah_dari_tampil"
+
+    # Periksa di berkas JSONL uji
+    jsonl_path, db_path = get_log_paths(penguji="otomatis")
+    assert os.path.exists(jsonl_path)
+    with open(jsonl_path, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f if line.strip()]
+        last_rec = json.loads(lines[-1])
+        assert last_rec["log_id"] == res["log_id"]
+        assert last_rec["aksi_parser"] == "cari_produk"
+        assert last_rec["jenis"] == "termurah_dari_tampil"
+        assert last_rec["jalur"] == "model"
+
+    # Periksa di SQLite uji
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute("SELECT jalur, aksi_parser, jenis FROM chat_logs WHERE log_id = ?", (res["log_id"],))
+    row = cur.fetchone()
+    conn.close()
+    assert row is not None
+    assert row[0] == "model"
+    assert row[1] == "cari_produk"
+    assert row[2] == "termurah_dari_tampil"
+
+

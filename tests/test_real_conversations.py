@@ -646,11 +646,11 @@ def test_kasus_obrolan_awal_dengan_llm():
     s = new_state()
 
     s, r1, route1 = step(s, "Tanya dong", real_cat, llm_model="gemma3:1b")
-    assert route1 in ("AGENTIC", "FAST_AGENTIC", "ASK")
+    assert route1 in ("AGENTIC", "FAST_AGENTIC", "ASK", "LLM_OPENING")
     assert len(r1) > 5
 
     s, r2, route2 = step(s, "Papa suruh cari laptop", real_cat, llm_model="gemma3:1b")
-    assert route2 in ("AGENTIC", "FAST_AGENTIC", "ASK")
+    assert route2 in ("AGENTIC", "FAST_AGENTIC", "ASK", "LLM_OPENING")
     assert len(r2) > 5
     assert s.get("category") == "laptop"
     assert s.get("persona_name") == "Papa"

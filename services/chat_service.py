@@ -157,6 +157,8 @@ def process_chat_message(
                 latency_ms=latency_ms,
                 engine_mode=CHAT_ENGINE_MODE,
                 jalur=turn_res.jalur,
+                aksi_parser=turn_res.aksi_parser,
+                jenis=turn_res.jenis,
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
