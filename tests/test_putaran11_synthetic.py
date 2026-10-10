@@ -367,6 +367,43 @@ def test_butir12_jawab_pertanyaan_bot_tanpa_buka_produk():
         assert state_out.get("persona") == "adik"
 
 
+def test_butir13_cabut_batasan_budget():
+    """Butir 13: Mekanisme pencabutan batasan budget (set None di state & filter)."""
+    from services.session_pipeline import SessionPipeline
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, StateUpdate, JenisEnum
+    from services.llm_generator import GeneratorOutput
+    from unittest.mock import patch
+
+    pipeline = SessionPipeline()
+
+    # Sesi awal memiliki budget ketat 5 juta dan kategori laptop
+    session_state = {
+        "kategori": "laptop",
+        "budget": 5000000,
+        "kriteria_pelanggan": {"max_harga": 5000000, "kategori": "laptop"}
+    }
+
+    # Pelanggan meminta tanpa batas budget
+    p = ParserOutput(
+        aksi=ActionEnum.PERBAIKI_PERCAKAPAN,
+        argumen=ActionArguments(jenis=JenisEnum.KOREKSI),
+        pembaruan_state=StateUpdate(budget=0)
+    )
+
+    with patch("services.session_pipeline.parse_user_message", return_value=(p, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response", return_value=(GeneratorOutput(teks="Baik Kak, berikut opsi laptop tanpa batasan harga."), {})):
+        res, state_out = pipeline.process_turn("kalau tanpa batas budget gimana", session_state=session_state)
+        # Budget harus dicabut (menjadi None)
+        assert state_out.get("budget") is None
+        assert "max_harga" not in state_out.get("kriteria_pelanggan", {})
+        # Produk yang ditampilkan sekarang bisa mencakup yang harganya di atas 5 juta
+        prods = res.fakta_eksekusi.get("produk", [])
+        assert len(prods) > 0
+        has_above_5m = any(int(p.get("harga", 0)) > 5000000 for p in prods)
+        assert has_above_5m
+
+
+
 
 
 

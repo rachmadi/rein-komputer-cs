@@ -1510,7 +1510,11 @@ class ActionEngine:
         if state_up:
             if state_up.kategori:
                 state["kategori"] = state_up.kategori
-            if state_up.budget:
+            if state_up.budget in (0, -1):
+                state["budget"] = None
+                if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                    state["kriteria_pelanggan"].pop("max_harga", None)
+            elif state_up.budget:
                 state["budget"] = state_up.budget
             if state_up.persona:
                 state["persona"] = state_up.persona
@@ -1520,7 +1524,11 @@ class ActionEngine:
             state["kategori"] = args.kategori
         if args.merek:
             state["merek"] = args.merek
-        if args.max_harga is not None:
+        if args.max_harga in (0, -1):
+            state["budget"] = None
+            if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                state["kriteria_pelanggan"].pop("max_harga", None)
+        elif args.max_harga is not None:
             state["budget"] = parse_int_safe(args.max_harga)
         if args.persona:
             state["persona"] = args.persona
@@ -1529,7 +1537,8 @@ class ActionEngine:
 
         has_criteria = bool(
             args.kategori or args.merek or (args.max_harga is not None) or args.kebutuhan_teks or args.persona or args.gpu or args.ram_gb_min or
-            (state_up and (state_up.kategori or state_up.budget or state_up.persona or state_up.kebutuhan_teks))
+            state.get("_cabut_budget") or
+            (state_up and (state_up.kategori or (state_up.budget is not None) or state_up.persona or state_up.kebutuhan_teks))
         )
 
         # Butir 9: koreksi menyangkut produk/kriteria -> cari ulang; keluhan/salah_paham non-produk -> tanpa pencarian

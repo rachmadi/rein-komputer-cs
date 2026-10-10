@@ -235,10 +235,34 @@ class SessionPipeline:
         if "batas_bot" not in state or not isinstance(state["batas_bot"], dict):
             state["batas_bot"] = {}
 
-        if parsed.argumen.max_harga is not None:
-            state["kriteria_pelanggan"]["max_harga"] = parse_int_safe(parsed.argumen.max_harga)
-        elif parsed.pembaruan_state.budget is not None:
-            state["kriteria_pelanggan"]["max_harga"] = parsed.pembaruan_state.budget
+        # Deteksi pencabutan batasan budget (Butir 13)
+        # Jika pelanggan bilang 'tanpa batas budget', 'bebas budget', 'budget dilepas', dsb.
+        # atau parser mengirim budget=0 / -1 untuk mencabut batasan budget
+        is_cabut_budget = bool(
+            re.search(r"\b(tanpa|bebas|lepas|hilangkan|hapus|nggak\s+pakai|tidak\s+pakai|ga\s+pakai|unlimited)\s+(batas\s+|batasan\s+)?(budget|anggaran|biaya)\b", pesan_pelanggan, re.IGNORECASE)
+            or re.search(r"\b(budget|anggaran|biaya)\s+(bebas|tanpa\s+batas|dihapus|dilepas|tidak\s+terbatas|unlimited)\b", pesan_pelanggan, re.IGNORECASE)
+            or (parsed.pembaruan_state.budget in (0, -1))
+            or (parsed.argumen.max_harga in (0, -1))
+            or (parsed.argumen.budget_max in (0, -1))
+        )
+
+        if is_cabut_budget:
+            state["budget"] = None
+            state["_cabut_budget"] = True
+            if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                state["kriteria_pelanggan"].pop("max_harga", None)
+            if "batas_bot" in state and isinstance(state["batas_bot"], dict):
+                state["batas_bot"].pop("max_harga", None)
+            parsed.argumen.max_harga = None
+            parsed.argumen.budget_max = None
+            parsed.pembaruan_state.budget = None
+        else:
+            if parsed.argumen.max_harga is not None:
+                state["kriteria_pelanggan"]["max_harga"] = parse_int_safe(parsed.argumen.max_harga)
+                state["budget"] = parse_int_safe(parsed.argumen.max_harga)
+            elif parsed.pembaruan_state.budget is not None:
+                state["kriteria_pelanggan"]["max_harga"] = parsed.pembaruan_state.budget
+                state["budget"] = parsed.pembaruan_state.budget
 
         if parsed.argumen.merek:
             state["kriteria_pelanggan"]["merek"] = parsed.argumen.merek
@@ -261,12 +285,21 @@ class SessionPipeline:
         lat_mesin = (time.perf_counter() - t_engine_0) * 1000.0
 
         # Update state dari argumen & pembaruan_state parser
+        state.pop("_cabut_budget", None)
+        if is_cabut_budget:
+            state["budget"] = None
+            if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                state["kriteria_pelanggan"].pop("max_harga", None)
+            if "batas_bot" in state and isinstance(state["batas_bot"], dict):
+                state["batas_bot"].pop("max_harga", None)
+        else:
+            if parsed.argumen.max_harga is not None:
+                state["budget"] = parse_int_safe(parsed.argumen.max_harga)
+
         if parsed.argumen.merek:
             state["merek"] = parsed.argumen.merek
         if parsed.argumen.kategori:
             state["kategori"] = parsed.argumen.kategori
-        if parsed.argumen.max_harga is not None:
-            state["budget"] = parse_int_safe(parsed.argumen.max_harga)
         if parsed.argumen.persona:
             state["persona"] = parsed.argumen.persona
         if parsed.argumen.kebutuhan_teks:
@@ -282,7 +315,7 @@ class SessionPipeline:
             state["sebutan"] = state_up.sebutan
         if state_up.kebutuhan_teks:
             state["kebutuhan_teks"] = state_up.kebutuhan_teks
-        if state_up.budget:
+        if not is_cabut_budget and state_up.budget:
             state["budget"] = state_up.budget
         if state_up.kategori:
             state["kategori"] = state_up.kategori

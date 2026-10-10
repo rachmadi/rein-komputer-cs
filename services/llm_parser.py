@@ -62,6 +62,7 @@ ATURAN INTENT & KONTEKS:
   * Keraguan kelayakan/kemampuan beban kerja -> 'evaluasi_kecocokan' ('rujukan_produk': nomor urut produk tampil [1], [2]).
   * Keraguan harga atau rincian komponen -> 'tanya_spesifikasi' ('rujukan_produk': nomor urut produk tampil [1], [2]).
 - Jawaban pelanggan yang bukan jawaban atas pertanyaan bot -> 'jawab_pertanyaan_bot' tanpa membuka pencarian produk.
+- Mencabut atau menghapus batas budget (misal 'tanpa batas budget' / 'bebas budget') -> gunakan 'perbaiki_percakapan' (koreksi) atau 'lanjutan_hasil' (yang_lain) dengan 'pembaruan_state': {'budget': 0}.
 - 'lanjutan_hasil' HANYA jika 'produk_tampil' tidak kosong.
 - Jangan menyebut kode internal produk katalog. Rujukan produk gunakan nomor urut ([1], [2]) atau nama dari produk tampil."""
 
