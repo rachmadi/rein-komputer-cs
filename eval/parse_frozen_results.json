@@ -1,9 +1,9 @@
 {
   "total_rows": 48,
-  "correct_actions": 46,
-  "accuracy_percent": 95.83,
-  "latency_median_sec": 3.6525,
-  "latency_p95_sec": 4.8429,
+  "correct_actions": 47,
+  "accuracy_percent": 97.92,
+  "latency_median_sec": 3.6911,
+  "latency_p95_sec": 4.3924,
   "per_action_stats": {
     "lanjutan_hasil": {
       "total": 12,
@@ -23,7 +23,7 @@
     },
     "evaluasi_kecocokan": {
       "total": 3,
-      "correct": 2
+      "correct": 3
     },
     "perbaiki_percakapan": {
       "total": 3,
@@ -59,7 +59,7 @@
       "pred_argumen": {
         "jenis": "lebih_murah"
       },
-      "latency_sec": 5.9819,
+      "latency_sec": 4.0097,
       "state_json": {
         "produk_tampil": [
           "KB-L03",
@@ -84,7 +84,7 @@
       "pred_argumen": {
         "jenis": "lebih_murah"
       },
-      "latency_sec": 3.3498,
+      "latency_sec": 3.4632,
       "state_json": {
         "produk_tampil": [
           "KB-D01"
@@ -108,7 +108,7 @@
       "pred_argumen": {
         "jenis": "lebih_murah"
       },
-      "latency_sec": 3.3734,
+      "latency_sec": 3.4454,
       "state_json": {
         "produk_tampil": [
           "KB-L07"
@@ -132,7 +132,7 @@
       "pred_argumen": {
         "jenis": "lebih_mahal"
       },
-      "latency_sec": 3.39,
+      "latency_sec": 3.4545,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -156,7 +156,7 @@
       "pred_argumen": {
         "jenis": "lebih_mahal"
       },
-      "latency_sec": 3.4041,
+      "latency_sec": 3.3851,
       "state_json": {
         "produk_tampil": [
           "KB-L02"
@@ -180,7 +180,7 @@
       "pred_argumen": {
         "jenis": "yang_lain"
       },
-      "latency_sec": 3.3761,
+      "latency_sec": 3.3648,
       "state_json": {
         "produk_tampil": [
           "KB-L06"
@@ -204,7 +204,7 @@
       "pred_argumen": {
         "jenis": "yang_lain"
       },
-      "latency_sec": 3.4026,
+      "latency_sec": 3.3708,
       "state_json": {
         "produk_tampil": [
           "KB-L05"
@@ -228,7 +228,7 @@
       "pred_argumen": {
         "jenis": "yang_lain"
       },
-      "latency_sec": 3.392,
+      "latency_sec": 3.3877,
       "state_json": {
         "produk_tampil": [
           "KB-L03"
@@ -252,7 +252,7 @@
       "pred_argumen": {
         "jenis": "yang_lain"
       },
-      "latency_sec": 3.3762,
+      "latency_sec": 3.3894,
       "state_json": {
         "produk_tampil": [
           "KB-D01"
@@ -276,7 +276,7 @@
       "pred_argumen": {
         "jenis": "yang_lain"
       },
-      "latency_sec": 3.4238,
+      "latency_sec": 3.4334,
       "state_json": {
         "produk_tampil": [
           "KB-L02",
@@ -301,7 +301,7 @@
       "pred_argumen": {
         "jenis": "yang_lain"
       },
-      "latency_sec": 3.4039,
+      "latency_sec": 3.3877,
       "state_json": {
         "produk_tampil": [
           "KB-P01"
@@ -332,7 +332,7 @@
         ],
         "atribut": "harga"
       },
-      "latency_sec": 3.6525,
+      "latency_sec": 3.6911,
       "state_json": {
         "produk_tampil": [
           "KB-L03"
@@ -363,7 +363,7 @@
         ],
         "atribut": "harga"
       },
-      "latency_sec": 3.6318,
+      "latency_sec": 3.6559,
       "state_json": {
         "produk_tampil": [
           "KB-L02",
@@ -395,7 +395,7 @@
         ],
         "atribut": "bobot"
       },
-      "latency_sec": 3.645,
+      "latency_sec": 3.7665,
       "state_json": {
         "produk_tampil": [
           "KB-L01",
@@ -426,7 +426,7 @@
         ],
         "atribut": "gpu"
       },
-      "latency_sec": 3.8856,
+      "latency_sec": 4.3739,
       "state_json": {
         "produk_tampil": [
           "KB-L07"
@@ -457,7 +457,7 @@
         ],
         "atribut": "ram"
       },
-      "latency_sec": 3.5914,
+      "latency_sec": 3.6716,
       "state_json": {
         "produk_tampil": [
           "KB-L07"
@@ -485,10 +485,9 @@
         ],
         "produk": [
           "KB-L06"
-        ],
-        "atribut": "lainnya"
+        ]
       },
-      "latency_sec": 3.6879,
+      "latency_sec": 3.6845,
       "state_json": {
         "produk_tampil": [
           "KB-L01",
@@ -520,7 +519,7 @@
         ],
         "atribut": "ram"
       },
-      "latency_sec": 3.5828,
+      "latency_sec": 3.6372,
       "state_json": {
         "produk_tampil": [
           "KB-L04"
@@ -551,7 +550,7 @@
         ],
         "atribut": "cpu"
       },
-      "latency_sec": 3.6114,
+      "latency_sec": 3.6185,
       "state_json": {
         "produk_tampil": [
           "KB-D01"
@@ -582,7 +581,7 @@
         ],
         "atribut": "storage"
       },
-      "latency_sec": 3.5827,
+      "latency_sec": 3.6448,
       "state_json": {
         "produk_tampil": [
           "KB-L02",
@@ -613,7 +612,7 @@
         ],
         "atribut": "layar"
       },
-      "latency_sec": 3.7397,
+      "latency_sec": 3.9091,
       "state_json": {
         "produk_tampil": [
           "KB-L04"
@@ -640,7 +639,7 @@
         "merek": "asus",
         "gpu": "diskrit"
       },
-      "latency_sec": 3.9371,
+      "latency_sec": 3.9603,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -666,7 +665,7 @@
         "kategori": "desktop",
         "merek": "lenovo"
       },
-      "latency_sec": 3.6904,
+      "latency_sec": 3.7872,
       "state_json": {
         "produk_tampil": [
           "KB-L02"
@@ -692,7 +691,7 @@
         "kategori": "printer",
         "merek": "canon"
       },
-      "latency_sec": 3.6957,
+      "latency_sec": 3.8108,
       "state_json": {
         "produk_tampil": [
           "KB-L03"
@@ -715,11 +714,9 @@
         "merek": "acer"
       },
       "pred_argumen": {
-        "kategori": "laptop",
-        "merek": "acer",
-        "gpu": "core i5"
+        "merek": "acer"
       },
-      "latency_sec": 4.0226,
+      "latency_sec": 4.1777,
       "state_json": {
         "produk_tampil": [
           "KB-L04"
@@ -745,7 +742,7 @@
         "kategori": "printer",
         "merek": "epson"
       },
-      "latency_sec": 3.7012,
+      "latency_sec": 3.7893,
       "state_json": {
         "produk_tampil": [
           "KB-P01"
@@ -768,9 +765,9 @@
       },
       "pred_argumen": {
         "kategori": "laptop",
-        "gpu": "rtx"
+        "gpu": "RTX"
       },
-      "latency_sec": 3.6803,
+      "latency_sec": 3.7999,
       "state_json": {
         "produk_tampil": [
           "KB-L05"
@@ -796,7 +793,7 @@
         "kategori": "laptop",
         "merek": "lenovo"
       },
-      "latency_sec": 3.7961,
+      "latency_sec": 3.839,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -820,7 +817,7 @@
       "pred_argumen": {
         "kebutuhan_teks": "editing video 4K dan animasi blender"
       },
-      "latency_sec": 4.5507,
+      "latency_sec": 4.7027,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -850,7 +847,7 @@
           "KB-L06"
         ]
       },
-      "latency_sec": 4.6248,
+      "latency_sec": 4.3352,
       "state_json": {
         "produk_tampil": [
           "KB-L06"
@@ -880,7 +877,7 @@
           "KB-L02"
         ]
       },
-      "latency_sec": 4.8429,
+      "latency_sec": 4.2552,
       "state_json": {
         "produk_tampil": [
           "KB-L02"
@@ -896,16 +893,21 @@
       "index": 32,
       "pesan": "Komputer ini rencananya dipakai untuk kompilasi kode software backend dan docker container",
       "gold_aksi": "evaluasi_kecocokan",
-      "pred_aksi": "minta_rekomendasi",
-      "action_match": false,
+      "pred_aksi": "evaluasi_kecocokan",
+      "action_match": true,
       "gold_argumen": {
         "rujukan_produk": 1,
         "kebutuhan_teks": "kompilasi kode software backend dan docker container"
       },
       "pred_argumen": {
-        "kebutuhan_teks": "kompilasi kode software backend dan docker container"
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-D01"
+        ]
       },
-      "latency_sec": 4.7661,
+      "latency_sec": 4.2646,
       "state_json": {
         "produk_tampil": [
           "KB-D01"
@@ -927,9 +929,10 @@
         "kebutuhan_teks": "software data science dan python"
       },
       "pred_argumen": {
-        "kebutuhan_teks": "data science dan python"
+        "kebutuhan_teks": "data science dan python",
+        "persona": "programmer"
       },
-      "latency_sec": 4.4789,
+      "latency_sec": 4.3924,
       "state_json": {
         "produk_tampil": [],
         "kategori": "laptop",
@@ -953,7 +956,7 @@
         "kebutuhan_teks": "transaksi kasir swalayan yang menyala non-stop",
         "persona": "kasir"
       },
-      "latency_sec": 5.0871,
+      "latency_sec": 5.229,
       "state_json": {
         "produk_tampil": [],
         "kategori": null,
@@ -975,7 +978,7 @@
       "pred_argumen": {
         "max_harga": 6000000
       },
-      "latency_sec": 3.7801,
+      "latency_sec": 3.7942,
       "state_json": {
         "produk_tampil": [],
         "kategori": "laptop",
@@ -999,7 +1002,7 @@
         "kategori": "laptop",
         "max_harga": 10000000
       },
-      "latency_sec": 3.9156,
+      "latency_sec": 4.0159,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -1024,7 +1027,7 @@
       "pred_argumen": {
         "max_harga": 4000000
       },
-      "latency_sec": 3.8085,
+      "latency_sec": 3.792,
       "state_json": {
         "produk_tampil": [
           "KB-L03"
@@ -1047,7 +1050,7 @@
         "jenis": "koreksi",
         "rujukan": "printer all-in-one"
       },
-      "latency_sec": 3.966,
+      "latency_sec": 3.9742,
       "state_json": {
         "produk_tampil": [
           "KB-P02"
@@ -1070,7 +1073,7 @@
         "jenis": "koreksi",
         "rujukan": "laptop bukan komputer meja desktop"
       },
-      "latency_sec": 3.7718,
+      "latency_sec": 3.8029,
       "state_json": {
         "produk_tampil": [
           "KB-D01"
@@ -1093,7 +1096,7 @@
         "jenis": "koreksi",
         "rujukan": "ganti tipe"
       },
-      "latency_sec": 3.6811,
+      "latency_sec": 3.7449,
       "state_json": {
         "produk_tampil": [
           "KB-L05"
@@ -1115,7 +1118,7 @@
       "pred_argumen": {
         "jenis": "terima_kasih"
       },
-      "latency_sec": 3.3771,
+      "latency_sec": 3.4438,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -1137,7 +1140,7 @@
       "pred_argumen": {
         "jenis": "pamit"
       },
-      "latency_sec": 3.3135,
+      "latency_sec": 3.3345,
       "state_json": {
         "produk_tampil": [
           "KB-L03"
@@ -1156,10 +1159,8 @@
       "pred_aksi": "basa_basi",
       "action_match": true,
       "gold_argumen": {},
-      "pred_argumen": {
-        "jenis": "terima_kasih"
-      },
-      "latency_sec": 3.348,
+      "pred_argumen": {},
+      "latency_sec": 3.1526,
       "state_json": {
         "produk_tampil": [
           "KB-D02"
@@ -1183,7 +1184,7 @@
       "pred_argumen": {
         "alasan": "tidak_dipahami"
       },
-      "latency_sec": 3.223,
+      "latency_sec": 3.4433,
       "state_json": {
         "produk_tampil": [],
         "kategori": null,
@@ -1205,7 +1206,7 @@
       "pred_argumen": {
         "alasan": "tidak_dipahami"
       },
-      "latency_sec": 3.1793,
+      "latency_sec": 3.2678,
       "state_json": {
         "produk_tampil": [],
         "kategori": null,
@@ -1227,7 +1228,7 @@
       "pred_argumen": {
         "alasan": "tidak_dipahami"
       },
-      "latency_sec": 3.2265,
+      "latency_sec": 3.3998,
       "state_json": {
         "produk_tampil": [
           "KB-L01"
@@ -1247,7 +1248,7 @@
       "action_match": true,
       "gold_argumen": {},
       "pred_argumen": {},
-      "latency_sec": 2.988,
+      "latency_sec": 3.0807,
       "state_json": {
         "produk_tampil": [],
         "kategori": null,
@@ -1269,7 +1270,7 @@
       "pred_argumen": {
         "topik": "alamat"
       },
-      "latency_sec": 3.348,
+      "latency_sec": 3.3857,
       "state_json": {
         "produk_tampil": [],
         "kategori": null,
@@ -1279,5 +1280,7 @@
         "pending_question": null
       }
     }
-  ]
+  ],
+  "code_sha256": "c7871249813c76377862286df8a88cf935cfd71fe4bb4bf4ba557f34dd79222f",
+  "git_head": "9eb03a9293ac26a924fc47d6e500251c7ed2b8d0"
 }

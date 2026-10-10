@@ -1,17 +1,17 @@
 {
   "total_checks": 8,
-  "total_pass": 6,
-  "total_fail": 2,
+  "total_pass": 7,
+  "total_fail": 1,
   "checks": {
     "G1": {
       "deskripsi": "Kebersihan & Integritas Repositori",
       "status": "FAIL",
-      "bukti": "Untracked tidak diizinkan: ?? eval/determinism_putaran9.json"
+      "bukti": "Untracked tidak diizinkan: ?? docs/laporan_putaran9.md"
     },
     "G2": {
       "deskripsi": "Integritas Label & Kronologi Commit",
-      "status": "FAIL",
-      "bukti": "SHA256 eval/parse_frozen_putaran8.csv pada commit e25d0643c44e90d7155f5106f0c7e90c4f8b9419 (d58c366afe06450c6bfc76cba56cfbfebb60e6a462c7879db26ff2e55eb7b9f3) != manifest (8c4e81b323e241cd28579938e984180f05fd0c1b23fa4534585cee08e5c08f0c)"
+      "status": "PASS",
+      "bukti": "Label utuh, checksum manifest valid, commit Tahap 0 mendahului kode"
     },
     "G3": {
       "deskripsi": "Ketiadaan Penulisan Ulang Riwayat Git",

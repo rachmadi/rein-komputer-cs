@@ -112,6 +112,10 @@ def run_replay(regression_file: str, runs: int, output_md: str, output_jsonl: st
     os.makedirs(os.path.dirname(output_jsonl) or ".", exist_ok=True)
     
     # Buka jsonl untuk streaming output mentah
+    import subprocess
+    from scripts.gate_putaran9 import get_code_sha256
+    curr_code_sha = get_code_sha256()
+    curr_git_head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     f_jsonl = open(output_jsonl, "w", encoding="utf-8")
 
     all_turn_records = []
@@ -198,7 +202,9 @@ def run_replay(regression_file: str, runs: int, output_md: str, output_jsonl: st
                     "pelanggaran_checker": t_res.pelanggaran_pemeriksa,
                     "is_emergency_fallback": t_res.is_emergency_fallback,
                     "kategori_mismatch": cat_mismatch,
-                    "teks_jawaban": t_res.teks_jawaban
+                    "teks_jawaban": t_res.teks_jawaban,
+                    "code_sha256": curr_code_sha,
+                    "git_head": curr_git_head
                 }
                 all_turn_records.append(rec)
                 run_records[r].append(rec)
@@ -251,6 +257,20 @@ def run_replay(regression_file: str, runs: int, output_md: str, output_jsonl: st
         "tot_p50": percentile(all_tot, 0.50),     "tot_p95": percentile(all_tot, 0.95),
         "n": len(all_turn_records)
     }
+
+    lat_json = {
+        "parser_median_ms": round(percentile(all_parse, 0.50), 1),
+        "parser_p95_ms": round(percentile(all_parse, 0.95), 1),
+        "engine_median_ms": round(percentile(all_mesin, 0.50), 1),
+        "engine_p95_ms": round(percentile(all_mesin, 0.95), 1),
+        "generator_median_ms": round(percentile(all_gen, 0.50), 1),
+        "generator_p95_ms": round(percentile(all_gen, 0.95), 1),
+        "total_median_ms": round(percentile(all_tot, 0.50), 1),
+        "total_p95_ms": round(percentile(all_tot, 0.95), 1),
+        "concurrent_processes": 1
+    }
+    with open("eval/latency_summary_putaran9.json", "w", encoding="utf-8") as f_lat:
+        json.dump(lat_json, f_lat, indent=2)
 
     # 2. Frekuensi Aksi A1-A12
     action_counter = Counter(x["aksi_terpilih"] for x in all_turn_records)

@@ -66,7 +66,7 @@
   - `6a79c50 fix(parser): enforce state consistency with 1x reparse retry, split jenis enums, and clarify cari_produk`
 
 ## 2. Hasil Eksekusi Pytest Suite Penuh
-- **Baris Ringkasan Verbatim**: `252 passed, 20 skipped, 5 warnings in 405.56s (0:06:45)`
+- **Baris Ringkasan Verbatim**: `271 passed, 20 skipped, 7 warnings in 427.76s (0:07:07)`
 - **Status Exit Code**: `0` (SUKSES / HIJAU)
 - **Daftar Nodeid Tes yang Di-skip** (20 tes):
   - `SKIPPED [1] tests\test_conversational_rubric.py:43: Legacy v1 test: asserts obsolete route 'GREETING' instead of v2 ActionEnum 'sapa'; requires rewrite to v2 action & facts architecture`

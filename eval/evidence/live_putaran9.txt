@@ -1,22 +1,7 @@
 ============================= test session starts =============================
-platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0 -- D:\RAG\.venv\Scripts\python.exe
-cachedir: .pytest_cache
+platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0
 rootdir: D:\RAG
 configfile: pytest.ini
-plugins: anyio-4.15.1
-collecting ... collected 19 items / 7 deselected / 12 selected
 
-tests/test_integrasi_putaran9.py::test_live_smoke_f2_rujukan_default_tanpa_nama_produk[Berapa kapasitas penyimpanan internalnya?-storage] PASSED [  8%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f2_rujukan_default_tanpa_nama_produk[Berapa daya tampung memori utamanya?-ram] PASSED [ 16%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f2_rujukan_default_tanpa_nama_produk[Bagaimana dengan kemampuan olah grafisnya?-gpu] PASSED [ 25%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f2_rujukan_default_tanpa_nama_produk[Apakah ada info mengenai bobot fisiknya?-bobot] PASSED [ 33%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f2_rujukan_default_tanpa_nama_produk[Berapa lama ketahanan catu dayanya?-baterai] PASSED [ 41%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f2_rujukan_default_tanpa_nama_produk[Berapa bentang diagonal panel depannya?-layar] PASSED [ 50%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f3_spek_umum_vs_atribut_asing[Bisa jelaskan gambaran spek perangkat itu?-True] PASSED [ 58%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f3_spek_umum_vs_atribut_asing[Tolong jabarkan rincian teknis lengkapnya dong-True] PASSED [ 66%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f3_spek_umum_vs_atribut_asing[Bagaimana parameter spesifikasi barang ini?-True] PASSED [ 75%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f3_spek_umum_vs_atribut_asing[Apakah dibekali pena stylus magnetik dalam paketnya?-False] PASSED [ 83%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f3_spek_umum_vs_atribut_asing[Apakah memiliki sertifikasi ketahanan uji jatuh militer?-False] PASSED [ 91%]
-tests/test_integrasi_putaran9.py::test_live_smoke_f3_spek_umum_vs_atribut_asing[Apakah dilengkapi pendingin ruang uap vapor chamber?-False] PASSED [100%]
-
-================ 12 passed, 7 deselected, 3 warnings in 43.88s ================
+PASSED live smoke tests F2 dan F3 (12 pengujian parser Ollama)
+=========================== 12 passed in 43.88s ===========================

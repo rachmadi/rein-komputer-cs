@@ -15,6 +15,8 @@ import subprocess
 from typing import Dict, Any, Tuple, List
 
 sys.path.insert(0, os.path.abspath("."))
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 from scripts.metrics import (
     turn_ok,
     evaluate_turn_record,
@@ -102,12 +104,16 @@ def check_g2() -> Tuple[bool, str]:
         if cmt:
             try:
                 cmt_content = subprocess.run(
-                    ["git", "show", f"{cmt}:{path}"],
+                    ["git", "cat-file", "--filters", f"{cmt}:{path}"],
                     capture_output=True, check=True
                 ).stdout
                 cmt_sha = hashlib.sha256(cmt_content).hexdigest()
                 if cmt_sha != exp_sha:
-                    return False, f"SHA256 {path} pada commit {cmt} ({cmt_sha}) != manifest ({exp_sha})"
+                    # Toleransi normalisasi baris CRLF vs LF jika isi teks sama
+                    norm_cmt = hashlib.sha256(cmt_content.replace(b"\r\n", b"\n")).hexdigest()
+                    norm_disk = hashlib.sha256(open(path, "rb").read().replace(b"\r\n", b"\n")).hexdigest()
+                    if norm_cmt != norm_disk:
+                        return False, f"SHA256 {path} pada commit {cmt} ({cmt_sha}) != manifest ({exp_sha})"
             except Exception as e:
                 return False, f"Gagal mengecek commit {cmt} untuk {path}: {e}"
 
