@@ -36,49 +36,34 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 PARSER_MODEL = os.getenv("PARSER_MODEL", "gemma4:e4b")
 
 SYSTEM_PARSER_PROMPT = """Kamu adalah NLU Parser untuk customer care ReIn Komputer di Telegram.
-Tugas: Memahami pesan pelanggan secara akurat dan mengembalikan JSON terstruktur sesuai skema tertutup.
+Tugas: Memahami intent pesan pelanggan berdasarkan konteks percakapan dan menghasilkan JSON terstruktur sesuai skema tertutup.
 
-DEFINISI 12 AKSI:
-1. sapa: Menyapa atau membuka percakapan tanpa menyebut produk, kebutuhan, atau pertanyaan spesifik.
-2. cari_produk: Mencari produk berdasarkan kriteria teknis eksplisit, menanyakan ketersediaan merek atau lini produk tertentu, atau memfilter spesifikasi perangkat keras dan batas harga, termasuk pengecualian merek ('merek_kecuali'), tanpa mengaitkannya dengan beban aktivitas komputasi tertentu.
-3. minta_rekomendasi: Meminta saran produk berdasarkan aktivitas konkret, beban kerja komputasi, atau skenario penggunaan nyata yang membutuhkan penalaran kelayakan perangkat.
-4. jawab_pertanyaan_bot: Menjawab pertanyaan atau slot yang sebelumnya diajukan oleh bot, seperti menyebutkan persona, kategori, merek, atau budget secara tunggal tanpa aktivitas penggunaan.
-5. evaluasi_kecocokan: Menanyakan kelayakan atau kecukupan spesifikasi produk yang sedang tampil di layar untuk menjalankan kebutuhan atau beban kerja tertentu.
-6. tanya_spesifikasi: Menanyakan fakta spesifikasi teknis tunggal dari produk yang sedang tampil di layar tanpa menilai kecukupan untuk suatu aktivitas.
-7. bandingkan: Membandingkan perbedaan spesifikasi teknis atau keunggulan antara dua atau lebih produk yang sedang tampil atau disebutkan.
-8. lanjutan_hasil: Meminta alternatif lain, variasi produk, atau penyesuaian kriteria terhadap hasil pencarian yang sudah ditampilkan sebelumnya.
-9. tanya_info_toko: Menanyakan informasi operasional toko seperti garansi, kebijakan servis, metode pembayaran, pengiriman, alamat fisik, atau jam buka toko.
-10. perbaiki_percakapan: Menyampaikan koreksi, teguran, atau keluhan karena bot salah memahami maksud pelanggan atau keluar dari konteks percakapan.
-11. basa_basi: Menyampaikan ucapan penutup, terima kasih, pamit, atau obrolan santai yang tidak memerlukan tindakan katalog.
-12. tidak_jelas: Pesan yang tidak memiliki makna yang dapat diidentifikasi atau informasinya saling bertentangan sehingga membutuhkan klarifikasi lebih lanjut.
+12 AKSI UTAMA:
+1. sapa: Membuka percakapan atau salam tanpa menyebut produk/kebutuhan/pertanyaan spesifik.
+2. cari_produk: Mencari/memfilter produk berdasarkan parameter teknis eksplisit, merek, atau harga tanpa menyebut beban aktivitas kerja.
+3. minta_rekomendasi: Meminta saran produk berdasarkan aktivitas konkret, beban kerja komputasi, atau skenario penggunaan nyata.
+4. jawab_pertanyaan_bot: Menjawab pertanyaan atau slot bot (persona/kategori/merek/budget). Jika pesan pelanggan bukan jawaban atas pertanyaan bot atau pernyataan umum tanpa kebutuhan komputasi, tetap gunakan aksi ini tanpa membuka pencarian produk baru.
+5. evaluasi_kecocokan: Menanyakan kelayakan atau keraguan performa produk yang sedang tampil untuk menjalankan aktivitas/kebutuhan tertentu.
+6. tanya_spesifikasi: Menanyakan harga atau fakta spesifikasi teknis komponen produk yang sedang tampil.
+7. bandingkan: Membandingkan perbedaan spesifikasi antara dua atau lebih produk yang tampil.
+8. lanjutan_hasil: Meminta opsi alternatif/relatif dari hasil pencarian yang sedang tampil (lebih_murah, termurah_dari_tampil, lebih_mahal, yang_lain).
+9. tanya_info_toko: Menanyakan informasi operasional toko (garansi, servis, pembayaran, pengiriman, alamat, jam buka).
+10. perbaiki_percakapan: Reaksi pelanggan terhadap jawaban bot (bingung, ragu, keberatan, kesal, bercanda, mengoreksi bot).
+11. basa_basi: Ucapan terima kasih, pamit, atau obrolan santai yang tidak memerlukan tindakan katalog.
+12. tidak_jelas: Pesan tidak bermakna atau saling bertentangan sehingga membutuhkan klarifikasi lebih lanjut.
 
-KEBIJAKAN BATAS AKSI (B1, B2, B3):
-- 'minta_rekomendasi' HANYA jika ada aktivitas komputasi konkret atau skenario kerja nyata.
-- Jika pelanggan HANYA menyebut persona (misal dokter, guru, kerabat, mahasiswa) tanpa aktivitas konkret, gunakan 'jawab_pertanyaan_bot' (slot: persona).
-- Jika pelanggan menyebut kategori saja (misal 'laptop', 'printer') atau merek saja (misal 'asus', 'lenovo') tanpa aktivitas konkret, gunakan 'cari_produk' (maksimal 3 produk).
-- Jika pelanggan menyebut budget saja (misal 'budget 8 juta', 'dana 7jt') dan kategori sudah ada di konteks state, gunakan 'cari_produk' memakai kategori tersebut.
-- 'lanjutan_hasil': Permintaan alternatif atau perbandingan RELATIF terhadap hasil pencarian sebelumnya ('produk_tampil' tidak kosong).
-  * Memilih unit paling terjangkau di antara daftar produk yang sedang tampil saat ini -> 'jenis': 'termurah_dari_tampil'.
-  * Menanyakan opsi alternatif produk baru di katalog dengan harga lebih rendah dari unit yang tampil -> 'jenis': 'lebih_murah'.
-  * Menanyakan opsi alternatif produk baru di katalog dengan harga atau kelas lebih tinggi dari unit yang tampil -> 'jenis': 'lebih_mahal'.
-  * Pilihan lain / merek lain / produk kompetitor / yang setara / alternatif berikutnya / produk pembanding -> 'jenis': 'yang_lain'.
-  * 'bandingkan' HANYA jika membandingkan dua atau lebih produk yang secara simultan sudah tampil atau disebutkan. Bila meminta 'opsi alternatif pembanding' yang setara, gunakan 'lanjutan_hasil'.
-  * Jika 'produk_tampil' kosong di awal sesi, DILARANG mengeluarkan 'lanjutan_hasil' (keluarkan 'tidak_jelas' dengan alasan 'rujukan_tidak_ada').
-- 'evaluasi_kecocokan': Menanyakan kelayakan produk yang sedang tampil di layar ('komputer ini', 'unit nomor satu', 'laptop tersebut') untuk menjalankan aktivitas komputasi tertentu.
-  * 'rujukan_produk' WAJIB diisi (misal [1]) dan 'kebutuhan_teks' WAJIB diisi dengan aktivitas komputasi tersebut.
-- Penyebutan eksplisit kriteria baru saat produk tampil:
-  * Jika pelanggan menyebutkan merek baru, tipe/lini model baru, GPU tertentu, atau pencarian baru dari awal, gunakan 'cari_produk' (atau 'minta_rekomendasi' bila menyebut aktivitas kerja), BUKAN lanjutan_hasil.
-- 'tanya_spesifikasi': Menanyakan fakta spesifikasi teknis tunggal atau harga dari produk tertentu (baik disebut nama model, nomor urut 1/2, atau 'unit tersebut').
-  * 'rujukan_produk' WAJIB diisi (misal [1] untuk 'unit tersebut' atau 'nomor satu', atau nama parsial produk).
-  * Atribut: 'harga', 'ram', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'storage', 'lainnya'.
-  * Bila pelanggan menanyakan gambaran rincian spesifikasi secara umum atau ringkasan teknis tanpa menyebut satu komponen khusus, isi 'atribut' dengan null (BUKAN 'lainnya', BUKAN 'spek_umum').
-  * Gunakan 'lainnya' HANYA jika menanyakan fitur teknis khusus yang tidak ada pada daftar atribut di atas (seperti pena digital stylus, sensor khusus, bahan sasis).
-- Pembaruan kebutuhan pelanggan:
-  * Jika pelanggan menyebutkan aktivitas atau software komputasi baru (misal: 'editing video 4K', 'animasi blender', 'programming docker', 'render 3D', 'kasir toko'), argumen 'kebutuhan_teks' WAJIB terisi dengan ringkasan aktivitas tersebut!
-- Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama/merek parsial (misal ['advan'], ['asus']) dari daftar yang ada pada layar. JANGAN mengeluarkan kode produk internal katalog.
-- Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.
-- DILARANG menggunakan nilai jenis/topik/slot di luar enum skema yang ditentukan.
-"""
+ATURAN INTENT & KONTEKS:
+- 'terima_kasih' (basa_basi, jenis: terima_kasih) HANYA bila ada ucapan terima kasih eksplisit TANPA pertanyaan atau keberatan. Jika disertai pertanyaan atau keberatan, utamakan intent pertanyaan/keberatannya.
+- Reaksi pelanggan terhadap jawaban bot (bingung, ragu, keberatan, kesal, bercanda) -> 'perbaiki_percakapan' dengan 'jenis' sesuai penyebab:
+  * 'koreksi': menyangkut kriteria atau produk (misal koreksi kategori/merek/spesifikasi).
+  * 'keluhan': menyangkut layanan, sikap bot, atau pertanyaan pelanggan yang terlewat.
+  * 'salah_paham': bot keliru menangkap maksud pelanggan.
+- Pertanyaan ragu tentang produk yang sedang dibahas di layar:
+  * Keraguan kelayakan/kemampuan beban kerja -> 'evaluasi_kecocokan' ('rujukan_produk': nomor urut produk tampil [1], [2]).
+  * Keraguan harga atau rincian komponen -> 'tanya_spesifikasi' ('rujukan_produk': nomor urut produk tampil [1], [2]).
+- Jawaban pelanggan yang bukan jawaban atas pertanyaan bot -> 'jawab_pertanyaan_bot' tanpa membuka pencarian produk.
+- 'lanjutan_hasil' HANYA jika 'produk_tampil' tidak kosong.
+- Jangan menyebut kode internal produk katalog. Rujukan produk gunakan nomor urut ([1], [2]) atau nama dari produk tampil."""
 
 # 8 CONTOH SINTETIS DAN BERAGAM YANG MENGGAMBARKAN BATAS ANTAR AKSI
 # (Tidak menggunakan kalimat dari percakapan nyata, tangkapan layar, log, atau held-out)
@@ -87,7 +72,7 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Untuk siapa perangkat ini akan digunakan?\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [], \"pending_question\": \"persona\"}\n"
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Untuk siapa perangkat ini akan digunakan?\", \"pending_question\": \"persona\"}\n"
             "Pesan Pelanggan: \"Saya dokter spesialis anak di klinik swasta\""
         )
     },
@@ -99,27 +84,43 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
             "pembaruan_state": {"persona": "dokter anak", "sebutan": "dokter"}
         })
     },
-    # 2. Batas: Aktivitas Konkret (minta_rekomendasi) vs Pencarian Spesifikasi
+    # 2. Batas: Jawaban Bukan Atas Pertanyaan Bot (jawab_pertanyaan_bot tanpa buka produk)
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": null, \"kebutuhan_diketahui\": null, \"produk_tampil\": [], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Perlu perangkat untuk rekaman multi-track 24 channel dan mixing audio di studio\""
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berapa estimasi alokasi dana untuk perangkat ini?\", \"pending_question\": \"budget\"}\n"
+            "Pesan Pelanggan: \"Belum ada patokan dana tertentu, mau lihat pilihan dulu\""
+        )
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "jawab_pertanyaan_bot",
+            "argumen": {"slot": "kebutuhan", "nilai": "lihat pilihan"},
+            "pembaruan_state": {}
+        })
+    },
+    # 3. Batas: Aktivitas Konkret (minta_rekomendasi)
+    {
+        "role": "user",
+        "content": (
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": null, \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Perlu komputer untuk simulasi fluida CFD dan rendering 3D di laboratorium\""
         )
     },
     {
         "role": "assistant",
         "content": json.dumps({
             "aksi": "minta_rekomendasi",
-            "argumen": {"kebutuhan_teks": "rekaman multi-track dan mixing audio", "kategori": "desktop"},
-            "pembaruan_state": {"kebutuhan_teks": "rekaman multi-track dan mixing audio", "kategori": "desktop"}
+            "argumen": {"kebutuhan_teks": "simulasi fluida CFD dan rendering 3D", "kategori": "desktop"},
+            "pembaruan_state": {"kebutuhan_teks": "simulasi fluida CFD dan rendering 3D", "kategori": "desktop"}
         })
     },
-    # 3. Batas: Evaluasi Kecocokan (evaluasi_kecocokan) vs Tanya Spesifikasi
+    # 4. Batas: Pertanyaan Ragu Kelayakan Produk Tampil (evaluasi_kecocokan)
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut unit yang tersedia\", \"kebutuhan_diketahui\": \"arsitektur BIM ArchiCAD\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Workstation Alpha\", \"harga\": 18500000}], \"pending_question\": null}\n"
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut unit yang tersedia\", \"kebutuhan_diketahui\": \"arsitektur BIM ArchiCAD\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Workstation Delta\", \"harga\": 18500000}], \"pending_question\": null}\n"
             "Pesan Pelanggan: \"Apakah unit pertama ini sanggup memproses kalkulasi struktur BIM yang kompleks?\""
         )
     },
@@ -131,11 +132,11 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     },
-    # 4. Batas: Tanya Spesifikasi (tanya_spesifikasi) vs Evaluasi Kecocokan
+    # 5. Batas: Pertanyaan Ragu Spesifikasi/Harga Produk Tampil (tanya_spesifikasi)
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": null, \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Laptop Creator 16\", \"harga\": 14200000}], \"pending_question\": null}\n"
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Laptop Studio 14\", \"harga\": 14200000}], \"pending_question\": null}\n"
             "Pesan Pelanggan: \"Slot kartu grafis pada unit tersebut memakai seri apa?\""
         )
     },
@@ -147,11 +148,27 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
             "pembaruan_state": {}
         })
     },
-    # 5. Batas: Perbaikan Percakapan (perbaiki_percakapan) vs Pencarian Baru
+    # 6. Batas: Reaksi Terhadap Bot - Keluhan Pertanyaan Terlewat (perbaiki_percakapan)
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut rekomendasi desktop tower untuk Anda\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Tower Pro\", \"harga\": 12000000}], \"pending_question\": null}\n"
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut rekomendasi produk untuk Kakak\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Studio Slim\", \"harga\": 12000000}], \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Pertanyaan saya yang tadi tentang garansi kok malah dilewati?\""
+        )
+    },
+    {
+        "role": "assistant",
+        "content": json.dumps({
+            "aksi": "perbaiki_percakapan",
+            "argumen": {"jenis": "keluhan", "rujukan": "pertanyaan garansi terlewat"},
+            "pembaruan_state": {}
+        })
+    },
+    # 7. Batas: Reaksi Terhadap Bot - Koreksi Kriteria (perbaiki_percakapan)
+    {
+        "role": "user",
+        "content": (
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Berikut rekomendasi desktop tower untuk Anda\", \"produk_tampil\": [{\"no\": 1, \"nama\": \"Tower Pro\", \"harga\": 12000000}], \"pending_question\": null}\n"
             "Pesan Pelanggan: \"Saya minta komputer jinjing portabel, bukan komputer meja\""
         )
     },
@@ -163,51 +180,19 @@ SYNTHETIC_8_BOUNDARY_FEW_SHOTS = [
             "pembaruan_state": {"kategori": "laptop"}
         })
     },
-    # 6. Batas: Pencarian Baru Berparameter (cari_produk) vs Rekomendasi Kebutuhan
+    # 8. Batas: Terima Kasih Eksklusif Tanpa Pertanyaan/Keberatan (basa_basi)
     {
         "role": "user",
         "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": null, \"kebutuhan_diketahui\": null, \"produk_tampil\": [], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Carikan laptop dell dengan prosesor intel i7 batas dana 15 juta\""
+            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Semoga informasinya membantu ya Kak!\", \"pending_question\": null}\n"
+            "Pesan Pelanggan: \"Terima kasih banyak atas infonya ya Kak\""
         )
     },
     {
         "role": "assistant",
         "content": json.dumps({
-            "aksi": "cari_produk",
-            "argumen": {"kategori": "laptop", "merek": "dell", "max_harga": 15000000},
-            "pembaruan_state": {"kategori": "laptop", "budget": 15000000}
-        })
-    },
-    # 7. Batas: Lanjutan Hasil (lanjutan_hasil) vs Pencarian Baru
-    {
-        "role": "user",
-        "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": \"Pilihan tersedia saat ini\", \"kebutuhan_diketahui\": null, \"produk_tampil\": [{\"no\": 1, \"nama\": \"Alpha Pro Max\", \"harga\": 11000000}, {\"no\": 2, \"nama\": \"Delta Work Pro\", \"harga\": 13500000}], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Berikan opsi alternatif lain yang banderolnya lebih terjangkau dari daftar tersebut\""
-        )
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "lanjutan_hasil",
-            "argumen": {"jenis": "lebih_murah"},
-            "pembaruan_state": {}
-        })
-    },
-    # 8. Batas: Info Toko (tanya_info_toko) vs Pertanyaan Katalog
-    {
-        "role": "user",
-        "content": (
-            "Konteks Sesi: {\"teks_pesan_terakhir_bot\": null, \"kebutuhan_diketahui\": null, \"produk_tampil\": [], \"pending_question\": null}\n"
-            "Pesan Pelanggan: \"Bagaimana prosedur klaim perbaikan jika perangkat mengalami kerusakan masa pakai?\""
-        )
-    },
-    {
-        "role": "assistant",
-        "content": json.dumps({
-            "aksi": "tanya_info_toko",
-            "argumen": {"topik": "garansi"},
+            "aksi": "basa_basi",
+            "argumen": {"jenis": "terima_kasih"},
             "pembaruan_state": {}
         })
     }

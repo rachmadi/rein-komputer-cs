@@ -75,3 +75,24 @@ def test_butir2_generator_prompt_dan_panjang_teks():
     is_valid, violations = checker.check(teks_panjang, {"status": "sapaan"})
     assert is_valid is True, f"Teks wajar 460 karakter harus lolos: {violations}"
 
+
+def test_butir3_parser_prompt_dan_few_shots():
+    """Menguji bahwa parser prompt memuat aturan intent/konteks dan 8 few-shots sintetis."""
+    from services.llm_parser import SYSTEM_PARSER_PROMPT, SYNTHETIC_8_BOUNDARY_FEW_SHOTS
+
+    # Cek poin-poin inti prompt parser
+    assert "terima_kasih" in SYSTEM_PARSER_PROMPT
+    assert "perbaiki_percakapan" in SYSTEM_PARSER_PROMPT
+    assert "koreksi" in SYSTEM_PARSER_PROMPT
+    assert "keluhan" in SYSTEM_PARSER_PROMPT
+    assert "salah_paham" in SYSTEM_PARSER_PROMPT
+    assert "evaluasi_kecocokan" in SYSTEM_PARSER_PROMPT
+    assert "tanya_spesifikasi" in SYSTEM_PARSER_PROMPT
+    assert "jawab_pertanyaan_bot" in SYSTEM_PARSER_PROMPT
+
+    # Few-shots berjumlah tepat 8 pasang user-assistant (16 pesan)
+    assert len(SYNTHETIC_8_BOUNDARY_FEW_SHOTS) == 16
+    user_turns = [m for m in SYNTHETIC_8_BOUNDARY_FEW_SHOTS if m["role"] == "user"]
+    assert len(user_turns) == 8
+
+
