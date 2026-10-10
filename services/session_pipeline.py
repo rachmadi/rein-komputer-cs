@@ -805,6 +805,17 @@ class SessionPipeline:
         # Putaran 13 Butir G: Pasca-proses deterministik pembersihan kata seru pembuka berulang
         gen_out.teks = strip_repeated_opening_interjection(gen_out.teks, history=history_8)
 
+        # Putaran 13b Butir 1: Jaring pengaman kebocoran kriteria teknis internal
+        LEAK_PATTERNS = ["(got ", ">=", "<=", "cpu_tier", "ram_gb", "storage_ssd_gb", "vram_gb", "gpu_dedicated"]
+        if any(p in gen_out.teks for p in LEAK_PATTERNS):
+            logger.warning("Jaring pengaman aktif: Kebocoran teks internal terdeteksi pada balasan. Mengganti dengan jawaban deterministik.")
+            violations.append("Kebocoran teks internal: mengandung kriteria teknis internal")
+            is_fallback = True
+            clean_fallback = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
+            if any(p in clean_fallback for p in LEAK_PATTERNS):
+                clean_fallback = "Saat ini belum ada produk yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Silakan konsultasikan kebutuhan Kakak dengan staf kami di kontak berikut."
+            gen_out.teks = clean_fallback
+
         # Update pending_question di state sesuai keluaran generator
         state["pending_question"] = gen_out.pertanyaan_diajukan
         if gen_out.pertanyaan_diajukan:

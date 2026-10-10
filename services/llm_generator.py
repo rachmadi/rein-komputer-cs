@@ -82,8 +82,14 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
     if status == "belum_ada_yang_memenuhi":
         p_close = fakta.get("produk_terdekat", {})
         nama = p_close.get("nama", "perangkat terdekat")
-        kekurangan = ", ".join(p_close.get("kekurangan", []))
-        return f"Saat ini belum ada produk yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Pilihan terdekat kami adalah {nama} ({kekurangan})."
+        raw_kekurangan = p_close.get("kekurangan", [])
+        from services.catalog_search import format_natural_unmet_list
+        if isinstance(raw_kekurangan, list):
+            natural_k = format_natural_unmet_list([str(x) for x in raw_kekurangan])
+            kek_str = ", ".join(natural_k) if natural_k else "spesifikasi masih di bawah kebutuhan"
+        else:
+            kek_str = str(raw_kekurangan)
+        return f"Saat ini belum ada produk yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Pilihan terdekat kami adalah {nama} ({kek_str})."
 
     if fakta.get("jenis_lanjutan") == "termurah_dari_tampil" and fakta.get("produk_termurah"):
         pt = fakta.get("produk_termurah", {})

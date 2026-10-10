@@ -106,21 +106,15 @@ def clean_specs(p_item: dict) -> str:
 _clean_specs = clean_specs
 
 
-def format_natural_unmet_requirements(unmet_list: list[str]) -> str:
-    """Format daftar syarat yang belum terpenuhi menjadi teks alami bahasa Indonesia."""
+def format_natural_unmet_list(unmet_list: list[str]) -> list[str]:
+    """Mengubah daftar kegagalan syarat mentah (misal: 'ram_gb >= 16 (got 8)') menjadi kalimat bahasa alami bebas sintaksis teknis."""
     natural_parts = []
     for item in unmet_list:
-        m_ram = re.search(r"ram_gb\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
-        if m_ram:
-            req_v = m_ram.group(1)
-            got_v = m_ram.group(2)
-            if got_v:
-                natural_parts.append(f"RAM {got_v} GB (butuh {req_v} GB)")
-            else:
-                natural_parts.append(f"butuh RAM {req_v} GB")
+        if not item:
             continue
+        item_str = str(item).strip()
 
-        m_vram = re.search(r"vram_gb\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        m_vram = re.search(r"\bvram(?:_gb)?\b\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item_str, re.IGNORECASE)
         if m_vram:
             req_v = m_vram.group(1)
             got_v = m_vram.group(2)
@@ -130,7 +124,17 @@ def format_natural_unmet_requirements(unmet_list: list[str]) -> str:
                 natural_parts.append(f"butuh VRAM {req_v} GB")
             continue
 
-        m_ssd = re.search(r"storage_ssd_gb\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        m_ram = re.search(r"\bram(?:_gb)?\b\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item_str, re.IGNORECASE)
+        if m_ram:
+            req_v = m_ram.group(1)
+            got_v = m_ram.group(2)
+            if got_v:
+                natural_parts.append(f"RAM {got_v} GB (butuh {req_v} GB)")
+            else:
+                natural_parts.append(f"butuh RAM {req_v} GB")
+            continue
+
+        m_ssd = re.search(r"(?:storage_ssd_gb|ssd_gb|ssd)\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item_str, re.IGNORECASE)
         if m_ssd:
             req_v = int(m_ssd.group(1))
             got_v = int(m_ssd.group(2)) if m_ssd.group(2) else None
@@ -142,23 +146,38 @@ def format_natural_unmet_requirements(unmet_list: list[str]) -> str:
                 natural_parts.append(f"butuh SSD {req_lbl}")
             continue
 
-        m_cpu = re.search(r"cpu_tier\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item)
+        m_cpu = re.search(r"cpu(?:_tier)?\s*(?:>=|==|=)\s*(\d+)(?:\s*\(got\s*(\d+)\))?", item_str, re.IGNORECASE)
         if m_cpu:
             req_v = m_cpu.group(1)
             got_v = m_cpu.group(2)
             if got_v:
-                natural_parts.append(f"prosesor tier {got_v} (butuh tier {req_v})")
+                natural_parts.append(f"prosesor tingkat {got_v} (butuh tingkat {req_v})")
             else:
-                natural_parts.append(f"butuh prosesor tier {req_v}")
+                natural_parts.append(f"butuh prosesor tingkat {req_v}")
             continue
 
-        if "gpu_dedicated" in item:
+        if "gpu_dedicated" in item_str:
             natural_parts.append("belum memiliki GPU dedicated")
             continue
 
-        cleaned = re.sub(r"\b([a-z_]+)_gb\b", r"\1", item).replace("_", " ")
-        natural_parts.append(cleaned)
+        m_na = re.search(r"^([a-z_]+)\s*\(tidak tersedia\)", item_str, re.IGNORECASE)
+        if m_na:
+            fld = m_na.group(1).replace("_gb", "").replace("_", " ")
+            natural_parts.append(f"{fld} tidak tercantum")
+            continue
 
+        cleaned = re.sub(r"\(got\s*[^)]*\)", "", item_str)
+        cleaned = re.sub(r"\b([a-z_]+)_gb\b", r"\1", cleaned)
+        cleaned = cleaned.replace(">=", "minimal").replace("<=", "maksimal").replace("==", "=").replace("_", " ").strip()
+        if cleaned:
+            natural_parts.append(cleaned)
+
+    return natural_parts
+
+
+def format_natural_unmet_requirements(unmet_list: list[str]) -> str:
+    """Format daftar syarat yang belum terpenuhi menjadi teks alami bahasa Indonesia."""
+    natural_parts = format_natural_unmet_list(unmet_list)
     if natural_parts:
         return f"Belum memenuhi: {', '.join(natural_parts)}"
     return ""

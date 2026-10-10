@@ -621,7 +621,10 @@ class ActionEngine:
             closest = candidates[0]
             closest_prod = closest["product"]
             rep = closest["report"]
-            unmet = rep.get("tidak_terpenuhi", []) or [f"{r} tidak terpenuhi" for r in rep.get("tidak_diketahui", [])] or [str(closest.get("failure_reason") or "spesifikasi belum memenuhi")]
+            from services.catalog_search import format_natural_unmet_list
+            unmet_raw = rep.get("tidak_terpenuhi", []) or [f"{r} tidak terpenuhi" for r in rep.get("tidak_diketahui", [])] or [str(closest.get("failure_reason") or "spesifikasi belum memenuhi")]
+            unmet = format_natural_unmet_list(unmet_raw)
+            alasan_terdekat = f"Belum memenuhi: {', '.join(unmet)}" if unmet else "Belum memenuhi spesifikasi minimum"
             fakta = {
                 "status": "belum_ada_yang_memenuhi",
                 "profil": {
@@ -638,7 +641,7 @@ class ActionEngine:
                     "lembar_spesifikasi": build_lembar_spesifikasi(closest_prod),
                     "catatan_minimum": {
                         "memenuhi": False,
-                        "alasan": ", ".join(unmet)
+                        "alasan": alasan_terdekat
                     },
                     "kekurangan": unmet
                 },
@@ -662,9 +665,13 @@ class ActionEngine:
             p = item["product"]
             rep = item["report"]
             p_price = get_product_price(p)
+            from services.catalog_search import format_natural_unmet_list
+            unmet_raw = rep.get("tidak_terpenuhi", [])
+            unmet_natural = format_natural_unmet_list(unmet_raw)
+            alasan_unmet = f"Belum memenuhi: {', '.join(unmet_natural)}" if unmet_natural else (item.get("failure_reason") or "Belum memenuhi sebagian spesifikasi")
             cat_min = {
                 "memenuhi": bool(item["passed"]),
-                "alasan": "Memenuhi seluruh spesifikasi minimum" if item["passed"] else (item.get("failure_reason") or "Belum memenuhi sebagian spesifikasi")
+                "alasan": "Memenuhi seluruh spesifikasi minimum" if item["passed"] else alasan_unmet
             }
             formatted_prods.append({
                 "kode": p.get("kode"),

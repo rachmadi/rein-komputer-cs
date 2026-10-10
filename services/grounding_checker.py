@@ -206,12 +206,17 @@ class GroundingChecker:
         # 3. Periksa istilah skema fakta internal dinamis dan istilah teknis sistem
         system_leak_terms = [
             "tier", "cpu_tier", "selisih", "fakta", "score", "profil_id",
-            "ram_gb", "storage_ssd_gb", "gpu_vram_gb", "fakta_eksekusi",
+            "ram_gb", "storage_ssd_gb", "gpu_vram_gb", "vram_gb", "gpu_dedicated", "fakta_eksekusi",
             "filter"
         ]
         for term in system_leak_terms:
             if re.search(rf"\b{re.escape(term)}\b", teks, re.IGNORECASE):
                 violations.append(f"Menyebut istilah skema/sistem internal '{term}'.")
+
+        leak_syntax = ["(got ", ">=", "<="]
+        for ls in leak_syntax:
+            if ls in teks.lower():
+                violations.append(f"Menyebut sintaks kriteria teknis internal '{ls}'.")
 
         # Tolak "kendala teknis" kecuali pada sistem_error
         if fakta.get("status") != "sistem_error" and "kendala teknis" in teks.lower():
