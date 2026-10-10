@@ -342,7 +342,8 @@ class GroundingChecker:
                     break
 
         # D3: Jangan menyebut "data belum tercatat/belum lengkap" untuk kategori yang ada di katalog
-        catalog_cats = ["laptop", "desktop", "printer", "komputer", "pc"]
+        from core.db import get_catalog_inventory
+        catalog_cats = get_catalog_inventory()["kategori"] + ["komputer", "pc"]
         cat_present = any(c in teks.lower() for c in catalog_cats) or (state and str(state.get("kategori", "")).lower() in catalog_cats) or (str(fakta.get("kategori", "")).lower() in catalog_cats)
         if cat_present:
             pola_data_belum_ada = [
@@ -427,7 +428,7 @@ class GroundingChecker:
             cats = {str(p.get("kategori", "")).lower() for p in active_prods if p.get("kategori")}
             if len(cats) == 1:
                 cur_cat = list(cats)[0]
-                conflicting = {"laptop", "desktop", "printer", "monitor"} - {cur_cat}
+                conflicting = set(get_catalog_inventory()["kategori"]) - {cur_cat}
                 for c_cat in conflicting:
                     if re.search(rf"\b(?:berikut|ini|rekomendasi|pilihan|unit)\s+(?:adalah\s+)?{c_cat}\b", teks, re.IGNORECASE):
                         violations.append(f"Menyebut kategori '{c_cat}' yang bertentangan dengan kategori produk aktif '{cur_cat}'.")

@@ -258,13 +258,14 @@ def merge_filters(f1: list[dict], f2: list[dict]) -> list[dict]:
 def _match_legacy_query(p: dict, q: str) -> bool:
     """Pencocokan query lama berbasis merek/kata unik nama produk."""
     q = q.lower()
-    brands = ["acer", "asus", "lenovo", "hp", "nitro", "vivobook", "tuf", "ideapad", "legion", "macbook", "apple", "rog"]
+    from core.db import get_catalog_inventory
+    brands = get_catalog_inventory()["merek"]
     matched_brands = [b for b in brands if re.search(r"\b" + b + r"\b", q)]
     if matched_brands:
         return any(b in p["nama"].lower() for b in matched_brands)
 
     common_words = [
-        "laptop", "notebook", "pc", "desktop", "komputer", "printer", "layar", "monitor",
+        "laptop", "notebook", "pc", "desktop", "komputer", "printer", "layar",
         "ram", "ssd", "gb", "tb", "jt", "juta", "murah", "di", "bawah", "dibawah", "buat", "untuk",
         "ada", "yang", "aja", "saja", "kalo", "kalau", "mau", "cari"
     ]
@@ -284,7 +285,8 @@ def should_skip_rag(text: str, catalog: Catalog) -> bool:
         return True
     if any(f" {k} " in f" {t} " for k in greetings):
         return True
-    brands = ["acer", "asus", "lenovo", "hp", "nitro", "vivobook", "tuf", "ideapad", "legion", "macbook", "apple", "rog"]
+    from core.db import get_catalog_inventory
+    brands = get_catalog_inventory()["merek"]
     for p in catalog.products:
         if p["kode"].lower() in t:
             return True
@@ -301,7 +303,8 @@ def check_fast_path(text: str, catalog: Catalog, previous_lowest_price: int | No
     if any(t == k or t.startswith(k + " ") for k in greetings):
         return True, "Halo Kak! Ada produk yang sedang dicari hari ini?", {}
 
-    brands = ["acer", "asus", "lenovo", "hp", "nitro", "vivobook", "tuf", "ideapad", "legion", "macbook", "apple", "rog"]
+    from core.db import get_catalog_inventory
+    brands = get_catalog_inventory()["merek"]
     has_brand = any(b in f" {t} " for b in brands)
 
     narrowing_keywords = ["lebih murah", "yang lain", "yang asus", "yang ssd", "yang ram", "kalo", "kalau", "aja"]
@@ -437,7 +440,6 @@ def execute_tool(
                 "laptop": ("laptop", "notebook"),
                 "desktop": ("desktop", "pc meja", "komputer meja", "tower", "all-in-one", "aio", "pc", "komputer"),
                 "printer": ("printer", "cetak", "print", "tinta", "ink tank"),
-                "monitor": ("monitor", "layar", "display")
             }
             earliest_idx = 9999
             for cname, kwords in cat_keywords.items():

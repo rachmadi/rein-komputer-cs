@@ -24,21 +24,9 @@ OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 DEFAULT_NLU_MODEL = "gemma4:e4b"
 DB_PATH = os.getenv("DB_PATH", "data/catalog.db")
 
-# Daftar merek dinamis dari database katalog Bobby Computer
 def get_catalog_brands() -> list[str]:
-    try:
-        db_file = os.getenv("DB_PATH", "data/catalog.db")
-        if os.path.exists(db_file):
-            conn = sqlite3.connect(db_file)
-            cur = conn.cursor()
-            cur.execute("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != ''")
-            brands = [r[0].lower() for r in cur.fetchall()]
-            conn.close()
-            if brands:
-                return brands
-    except Exception as e:
-        logger.warning(f"Gagal memuat merek dinamis dari DB: {e}")
-    return ["lenovo", "asus", "hp", "acer", "canon", "epson", "brother"]
+    from core.db import get_catalog_inventory
+    return get_catalog_inventory()["merek"]
 
 # Pemetaan Aktivitas ke Profil (LLM + Knowledge Base)
 def map_activity_to_profile(aktivitas: str | None, persona: str | None = None) -> str | None:
@@ -142,8 +130,6 @@ def extract_slots_deterministic(
         slots["kategori"] = "desktop"
     elif any(k in low for k in ["printer", "cetak"]):
         slots["kategori"] = "printer"
-    elif any(k in low for k in ["monitor", "layar"]):
-        slots["kategori"] = "monitor"
 
     # 4. Deteksi budget
     bg = parse_budget_amount(user_text)

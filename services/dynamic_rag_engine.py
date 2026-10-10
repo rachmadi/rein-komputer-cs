@@ -28,7 +28,6 @@ CATEGORY_KEYWORDS = {
     "printer": ["printer", "print", "cetak", "tinta", "cartridge", "ink tank", "ecotank", "scan", "fotokopi", "copy"],
     "laptop": ["laptop", "notebook", "komputer jinjing"],
     "desktop": ["desktop", "pc", "komputer", "mini pc", "all-in-one", "aio", "tower"],
-    "monitor": ["monitor"]
 }
 
 BRAND_KEYWORDS = {

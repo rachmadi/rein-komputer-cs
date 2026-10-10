@@ -26,7 +26,7 @@ TOOLS_DEFINITION = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "kategori": {"type": "string", "enum": ["laptop", "desktop", "printer", "monitor", "all"]},
+                    "kategori": {"type": "string", "enum": ["laptop", "desktop", "printer", "all"]},
                     "kebutuhan": {"type": "string", "description": "HANYA isi dengan peruntukan/kegiatan. Contoh: 'edit video', 'gaming', 'kasir', 'anak sekolah'."},
                     "query": {"type": "string", "description": "HANYA isi dengan nama merek, model, atau kata kunci eksplisit (misal: 'asus', '128gb', 'RTX')."},
                     "profil_id": {"type": "string", "description": "Isi jika user meminta opsi 'lain' atau 'lebih murah'."},
@@ -354,7 +354,6 @@ def run_agentic_tool(
         cat_name = current_category or "laptop"
         if any(k in low for k in ["desktop", "komputer", "pc", "aio"]): cat_name = "desktop"
         elif any(k in low for k in ["printer", "cetak"]): cat_name = "printer"
-        elif any(k in low for k in ["monitor", "layar"]): cat_name = "monitor"
 
         reply = (
             f"Kami memiliki beragam pilihan {cat_name} berkualitas di Bobby Computer.\n\n"
@@ -598,7 +597,6 @@ def run_agentic_tool(
     if any(k in low for k in ["laptop", "notebook"]): new_cat = "laptop"
     elif any(k in low for k in ["desktop", "komputer", "pc", "aio"]): new_cat = "desktop"
     elif any(k in low for k in ["printer", "cetak"]): new_cat = "printer"
-    elif any(k in low for k in ["monitor", "layar"]): new_cat = "monitor"
 
     if new_cat and current_category and new_cat != current_category:
         # Kategori berganti -> reset profil aktif!

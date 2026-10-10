@@ -7,6 +7,27 @@ from core.catalog import Catalog, infer_tags_from_specs, derive_tags, normalize
 import os
 DB_PATH = os.getenv("DB_PATH", "data/catalog.db")
 
+def get_catalog_inventory(db_path: str | None = None) -> dict[str, list[str]]:
+    """Satu sumber kebenaran (§Putaran 14 Butir 1):
+    Daftar kategori dan merek yang dijual hanya diambil dari catalog.db melalui satu fungsi ini.
+    Mengembalikan dict: {"kategori": [...], "merek": [...]}
+    Semua nilai dalam huruf kecil dan terurut alfabetis.
+    """
+    path = db_path or os.getenv("DB_PATH", "data/catalog.db")
+    if not os.path.exists(path):
+        return {"kategori": [], "merek": []}
+    try:
+        conn = sqlite3.connect(path)
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT kategori FROM products WHERE kategori IS NOT NULL AND kategori != ''")
+        kategori = sorted(list({r[0].lower().strip() for r in cur.fetchall() if r[0]}))
+        cur.execute("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != ''")
+        merek = sorted(list({r[0].lower().strip() for r in cur.fetchall() if r[0]}))
+        conn.close()
+        return {"kategori": kategori, "merek": merek}
+    except Exception:
+        return {"kategori": [], "merek": []}
+
 def init_db(db_path: str = DB_PATH):
     import os
     os.makedirs(os.path.dirname(db_path), exist_ok=True)

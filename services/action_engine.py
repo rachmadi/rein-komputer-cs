@@ -472,8 +472,6 @@ class ActionEngine:
                 kategori = "desktop"
             elif "printer" in k_low or "cetak" in k_low:
                 kategori = "printer"
-            elif "monitor" in k_low or "layar tambahan" in k_low:
-                kategori = "monitor"
 
         # B7: Anggaran di bawah harga terendah katalog
         if budget_max:
@@ -1383,7 +1381,7 @@ class ActionEngine:
                 if kategori in ("laptop", "desktop", "all-in-one"):
                     val = p.get("gpu")
             elif attr == AtributSpesifikasiEnum.LAYAR:
-                if kategori in ("laptop", "monitor"):
+                if kategori == "laptop":
                     val = p.get("display") or (f"{p.get('screen_inch')} inci" if p.get("screen_inch") else None)
             elif attr == AtributSpesifikasiEnum.BATERAI:
                 if kategori == "laptop":

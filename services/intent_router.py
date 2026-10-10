@@ -123,7 +123,9 @@ SPEC_INDICATORS = [
     r"\b\d+\s*(juta|jt)\b",
 ]
 
-CATALOG_BRANDS = ["lenovo", "asus", "hp", "acer", "canon", "epson", "brother"]
+from core.db import get_catalog_inventory
+
+CATALOG_BRANDS = get_catalog_inventory()["merek"]
 OTHER_BRANDS = [
     "dell", "apple", "macbook", "msi", "samsung", "toshiba", "axioo", "zyrex",
     "huawei", "xiaomi", "redmibook", "advan", "infinix", "avita", "sony", "vaio", "razer", "alienware", "fujitsu"

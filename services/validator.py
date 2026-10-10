@@ -32,38 +32,17 @@ ACTION_JENIS_MAP = {
 }
 
 
+from core.db import get_catalog_inventory
+
+
 def get_catalog_brands(db_path: str | None = None) -> list[str]:
-    """Mengambil daftar merek secara dinamis dari database katalog."""
-    path = db_path or os.getenv("DB_PATH", "data/catalog.db")
-    try:
-        if os.path.exists(path):
-            conn = sqlite3.connect(path)
-            cur = conn.cursor()
-            cur.execute("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != ''")
-            brands = [r[0].lower().strip() for r in cur.fetchall() if r[0]]
-            conn.close()
-            if brands:
-                return sorted(list(set(brands)))
-    except Exception as e:
-        logger.warning(f"Gagal memuat merek dinamis: {e}")
-    return ["lenovo", "asus", "hp", "acer", "canon", "epson", "brother"]
+    """Mengambil daftar merek secara dinamis dari catalog.db via satu sumber kebenaran."""
+    return get_catalog_inventory(db_path)["merek"]
 
 
 def get_catalog_categories(db_path: str | None = None) -> list[str]:
-    """Mengambil daftar kategori secara dinamis dari database katalog."""
-    path = db_path or os.getenv("DB_PATH", "data/catalog.db")
-    try:
-        if os.path.exists(path):
-            conn = sqlite3.connect(path)
-            cur = conn.cursor()
-            cur.execute("SELECT DISTINCT kategori FROM products WHERE kategori IS NOT NULL AND kategori != ''")
-            cats = [r[0].lower().strip() for r in cur.fetchall() if r[0]]
-            conn.close()
-            if cats:
-                return sorted(list(set(cats)))
-    except Exception as e:
-        logger.warning(f"Gagal memuat kategori dinamis: {e}")
-    return ["laptop", "desktop", "printer", "monitor"]
+    """Mengambil daftar kategori secara dinamis dari catalog.db via satu sumber kebenaran."""
+    return get_catalog_inventory(db_path)["kategori"]
 
 
 def is_valid_kebutuhan_teks(text: str | None, db_path: str | None = None) -> bool:
