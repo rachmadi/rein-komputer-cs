@@ -175,6 +175,8 @@ def process_chat_message(
                 kartu_ditampilkan=getattr(turn_res, "kartu_ditampilkan", False),
                 keluhan_beruntun=int(new_state_dict.get("keluhan_beruntun", 0) or 0),
                 tanya_beruntun=int(new_state_dict.get("tanya_beruntun", 0) or 0),
+                status_fakta=getattr(turn_res, "status_fakta", None),
+                state_setelah=getattr(turn_res, "state_setelah", None),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)

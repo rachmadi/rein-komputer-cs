@@ -67,6 +67,8 @@ class TurnExecutionResult:
     jenis: Optional[str] = None
     parser_raw: Optional[Any] = None
     kartu_ditampilkan: bool = False
+    status_fakta: Optional[str] = None
+    state_setelah: Optional[Dict[str, Any]] = None
 
 
 def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None) -> Optional[Tuple[str, str, str]]:
@@ -169,7 +171,14 @@ class SessionPipeline:
                 aksi_parser=r_aksi,
                 jenis=None,
                 parser_raw=None,
-                kartu_ditampilkan=False
+                kartu_ditampilkan=False,
+                status_fakta=r_status,
+                state_setelah={
+                    "kategori": state.get("kategori"),
+                    "merek": state.get("merek"),
+                    "kebutuhan_teks": state.get("kebutuhan_teks"),
+                    "budget": state.get("budget"),
+                }
             )
             return turn_result, state
 
@@ -693,7 +702,14 @@ class SessionPipeline:
             aksi_parser=parsed.aksi.value,
             jenis=(parsed.argumen.jenis.value if hasattr(parsed.argumen.jenis, "value") else str(parsed.argumen.jenis)) if getattr(parsed.argumen, "jenis", None) is not None else None,
             parser_raw=parse_metrics.get("parser_raw") or parse_metrics.get("raw_content"),
-            kartu_ditampilkan=bool(kartu_html is not None and len(str(kartu_html).strip()) > 0)
+            kartu_ditampilkan=bool(kartu_html is not None and len(str(kartu_html).strip()) > 0),
+            status_fakta=(action_res.fakta.get("status") if action_res and action_res.fakta else None),
+            state_setelah={
+                "kategori": state.get("kategori"),
+                "merek": state.get("merek"),
+                "kebutuhan_teks": state.get("kebutuhan_teks"),
+                "budget": state.get("budget"),
+            }
         )
 
         return turn_result, state
