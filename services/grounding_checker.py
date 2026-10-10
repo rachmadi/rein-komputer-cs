@@ -466,6 +466,9 @@ class GroundingChecker:
                 if val and attr != "spek_umum":
                     val_str = str(val).lower()
                     val_tokens = [tok for tok in re.split(r"[\s\|\,\;]+", val_str) if len(tok) >= 2 and tok not in ("inci", "fhd", "ips", "ram", "ssd", "ddr4", "ddr5", "tipe")]
+                    if val_str not in teks.lower() and not any(tok in teks.lower() for tok in val_tokens):
+                        violations.append(f"Teks tanya_spesifikasi tidak memuat nilai spesifikasi yang diminta ({val}).")
+
         # 16. Putaran 14 Butir 5: Tolak balasan yang menyebut kategori/merek di luar katalog kecuali penolakan
         from core.db import get_catalog_inventory
         inv = get_catalog_inventory()

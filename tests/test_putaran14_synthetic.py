@@ -235,5 +235,85 @@ def test_butir6_log_mencatat_permintaan_asli_argumen_ditolak_konteks_toko_fakta(
     assert rec["status_hasil"] == "tidak_dijual"
 
 
+# =============================================================================
+# BUTIR 7 — Property-Based Tests (Minimal 10 Kasus Kombinasi)
+# Kategori Luar (monitor, tablet, kamera, keyboard) x Merek Luar (MacBook, Logitech, Apple, Dell) x Kategori Katalog (laptop, desktop, printer)
+# =============================================================================
+@pytest.mark.parametrize("kat_req,merek_req,state_kat", [
+    # 1. Kategori luar saja
+    ("monitor", None, None),
+    ("tablet", None, None),
+    ("kamera", None, None),
+    ("keyboard", None, None),
+    # 2. Merek luar saja
+    (None, "MacBook", None),
+    (None, "Logitech", None),
+    (None, "Apple", None),
+    (None, "Dell", None),
+    # 3. Kategori luar x Merek luar
+    ("monitor", "Logitech", None),
+    ("tablet", "Apple", None),
+    ("kamera", "Sony", None),
+    ("keyboard", "Razer", None),
+    # 4. Kategori katalog x Merek luar
+    ("laptop", "MacBook", None),
+    ("desktop", "Dell", None),
+    ("printer", "Logitech", None),
+    ("laptop", "Apple", None),
+    # 5. Kategori luar x State lama berisi laptop/desktop/printer (uji ketahanan substitusi diam-diam)
+    ("monitor", None, "laptop"),
+    ("tablet", None, "desktop"),
+    ("kamera", None, "printer"),
+    ("keyboard", None, "laptop"),
+])
+def test_butir7_property_based_kombinasi_luar_katalog_tidak_sukses_tidak_default_laptop(kat_req, merek_req, state_kat):
+    """
+    Property-Based Test:
+    Bagi SETIAP kombinasi kategori luar, merek luar, dan kategori katalog:
+    1. Status HASIL TIDAK BOLEH 'sukses'.
+    2. Status HASIL HARUS 'tidak_dijual'.
+    3. Produk list HARUS kosong ([]).
+    4. TIDAK BOLEH jatuh ke default laptop atau produk katalog mana pun.
+    """
+    engine = ActionEngine()
+    state = {}
+    if state_kat:
+        state["kategori"] = state_kat
+        state["produk_tampil"] = [{"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "harga": 5199000}]
+
+    raw_args = {}
+    raw_state_up = {}
+    if kat_req:
+        raw_args["kategori"] = kat_req
+        raw_state_up["kategori"] = kat_req
+    if merek_req:
+        raw_args["merek"] = merek_req
+        raw_state_up["merek"] = merek_req
+
+    raw = {
+        "aksi": "cari_produk",
+        "argumen": raw_args,
+        "pembaruan_state": raw_state_up
+    }
+
+    validated, is_valid = validate_parser_output(raw, session_state=state)
+    assert is_valid is True
+
+    # Periksa kontrak intent: harus ada argumen ditolak
+    ki = validated.kontrak_intent
+    assert ki is not None
+    assert len(ki["argumen_ditolak"]) >= 1
+
+    # Eksekusi aksi
+    res = engine.execute(validated, session_state=state)
+
+    # Verifikasi invariant
+    assert res.fakta.get("status") == "tidak_dijual", f"Status must be 'tidak_dijual', got {res.fakta.get('status')}"
+    assert res.fakta.get("status") != "sukses", "Status must NOT be 'sukses'"
+    assert res.produk_list == [], "produk_list must be empty, no default laptop"
+    assert res.fakta.get("belum_dicari") is True, "belum_dicari must be True"
+
+
+
 
 
