@@ -1847,13 +1847,17 @@ class ActionEngine:
     def _handle_tanya_info_toko(self, args: ActionArguments, state: dict) -> ActionResult:
         topik = args.topik.value if hasattr(args.topik, "value") else str(args.topik)
         kontak_staf = KONTAK_STAF
+        from services.validator import get_catalog_categories, get_catalog_brands
+        is_jual_apa = topik in ("produk", "katalog", "kategori", "merek", "jual_apa", "barang")
         fakta = {
             "status": "info_toko",
             "topik": topik,
-            "data_tersedia": False,
+            "data_tersedia": True if is_jual_apa else False,
+            "kategori_tersedia": get_catalog_categories(),
+            "merek_tersedia": get_catalog_brands(),
             "kontak_staf": kontak_staf,
             "belum_dicari": True,
-            "arahan": f"Berikan kontak staf toko di {kontak_staf} secara sopan tanpa menyebut estimasi durasi respons atau janji spesifik."
+            "arahan": "Sampaikan kategori dan merek yang dijual di ReIn Komputer berdasarkan Konteks Toko secara ramah tanpa mencari produk." if is_jual_apa else f"Berikan kontak staf toko di {kontak_staf} secara sopan tanpa menyebut estimasi durasi respons atau janji spesifik."
         }
         return ActionResult(aksi=ActionEnum.TANYA_INFO_TOKO, fakta=fakta, produk_list=[])
 

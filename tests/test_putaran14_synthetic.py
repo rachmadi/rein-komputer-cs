@@ -123,3 +123,40 @@ def test_butir3_tanpa_substitusi_diam_diam_ke_state_lama_atau_default_laptop():
     # Tidak boleh ada kartu produk laptop atau produk apa pun yang dikembalikan
     assert len(res.produk_list) == 0
 
+
+# =============================================================================
+# BUTIR 4 — Kontrak Konteks (Generator)
+# =============================================================================
+def test_butir4_konteks_toko_selalu_ada_di_prompt_generator():
+    """Setiap panggilan generator memuat blok tetap 'Konteks Toko' dan 'Permintaan Pelanggan Giliran Ini'."""
+    from services.llm_generator import build_generator_messages
+    state = {"kategori": "laptop"}
+    fakta = {"status": "tidak_dijual", "permintaan": {"kategori": "monitor"}}
+    messages = build_generator_messages("cari_produk", fakta, state, pesan_pelanggan="ada monitor?")
+
+    user_content = messages[-1]["content"]
+    assert "Konteks Toko" in user_content
+    assert "kategori_dijual" in user_content
+    assert "merek_dijual" in user_content
+    assert "Permintaan Pelanggan Giliran Ini" in user_content
+
+
+def test_butir4_fallback_teks_tidak_dijual_menyebut_konteks_toko_tanpa_pengganti():
+    """Teks deterministik tidak_dijual menyebut barang tidak dijual dan menyebut kategori/merek dari Konteks Toko."""
+    from services.llm_generator import build_deterministic_fallback_text
+    fakta = {
+        "status": "tidak_dijual",
+        "argumen_ditolak": [{"field": "kategori", "nilai": "monitor", "alasan": "tidak_ada_di_katalog"}],
+        "kategori_tersedia": ["desktop", "laptop", "printer"],
+        "merek_tersedia": ["acer", "asus", "brother", "canon", "epson", "hp", "lenovo"]
+    }
+    teks = build_deterministic_fallback_text("cari_produk", fakta)
+    assert "monitor" in teks.lower()
+    assert "tidak dijual di rein komputer" in teks.lower()
+    assert "desktop" in teks.lower()
+    assert "laptop" in teks.lower()
+    assert "printer" in teks.lower()
+    # Tanpa menawarkan produk pengganti secara sepihak
+    assert "padanan terdekat" not in teks.lower()
+
+

@@ -37,6 +37,12 @@ Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
 8. Jaring pengaman: jika FAKTA terasa tidak nyambung dengan pesan pelanggan, utamakan memahami maksud pesan pelanggan, jangan mengarang fakta, dan ajukan klarifikasi secara sopan.
 9. Gaya & Variasi: Maaf paling banyak sekali per beberapa giliran, lalu langsung bertindak; jika 'sudah_minta_maaf' bernilai true, jangan minta maaf lagi; jangan mengulang pembuka yang sama dengan daftar 'pembuka_terakhir'.
 10. Batas budget pelanggan adalah FILTER KERAS: DILARANG menawarkan, menyebut, atau merekomendasikan produk dengan harga di atas budget pelanggan sebagai pilihan. Jika tidak ada yang memenuhi seluruh syarat minimum, tampilkan produk di dalam budget yang paling mendekati dengan catatan jujur kekurangannya. Jika tidak ada produk sama sekali di dalam budget, katakan jujur dan tanyakan apakah pelanggan bersedia menaikkan budget — jangan menawarkan produk di luar budget tanpa diminta.
+11. Kontrak Konteks Toko & Permintaan Pelanggan:
+(a) Jika status != 'sukses', jangan menyatakan produk tersedia atau merekomendasikan produk apa pun.
+(b) Jika status 'tidak_dijual', sampaikan bahwa barang/merek itu tidak dijual di ReIn Komputer, sebutkan yang dijual dari Konteks Toko, dan jangan menawarkan produk pengganti kecuali diminta.
+(c) Jangan pernah mengklaim pelanggan menginginkan kriteria yang tidak ada di Permintaan Pelanggan Giliran Ini atau riwayat percakapan.
+(d) Jangan pernah menyebut kategori atau merek yang tidak ada di Konteks Toko, kecuali untuk mengonfirmasi bahwa toko tidak menjualnya.
+(e) Pertanyaan tentang toko menjual apa dijawab langsung dari Konteks Toko, bukan mencari produk.
 
 Contoh respons sintetis saat pelanggan kecewa:
 - Contoh 1: Pelanggan: "Lama sekali responnya, butuh laptop kerja segera!" | FAKTA: {"status": "sukses", "produk_list": [{"nama": "Acro 14", "harga": 7000000, "ram": "16 GB"}]}
@@ -59,6 +65,23 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
     """Merakit teks cadangan terstruktur langsung dari fakta_eksekusi secara deterministik (B10, B13, F5)."""
     status = fakta.get("status")
     aksi_clean = str(aksi).lower().strip()
+
+    if status == "tidak_dijual":
+        from services.validator import get_catalog_categories, get_catalog_brands
+        cats = ", ".join(fakta.get("kategori_tersedia") or get_catalog_categories())
+        brands = ", ".join(fakta.get("merek_tersedia") or get_catalog_brands())
+        ditolak_list = fakta.get("argumen_ditolak", [])
+        nama_ditolak = ", ".join([str(d.get("nilai", "")) for d in ditolak_list if d.get("nilai")]) or "barang tersebut"
+        return f"Mohon maaf Kak, {nama_ditolak} saat ini tidak dijual di ReIn Komputer. Kami menyediakan kategori {cats} dari merek {brands}."
+
+    if aksi_clean == "tanya_info_toko" or status == "info_toko":
+        topik = str(fakta.get("topik", "")).lower()
+        if topik in ("produk", "katalog", "kategori", "merek", "jual_apa", "barang") or fakta.get("data_tersedia"):
+            from services.validator import get_catalog_categories, get_catalog_brands
+            cats = ", ".join(fakta.get("kategori_tersedia") or get_catalog_categories())
+            brands = ", ".join(fakta.get("merek_tersedia") or get_catalog_brands())
+            return f"Di ReIn Komputer kami menyediakan produk dengan kategori {cats} dari merek {brands}. Ada yang bisa kami bantu carikan, Kak?"
+        return f"Untuk informasi lebih lanjut mengenai toko kami, Kakak dapat menghubungi staf kami di {KONTAK_STAF}."
 
     if aksi_clean in ("sapa", "sapaan") or status in ("sapa", "sapaan"):
         return "Halo! Selamat datang di ReIn Komputer. Ada yang bisa kami bantu seputar kebutuhan laptop atau komputer hari ini?"
@@ -304,7 +327,24 @@ def build_generator_messages(
                     "giliran": entry.get("giliran")
                 })
 
+    from core.db import get_catalog_inventory
+    inv = get_catalog_inventory()
+    konteks_toko = {
+        "kategori_dijual": inv.get("kategori", []),
+        "merek_dijual": inv.get("merek", [])
+    }
+
+    permintaan_asli = clean_fakta.get("permintaan") or state.get("_permintaan_asli") or {}
+    permintaan_giliran_ini = {
+        "intent": aksi,
+        "argumen_asli": permintaan_asli,
+        "pesan_pelanggan": pesan_pelanggan
+    }
+
     context_data = {
+        "Konteks Toko": konteks_toko,
+        "Permintaan Pelanggan Giliran Ini": permintaan_giliran_ini,
+        "status_hasil": clean_fakta.get("status"),
         "pesan_pelanggan_giliran_ini": pesan_pelanggan,
         "aksi": aksi,
         "fakta": clean_fakta,
