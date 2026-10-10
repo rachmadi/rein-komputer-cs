@@ -68,6 +68,8 @@ ATURAN INTENT & KONTEKS:
 - Mencabut atau menghapus batas budget (misal 'tanpa batas budget' / 'bebas budget') -> gunakan 'perbaiki_percakapan' (koreksi) atau 'lanjutan_hasil' (yang_lain) dengan 'pembaruan_state': {'budget': 0}.
 - Pertanyaan ketersediaan produk/kategori (misal 'ada X?', 'apakah ada laptop?', 'ada printer apa gak?') adalah 'cari_produk', BUKAN 'perbaiki_percakapan'.
 - Pesan majemuk: jika pelanggan mengoreksi atau mengeluh sambil menyebut kriteria produk yang dicari (kategori/merek/kebutuhan/budget), tetap cantumkan kriteria tersebut di argumen atau pembaruan_state agar pencarian katalog tetap dijalankan.
+- Pernyataan angka budget (misal 'budget 8 juta', 'maksimal 10jt', 'dana 7.500.000') adalah slot budget ('jawab_pertanyaan_bot' atau 'minta_rekomendasi' / 'cari_produk'), BUKAN 'lanjutan_hasil' (lebih_murah). 'lebih_murah' HANYA jika meminta opsi relatif tanpa angka baru (misal 'ada yang lebih murah?').
+- Pertanyaan pengetahuan, penjelasan teknis, atau opini (misal 'kenapa prosesor seri H boros baterai?', 'apa hubungannya RAM besar dengan simulasi?', 'kenapa tangki tinta lebih hemat?') adalah 'tanya_info_toko' / penjelasan teknis, BUKAN 'perbaiki_percakapan'.
 - Jangan menyebut kode internal produk katalog. Rujukan produk gunakan nomor urut ([1], [2]) atau nama dari produk tampil."""
 
 # 8 CONTOH SINTETIS DAN BERAGAM YANG MENGGAMBARKAN BATAS ANTAR AKSI

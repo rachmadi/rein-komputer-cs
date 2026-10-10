@@ -204,6 +204,55 @@ def update_product_focus(state: dict, action_res=None, gen_out=None, catalog=Non
         state["produk_terakhir_dibahas"] = new_focus_codes[0] if len(new_focus_codes) == 1 else new_focus_codes
 
 
+def strip_repeated_opening_interjection(reply_text: str, history: list[dict] | None) -> str:
+    """
+    Putaran 13 Butir G:
+    Pasca-proses deterministik: jika balasan dibuka dengan kata seru yang sama dengan salah satu
+    dari 3 balasan bot terakhir (pembuka_terakhir), buang kata seru itu sampai koma pertama.
+    """
+    if not reply_text or not history:
+        return reply_text
+
+    bot_replies = [
+        h.get("content") or h.get("text") or ""
+        for h in history
+        if h.get("role") in ("assistant", "bot")
+    ]
+    last_3 = bot_replies[-3:]
+    if not last_3:
+        return reply_text
+
+    KATA_SERU = {
+        "baik", "tentu", "wah", "siap", "halo", "hai", "oke", "ok",
+        "nah", "oh", "ya", "iya", "aduh", "sip", "mantap", "hebat"
+    }
+
+    def get_opening_interjection(text: str) -> str | None:
+        t = text.strip()
+        m = re.match(r"^([a-zA-Z]+)\s*,\s*", t)
+        if m:
+            w = m.group(1).lower()
+            if w in KATA_SERU:
+                return w
+        return None
+
+    past_openings = set()
+    for br in last_3:
+        op = get_opening_interjection(br)
+        if op:
+            past_openings.add(op)
+
+    current_op = get_opening_interjection(reply_text)
+    if current_op and current_op in past_openings:
+        m = re.match(r"^[a-zA-Z]+\s*,\s*(.*)$", reply_text.strip(), flags=re.DOTALL)
+        if m:
+            remainder = m.group(1).strip()
+            if remainder:
+                return remainder[:1].upper() + remainder[1:]
+
+    return reply_text
+
+
 class SessionPipeline:
     def __init__(self, action_engine: ActionEngine | None = None):
         self.action_engine = action_engine or ActionEngine()
@@ -736,6 +785,9 @@ class SessionPipeline:
 
         lat_gen = (time.perf_counter() - t_gen_0) * 1000.0
         lat_total = (time.perf_counter() - t_start) * 1000.0
+
+        # Putaran 13 Butir G: Pasca-proses deterministik pembersihan kata seru pembuka berulang
+        gen_out.teks = strip_repeated_opening_interjection(gen_out.teks, history=history_8)
 
         # Update pending_question di state sesuai keluaran generator
         state["pending_question"] = gen_out.pertanyaan_diajukan
