@@ -157,15 +157,16 @@ def build_generator_messages(
     fakta: dict,
     state: dict,
     history: list[dict] | None = None,
+    pesan_pelanggan: str | None = None,
     feedback_note: str | None = None
 ) -> List[Dict[str, str]]:
     messages = [
         {"role": "system", "content": GENERATOR_SYSTEM_PROMPT}
     ]
 
-    # Format ringkas riwayat
+    # Format ringkas riwayat (maks 8 entri)
     if history:
-        hist_text = "\n".join([f"- {h.get('role', 'user')}: {h.get('content') or h.get('text') or ''}" for h in history[-4:]])
+        hist_text = "\n".join([f"- {h.get('role', 'user')}: {h.get('content') or h.get('text') or ''}" for h in history[-8:]])
         messages.append({
             "role": "user",
             "content": f"Riwayat percakapan terakhir:\n{hist_text}"
@@ -174,20 +175,48 @@ def build_generator_messages(
     # Konteks giliran ini: sebutan lawan bicara selalu 'Kak' kecuali pelanggan menyebut sebutan untuk diri sendiri
     sebutan = state.get("sebutan") or "Kak"
 
-    # Slot yang sudah terisi agar tidak ditanyakan ulang oleh generator
-    slot_terisi = {}
-    for slot_name in ["kategori", "persona", "kebutuhan_teks", "budget", "merek"]:
-        val = state.get(slot_name)
-        if val:
-            slot_terisi[slot_name] = val
+    # Hal yang sudah diketahui tentang pelanggan
+    hal_diketahui = {
+        "pemakai": state.get("persona") or state.get("pemakai"),
+        "kebutuhan": state.get("kebutuhan_teks") or state.get("kebutuhan_diketahui") or state.get("profil_aktif"),
+        "merek": state.get("merek") or (state.get("kriteria_pelanggan") or {}).get("merek"),
+        "budget": state.get("budget"),
+        "pertanyaan_terakhir_bot": state.get("pending_question") or state.get("last_asked_slot")
+    }
+
+    # Format produk_tampil (nama, harga; tanpa kode internal)
+    raw_prods = state.get("produk_tampil", []) or fakta.get("produk", [])
+    prods_clean = []
+    if isinstance(raw_prods, list):
+        for idx, p in enumerate(raw_prods[:5]):
+            if isinstance(p, dict):
+                p_harga = p.get("harga_formatted")
+                if not p_harga and (p.get("harga") or p.get("harga_idr")):
+                    p_harga = f"Rp{int(p.get('harga') or p.get('harga_idr')):,}".replace(",", ".")
+                prods_clean.append({
+                    "no": idx + 1,
+                    "nama": p.get("nama") or "Produk Komputer",
+                    "harga": p_harga or "Harga hubungi kami"
+                })
+
+    # Bersihkan kode internal dari fakta agar generator tidak melihat kode internal (KB-xxx, Pxx)
+    def _sanitize_codes(obj):
+        if isinstance(obj, dict):
+            return {k: _sanitize_codes(v) for k, v in obj.items() if not (k in ("kode", "kode_produk", "profil_id") and isinstance(v, str) and (v.startswith("KB-") or v.startswith("P0") or v.startswith("P1")))}
+        elif isinstance(obj, list):
+            return [_sanitize_codes(x) for x in obj]
+        return obj
+
+    clean_fakta = _sanitize_codes(fakta)
 
     context_data = {
+        "pesan_pelanggan_giliran_ini": pesan_pelanggan,
         "aksi": aksi,
-        "fakta": fakta,
+        "fakta": clean_fakta,
+        "produk_tampil": prods_clean,
+        "hal_yang_sudah_diketahui": hal_diketahui,
         "sebutan_pelanggan": sebutan,
         "persona_pengguna_perangkat": state.get("persona"),
-        "slot_sudah_diketahui": slot_terisi,
-        "pending_question_sebelumnya": state.get("pending_question")
     }
 
     turn_prompt = f"Konteks giliran ini:\n{json.dumps(context_data, ensure_ascii=False, indent=2)}"
@@ -207,6 +236,7 @@ def generate_response(
     fakta: dict,
     state: dict,
     history: list[dict] | None = None,
+    pesan_pelanggan: str | None = None,
     feedback_note: str | None = None,
     model: str = GENERATOR_MODEL,
     ollama_url: str = OLLAMA_BASE_URL,
@@ -217,7 +247,9 @@ def generate_response(
     Mengembalikan (GeneratorOutput, metrics_dict).
     """
     t0 = time.perf_counter()
-    messages = build_generator_messages(aksi, fakta, state, history=history, feedback_note=feedback_note)
+    messages = build_generator_messages(
+        aksi, fakta, state, history=history, pesan_pelanggan=pesan_pelanggan, feedback_note=feedback_note
+    )
     schema = GeneratorOutput.model_json_schema()
 
     req_data = {

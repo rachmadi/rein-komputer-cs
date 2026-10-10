@@ -55,7 +55,7 @@ class GroundingChecker:
 
     @staticmethod
     def extract_prices_from_facts(fakta: dict, state: dict | None = None) -> set[int]:
-        """Ekstrak semua nominal harga yang sah dari fakta dan state."""
+        """Ekstrak semua nominal harga yang sah dari fakta, state, dan produk_tampil."""
         valid_prices = set()
 
         def recurse_extract(obj):
@@ -65,9 +65,24 @@ class GroundingChecker:
                         "harga", "harga_idr", "budget", "min_harga", "max_harga",
                         "harga_termurah_kategori", "harga_termurah_saat_ini",
                         "harga_termahal_kategori", "harga_termahal_saat_ini",
-                        "budget_pelanggan", "batas_dipakai"
-                    ) and isinstance(v, (int, float)):
-                        valid_prices.add(int(v))
+                        "budget_pelanggan", "batas_dipakai", "price", "harga_num"
+                    ):
+                        if isinstance(v, (int, float)):
+                            valid_prices.add(int(v))
+                        elif isinstance(v, str):
+                            digits = re.sub(r"[^\d]", "", v)
+                            if digits and len(digits) >= 5:
+                                try:
+                                    valid_prices.add(int(digits))
+                                except ValueError:
+                                    pass
+                    elif isinstance(v, str) and ("rp" in v.lower() or "juta" in v.lower() or "jt" in v.lower()):
+                        digits = re.sub(r"[^\d]", "", v)
+                        if digits and len(digits) >= 5:
+                            try:
+                                valid_prices.add(int(digits))
+                            except ValueError:
+                                pass
                     elif isinstance(v, (dict, list)):
                         recurse_extract(v)
             elif isinstance(obj, list):
@@ -77,6 +92,7 @@ class GroundingChecker:
         recurse_extract(fakta)
         if state:
             recurse_extract(state.get("produk_tampil", []))
+            recurse_extract(state.get("history_produk_tampil", []))
             b_val = state.get("budget")
             if b_val:
                 if isinstance(b_val, (int, float)):
@@ -93,8 +109,8 @@ class GroundingChecker:
         return valid_prices
 
     @staticmethod
-    def extract_spec_numbers_from_facts(fakta: dict) -> set[int]:
-        """Ekstrak angka spesifikasi (RAM GB, SSD GB, tier, dll) dari fakta evaluasi."""
+    def extract_spec_numbers_from_facts(fakta: dict, state: dict | None = None) -> set[int]:
+        """Ekstrak angka spesifikasi (RAM GB, SSD GB, tier, dll) dari fakta evaluasi dan produk_tampil."""
         nums = set()
         eval_prods = fakta.get("evaluasi_produk", [])
         for ep in eval_prods:
@@ -116,18 +132,25 @@ class GroundingChecker:
                     if isinstance(v, (int, float)) and v > 0:
                         nums.add(int(v))
 
-        raw_prods = fakta.get("produk_list", []) or fakta.get("produk", [])
-        if isinstance(raw_prods, dict):
-            raw_prods = [raw_prods]
+        raw_prods = list(fakta.get("produk_list", []) or fakta.get("produk", []) or [])
+        if state and state.get("produk_tampil"):
+            raw_prods.extend(state.get("produk_tampil", []))
+        if fakta.get("produk_tampil"):
+            raw_prods.extend(fakta.get("produk_tampil", []))
+
         for p in raw_prods:
             if isinstance(p, dict):
                 specs = p.get("spesifikasi", {}) if isinstance(p.get("spesifikasi"), dict) else {}
-                for k in ("ram_gb", "storage_ssd_gb", "vram_gb"):
+                for k in ("ram_gb", "storage_ssd_gb", "vram_gb", "ram", "ssd", "vram"):
                     v = specs.get(k) or p.get(k)
                     if isinstance(v, (int, float)) and v > 0:
                         nums.add(int(v))
                         if v >= 512:
                             nums.add(1)
+                    elif isinstance(v, str):
+                        m_dig = re.findall(r"\b(\d+)\s*(?:gb|tb)\b", v.lower())
+                        for md in m_dig:
+                            nums.add(int(md))
         return nums
 
     @staticmethod
@@ -213,7 +236,7 @@ class GroundingChecker:
 
         # 6. Periksa kesahihan angka spesifikasi pada evaluasi_kecocokan
         if fakta.get("evaluasi_produk"):
-            valid_nums = self.extract_spec_numbers_from_facts(fakta)
+            valid_nums = self.extract_spec_numbers_from_facts(fakta, state=state)
             spec_matches = re.findall(r"(?:ram|ssd|vram)\s*(?:sebesar\s+)?(\d+)\s*(?:gb|tb)\b", teks.lower())
             for sm in spec_matches:
                 val = int(sm)

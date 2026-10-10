@@ -296,12 +296,18 @@ class SessionPipeline:
         # ---------------------------------------------------------------------
         # 4. GENERATOR LLM & 5. PEMERIKSA GROUNDING
         # ---------------------------------------------------------------------
+        # Siapkan riwayat yang SUDAH memuat pesan giliran ini (maks 8 entri)
+        current_history = list(history)
+        current_history.append({"role": "user", "content": pesan_pelanggan, "text": pesan_pelanggan})
+        history_8 = current_history[-8:]
+
         t_gen_0 = time.perf_counter()
         gen_out, gen_metrics = generate_response(
             aksi=parsed.aksi.value,
             fakta=action_res.fakta,
             state=state,
-            history=history
+            history=history_8,
+            pesan_pelanggan=pesan_pelanggan
         )
 
         is_valid, violations = self.grounding_checker.check(
@@ -317,7 +323,8 @@ class SessionPipeline:
                 aksi=parsed.aksi.value,
                 fakta=action_res.fakta,
                 state=state,
-                history=history,
+                history=history_8,
+                pesan_pelanggan=pesan_pelanggan,
                 feedback_note=feedback_note
             )
             is_valid_retry, violations_retry = self.grounding_checker.check(
@@ -357,10 +364,8 @@ class SessionPipeline:
             kartu_html = format_product_cards_message(action_res.produk_list, judul_rekomendasi=judul_rek)
 
         # Update riwayat percakapan (maks 8 pesan)
-        new_history = list(history)
-        new_history.append({"role": "user", "content": pesan_pelanggan, "text": pesan_pelanggan})
-        new_history.append({"role": "assistant", "content": gen_out.teks, "text": gen_out.teks})
-        state["history"] = new_history[-8:]
+        current_history.append({"role": "assistant", "content": gen_out.teks, "text": gen_out.teks})
+        state["history"] = current_history[-8:]
 
         turn_result = TurnExecutionResult(
             teks_jawaban=gen_out.teks,

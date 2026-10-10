@@ -262,14 +262,23 @@ def build_parser_messages(
         or s.get("profil_aktif")
     )
 
+    hal_diketahui = {
+        "pemakai": s.get("persona") or s.get("pemakai"),
+        "kebutuhan": kebutuhan_diketahui,
+        "merek": s.get("merek") or (s.get("kriteria_pelanggan") or {}).get("merek"),
+        "budget": s.get("budget"),
+        "pertanyaan_terakhir_bot": last_bot_msg
+    }
+
     raw_pt = s.get("produk_tampil", [])
     produk_tampil = []
     for idx, p in enumerate(raw_pt):
         if isinstance(p, dict):
+            p_harga = p.get("harga_formatted") or p.get("harga_idr") or p.get("harga")
             produk_tampil.append({
                 "no": p.get("no", idx + 1),
-                "nama": p.get("nama") or p.get("kode"),
-                "harga": p.get("harga_idr") or p.get("harga")
+                "nama": p.get("nama") or "Produk Komputer",
+                "harga": p_harga
             })
         elif isinstance(p, str):
             produk_tampil.append({
@@ -278,12 +287,14 @@ def build_parser_messages(
                 "harga": None
             })
 
+    hist_summary = [f"- {h.get('role', 'user')}: {h.get('content') or h.get('text') or ''}" for h in (history or [])[-8:]]
 
     context_data = {
+        "riwayat_terakhir": hist_summary,
         "teks_pesan_terakhir_bot": last_bot_msg,
-        "kebutuhan_diketahui": kebutuhan_diketahui,
+        "pending_question": s.get("pending_question"),
         "produk_tampil": produk_tampil,
-        "pending_question": s.get("pending_question")
+        "fakta_pelanggan": hal_diketahui
     }
 
     user_dynamic_content = (
