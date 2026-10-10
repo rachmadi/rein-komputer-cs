@@ -183,11 +183,13 @@ def test_trace_a2_printer_canon_kebutuhan(action_engine, capsys):
     # Bukti diagnostik:
     # 1. Kandidat masih ada sampai tahap merek (2 unit)
     assert len(cands_merek) == 2
-    # 2. Tahap profil/apply_filters menghabiskan seluruh kandidat karena printer tidak punya spek PC (ram/ssd/cpu)
-    assert len(cands_passed) == 0
-    assert len(gugur) == 2
-    # 3. Status akhir adalah 'belum_ada_yang_memenuhi'
-    assert res.fakta.get("status") == "belum_ada_yang_memenuhi"
+    # 2. Putaran 13: printer tidak digugurkan oleh syarat PC, sehingga status akhir adalah 'sukses'
+    assert res.fakta.get("status") == "sukses"
+    assert len(res.produk_list) >= 1
+    # Memastikan produk memiliki lembar spesifikasi dan catatan minimum
+    first_p = res.produk_list[0]
+    assert "lembar_spesifikasi" in first_p
+    assert first_p["catatan_minimum"]["memenuhi"] is True
 
 
 def test_d1_false_positive_non_produk_diizinkan():

@@ -174,9 +174,15 @@ def process_chat_message(
                 parser_raw=getattr(turn_res, "parser_raw", None),
                 kartu_ditampilkan=getattr(turn_res, "kartu_ditampilkan", False),
                 keluhan_beruntun=int(new_state_dict.get("keluhan_beruntun", 0) or 0),
-                tanya_beruntun=int(new_state_dict.get("tanya_beruntun", 0) or 0),
                 status_fakta=getattr(turn_res, "status_fakta", None),
                 state_setelah=getattr(turn_res, "state_setelah", None),
+                is_emergency_fallback=getattr(turn_res, "is_emergency_fallback", False),
+                jumlah_retry=getattr(turn_res, "jumlah_retry", 0),
+                pelanggaran=getattr(turn_res, "pelanggaran", getattr(turn_res, "pelanggaran_pemeriksa", [])),
+                kartu_isi=getattr(turn_res, "kartu_isi", None),
+                produk_dibahas=getattr(turn_res, "produk_dibahas", new_state_dict.get("produk_dibahas")),
+                produk_dibahas_sebelumnya=getattr(turn_res, "produk_dibahas_sebelumnya", new_state_dict.get("produk_dibahas_sebelumnya")),
+                catatan_minimum=getattr(turn_res, "catatan_minimum", None),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)

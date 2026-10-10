@@ -28,6 +28,7 @@ from services.action_engine import ActionEngine, ActionResult, parse_int_safe
 from services.llm_generator import generate_response, GeneratorOutput, build_deterministic_fallback_text
 from services.grounding_checker import GroundingChecker, EMERGENCY_FALLBACK_TEXT
 from services.product_card import format_product_cards_message
+from services.catalog_search import clean_specs
 from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AlasanTidakJelasEnum, JenisEnum
 from core.config import KONTAK_STAF
 
@@ -53,7 +54,13 @@ class TurnExecutionResult:
     
     json_valid: bool = True
     pelanggaran_pemeriksa: List[str] = field(default_factory=list)
+    pelanggaran: List[str] = field(default_factory=list)
     is_emergency_fallback: bool = False
+    jumlah_retry: int = 0
+    kartu_isi: List[Dict[str, Any]] = field(default_factory=list)
+    produk_dibahas: Any = None
+    produk_dibahas_sebelumnya: List[Dict[str, Any]] = field(default_factory=list)
+    catatan_minimum: Any = None
     re_parse: bool = False
     prompt_eval_count: int = 0
     eval_count: int = 0
@@ -305,7 +312,14 @@ class SessionPipeline:
                     "merek": state.get("merek"),
                     "kebutuhan_teks": state.get("kebutuhan_teks"),
                     "budget": state.get("budget"),
-                }
+                },
+                is_emergency_fallback=False,
+                jumlah_retry=0,
+                pelanggaran=[],
+                kartu_isi=[],
+                produk_dibahas=state.get("produk_dibahas"),
+                produk_dibahas_sebelumnya=state.get("produk_dibahas_sebelumnya", []),
+                catatan_minimum=None,
             )
             return turn_result, state
 
@@ -733,6 +747,7 @@ class SessionPipeline:
         current_history.append({"role": "user", "content": pesan_pelanggan, "text": pesan_pelanggan})
         history_8 = current_history[-8:]
 
+        retried_count = 0
         # B10 & Butir 8: Teks darurat B13 HANYA untuk sistem_error (Ollama gagal)
         if action_res.fakta.get("status") == "sistem_error" or action_res.fakta.get("alasan") == "sistem_error":
             t_gen_0 = time.perf_counter()
@@ -756,6 +771,7 @@ class SessionPipeline:
             is_fallback = False
 
         if not is_valid:
+            retried_count = 1
             logger.warning(f"Pelanggaran pemeriksa: {violations}. Meminta generator menulis ulang...")
             feedback_note = f"Perbaiki kalimatmu: {'; '.join(violations)}. Jangan sebut hal tersebut."
             # Retry 1 kali
@@ -837,7 +853,7 @@ class SessionPipeline:
                 if alt not in raw_candidates:
                     raw_candidates.append(alt)
         if not raw_candidates and action_res.fakta.get("produk"):
-            catalog = getattr(self.engine, "catalog", None)
+            catalog = getattr(self.action_engine, "catalog", None)
             if catalog:
                 for fp in action_res.fakta.get("produk"):
                     c_code = fp.get("kode") if isinstance(fp, dict) else fp
@@ -900,6 +916,28 @@ class SessionPipeline:
         current_history.append({"role": "assistant", "content": gen_out.teks, "text": gen_out.teks})
         state["history"] = current_history[-8:]
 
+        # Rangkum kartu_isi jika kartu ditampilkan (kode + atribut tampil)
+        kartu_isi_list = []
+        if should_show_card and valid_products:
+            for p in prods_to_card:
+                if isinstance(p, dict):
+                    kartu_isi_list.append({
+                        "kode": p.get("kode"),
+                        "nama": p.get("nama"),
+                        "harga": p.get("harga") or p.get("harga_idr"),
+                        "spesifikasi": p.get("spesifikasi") or clean_specs(p)
+                    })
+
+        # Rangkum catatan_minimum dari fakta
+        catatan_min_data = action_res.fakta.get("catatan_minimum")
+        if not catatan_min_data:
+            c_prods = action_res.fakta.get("produk") or action_res.fakta.get("evaluasi_produk") or []
+            if isinstance(c_prods, list) and c_prods:
+                catatan_min_data = [
+                    {"kode": cp.get("kode"), "catatan_minimum": cp.get("catatan_minimum")}
+                    for cp in c_prods if isinstance(cp, dict) and cp.get("catatan_minimum")
+                ]
+
         turn_result = TurnExecutionResult(
             teks_jawaban=gen_out.teks,
             kartu_produk_html=kartu_html,
@@ -912,7 +950,13 @@ class SessionPipeline:
             latensi_total_ms=round(lat_total, 1),
             json_valid=parse_metrics.get("json_valid", True),
             pelanggaran_pemeriksa=violations,
+            pelanggaran=violations,
             is_emergency_fallback=is_fallback,
+            jumlah_retry=retried_count,
+            kartu_isi=kartu_isi_list,
+            produk_dibahas=state.get("produk_dibahas"),
+            produk_dibahas_sebelumnya=state.get("produk_dibahas_sebelumnya", []),
+            catatan_minimum=catatan_min_data,
             re_parse=parse_metrics.get("retried", False),
             prompt_eval_count=(parse_metrics.get("prompt_eval_count", 0) or 0) + (gen_metrics.get("prompt_eval_count", 0) or 0),
             eval_count=(parse_metrics.get("eval_count", 0) or 0) + (gen_metrics.get("eval_count", 0) or 0),

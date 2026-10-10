@@ -1176,10 +1176,19 @@ class ActionEngine:
                 if kategori_eval and cp_kat and cp_kat.lower() != str(kategori_eval).lower():
                     continue
 
-                c_cpu = cp.get("cpu_tier") or 0
-                c_ram = cp.get("ram") or cp.get("ram_gb") or 0
-                c_ssd = cp.get("ssd_gb") or cp.get("storage_ssd_gb") or 0
-                c_vram = cp.get("gpu_vram_gb") or 0
+                def _extract_int_spec(v):
+                    if isinstance(v, (int, float)):
+                        return int(v)
+                    if isinstance(v, str):
+                        m = re.search(r'\d+', v)
+                        if m:
+                            return int(m.group(0))
+                    return 0
+
+                c_cpu = cp.get("cpu_tier") or (1 if cp.get("cpu") else 0)
+                c_ram = cp.get("ram_gb") or _extract_int_spec(cp.get("ram")) or 0
+                c_ssd = cp.get("storage_ssd_gb") or cp.get("ssd_gb") or _extract_int_spec(cp.get("storage")) or 0
+                c_vram = cp.get("gpu_vram_gb") or cp.get("vram_gb") or _extract_int_spec(cp.get("vram")) or 0
 
                 memenuhi = (c_cpu >= min_cpu and c_ram >= min_ram and c_ssd >= min_ssd and c_vram >= min_vram)
                 if not memenuhi:
@@ -1584,12 +1593,14 @@ class ActionEngine:
             budget_disertai = parse_int_safe(args.max_harga) or parse_int_safe(args.budget_max) or msg_budget
 
             if budget_disertai is not None:
-                # Putaran 13 Butir D: perbarui budget state, JALANKAN ULANG minta_rekomendasi
                 state["budget"] = budget_disertai
                 if "kriteria_pelanggan" not in state or not isinstance(state["kriteria_pelanggan"], dict):
                     state["kriteria_pelanggan"] = {}
                 state["kriteria_pelanggan"]["max_harga"] = budget_disertai
+                user_max_harga = budget_disertai
+                filter_dipakai["max_harga"] = budget_disertai
 
+                # Putaran 13 Butir D: jika disertai angka budget DAN kebutuhan_teks terisi -> jalankan ulang minta_rekomendasi
                 if state.get("kebutuhan_teks") or getattr(args, "kebutuhan_teks", None):
                     args.max_harga = budget_disertai
                     args.budget_max = budget_disertai
@@ -1598,13 +1609,6 @@ class ActionEngine:
                     if not args.merek and merek:
                         args.merek = merek
                     return self._handle_minta_rekomendasi(args, state)
-                else:
-                    args.max_harga = budget_disertai
-                    if not args.kategori and kategori:
-                        args.kategori = kategori
-                    if not args.merek and merek:
-                        args.merek = merek
-                    return self._handle_cari_produk(args, state)
 
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             target_max = user_max_harga if user_max_harga is not None else lowest_p

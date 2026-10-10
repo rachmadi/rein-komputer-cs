@@ -139,9 +139,15 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
                 parser_raw TEXT,
                 kartu_ditampilkan INTEGER,
                 keluhan_beruntun INTEGER,
-                tanya_beruntun INTEGER,
                 status_fakta TEXT,
-                state_setelah TEXT
+                state_setelah TEXT,
+                is_emergency_fallback INTEGER,
+                jumlah_retry INTEGER,
+                pelanggaran TEXT,
+                kartu_isi TEXT,
+                produk_dibahas TEXT,
+                produk_dibahas_sebelumnya TEXT,
+                catatan_minimum TEXT
             )
         """)
         # Migrasi kolom jika tabel lama belum memiliki kolom baru
@@ -173,6 +179,20 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN status_fakta TEXT")
         if "state_setelah" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN state_setelah TEXT")
+        if "is_emergency_fallback" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN is_emergency_fallback INTEGER")
+        if "jumlah_retry" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN jumlah_retry INTEGER")
+        if "pelanggaran" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN pelanggaran TEXT")
+        if "kartu_isi" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN kartu_isi TEXT")
+        if "produk_dibahas" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN produk_dibahas TEXT")
+        if "produk_dibahas_sebelumnya" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN produk_dibahas_sebelumnya TEXT")
+        if "catatan_minimum" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN catatan_minimum TEXT")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -208,6 +228,13 @@ def log_turn(
     tanya_beruntun: int | None = None,
     status_fakta: str | None = None,
     state_setelah: dict[str, Any] | None = None,
+    is_emergency_fallback: bool | None = None,
+    jumlah_retry: int | None = None,
+    pelanggaran: list[str] | str | None = None,
+    kartu_isi: list[dict[str, Any]] | None = None,
+    produk_dibahas: Any = None,
+    produk_dibahas_sebelumnya: list[dict[str, Any]] | None = None,
+    catatan_minimum: Any = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
@@ -263,6 +290,12 @@ def log_turn(
     if tanya_beruntun is None:
         tanya_beruntun = int(state.get("tanya_beruntun", 0) or 0)
 
+    if produk_dibahas is None:
+        produk_dibahas = state.get("produk_dibahas")
+
+    if produk_dibahas_sebelumnya is None:
+        produk_dibahas_sebelumnya = state.get("produk_dibahas_sebelumnya")
+
     # Pastikan session_id mentah tidak pernah disimpan di record
     record = {
         "log_id": log_id,
@@ -294,6 +327,13 @@ def log_turn(
         "latency_ms": round(latency_ms, 2),
         "penguji": effective_penguji,
         "engine_mode": effective_engine,
+        "is_emergency_fallback": bool(is_emergency_fallback),
+        "jumlah_retry": int(jumlah_retry or 0),
+        "pelanggaran": pelanggaran,
+        "kartu_isi": kartu_isi,
+        "produk_dibahas": produk_dibahas,
+        "produk_dibahas_sebelumnya": produk_dibahas_sebelumnya,
+        "catatan_minimum": catatan_minimum,
     }
 
     jsonl_path, db_path = get_log_paths(penguji=effective_penguji)
@@ -322,8 +362,10 @@ def log_turn(
                     penguji, engine_mode, jalur, aksi_parser, jenis,
                     status_fakta, state_setelah,
                     state_ringkas, produk_tampil, parser_raw, kartu_ditampilkan,
-                    keluhan_beruntun, tanya_beruntun
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    keluhan_beruntun, tanya_beruntun,
+                    is_emergency_fallback, jumlah_retry, pelanggaran, kartu_isi,
+                    produk_dibahas, produk_dibahas_sebelumnya, catatan_minimum
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
@@ -352,6 +394,13 @@ def log_turn(
                 1 if kartu_ditampilkan else 0,
                 keluhan_beruntun,
                 tanya_beruntun,
+                1 if is_emergency_fallback else 0,
+                int(jumlah_retry or 0),
+                json.dumps(pelanggaran, ensure_ascii=False) if isinstance(pelanggaran, (list, dict)) else (str(pelanggaran) if pelanggaran else None),
+                json.dumps(kartu_isi, ensure_ascii=False) if kartu_isi else None,
+                json.dumps(produk_dibahas, ensure_ascii=False) if isinstance(produk_dibahas, (list, dict)) else (str(produk_dibahas) if produk_dibahas else None),
+                json.dumps(produk_dibahas_sebelumnya, ensure_ascii=False) if produk_dibahas_sebelumnya else None,
+                json.dumps(catatan_minimum, ensure_ascii=False) if isinstance(catatan_minimum, (list, dict)) else (str(catatan_minimum) if catatan_minimum else None),
             ))
             conn.commit()
             conn.close()
