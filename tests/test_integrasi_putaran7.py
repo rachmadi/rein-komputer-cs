@@ -276,7 +276,8 @@ class TestIntegrasiMultiGiliranPutaran7(unittest.TestCase):
         t_out = ParserOutput(aksi=ActionEnum.CARI_PRODUK, argumen=ActionArguments(kategori="laptop"))
         res, _ = self._execute_turn({}, "Cari laptop", t_out)
         self.assertIsNotNone(res.kartu_produk_html, "B18: Kartu produk HTML wajib ada jika aksi menghasilkan produk")
-        self.assertIn("[KB-", res.kartu_produk_html, "B18: Header kartu produk wajib memuat [KODE]")
+        self.assertIn("<b>", res.kartu_produk_html, "B18: Header kartu produk wajib berupa HTML bold")
+        self.assertNotIn("[KB-", res.kartu_produk_html, "Putaran 11: Kartu produk tidak boleh memuat kode internal")
 
     # -------------------------------------------------------------------------
     # B5: Qdrant/embedding mati menghasilkan status sistem_error

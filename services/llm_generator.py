@@ -178,6 +178,8 @@ def build_generator_messages(
 
     # Hal yang sudah diketahui tentang pelanggan
     hal_diketahui = {
+        "kategori": state.get("kategori"),
+        "persona": state.get("persona"),
         "pemakai": state.get("persona") or state.get("pemakai"),
         "kebutuhan": state.get("kebutuhan_teks") or state.get("kebutuhan_diketahui") or state.get("profil_aktif"),
         "merek": state.get("merek") or (state.get("kriteria_pelanggan") or {}).get("merek"),

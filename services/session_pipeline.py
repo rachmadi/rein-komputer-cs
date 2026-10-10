@@ -261,6 +261,14 @@ class SessionPipeline:
             parsed.argumen.budget_max = None
             parsed.pembaruan_state.budget = None
         else:
+            if not parsed.argumen.max_harga and not parsed.pembaruan_state.budget:
+                from services.catalog_search import parse_budget_from_text
+                b_text = parse_budget_from_text(pesan_pelanggan)
+                if b_text:
+                    parsed.argumen.max_harga = b_text
+                    parsed.argumen.budget_max = b_text
+                    parsed.pembaruan_state.budget = b_text
+
             if parsed.argumen.max_harga is not None:
                 state["kriteria_pelanggan"]["max_harga"] = parse_int_safe(parsed.argumen.max_harga)
                 state["budget"] = parse_int_safe(parsed.argumen.max_harga)
@@ -528,6 +536,11 @@ class SessionPipeline:
         if aksi_name in ("tanya_spesifikasi", "bandingkan"):
             should_show_card = True
         elif aksi_name in ("cari_produk", "minta_rekomendasi"):
+            if gen_out.tampilkan_kartu is not None:
+                should_show_card = bool(gen_out.tampilkan_kartu)
+            else:
+                should_show_card = bool(valid_products)
+        elif action_res.produk_list:
             if gen_out.tampilkan_kartu is not None:
                 should_show_card = bool(gen_out.tampilkan_kartu)
             else:

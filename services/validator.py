@@ -429,6 +429,20 @@ def validate_parser_output(
         else:
             args.produk = resolved_codes
 
+        if args.produk_luar_katalog:
+            still_outside = []
+            for luar_item in args.produk_luar_katalog:
+                res_codes, ok, _ = resolve_product_references([luar_item], produk_tampil_list, history_tampil=history_tampil_list)
+                if ok and res_codes:
+                    if not args.produk:
+                        args.produk = []
+                    for c in res_codes:
+                        if c not in args.produk:
+                            args.produk.append(c)
+                else:
+                    still_outside.append(luar_item)
+            args.produk_luar_katalog = still_outside or None
+
     # 4c. Validasi jenis per-aksi
     if parsed.aksi in ACTION_JENIS_MAP and args.jenis is not None:
         jenis_str = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis).lower()

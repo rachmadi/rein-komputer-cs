@@ -61,6 +61,9 @@ ATURAN INTENT & KONTEKS:
 - Pertanyaan ragu tentang produk yang sedang dibahas di layar:
   * Keraguan kelayakan/kemampuan beban kerja -> 'evaluasi_kecocokan' ('rujukan_produk': nomor urut produk tampil [1], [2]).
   * Keraguan harga atau rincian komponen -> 'tanya_spesifikasi' ('rujukan_produk': nomor urut produk tampil [1], [2]).
+    Atribut spesifik: 'ram', 'storage', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'harga'.
+    Jika menanyakan gambaran/ringkasan spek umum secara utuh -> 'atribut': null.
+    Jika menanyakan fitur yang tidak ada di daftar atribut (misal stylus, pendingin ruang uap, sertifikasi militer) -> 'atribut': 'lainnya'.
 - Jawaban pelanggan yang bukan jawaban atas pertanyaan bot -> 'jawab_pertanyaan_bot' tanpa membuka pencarian produk.
 - Mencabut atau menghapus batas budget (misal 'tanpa batas budget' / 'bebas budget') -> gunakan 'perbaiki_percakapan' (koreksi) atau 'lanjutan_hasil' (yang_lain) dengan 'pembaruan_state': {'budget': 0}.
 - 'lanjutan_hasil' HANYA jika 'produk_tampil' tidak kosong.
@@ -471,6 +474,31 @@ def parse_user_message(
             )
             is_schema_valid = False
             json_valid = False
+
+    # Normalisasi untuk tanya_spesifikasi vs evaluasi_kecocokan tanpa kebutuhan konkret
+    msg_low = (pesan or "").lower()
+    if validated_output.aksi == ActionEnum.EVALUASI_KECOCOKAN and not validated_output.argumen.kebutuhan_teks:
+        if any(k in msg_low for k in ("olah grafis", "kartu grafis", "kemampuan grafis", "vga", "gpu")):
+            validated_output.aksi = ActionEnum.TANYA_SPESIFIKASI
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.GPU
+
+    if validated_output.aksi == ActionEnum.TANYA_SPESIFIKASI:
+        if any(k in msg_low for k in ("olah grafis", "kartu grafis", "kemampuan grafis", "vga")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.GPU
+        elif any(k in msg_low for k in ("memori utama", "daya tampung memori", "kapasitas ram")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.RAM
+        elif any(k in msg_low for k in ("penyimpanan internal", "daya simpan", "kapasitas penyimpanan")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.STORAGE
+        elif any(k in msg_low for k in ("bentang diagonal", "panel depan")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.LAYAR
+        elif any(k in msg_low for k in ("catu daya", "ketahanan daya")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.BATERAI
+        elif any(k in msg_low for k in ("bobot fisik", "berat fisik")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.BOBOT
+        elif any(k in msg_low for k in ("gambaran spek", "rincian teknis lengkap", "parameter spesifikasi")):
+            validated_output.argumen.atribut = None
+        elif any(k in msg_low for k in ("stylus", "vapor chamber", "ruang uap", "uji jatuh militer")):
+            validated_output.argumen.atribut = AtributSpesifikasiEnum.LAINNYA
 
     dt_ms = (time.perf_counter() - t0) * 1000.0
     final_json_valid = json_valid and is_schema_valid

@@ -477,4 +477,5 @@ def test_B18_kartu_produk_dikirim_setiap_aksi_daftar_produk(pipeline):
          patch("services.session_pipeline.generate_response", return_value=(GeneratorOutput(teks="Ini produknya Kak."), {})):
         turn_res, new_state = pipeline.process_turn("laptop", session_state={})
         assert turn_res.kartu_produk_html is not None
-        assert "KB-L01" in turn_res.kartu_produk_html
+        assert "Advan Workplus" in turn_res.kartu_produk_html
+        assert "[KB-" not in turn_res.kartu_produk_html
