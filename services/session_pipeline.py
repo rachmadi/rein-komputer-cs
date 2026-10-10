@@ -188,33 +188,97 @@ class SessionPipeline:
             parse_metrics = {"latency_ms": 0.0, "json_valid": False}
             lat_parse = 0.0
 
-        # D6: Pergantian kategori mereset slot anggaran, merek, profil aktif, dan produk tampil
-        if parsed.argumen.kategori:
-            new_kat_str = str(parsed.argumen.kategori).strip().lower()
+        # B2: Deteksi kategori yang diminta pada giliran ini & reset state saat kategori berganti
+        from services.validator import get_catalog_categories, get_catalog_brands
+        catalog_cats = set(get_catalog_categories())
+        catalog_brands = set(get_catalog_brands())
+
+        detected_kategori = None
+        if parsed.argumen.kategori and parsed.argumen.kategori.lower() in catalog_cats:
+            detected_kategori = parsed.argumen.kategori.lower()
+        elif parsed.pembaruan_state.kategori and parsed.pembaruan_state.kategori.lower() in catalog_cats:
+            detected_kategori = parsed.pembaruan_state.kategori.lower()
+        else:
+            if re.search(r"\b(laptop|notebook|komputer jinjing)\b", pesan_pelanggan, re.IGNORECASE):
+                detected_kategori = "laptop"
+            elif re.search(r"\b(desktop|pc|komputer meja)\b", pesan_pelanggan, re.IGNORECASE):
+                detected_kategori = "desktop"
+            elif re.search(r"\b(printer)\b", pesan_pelanggan, re.IGNORECASE):
+                detected_kategori = "printer"
+
+        if detected_kategori:
+            parsed.argumen.kategori = detected_kategori
             old_kat_str = str(state.get("kategori", "")).strip().lower() if state.get("kategori") else None
-            if old_kat_str and new_kat_str != old_kat_str:
-                state["kategori"] = new_kat_str
-                state["budget"] = None
-                state["merek"] = None
-                state["profil_aktif"] = None
-                state["kebutuhan_teks"] = None
+
+            # Saat kategori berganti, reset merek, kebutuhan_teks, produk_tampil, filter spesifikasi, dan budget
+            # (kecuali disebut lagi di pesan yang sama). Merek yang disebut eksplisit menggantikan yang lama.
+            if old_kat_str and detected_kategori != old_kat_str:
+                state["kategori"] = detected_kategori
+
+                # Merek eksplisit di pesan yang sama
+                merek_eksplisit = None
+                if parsed.argumen.merek and parsed.argumen.merek.lower() in catalog_brands:
+                    merek_eksplisit = parsed.argumen.merek.lower()
+                elif parsed.pembaruan_state.merek and parsed.pembaruan_state.merek.lower() in catalog_brands:
+                    merek_eksplisit = parsed.pembaruan_state.merek.lower()
+                else:
+                    for b in catalog_brands:
+                        if re.search(r"\b" + re.escape(b) + r"\b", pesan_pelanggan, re.IGNORECASE):
+                            merek_eksplisit = b
+                            break
+
+                if merek_eksplisit:
+                    state["merek"] = merek_eksplisit
+                    parsed.argumen.merek = merek_eksplisit
+                    if "kriteria_pelanggan" not in state or not isinstance(state["kriteria_pelanggan"], dict):
+                        state["kriteria_pelanggan"] = {}
+                    state["kriteria_pelanggan"]["merek"] = merek_eksplisit
+                else:
+                    state["merek"] = None
+                    parsed.argumen.merek = None
+                    parsed.pembaruan_state.merek = None
+                    if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                        state["kriteria_pelanggan"].pop("merek", None)
+
+                # Budget di pesan yang sama
+                from services.catalog_search import parse_budget_from_text
+                b_text = parse_budget_from_text(pesan_pelanggan)
+                if b_text:
+                    state["budget"] = b_text
+                    parsed.argumen.max_harga = b_text
+                    if "kriteria_pelanggan" not in state or not isinstance(state["kriteria_pelanggan"], dict):
+                        state["kriteria_pelanggan"] = {}
+                    state["kriteria_pelanggan"]["max_harga"] = b_text
+                else:
+                    state["budget"] = None
+                    parsed.argumen.max_harga = None
+                    parsed.pembaruan_state.budget = None
+                    if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                        state["kriteria_pelanggan"].pop("max_harga", None)
+
+                # Kebutuhan di pesan yang sama
+                m_keb = re.search(r"(?:dipakai|buat|untuk|kebutuhan)\s+([a-zA-Z0-9\s\+\#]{4,40}?)(?:\s+apakah|\s+bisa|\s+kuat|\?|$)", pesan_pelanggan, re.IGNORECASE)
+                if m_keb and len(m_keb.group(1).strip()) >= 4:
+                    state["kebutuhan_teks"] = m_keb.group(1).strip()
+                    parsed.argumen.kebutuhan_teks = state["kebutuhan_teks"]
+                else:
+                    state["kebutuhan_teks"] = None
+                    parsed.argumen.kebutuhan_teks = None
+                    parsed.pembaruan_state.kebutuhan_teks = None
+
+                # Reset produk_tampil & filter spesifikasi
                 state["produk_tampil"] = []
                 state["produk_terakhir_dibahas"] = None
                 state["history_produk_tampil"] = []
-                state["kriteria_pelanggan"] = {"kategori": new_kat_str}
+                state["profil_aktif"] = None
                 state["batas_bot"] = {}
-
-        # Deteksi kategori jika belum terisi di argumen maupun state
-        if not parsed.argumen.kategori and not state.get("kategori"):
-            if re.search(r"\b(laptop|notebook|komputer jinjing)\b", pesan_pelanggan, re.IGNORECASE):
-                parsed.argumen.kategori = "laptop"
-                state["kategori"] = "laptop"
-            elif re.search(r"\b(desktop|pc|komputer meja)\b", pesan_pelanggan, re.IGNORECASE):
-                parsed.argumen.kategori = "desktop"
-                state["kategori"] = "desktop"
-            elif re.search(r"\b(printer)\b", pesan_pelanggan, re.IGNORECASE):
-                parsed.argumen.kategori = "printer"
-                state["kategori"] = "printer"
+                state["kriteria_pelanggan"] = {
+                    k: v for k, v in state.get("kriteria_pelanggan", {}).items()
+                    if k in ("kategori", "merek", "max_harga")
+                }
+                state["kriteria_pelanggan"]["kategori"] = detected_kategori
+            else:
+                state["kategori"] = detected_kategori
 
         # E3: Deteksi jika pesan pelanggan membawa kebutuhan komputasi baru yang belum terisi di argumen
         if not parsed.argumen.kebutuhan_teks and parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.MINTA_REKOMENDASI):
@@ -277,11 +341,19 @@ class SessionPipeline:
                 state["budget"] = parsed.pembaruan_state.budget
 
         if parsed.argumen.merek:
-            state["kriteria_pelanggan"]["merek"] = parsed.argumen.merek
-            state["merek"] = parsed.argumen.merek
+            m_clean = str(parsed.argumen.merek).lower().strip()
+            if m_clean in catalog_brands:
+                state["kriteria_pelanggan"]["merek"] = m_clean
+                state["merek"] = m_clean
+            else:
+                logger.warning(f"B1: Merek tak dikenal diabaikan dari argumen: '{parsed.argumen.merek}'")
         elif parsed.pembaruan_state.merek:
-            state["kriteria_pelanggan"]["merek"] = parsed.pembaruan_state.merek
-            state["merek"] = parsed.pembaruan_state.merek
+            m_clean = str(parsed.pembaruan_state.merek).lower().strip()
+            if m_clean in catalog_brands:
+                state["kriteria_pelanggan"]["merek"] = m_clean
+                state["merek"] = m_clean
+            else:
+                logger.warning(f"B1: Merek tak dikenal diabaikan dari pembaruan_state: '{parsed.pembaruan_state.merek}'")
         if parsed.argumen.kategori:
             state["kriteria_pelanggan"]["kategori"] = parsed.argumen.kategori
         if parsed.argumen.kebutuhan_teks:

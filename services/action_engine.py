@@ -1455,7 +1455,23 @@ class ActionEngine:
 
         # Perbarui slot state yang relevan
         if slot in ("kategori", "category"):
-            state["kategori"] = str(slot_val).strip().lower()
+            val_cat = str(slot_val).strip().lower()
+            if val_cat in ("laptop", "desktop", "printer"):
+                old_kat = state.get("kategori")
+                state["kategori"] = val_cat
+                if old_kat and val_cat != old_kat:
+                    state["merek"] = None
+                    state["kebutuhan_teks"] = None
+                    state["budget"] = None
+                    state["produk_tampil"] = []
+                    state["produk_terakhir_dibahas"] = None
+                    state["history_produk_tampil"] = []
+                    state["profil_aktif"] = None
+                    state["batas_bot"] = {}
+                    if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                        state["kriteria_pelanggan"] = {"kategori": val_cat}
+            else:
+                logger.warning(f"B1: Kategori '{slot_val}' tak dikenal katalog, diabaikan.")
         elif slot in ("budget", "anggaran"):
             state["budget"] = parse_int_safe(slot_val)
         elif slot in ("persona",):
@@ -1463,7 +1479,12 @@ class ActionEngine:
         elif slot in ("kebutuhan", "aktivitas"):
             state["kebutuhan_teks"] = str(slot_val).strip()
         elif slot in ("merek", "brand"):
-            state["merek"] = str(slot_val).strip().lower()
+            all_brands = set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))
+            val_m = str(slot_val).strip().lower()
+            if val_m in all_brands:
+                state["merek"] = val_m
+            else:
+                logger.warning(f"B1: Merek '{slot_val}' tak dikenal katalog, diabaikan.")
 
         state["pending_question"] = None
 
@@ -1520,9 +1541,36 @@ class ActionEngine:
         state_up = parsed.pembaruan_state if parsed else None
 
         # Terapkan pembaruan state jika ada
+        catalog_cats = {"laptop", "desktop", "printer"}
+        new_kategori = None
+        if args.kategori and str(args.kategori).lower() in catalog_cats:
+            new_kategori = str(args.kategori).lower()
+        elif state_up and state_up.kategori and str(state_up.kategori).lower() in catalog_cats:
+            new_kategori = str(state_up.kategori).lower()
+
+        old_kategori = state.get("kategori")
+        if new_kategori and old_kategori and new_kategori != old_kategori:
+            state["kategori"] = new_kategori
+            # B2: Reset saat kategori berganti
+            if not args.merek and not (state_up and state_up.merek):
+                state["merek"] = None
+                if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                    state["kriteria_pelanggan"].pop("merek", None)
+            if args.max_harga is None and not (state_up and state_up.budget):
+                state["budget"] = None
+                if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                    state["kriteria_pelanggan"].pop("max_harga", None)
+            if not args.kebutuhan_teks and not (state_up and state_up.kebutuhan_teks):
+                state["kebutuhan_teks"] = None
+            state["produk_tampil"] = []
+            state["produk_terakhir_dibahas"] = None
+            state["history_produk_tampil"] = []
+            state["profil_aktif"] = None
+            state["batas_bot"] = {}
+        elif new_kategori:
+            state["kategori"] = new_kategori
+
         if state_up:
-            if state_up.kategori:
-                state["kategori"] = state_up.kategori
             if state_up.budget in (0, -1):
                 state["budget"] = None
                 if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
@@ -1533,8 +1581,6 @@ class ActionEngine:
                 state["persona"] = state_up.persona
             if state_up.kebutuhan_teks:
                 state["kebutuhan_teks"] = state_up.kebutuhan_teks
-        if args.kategori:
-            state["kategori"] = args.kategori
         if args.merek:
             state["merek"] = args.merek
         if args.max_harga in (0, -1):

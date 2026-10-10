@@ -322,17 +322,34 @@ def validate_parser_output(
 
     # 3. Normalisasi kategori & merek terhadap katalog
     catalog_cats = get_catalog_categories(db_path)
+    catalog_brands = get_catalog_brands(db_path)
+
+    # B1: Validator menolak pembaruan state kategori/merek yang tidak ada di nilai katalog
     if args.kategori:
         cat_clean = args.kategori.lower().strip()
         if cat_clean in catalog_cats:
             args.kategori = cat_clean
         elif cat_clean in ("all", "semua"):
             args.kategori = None
+        else:
+            logger.warning(f"B1: Validator mengabaikan kategori tak dikenal pada argumen: '{args.kategori}'")
+            args.kategori = None
 
     if state_up.kategori:
         cat_clean = state_up.kategori.lower().strip()
         if cat_clean in catalog_cats:
             state_up.kategori = cat_clean
+        else:
+            logger.warning(f"B1: Validator menolak pembaruan state kategori tak dikenal: '{state_up.kategori}'")
+            state_up.kategori = None
+
+    if state_up.merek:
+        m_clean = state_up.merek.lower().strip()
+        if m_clean in catalog_brands:
+            state_up.merek = m_clean
+        else:
+            logger.warning(f"B1: Validator menolak pembaruan state merek tak dikenal: '{state_up.merek}'")
+            state_up.merek = None
 
     # 3a. Normalisasi merek_kecuali jika terisi nama GPU/chipmaker
     if args.merek_kecuali:
@@ -360,6 +377,16 @@ def validate_parser_output(
                 ),
                 False
             )
+
+        slot_key = args.slot.value if hasattr(args.slot, "value") else str(args.slot).lower()
+        if slot_key in ("kategori", "category"):
+            if val_str not in catalog_cats:
+                logger.warning(f"B1: Nilai slot kategori tak dikenal diabaikan: '{args.nilai}'")
+                args.nilai = None
+        elif slot_key in ("merek", "brand"):
+            if val_str not in catalog_brands:
+                logger.warning(f"B1: Nilai slot merek tak dikenal diabaikan: '{args.nilai}'")
+                args.nilai = None
 
     # 4. Validasi lanjutan_hasil saat tidak ada produk tampil (B9)
     if parsed.aksi == ActionEnum.LANJUTAN_HASIL and not produk_tampil_list:
