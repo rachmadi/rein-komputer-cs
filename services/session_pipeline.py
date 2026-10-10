@@ -280,9 +280,11 @@ class SessionPipeline:
         # ---------------------------------------------------------------------
         # 3. MESIN DETERMINISTIK
         # ---------------------------------------------------------------------
+        state["_pesan_pelanggan"] = pesan_pelanggan
         t_engine_0 = time.perf_counter()
         action_res: ActionResult = self.action_engine.execute(parsed, session_state=state)
         lat_mesin = (time.perf_counter() - t_engine_0) * 1000.0
+        state.pop("_pesan_pelanggan", None)
 
         # Update state dari argumen & pembaruan_state parser
         state.pop("_cabut_budget", None)

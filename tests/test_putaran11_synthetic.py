@@ -403,6 +403,33 @@ def test_butir13_cabut_batasan_budget():
         assert has_above_5m
 
 
+def test_butir14_kebutuhan_paling_murah_sorting():
+    """Butir 14: Intensi '<kebutuhan> paling murah' menghasilkan pengurutan harga menaik (termurah dahulu)."""
+    from services.session_pipeline import SessionPipeline
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments
+    from services.llm_generator import GeneratorOutput
+    from unittest.mock import patch
+
+    pipeline = SessionPipeline()
+
+    # Query dengan intensi termurah: 'rekomendasi laptop kantor paling murah'
+    p = ParserOutput(
+        aksi=ActionEnum.MINTA_REKOMENDASI,
+        argumen=ActionArguments(kategori="laptop", kebutuhan_teks="kantor paling murah")
+    )
+
+    with patch("services.session_pipeline.parse_user_message", return_value=(p, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response", return_value=(GeneratorOutput(teks="Berikut rekomendasi laptop kantor termurah."), {})):
+        res, state_out = pipeline.process_turn("rekomendasi laptop kantor paling murah", session_state={})
+        prods = res.fakta_eksekusi.get("produk", [])
+        assert len(prods) >= 2
+        prices = [int(p.get("harga", 0)) for p in prods]
+        # Pastikan terurut menaik (termurah di urutan pertama)
+        assert prices == sorted(prices)
+        assert prices[0] <= prices[1]
+
+
+
 
 
 

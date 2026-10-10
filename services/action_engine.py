@@ -435,9 +435,19 @@ class ActionEngine:
                 }
                 return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
 
+        user_msg = str(state.get("_pesan_pelanggan") or "")
+        is_termurah = bool(
+            re.search(r"\b(paling\s+murah|termurah|terjangkau|hemat|paling\s+hemat|harga\s+terendah|paling\s+rendah)\b", kebutuhan_teks or "", re.IGNORECASE)
+            or re.search(r"\b(paling\s+murah|termurah|terjangkau|hemat|paling\s+hemat|harga\s+terendah|paling\s+rendah)\b", user_msg, re.IGNORECASE)
+            or (str(getattr(args, "jenis", "")).lower() in ("termurah_dari_tampil", "lebih_murah"))
+        )
+
         # B6: Tidak ada produk yang memenuhi spesifikasi minimum
         if candidates and all(not c["passed"] for c in candidates):
-            candidates.sort(key=lambda x: (-x["penalty"], get_product_price(x["product"])))
+            if is_termurah:
+                candidates.sort(key=lambda x: (get_product_price(x["product"]), -x["penalty"]))
+            else:
+                candidates.sort(key=lambda x: (-x["penalty"], get_product_price(x["product"])))
             closest = candidates[0]
             closest_prod = closest["product"]
             rep = closest["report"]
@@ -462,8 +472,11 @@ class ActionEngine:
             }
             return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
 
-        # Urutkan: lolos semua dulu, penalty tertinggi (paling sedikit penalti), harga termurah
-        candidates.sort(key=lambda x: (not x["passed"], -x["penalty"], get_product_price(x["product"])))
+        # Urutkan: lolos semua dulu. Jika ada intensi termurah -> urutkan harga menaik lebih dulu!
+        if is_termurah:
+            candidates.sort(key=lambda x: (not x["passed"], get_product_price(x["product"]), -x["penalty"]))
+        else:
+            candidates.sort(key=lambda x: (not x["passed"], -x["penalty"], get_product_price(x["product"])))
         top_matches = candidates[:3]
 
         formatted_prods = []
