@@ -170,6 +170,26 @@ def test_butir6_budget_tidak_tertimpa_pada_lanjutan_hasil():
     assert state.get("budget") == initial_budget
 
 
+def test_butir7_aturan_sapaan_tengah_percakapan():
+    """Butir 7: Sapaan di tengah percakapan tanpa 'Selamat datang' dan tanpa salam ulang."""
+    from services.session_pipeline import match_rule_greeting
+
+    hist = [{"role": "user", "content": "Halo min"}, {"role": "assistant", "content": "Halo Kak!"}]
+    match = match_rule_greeting("selamat siang kak", history=hist)
+    assert match is not None
+    r_aksi, r_reply, r_status = match
+    assert r_aksi == "sapa"
+    assert "Selamat datang" not in r_reply
+    assert "selamat siang" not in r_reply.lower()
+    assert "Iya, Kak!" in r_reply
+
+    # Awal percakapan (tanpa history) tetap memuat Selamat datang
+    match_awal = match_rule_greeting("selamat siang kak", history=[])
+    assert match_awal is not None
+    assert "Selamat datang di ReIn Komputer" in match_awal[1]
+
+
+
 
 
 

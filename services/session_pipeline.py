@@ -66,10 +66,11 @@ class TurnExecutionResult:
     jenis: Optional[str] = None
 
 
-def match_rule_greeting(pesan_pelanggan: str) -> Optional[Tuple[str, str, str]]:
+def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None) -> Optional[Tuple[str, str, str]]:
     """
     Memeriksa apakah pesan sepenuhnya merupakan sapaan atau terima kasih berdasarkan daftar kata tertutup.
     Mengembalikan (route, reply_text, fakta_status) jika cocok, atau None jika tidak.
+    Bila riwayat tidak kosong, balasan tanpa 'Selamat datang' dan tanpa salam ulang (cukup tanggapan singkat + ajakan).
     """
     if not pesan_pelanggan:
         return None
@@ -86,20 +87,28 @@ def match_rule_greeting(pesan_pelanggan: str) -> Optional[Tuple[str, str, str]]:
     # Himpunan kata terima kasih yang diizinkan
     terima_kasih_words = {"terima", "kasih", "makasih", "thanks", "banyak", "kak", "kakak"}
 
+    has_history = bool(history and len(history) > 0)
+
     # 1. Cek apakah SELURUH kata termasuk dalam sapaan
     if all(w in sapaan_words for w in words) and any(w in greeting_roots for w in words):
-        if "pagi" in words:
-            reply = "Selamat pagi, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
-        elif "siang" in words:
-            reply = "Selamat siang, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
-        elif "sore" in words:
-            reply = "Selamat sore, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
-        elif "malam" in words:
-            reply = "Selamat malam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
-        elif "assalamualaikum" in words:
-            reply = "Waalaikumsalam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        if has_history:
+            if "assalamualaikum" in words:
+                reply = "Waalaikumsalam, Kak! Ada yang bisa kami bantu lagi untuk kebutuhan komputer atau laptopnya?"
+            else:
+                reply = "Iya, Kak! Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan lagi?"
         else:
-            reply = "Halo, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+            if "pagi" in words:
+                reply = "Selamat pagi, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+            elif "siang" in words:
+                reply = "Selamat siang, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+            elif "sore" in words:
+                reply = "Selamat sore, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+            elif "malam" in words:
+                reply = "Selamat malam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+            elif "assalamualaikum" in words:
+                reply = "Waalaikumsalam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+            else:
+                reply = "Halo, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
         return ("sapa", reply, "sapaan")
 
     # 2. Cek apakah SELURUH kata termasuk dalam terima kasih
@@ -134,7 +143,7 @@ class SessionPipeline:
         # ---------------------------------------------------------------------
         # 0. JALUR ATURAN SAPAAN & TERIMA KASIH (tanpa memanggil model)
         # ---------------------------------------------------------------------
-        rule_match = match_rule_greeting(pesan_pelanggan)
+        rule_match = match_rule_greeting(pesan_pelanggan, history=history)
         if rule_match is not None:
             r_aksi, r_reply, r_status = rule_match
             lat_total = (time.perf_counter() - t_start) * 1000.0
