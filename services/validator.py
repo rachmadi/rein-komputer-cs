@@ -417,11 +417,31 @@ def validate_parser_output(
     args = parsed.argumen
     state_up = parsed.pembaruan_state
 
+    # Kontrak Intent (Putaran 14 Butir 2):
+    # Validator tidak boleh menghapus atau mengganti nilai dari parser diam-diam.
+    # Setiap argumen diklasifikasikan: valid, tidak_ada_di_katalog, atau ambigu.
+    raw_args_original = {}
+    if isinstance(raw_output, dict) and "argumen" in raw_output and isinstance(raw_output["argumen"], dict):
+        raw_args_original = dict(raw_output["argumen"])
+    elif isinstance(raw_output, ParserOutput):
+        raw_args_original = {k: v for k, v in raw_output.argumen.model_dump().items() if v is not None}
+
+    permintaan_asli = {
+        "aksi": parsed.aksi.value if hasattr(parsed.aksi, "value") else str(parsed.aksi),
+        "argumen": dict(raw_args_original)
+    }
+    argumen_valid = {}
+    argumen_ditolak = []
+
     # 2. Validasi rentang harga (harus >= 0)
     for price_field in ["min_harga", "max_harga", "budget_min", "budget_max"]:
         val = getattr(args, price_field, None)
-        if val is not None and val < 0:
-            setattr(args, price_field, None)
+        if val is not None:
+            if isinstance(val, (int, float)) and val >= 0:
+                argumen_valid[price_field] = int(val)
+            else:
+                argumen_ditolak.append({"field": price_field, "nilai": val, "alasan": "ambigu"})
+                setattr(args, price_field, None)
 
     if state_up.budget is not None and state_up.budget < 0:
         state_up.budget = None
@@ -430,31 +450,67 @@ def validate_parser_output(
     catalog_cats = get_catalog_categories(db_path)
     catalog_brands = get_catalog_brands(db_path)
 
-    # B1: Validator menolak pembaruan state kategori/merek yang tidak ada di nilai katalog
-    if args.kategori:
-        cat_clean = args.kategori.lower().strip()
+    # Klasifikasi argumen kategori
+    raw_cat = raw_args_original.get("kategori") or args.kategori
+    if raw_cat:
+        cat_clean = str(raw_cat).lower().strip()
         if cat_clean in catalog_cats:
             args.kategori = cat_clean
+            argumen_valid["kategori"] = cat_clean
         elif cat_clean in ("all", "semua"):
             args.kategori = None
+            argumen_valid["kategori"] = "all"
         else:
-            logger.warning(f"B1: Validator mengabaikan kategori tak dikenal pada argumen: '{args.kategori}'")
+            logger.warning(f"B1/Butir 2: Kategori tidak ada di katalog ditolak: '{raw_cat}'")
+            argumen_ditolak.append({
+                "field": "kategori",
+                "nilai": raw_cat,
+                "alasan": "tidak_ada_di_katalog"
+            })
             args.kategori = None
 
     if state_up.kategori:
-        cat_clean = state_up.kategori.lower().strip()
+        cat_clean = str(state_up.kategori).lower().strip()
         if cat_clean in catalog_cats:
             state_up.kategori = cat_clean
         else:
-            logger.warning(f"B1: Validator menolak pembaruan state kategori tak dikenal: '{state_up.kategori}'")
+            logger.warning(f"B1/Butir 2: Pembaruan state kategori tak dikenal ditolak: '{state_up.kategori}'")
+            if not any(d["field"] == "kategori" for d in argumen_ditolak):
+                argumen_ditolak.append({
+                    "field": "kategori",
+                    "nilai": state_up.kategori,
+                    "alasan": "tidak_ada_di_katalog"
+                })
             state_up.kategori = None
 
+    # Klasifikasi argumen merek
+    raw_merek = raw_args_original.get("merek") or args.merek
+    if raw_merek:
+        m_clean = str(raw_merek).lower().strip()
+        if m_clean in catalog_brands:
+            args.merek = m_clean
+            argumen_valid["merek"] = m_clean
+        else:
+            logger.warning(f"B1/Butir 2: Merek tidak ada di katalog ditolak: '{raw_merek}'")
+            argumen_ditolak.append({
+                "field": "merek",
+                "nilai": raw_merek,
+                "alasan": "tidak_ada_di_katalog"
+            })
+            args.merek = None
+
     if state_up.merek:
-        m_clean = state_up.merek.lower().strip()
+        m_clean = str(state_up.merek).lower().strip()
         if m_clean in catalog_brands:
             state_up.merek = m_clean
         else:
-            logger.warning(f"B1: Validator menolak pembaruan state merek tak dikenal: '{state_up.merek}'")
+            logger.warning(f"B1/Butir 2: Pembaruan state merek tak dikenal ditolak: '{state_up.merek}'")
+            if not any(d["field"] == "merek" for d in argumen_ditolak):
+                argumen_ditolak.append({
+                    "field": "merek",
+                    "nilai": state_up.merek,
+                    "alasan": "tidak_ada_di_katalog"
+                })
             state_up.merek = None
 
     # 3a. Normalisasi merek_kecuali jika terisi nama GPU/chipmaker
@@ -510,10 +566,19 @@ def validate_parser_output(
             False
         )
 
-    # Putaran 13 Butir E: Validasi kebersihan kebutuhan_teks
-    if args.kebutuhan_teks and not is_valid_kebutuhan_teks(args.kebutuhan_teks, db_path):
-        logger.warning(f"E: Argumen kebutuhan_teks '{args.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
-        args.kebutuhan_teks = None
+    # Putaran 13 Butir E & Putaran 14 Butir 2: Validasi kebersihan kebutuhan_teks
+    if args.kebutuhan_teks:
+        if is_valid_kebutuhan_teks(args.kebutuhan_teks, db_path):
+            argumen_valid["kebutuhan_teks"] = args.kebutuhan_teks
+        else:
+            logger.warning(f"E/Butir 2: Argumen kebutuhan_teks '{args.kebutuhan_teks}' hanya berisi kategori/merek katalog, ditolak sebagai ambigu.")
+            argumen_ditolak.append({
+                "field": "kebutuhan_teks",
+                "nilai": args.kebutuhan_teks,
+                "alasan": "ambigu"
+            })
+            args.kebutuhan_teks = None
+
     if parsed.pembaruan_state.kebutuhan_teks and not is_valid_kebutuhan_teks(parsed.pembaruan_state.kebutuhan_teks, db_path):
         logger.warning(f"E: Pembaruan state kebutuhan_teks '{parsed.pembaruan_state.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
         parsed.pembaruan_state.kebutuhan_teks = None
@@ -530,11 +595,21 @@ def validate_parser_output(
     prev_stack_list = state.get("produk_dibahas_sebelumnya", [])
     if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list and not history_tampil_list and not fokus_list and not prev_stack_list:
         logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil, fokus, dan riwayat kosong (B9)")
+        argumen_ditolak.append({
+            "field": "rujukan_produk",
+            "nilai": args.rujukan_produk or args.produk,
+            "alasan": "tidak_ada_di_katalog"
+        })
         return (
             ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
                 argumen=ActionArguments(alasan=AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA),
-                pembaruan_state=StateUpdate()
+                pembaruan_state=StateUpdate(),
+                kontrak_intent={
+                    "permintaan_asli": permintaan_asli,
+                    "argumen_valid": argumen_valid,
+                    "argumen_ditolak": argumen_ditolak
+                }
             ),
             False
         )
@@ -570,17 +645,30 @@ def validate_parser_output(
                 args.produk = resolved_codes if resolved_codes else [p.get("kode") for p in produk_tampil_list if p.get("kode")]
                 if failed_clean:
                     args.produk_luar_katalog = failed_clean
+                    for fc in failed_clean:
+                        argumen_ditolak.append({"field": "produk", "nilai": fc, "alasan": "tidak_ada_di_katalog"})
             else:
+                argumen_ditolak.append({
+                    "field": "rujukan_produk",
+                    "nilai": raw_refs,
+                    "alasan": "ambigu" if failed_ref in ("rujukan_ambigu", "ambigu") else "tidak_ada_di_katalog"
+                })
                 return (
                     ParserOutput(
                         aksi=ActionEnum.TIDAK_JELAS,
                         argumen=ActionArguments(alasan=AlasanTidakJelasEnum.RUJUKAN_TIDAK_ADA),
-                        pembaruan_state=StateUpdate()
+                        pembaruan_state=StateUpdate(),
+                        kontrak_intent={
+                            "permintaan_asli": permintaan_asli,
+                            "argumen_valid": argumen_valid,
+                            "argumen_ditolak": argumen_ditolak
+                        }
                     ),
                     False
                 )
         else:
             args.produk = resolved_codes
+            argumen_valid["produk"] = resolved_codes
 
         if args.produk_luar_katalog:
             still_outside = []
@@ -675,6 +763,17 @@ def validate_parser_output(
         state_up.sebutan = state_up.sebutan.strip()
         if state_up.persona and state_up.sebutan.lower() == state_up.persona:
             state_up.sebutan = None
+
+    for f in ActionArguments.model_fields.keys():
+        val = getattr(args, f, None)
+        if val is not None and f not in argumen_valid and not any(d["field"] == f for d in argumen_ditolak):
+            argumen_valid[f] = val
+
+    parsed.kontrak_intent = {
+        "permintaan_asli": permintaan_asli,
+        "argumen_valid": argumen_valid,
+        "argumen_ditolak": argumen_ditolak
+    }
 
     return parsed, True
 

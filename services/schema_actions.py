@@ -168,6 +168,7 @@ class ParserOutput(BaseModel):
     aksi: ActionEnum
     argumen: ActionArguments = Field(default_factory=ActionArguments)
     pembaruan_state: StateUpdate = Field(default_factory=StateUpdate)
+    kontrak_intent: Optional[dict] = None
 
     model_config = {
         "extra": "ignore"
@@ -177,6 +178,10 @@ class ParserOutput(BaseModel):
 def get_parser_json_schema(allowed_actions: Optional[List[ActionEnum]] = None) -> dict:
     """Mengembalikan JSON schema dictionary tertutup untuk Ollama structured output."""
     schema = ParserOutput.model_json_schema()
+    if "properties" in schema and "kontrak_intent" in schema["properties"]:
+        del schema["properties"]["kontrak_intent"]
+    if "required" in schema and "kontrak_intent" in schema["required"]:
+        schema["required"].remove("kontrak_intent")
     if allowed_actions is not None:
         allowed_vals = [a.value if hasattr(a, "value") else str(a) for a in allowed_actions]
         if "$defs" in schema and "ActionEnum" in schema["$defs"]:
