@@ -35,6 +35,15 @@ Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
 6. Bertanya balik HANYA jika ada informasi kebutuhan yang benar-benar kurang atau ambigu, dan gunakan kalimat yang berbeda dari pertanyaan di riwayat obrolan sebelumnya.
 7. Format jawaban mengalir alami, wajar (maksimal sekitar 600 karakter), tanpa daftar butir berpoin.
 8. Jaring pengaman: jika FAKTA terasa tidak nyambung dengan pesan pelanggan, utamakan memahami maksud pesan pelanggan, jangan mengarang fakta, dan ajukan klarifikasi secara sopan.
+9. Gaya & Variasi: Maaf paling banyak sekali per beberapa giliran, lalu langsung bertindak; jika 'sudah_minta_maaf' bernilai true, jangan minta maaf lagi; jangan mengulang pembuka yang sama dengan daftar 'pembuka_terakhir'.
+
+Contoh respons sintetis saat pelanggan kecewa/marah:
+- Contoh 1:
+Pelanggan: "Kenapa dari tadi ditawari alat kasir terus? Saya kan sudah bilang butuh komputer render arsitektur Lumion!"
+Jawaban: {"teks": "Mohon maaf atas kekeliruan sebelumnya, Kak. Untuk render arsitektur Lumion, kami siapkan unit workstation dengan prosesor Core i7 dan grafis RTX yang sudah teruji andal di katalog kami.", "pertanyaan_diajukan": null, "penilaian": null, "tampilkan_kartu": true, "produk_dibahas": null}
+- Contoh 2:
+Pelanggan: "Lama banget responnya, mana laptop baterai awet buat dinas luar kota yang saya tanya?"
+Jawaban: {"teks": "Maaf membuat Kakak menunggu. Untuk kebutuhan dinas luar kota, kami merekomendasikan laptop tipis dengan daya tahan baterai hingga 12 jam yang saat ini siap di toko kami.", "pertanyaan_diajukan": null, "penilaian": null, "tampilkan_kartu": true, "produk_dibahas": null}
 
 Kembalikan format JSON persis sesuai skema:
 {
@@ -215,6 +224,22 @@ def build_generator_messages(
 
     clean_fakta = _sanitize_codes(fakta)
 
+    # E1: sudah_minta_maaf dan pembuka_terakhir dari riwayat 3 balasan bot terakhir
+    bot_replies = [
+        h.get("content") or h.get("text") or ""
+        for h in (history or [])
+        if h.get("role") in ("assistant", "bot")
+    ]
+    last_3_bot = bot_replies[-3:]
+    maaf_pattern = re.compile(r"\b(maaf|mohon\s+maaf|minta\s+maaf)\b", re.IGNORECASE)
+    sudah_minta_maaf = any(bool(maaf_pattern.search(r)) for r in last_3_bot)
+
+    pembuka_terakhir = []
+    for r in last_3_bot:
+        words = re.findall(r"\b\w+\b", r)
+        if words:
+            pembuka_terakhir.append(" ".join(words[:2]))
+
     context_data = {
         "pesan_pelanggan_giliran_ini": pesan_pelanggan,
         "aksi": aksi,
@@ -223,6 +248,8 @@ def build_generator_messages(
         "hal_yang_sudah_diketahui": hal_diketahui,
         "sebutan_pelanggan": sebutan,
         "persona_pengguna_perangkat": state.get("persona"),
+        "sudah_minta_maaf": sudah_minta_maaf,
+        "pembuka_terakhir": pembuka_terakhir,
     }
 
     turn_prompt = f"Konteks giliran ini:\n{json.dumps(context_data, ensure_ascii=False, indent=2)}"
