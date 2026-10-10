@@ -305,6 +305,41 @@ def test_butir10_penghitung_keluhan_dan_tanya_beruntun():
         assert not any(p.startswith("P0") or p.startswith("P1") for p in pilihan)
 
 
+def test_butir11_pertahankan_merek():
+    """Butir 11: Merek dipertahankan di state dan pencarian/rekomendasi giliran berikutnya."""
+    from services.session_pipeline import SessionPipeline
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments
+    from services.llm_generator import GeneratorOutput
+    from unittest.mock import patch
+
+    pipeline = SessionPipeline()
+
+    # Giliran 1: Pelanggan menyebut merek spesifik
+    p1 = ParserOutput(
+        aksi=ActionEnum.CARI_PRODUK,
+        argumen=ActionArguments(kategori="laptop", merek="asus")
+    )
+    with patch("services.session_pipeline.parse_user_message", return_value=(p1, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response", return_value=(GeneratorOutput(teks="Ini beberapa laptop Asus."), {})):
+        res1, state1 = pipeline.process_turn("cari laptop asus", session_state={})
+        assert state1.get("merek") == "asus"
+
+    # Giliran 2: Pelanggan meminta rekomendasi kebutuhan tanpa menyebut ulang merek
+    p2 = ParserOutput(
+        aksi=ActionEnum.MINTA_REKOMENDASI,
+        argumen=ActionArguments(kategori="laptop", kebutuhan_teks="ketik naskah dan dokumen kerja")
+    )
+    with patch("services.session_pipeline.parse_user_message", return_value=(p2, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response", return_value=(GeneratorOutput(teks="Berikut rekomendasi laptop yang cocok."), {})):
+        res2, state2 = pipeline.process_turn("rekomendasi buat ketik naskah dan dokumen kerja", session_state=state1)
+        assert state2.get("merek") == "asus"
+        prods = res2.fakta_eksekusi.get("produk", [])
+        assert len(prods) > 0
+        for p in prods:
+            assert "asus" in p.get("nama", "").lower()
+
+
+
 
 
 

@@ -242,6 +242,10 @@ class SessionPipeline:
 
         if parsed.argumen.merek:
             state["kriteria_pelanggan"]["merek"] = parsed.argumen.merek
+            state["merek"] = parsed.argumen.merek
+        elif parsed.pembaruan_state.merek:
+            state["kriteria_pelanggan"]["merek"] = parsed.pembaruan_state.merek
+            state["merek"] = parsed.pembaruan_state.merek
         if parsed.argumen.kategori:
             state["kriteria_pelanggan"]["kategori"] = parsed.argumen.kategori
         if parsed.argumen.kebutuhan_teks:
@@ -282,6 +286,8 @@ class SessionPipeline:
             state["budget"] = state_up.budget
         if state_up.kategori:
             state["kategori"] = state_up.kategori
+        if state_up.merek:
+            state["merek"] = state_up.merek
         if action_res.profil_id:
             state["profil_aktif"] = action_res.profil_id
 

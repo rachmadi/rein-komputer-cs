@@ -310,6 +310,8 @@ class ActionEngine:
 
         # B3: Hapus default kategori 'laptop'. Simpulkan dari kebutuhan jika jelas, jika tidak biarkan None
         kategori = args.kategori or state.get("kategori")
+        kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
+        merek = args.merek or state.get("merek") or kriteria_pelanggan.get("merek")
         if not kategori and kebutuhan_teks:
             k_low = kebutuhan_teks.lower()
             if any(w in k_low for w in ["bawa-bawa", "mobile", "kuliah", "sekolah", "kampus", "kafe", "mobilitas", "baterai"]):
@@ -324,6 +326,11 @@ class ActionEngine:
         # B7: Anggaran di bawah harga terendah katalog
         if budget_max:
             cat_candidates = [p for p in self.catalog.products if not kategori or p.get("kategori", "").lower() == str(kategori).lower()]
+            if merek:
+                m_clean = str(merek).strip().lower()
+                m_cands = [p for p in cat_candidates if m_clean == get_product_brand(p) or m_clean in str(p.get("nama", "")).lower()]
+                if m_cands:
+                    cat_candidates = m_cands
             if cat_candidates:
                 min_cat_price = min(get_product_price(p) for p in cat_candidates)
                 if budget_max < min_cat_price:
@@ -336,6 +343,8 @@ class ActionEngine:
                         "kategori": kategori or "katalog",
                         "pesan": f"Belum ada produk dalam rentang anggaran {format_rupiah(budget_max)}. Opsi termurah yang tersedia adalah {format_rupiah(min_cat_price)}."
                     }
+                    if merek:
+                        fakta["merek"] = merek
                     return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
 
         # B4 & B5: Penelusuran profil kebutuhan via RAG
@@ -390,6 +399,12 @@ class ActionEngine:
                 continue
             if budget_max and get_product_price(p) > budget_max:
                 continue
+            if merek:
+                p_brand = get_product_brand(p)
+                p_nama = str(p.get("nama", "")).strip().lower()
+                m_clean = str(merek).strip().lower()
+                if m_clean != p_brand and m_clean not in p_brand and m_clean not in p_nama:
+                    continue
             passed, failure_reason, penalty, report = apply_filters(p, filters)
             candidates.append({
                 "product": p,
@@ -398,6 +413,27 @@ class ActionEngine:
                 "failure_reason": failure_reason,
                 "report": report
             })
+
+        if not candidates:
+            all_brands = set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))
+            is_brand_outside = bool(merek and str(merek).strip().lower() not in all_brands)
+            if is_brand_outside:
+                fakta = {
+                    "status": "produk_tidak_di_katalog",
+                    "merek": merek,
+                    "kontak_staf": KONTAK_STAF,
+                    "pesan": f"Produk dengan merek '{merek}' saat ini belum tersedia di katalog ReIn Komputer."
+                }
+                return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
+            else:
+                fakta = {
+                    "status": "belum_ada_yang_memenuhi",
+                    "merek": merek,
+                    "kategori": kategori,
+                    "kontak_staf": KONTAK_STAF,
+                    "pesan": "Saat ini belum ada produk yang memenuhi kriteria tersebut."
+                }
+                return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
 
         # B6: Tidak ada produk yang memenuhi spesifikasi minimum
         if candidates and all(not c["passed"] for c in candidates):
@@ -460,6 +496,7 @@ class ActionEngine:
                 "rekomendasi_spek": prof_data.get("rekomendasi_spek")
             },
             "kebutuhan_teks": kebutuhan_teks,
+            "merek": merek,
             "total_ditemukan": len(formatted_prods),
             "produk": formatted_prods
         }
@@ -475,8 +512,8 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     def _handle_cari_produk(self, args: ActionArguments, state: dict) -> ActionResult:
         kategori = args.kategori or state.get("kategori")
-        merek = args.merek
         kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
+        merek = args.merek or state.get("merek") or kriteria_pelanggan.get("merek")
         batas_bot = state.get("batas_bot", {}) or {}
         merek_kecuali = args.merek_kecuali or state.get("merek_kecuali") or kriteria_pelanggan.get("merek_kecuali")
         nama_model = args.nama_model

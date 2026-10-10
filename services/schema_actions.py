@@ -157,6 +157,7 @@ class StateUpdate(BaseModel):
     kebutuhan_teks: Optional[str] = None
     budget: Optional[int] = None
     kategori: Optional[str] = None
+    merek: Optional[str] = None
 
     model_config = {
         "extra": "ignore"
