@@ -140,6 +140,8 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN penguji TEXT DEFAULT 'manusia'")
         if "engine_mode" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN engine_mode TEXT DEFAULT 'antigravity_v2'")
+        if "jalur" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN jalur TEXT DEFAULT 'model'")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -164,6 +166,7 @@ def log_turn(
     latency_ms: float = 0.0,
     penguji: str | None = None,
     engine_mode: str | None = None,
+    jalur: str | None = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
@@ -200,6 +203,7 @@ def log_turn(
         "user_text": user_text,
         "bot_reply": bot_reply,
         "route": route,
+        "jalur": jalur or "model",
         "fsm_stage": fsm_stage,
         "active_category": active_category,
         "persona_name": persona_name,

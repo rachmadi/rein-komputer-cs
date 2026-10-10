@@ -293,7 +293,7 @@ class TestIntegrasiMultiGiliranPutaran7(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_B10_ollama_timeout_sistem_error(self):
         with patch("services.llm_parser._call_ollama_chat", side_effect=TimeoutError("Ollama timeout")):
-            res, _ = self.pipeline.process_turn("Halo", session_state={})
+            res, _ = self.pipeline.process_turn("Cari laptop gaming", session_state={})
             self.assertEqual(res.fakta_eksekusi.get("status"), "sistem_error",
                              "B10: Kegagalan koneksi/timeout Ollama wajib menghasilkan fakta status sistem_error")
 

@@ -61,6 +61,55 @@ class TurnExecutionResult:
     eval_duration_ms: float = 0.0
     parsed_output: Optional[Dict[str, Any]] = None
     raw_llm_content: Optional[str] = None
+    jalur: str = "model"
+    aksi_parser: Optional[str] = None
+    jenis: Optional[str] = None
+
+
+def match_rule_greeting(pesan_pelanggan: str) -> Optional[Tuple[str, str, str]]:
+    """
+    Memeriksa apakah pesan sepenuhnya merupakan sapaan atau terima kasih berdasarkan daftar kata tertutup.
+    Mengembalikan (route, reply_text, fakta_status) jika cocok, atau None jika tidak.
+    """
+    if not pesan_pelanggan:
+        return None
+    # Normalisasi pesan: huruf kecil, buang tanda baca/emoji, rapikan spasi
+    text_clean = re.sub(r"[^\w\s]|_", " ", pesan_pelanggan.lower())
+    words = text_clean.split()
+    if not words:
+        return None
+
+    # Himpunan kata sapaan yang diizinkan
+    sapaan_words = {"halo", "hai", "hi", "hello", "pagi", "siang", "sore", "malam", "selamat", "assalamualaikum", "kak", "kakak"}
+    greeting_roots = {"halo", "hai", "hi", "hello", "pagi", "siang", "sore", "malam", "assalamualaikum"}
+
+    # Himpunan kata terima kasih yang diizinkan
+    terima_kasih_words = {"terima", "kasih", "makasih", "thanks", "banyak", "kak", "kakak"}
+
+    # 1. Cek apakah SELURUH kata termasuk dalam sapaan
+    if all(w in sapaan_words for w in words) and any(w in greeting_roots for w in words):
+        if "pagi" in words:
+            reply = "Selamat pagi, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        elif "siang" in words:
+            reply = "Selamat siang, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        elif "sore" in words:
+            reply = "Selamat sore, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        elif "malam" in words:
+            reply = "Selamat malam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        elif "assalamualaikum" in words:
+            reply = "Waalaikumsalam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        else:
+            reply = "Halo, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+        return ("sapa", reply, "sapaan")
+
+    # 2. Cek apakah SELURUH kata termasuk dalam terima kasih
+    cleaned_phrase = " ".join(words)
+    has_tk_root = "makasih" in words or "thanks" in words or "terima kasih" in cleaned_phrase
+    if all(w in terima_kasih_words for w in words) and has_tk_root:
+        reply = "Sama-sama, Kak! Senang bisa membantu di ReIn Komputer. Silakan beri tahu jika ada kebutuhan komputer atau laptop lain yang ingin dicari."
+        return ("basa_basi", reply, "terima_kasih")
+
+    return None
 
 
 class SessionPipeline:
@@ -81,6 +130,34 @@ class SessionPipeline:
         t_start = time.perf_counter()
         state = dict(session_state or {})
         history = history or state.get("history", [])
+
+        # ---------------------------------------------------------------------
+        # 0. JALUR ATURAN SAPAAN & TERIMA KASIH (tanpa memanggil model)
+        # ---------------------------------------------------------------------
+        rule_match = match_rule_greeting(pesan_pelanggan)
+        if rule_match is not None:
+            r_aksi, r_reply, r_status = rule_match
+            lat_total = (time.perf_counter() - t_start) * 1000.0
+            new_history = list(history)
+            new_history.append({"role": "user", "content": pesan_pelanggan, "text": pesan_pelanggan})
+            new_history.append({"role": "assistant", "content": r_reply, "text": r_reply})
+            state["history"] = new_history[-8:]
+
+            turn_result = TurnExecutionResult(
+                teks_jawaban=r_reply,
+                kartu_produk_html=None,
+                pertanyaan_diajukan=None,
+                aksi_terpilih=r_aksi,
+                fakta_eksekusi={"status": r_status},
+                latensi_parse_ms=0.0,
+                latensi_mesin_ms=0.0,
+                latensi_generate_ms=0.0,
+                latensi_total_ms=round(lat_total, 1),
+                jalur="aturan",
+                aksi_parser=r_aksi,
+                jenis=None
+            )
+            return turn_result, state
 
         # ---------------------------------------------------------------------
         # 1. PARSER LLM & 2. VALIDATOR
@@ -305,7 +382,10 @@ class SessionPipeline:
             prompt_eval_duration_ms=round((parse_metrics.get("prompt_eval_duration_ms", 0.0) or 0.0) + (gen_metrics.get("prompt_eval_duration_ms", 0.0) or 0.0), 1),
             eval_duration_ms=round((parse_metrics.get("eval_duration_ms", 0.0) or 0.0) + (gen_metrics.get("eval_duration_ms", 0.0) or 0.0), 1),
             parsed_output=parsed.model_dump(),
-            raw_llm_content=parse_metrics.get("raw_content")
+            raw_llm_content=parse_metrics.get("raw_content"),
+            jalur="model",
+            aksi_parser=parsed.aksi.value,
+            jenis=(parsed.argumen.jenis.value if hasattr(parsed.argumen.jenis, "value") else str(parsed.argumen.jenis)) if getattr(parsed.argumen, "jenis", None) is not None else None
         )
 
         return turn_result, state
