@@ -436,6 +436,9 @@ def validate_parser_output(
             if jenis_str in ("lainnya", "merek_lain", "yang_setara", "setara", "alternatif", "varian_lain"):
                 args.jenis = JenisEnum.YANG_LAIN
                 jenis_str = JenisEnum.YANG_LAIN.value
+            elif jenis_str in ("termurah", "paling_murah", "paling_rendah", "termurah_dari_tampil"):
+                args.jenis = JenisEnum.TERMURAH_DARI_TAMPIL
+                jenis_str = JenisEnum.TERMURAH_DARI_TAMPIL.value
             elif jenis_str in ("di_bawah_itu", "murah", "lebih_hemat"):
                 args.jenis = JenisEnum.LEBIH_MURAH
                 jenis_str = JenisEnum.LEBIH_MURAH.value

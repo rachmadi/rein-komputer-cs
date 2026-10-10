@@ -97,6 +97,10 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         kekurangan = ", ".join(p_close.get("kekurangan", []))
         return f"Saat ini belum ada produk yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Pilihan terdekat kami adalah {nama} ({kekurangan})."
 
+    if fakta.get("jenis_lanjutan") == "termurah_dari_tampil" and fakta.get("produk_termurah"):
+        pt = fakta.get("produk_termurah", {})
+        return f"Di antara produk yang tampil, opsi paling terjangkau adalah {pt.get('nama', '')} seharga {pt.get('harga_formatted', '')}, Kak."
+
     if status == "tidak_ada_lebih_murah":
         min_p = fakta.get("harga_termurah_saat_ini_formatted") or "harga tersebut"
         return f"Produk yang ditampilkan sebelumnya sudah merupakan opsi paling terjangkau di katalog kami ({min_p}), Kak."

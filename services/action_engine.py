@@ -1201,6 +1201,49 @@ class ActionEngine:
             filter_dipakai["merek_kecuali"] = merek_kecuali
 
         batas_dipakai = None
+        if jenis == "termurah_dari_tampil":
+            resolved_tampil = []
+            for p in tampil:
+                full_p = self.get_product_by_code(p.get("kode")) if p.get("kode") else p
+                resolved_tampil.append(full_p or p)
+
+            cheapest_item = min(resolved_tampil, key=lambda x: get_product_price(x))
+            cheapest_price = get_product_price(cheapest_item)
+            formatted_item = {
+                "kode": cheapest_item.get("kode"),
+                "nama": cheapest_item.get("nama"),
+                "kategori": cheapest_item.get("kategori"),
+                "brand": get_product_brand(cheapest_item),
+                "merek": get_product_brand(cheapest_item),
+                "harga": cheapest_price,
+                "harga_formatted": format_rupiah(cheapest_price),
+                "spesifikasi": clean_specs(cheapest_item),
+                "cpu": cheapest_item.get("cpu"),
+                "cpu_tier": cheapest_item.get("cpu_tier"),
+                "ram": cheapest_item.get("ram"),
+                "ram_gb": cheapest_item.get("ram_gb"),
+                "storage": cheapest_item.get("storage"),
+                "storage_ssd_gb": cheapest_item.get("storage_ssd_gb"),
+                "gpu": cheapest_item.get("gpu"),
+                "display": cheapest_item.get("display"),
+                "screen_inch": cheapest_item.get("screen_inch"),
+                "image_url": cheapest_item.get("image_url")
+            }
+            fakta = {
+                "status": "sukses",
+                "jenis_lanjutan": "termurah_dari_tampil",
+                "filter_dipakai": filter_dipakai,
+                "produk_termurah": formatted_item,
+                "produk": [formatted_item],
+                "total_ditemukan": 1,
+                "pesan": f"Di antara produk yang sedang ditampilkan, opsi paling terjangkau adalah {formatted_item.get('nama', '')} dengan harga {formatted_item.get('harga_formatted', '')}."
+            }
+            return ActionResult(
+                aksi=ActionEnum.LANJUTAN_HASIL,
+                fakta=fakta,
+                produk_list=[formatted_item]
+            )
+
         if jenis == "lebih_murah":
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             target_max = user_max_harga if user_max_harga is not None else lowest_p
@@ -1211,7 +1254,7 @@ class ActionEngine:
                 if mk_list:
                     cat_candidates = [p for p in cat_candidates if not any(mk == get_product_brand(p) or mk in get_product_brand(p) or mk in str(p.get("nama", "")).lower() for mk in mk_list)]
                 matches = [p for p in cat_candidates if get_product_price(p) < lowest_p]
-            matches.sort(key=lambda x: -get_product_price(x))
+            matches.sort(key=lambda x: get_product_price(x))
 
             # B7: Jika ada batas anggaran eksplisit dan tidak ada yang cocok
             if not matches and user_max_harga is not None:

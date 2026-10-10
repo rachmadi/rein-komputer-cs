@@ -36,6 +36,7 @@ class SlotEnum(str, Enum):
 
 class JenisLanjutanEnum(str, Enum):
     LEBIH_MURAH = "lebih_murah"
+    TERMURAH_DARI_TAMPIL = "termurah_dari_tampil"
     LEBIH_MAHAL = "lebih_mahal"
     YANG_LAIN = "yang_lain"
     FILTER_TAMBAHAN = "filter_tambahan"
@@ -56,6 +57,7 @@ class JenisBasaBasiEnum(str, Enum):
 class JenisEnum(str, Enum):
     # lanjutan_hasil
     LEBIH_MURAH = "lebih_murah"
+    TERMURAH_DARI_TAMPIL = "termurah_dari_tampil"
     LEBIH_MAHAL = "lebih_mahal"
     YANG_LAIN = "yang_lain"
     FILTER_TAMBAHAN = "filter_tambahan"

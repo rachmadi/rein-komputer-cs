@@ -96,3 +96,65 @@ def test_butir1_pipeline_process_turn_aturan_vs_state():
     assert updated_state["budget"] == 15000000
     assert len(updated_state["produk_tampil"]) == 1
     assert len(updated_state["history"]) == 2
+
+
+def test_butir2_termurah_dari_tampil():
+    """Menguji pemilihan unit termurah di antara produk_tampil tanpa pencarian katalog baru."""
+    from services.action_engine import ActionEngine
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, JenisEnum, StateUpdate
+
+    engine = ActionEngine()
+    state = {
+        "kategori": "laptop",
+        "produk_tampil": [
+            {"kode": "UNIT-MAHAL", "nama": "Laptop Alpha", "harga": 18000000},
+            {"kode": "UNIT-MURAH", "nama": "Laptop Beta", "harga": 7500000},
+            {"kode": "UNIT-SEDANG", "nama": "Laptop Gamma", "harga": 12000000},
+        ]
+    }
+    parsed = ParserOutput(
+        aksi=ActionEnum.LANJUTAN_HASIL,
+        argumen=ActionArguments(jenis=JenisEnum.TERMURAH_DARI_TAMPIL),
+        pembaruan_state=StateUpdate()
+    )
+
+    res = engine.execute(parsed, session_state=state)
+    assert res.aksi == ActionEnum.LANJUTAN_HASIL
+    assert res.fakta["status"] == "sukses"
+    assert res.fakta["jenis_lanjutan"] == "termurah_dari_tampil"
+    assert len(res.produk_list) == 1
+    assert res.produk_list[0]["kode"] == "UNIT-MURAH"
+    assert res.produk_list[0]["harga"] == 7500000
+    assert res.fakta["produk_termurah"]["kode"] == "UNIT-MURAH"
+    assert "Laptop Beta" in res.fakta["pesan"]
+
+
+def test_butir2_lebih_murah_urutan_menaik():
+    """Menguji bahwa hasil lanjutan_hasil lebih_murah diurutkan menaik (termurah dulu)."""
+    from services.action_engine import ActionEngine
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, JenisEnum, StateUpdate
+
+    engine = ActionEngine()
+    state = {
+        "kategori": "laptop",
+        "produk_tampil": [
+            {"kode": "BENCH-01", "nama": "Unit Pembanding", "harga": 20000000}
+        ]
+    }
+    parsed = ParserOutput(
+        aksi=ActionEnum.LANJUTAN_HASIL,
+        argumen=ActionArguments(jenis=JenisEnum.LEBIH_MURAH),
+        pembaruan_state=StateUpdate()
+    )
+
+    res = engine.execute(parsed, session_state=state)
+    assert res.aksi == ActionEnum.LANJUTAN_HASIL
+    assert res.fakta["status"] == "sukses"
+    assert len(res.produk_list) > 1
+
+    prices = [p["harga"] for p in res.produk_list]
+    # Pastikan urutan menaik (ascending)
+    assert prices == sorted(prices)
+    for p_val in prices:
+        assert p_val < 20000000
+

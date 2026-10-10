@@ -58,8 +58,9 @@ KEBIJAKAN BATAS AKSI (B1, B2, B3):
 - Jika pelanggan menyebut kategori saja (misal 'laptop', 'printer') atau merek saja (misal 'asus', 'lenovo') tanpa aktivitas konkret, gunakan 'cari_produk' (maksimal 3 produk).
 - Jika pelanggan menyebut budget saja (misal 'budget 8 juta', 'dana 7jt') dan kategori sudah ada di konteks state, gunakan 'cari_produk' memakai kategori tersebut.
 - 'lanjutan_hasil': Permintaan alternatif atau perbandingan RELATIF terhadap hasil pencarian sebelumnya ('produk_tampil' tidak kosong).
-  * Lebih murah / lebih miring / hemat / di bawah produk tersebut / pagu dana lebih rendah -> 'jenis': 'lebih_murah'.
-  * Lebih mahal / lebih premium / kelas di atas produk tersebut -> 'jenis': 'lebih_mahal'.
+  * Memilih unit paling terjangkau di antara daftar produk yang sedang tampil saat ini -> 'jenis': 'termurah_dari_tampil'.
+  * Menanyakan opsi alternatif produk baru di katalog dengan harga lebih rendah dari unit yang tampil -> 'jenis': 'lebih_murah'.
+  * Menanyakan opsi alternatif produk baru di katalog dengan harga atau kelas lebih tinggi dari unit yang tampil -> 'jenis': 'lebih_mahal'.
   * Pilihan lain / merek lain / produk kompetitor / yang setara / alternatif berikutnya / produk pembanding -> 'jenis': 'yang_lain'.
   * 'bandingkan' HANYA jika membandingkan dua atau lebih produk yang secara simultan sudah tampil atau disebutkan. Bila meminta 'opsi alternatif pembanding' yang setara, gunakan 'lanjutan_hasil'.
   * Jika 'produk_tampil' kosong di awal sesi, DILARANG mengeluarkan 'lanjutan_hasil' (keluarkan 'tidak_jelas' dengan alasan 'rujukan_tidak_ada').
