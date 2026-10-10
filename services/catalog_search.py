@@ -22,16 +22,60 @@ logger = logging.getLogger(__name__)
 
 
 def parse_budget_from_text(text: str) -> int | None:
-    """Ekstrak nominal budget (contoh: '10 juta', '10jt') ke integer rupiah."""
+    """Ekstrak nominal budget (contoh: '10 juta', '10jt', '6-7 juta', '7.500.000') ke integer rupiah (Putaran 13 Butir D)."""
     if not text:
         return None
-    text = text.lower().replace('.', '').replace(',', '')
-    m = re.search(r'(\d+)\s*(?:-?an\s*)?juta', text)
-    if m:
-        return int(m.group(1)) * 1_000_000
-    m_jt = re.search(r'(\d+)\s*(?:-?an\s*)?jt\b', text)
+    text_clean = str(text).strip()
+
+    # 1. Rentang harga (misal '6-7 juta', '6–7 jt', '6 s/d 7 juta', '6 sampai 7 juta') -> ambil batas atas yang sah
+    m_range = re.search(r'(\d+(?:[.,]\d+)?)\s*(?:-|–|—|s/?d|sampai)\s*(\d+(?:[.,]\d+)?)\s*(?:-?an\s*)?(?:juta|jt)?\b', text_clean, re.IGNORECASE)
+    if m_range:
+        upper_str = m_range.group(2).replace(',', '.')
+        is_jt = bool(re.search(r'(?:juta|jt)\b', text_clean, re.IGNORECASE))
+        try:
+            num = float(upper_str)
+            if is_jt or num <= 100:
+                return int(num * 1_000_000)
+            return int(num)
+        except ValueError:
+            pass
+
+    # 2. Desimal juta (misal '7.5 juta', '7,5 jt')
+    m_dec = re.search(r'(\d+(?:[.,]\d+)?)\s*(?:-?an\s*)?(?:juta|jt)\b', text_clean, re.IGNORECASE)
+    if m_dec:
+        dec_str = m_dec.group(1).replace(',', '.')
+        try:
+            return int(float(dec_str) * 1_000_000)
+        except ValueError:
+            pass
+
+    # 3. Format rupiah bertitik/lengkap (misal '7.500.000', 'Rp7.500.000')
+    m_dot = re.search(r'(?:rp\s*)?(\d{1,3}(?:\.\d{3}){1,3})\b', text_clean, re.IGNORECASE)
+    if m_dot:
+        clean = m_dot.group(1).replace('.', '')
+        try:
+            return int(clean)
+        except ValueError:
+            pass
+
+    # 4. Format juta biasa
+    t_no_punct = text_clean.lower().replace('.', '').replace(',', '')
+    m_jt = re.search(r'(\d+)\s*(?:-?an\s*)?(?:juta|jt)\b', t_no_punct)
     if m_jt:
-        return int(m_jt.group(1)) * 1_000_000
+        try:
+            return int(m_jt.group(1)) * 1_000_000
+        except ValueError:
+            pass
+
+    # 5. Angka nominal mandiri (misal 5000000 s/d 100000000)
+    for token in re.findall(r'\b\d{6,9}\b', t_no_punct):
+        try:
+            val = int(token)
+            if 500_000 <= val <= 100_000_000:
+                return val
+        except ValueError:
+            pass
+
     return None
 
 

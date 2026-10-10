@@ -377,8 +377,21 @@ def validate_parser_output(
     if isinstance(raw_output, ParserOutput):
         parsed = raw_output
     elif isinstance(raw_output, dict):
+        raw_copy = dict(raw_output)
+        from services.catalog_search import parse_budget_from_text
+        if "argumen" in raw_copy and isinstance(raw_copy["argumen"], dict):
+            raw_arg = dict(raw_copy["argumen"])
+            for bf in ("max_harga", "budget_max", "min_harga", "budget_min"):
+                if bf in raw_arg and isinstance(raw_arg[bf], str):
+                    raw_arg[bf] = parse_budget_from_text(raw_arg[bf])
+            raw_copy["argumen"] = raw_arg
+        if "pembaruan_state" in raw_copy and isinstance(raw_copy["pembaruan_state"], dict):
+            raw_su = dict(raw_copy["pembaruan_state"])
+            if "budget" in raw_su and isinstance(raw_su["budget"], str):
+                raw_su["budget"] = parse_budget_from_text(raw_su["budget"])
+            raw_copy["pembaruan_state"] = raw_su
         try:
-            parsed = ParserOutput.model_validate(raw_output)
+            parsed = ParserOutput.model_validate(raw_copy)
         except ValidationError as ve:
             logger.warning(f"Validasi skema/enum parser gagal: {ve}")
             return (

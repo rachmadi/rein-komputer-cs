@@ -1490,6 +1490,8 @@ class ActionEngine:
                 "harga": cheapest_price,
                 "harga_formatted": format_rupiah(cheapest_price),
                 "spesifikasi": clean_specs(cheapest_item),
+                "lembar_spesifikasi": build_lembar_spesifikasi(cheapest_item),
+                "catatan_minimum": {"memenuhi": True, "alasan": "Opsi paling terjangkau di antara produk tampil"},
                 "cpu": cheapest_item.get("cpu"),
                 "cpu_tier": cheapest_item.get("cpu_tier"),
                 "ram": cheapest_item.get("ram"),
@@ -1518,6 +1520,33 @@ class ActionEngine:
             )
 
         if jenis == "lebih_murah":
+            from services.catalog_search import parse_budget_from_text
+            msg_budget = parse_budget_from_text(str(state.get("_pesan_pelanggan") or ""))
+            budget_disertai = parse_int_safe(args.max_harga) or parse_int_safe(args.budget_max) or msg_budget
+
+            if budget_disertai is not None:
+                # Putaran 13 Butir D: perbarui budget state, JALANKAN ULANG minta_rekomendasi
+                state["budget"] = budget_disertai
+                if "kriteria_pelanggan" not in state or not isinstance(state["kriteria_pelanggan"], dict):
+                    state["kriteria_pelanggan"] = {}
+                state["kriteria_pelanggan"]["max_harga"] = budget_disertai
+
+                if state.get("kebutuhan_teks") or getattr(args, "kebutuhan_teks", None):
+                    args.max_harga = budget_disertai
+                    args.budget_max = budget_disertai
+                    if not args.kategori and kategori:
+                        args.kategori = kategori
+                    if not args.merek and merek:
+                        args.merek = merek
+                    return self._handle_minta_rekomendasi(args, state)
+                else:
+                    args.max_harga = budget_disertai
+                    if not args.kategori and kategori:
+                        args.kategori = kategori
+                    if not args.merek and merek:
+                        args.merek = merek
+                    return self._handle_cari_produk(args, state)
+
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             target_max = user_max_harga if user_max_harga is not None else lowest_p
             matches = [p for p in candidates if get_product_price(p) < lowest_p and (user_max_harga is None or get_product_price(p) <= user_max_harga)]
@@ -1618,6 +1647,8 @@ class ActionEngine:
                 "harga": p_price,
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi": clean_specs(p),
+                "lembar_spesifikasi": build_lembar_spesifikasi(p),
+                "catatan_minimum": {"memenuhi": True, "alasan": "Sesuai filter lanjutan hasil"},
                 "cpu": p.get("cpu"),
                 "cpu_tier": p.get("cpu_tier"),
                 "ram": p.get("ram"),
