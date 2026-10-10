@@ -310,19 +310,27 @@ class SessionPipeline:
         current_history.append({"role": "user", "content": pesan_pelanggan, "text": pesan_pelanggan})
         history_8 = current_history[-8:]
 
-        t_gen_0 = time.perf_counter()
-        gen_out, gen_metrics = generate_response(
-            aksi=parsed.aksi.value,
-            fakta=action_res.fakta,
-            state=state,
-            history=history_8,
-            pesan_pelanggan=pesan_pelanggan
-        )
+        # B10 & Butir 8: Teks darurat B13 HANYA untuk sistem_error (Ollama gagal)
+        if action_res.fakta.get("status") == "sistem_error" or action_res.fakta.get("alasan") == "sistem_error":
+            t_gen_0 = time.perf_counter()
+            gen_out = GeneratorOutput(teks=EMERGENCY_FALLBACK_TEXT, pertanyaan_diajukan=None)
+            gen_metrics = {}
+            is_valid, violations = True, []
+            is_fallback = True
+        else:
+            t_gen_0 = time.perf_counter()
+            gen_out, gen_metrics = generate_response(
+                aksi=parsed.aksi.value,
+                fakta=action_res.fakta,
+                state=state,
+                history=history_8,
+                pesan_pelanggan=pesan_pelanggan
+            )
 
-        is_valid, violations = self.grounding_checker.check(
-            gen_out.teks, action_res.fakta, state=state, penilaian=gen_out.penilaian
-        )
-        is_fallback = False
+            is_valid, violations = self.grounding_checker.check(
+                gen_out.teks, action_res.fakta, state=state, penilaian=gen_out.penilaian
+            )
+            is_fallback = False
 
         if not is_valid:
             logger.warning(f"Pelanggaran pemeriksa: {violations}. Meminta generator menulis ulang...")

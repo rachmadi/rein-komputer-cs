@@ -189,6 +189,39 @@ def test_butir7_aturan_sapaan_tengah_percakapan():
     assert "Selamat datang di ReIn Komputer" in match_awal[1]
 
 
+def test_butir8_tidak_jelas_klarifikasi_alami_vs_sistem_error():
+    """Butir 8: tidak_jelas klarifikasi alami vs teks darurat B13 hanya untuk sistem_error."""
+    from services.session_pipeline import SessionPipeline
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AlasanTidakJelasEnum
+    from services.grounding_checker import EMERGENCY_FALLBACK_TEXT
+    from unittest.mock import patch
+
+    pipeline = SessionPipeline()
+
+    # 1. Kasus sistem_error -> Memakai EMERGENCY_FALLBACK_TEXT
+    p_err = ParserOutput(
+        aksi=ActionEnum.TIDAK_JELAS,
+        argumen=ActionArguments(alasan=AlasanTidakJelasEnum.SISTEM_ERROR)
+    )
+    with patch("services.session_pipeline.parse_user_message", return_value=(p_err, {"json_valid": True})):
+        res_err, _ = pipeline.process_turn("pesan eror", session_state={})
+        assert res_err.teks_jawaban == EMERGENCY_FALLBACK_TEXT
+
+    # 2. Kasus tidak_dipahami -> Generator menghasilkan klarifikasi alami, BUKAN teks darurat
+    p_unclear = ParserOutput(
+        aksi=ActionEnum.TIDAK_JELAS,
+        argumen=ActionArguments(alasan=AlasanTidakJelasEnum.TIDAK_DIPAHAMI)
+    )
+    with patch("services.session_pipeline.parse_user_message", return_value=(p_unclear, {"json_valid": True})):
+        with patch("services.session_pipeline.generate_response") as mock_gen:
+            from services.llm_generator import GeneratorOutput
+            mock_gen.return_value = (GeneratorOutput(teks="Boleh dijelaskan lebih detail kebutuhan perangkatnya, Kak?"), {})
+            res_unclear, _ = pipeline.process_turn("xyz123abc", session_state={})
+            assert res_unclear.teks_jawaban != EMERGENCY_FALLBACK_TEXT
+            assert "Boleh dijelaskan" in res_unclear.teks_jawaban
+
+
+
 
 
 

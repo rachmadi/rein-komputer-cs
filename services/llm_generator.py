@@ -17,7 +17,7 @@ import time
 import urllib.request
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -125,6 +125,18 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         nama_list = [p.get("nama") for p in prods[:3] if p.get("nama")]
         if nama_list:
             return f"Berikut beberapa pilihan yang sesuai di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+
+    if status == "sistem_error" or fakta.get("alasan") == "sistem_error":
+        return EMERGENCY_FALLBACK_TEXT
+
+    if status == "tidak_jelas" or aksi_clean == "tidak_jelas":
+        alasan = fakta.get("alasan")
+        if alasan == "rujukan_tidak_ada":
+            return "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil, Kak. Boleh sebutkan perangkat yang Kakak cari?"
+        elif alasan == "bertentangan":
+            return "Informasinya agak membingungkan nih, Kak. Boleh diperjelas kembali kebutuhan atau spesifikasi yang diinginkan?"
+        else:
+            return "Boleh diceritakan lebih detail kebutuhan komputer atau laptop yang sedang Kakak cari?"
 
     return EMERGENCY_FALLBACK_TEXT
 
