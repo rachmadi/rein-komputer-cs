@@ -1400,7 +1400,7 @@ class ActionEngine:
     # 8. jawab_pertanyaan_bot (A7)
     # -------------------------------------------------------------------------
     def _handle_jawab_pertanyaan_bot(self, args: ActionArguments, state: dict) -> ActionResult:
-        slot = args.slot.value if hasattr(args.slot, "value") else str(args.slot)
+        slot = args.slot.value if hasattr(args.slot, "value") else (str(args.slot) if args.slot else None)
         slot_val = args.nilai
 
         # Perbarui slot state yang relevan
@@ -1417,11 +1417,39 @@ class ActionEngine:
 
         state["pending_question"] = None
 
-        # Jalankan ulang aksi dengan slot yang baru
+        # B1: Jika hanya persona tanpa aktivitas, jangan buka produk -> tanya_kebutuhan
+        if slot == "persona" and not state.get("kebutuhan_teks"):
+            fakta = {
+                "status": "tanya_kebutuhan",
+                "persona": state.get("persona"),
+                "slot_diisi": "persona",
+                "pesan": f"Persona '{state.get('persona')}' telah dicatat. Tanyakan kebutuhan atau aktivitas spesifik yang akan dijalankan."
+            }
+            return ActionResult(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, fakta=fakta, produk_list=[])
+
+        # Jika bukan jawaban spesifik atau slot kosong/belum tahu -> jangan membuka pencarian produk
+        if not slot or slot not in ("kategori", "category", "budget", "anggaran", "kebutuhan", "aktivitas", "merek", "brand"):
+            fakta = {
+                "status": "jawaban_dicatat",
+                "slot_diisi": slot,
+                "nilai": slot_val,
+                "pesan": "Jawaban telah dicatat."
+            }
+            return ActionResult(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, fakta=fakta, produk_list=[])
+
+        # Jalankan ulang aksi hanya jika ada kriteria konkret
         if state.get("kebutuhan_teks"):
             return self._handle_minta_rekomendasi(args, state)
-        else:
+        elif state.get("kategori") or state.get("merek") or state.get("budget"):
             return self._handle_cari_produk(args, state)
+        else:
+            fakta = {
+                "status": "jawaban_dicatat",
+                "slot_diisi": slot,
+                "nilai": slot_val,
+                "pesan": "Jawaban telah dicatat."
+            }
+            return ActionResult(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, fakta=fakta, produk_list=[])
 
     # -------------------------------------------------------------------------
     # 9. perbaiki_percakapan

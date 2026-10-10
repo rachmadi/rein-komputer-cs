@@ -265,6 +265,47 @@ def test_butir9_perbaiki_percakapan_keluhan_vs_koreksi():
     assert len(res_koreksi.produk_list) > 0
 
 
+def test_butir10_penghitung_keluhan_dan_tanya_beruntun():
+    """Butir 10: Penghitung keluhan_beruntun (>=2 tawarkan staf) dan tanya_beruntun (>=2 pilihan_konkret)."""
+    from services.session_pipeline import SessionPipeline
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, JenisEnum
+    from unittest.mock import patch
+
+    pipeline = SessionPipeline()
+
+    # 1. Keluhan berturut-turut >= 2 kali memicu tawarkan_staf=True
+    state_k = {"keluhan_beruntun": 1, "tanya_beruntun": 0}
+    p_k = ParserOutput(
+        aksi=ActionEnum.PERBAIKI_PERCAKAPAN,
+        argumen=ActionArguments(jenis=JenisEnum.KELUHAN, rujukan="jawaban masih belum pas")
+    )
+    with patch("services.session_pipeline.parse_user_message", return_value=(p_k, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response") as mock_gen:
+        from services.llm_generator import GeneratorOutput
+        mock_gen.return_value = (GeneratorOutput(teks="Mohon maaf Kak, staf kami siap membantu."), {})
+        res1, state_out = pipeline.process_turn("masih belum pas nih", session_state=state_k)
+        assert state_out["keluhan_beruntun"] == 2
+        assert res1.fakta_eksekusi.get("tawarkan_staf") is True
+        assert "kontak_staf" in res1.fakta_eksekusi
+
+    # 2. Tanya berturut-turut >= 2 kali tanpa arah memicu pilihan_konkret 2-3 profil tanpa kode
+    state_t = {"keluhan_beruntun": 0, "tanya_beruntun": 1, "produk_tampil": []}
+    p_t = ParserOutput(
+        aksi=ActionEnum.JAWAB_PERTANYAAN_BOT,
+        argumen=ActionArguments(slot=None, nilai="belum tahu pastinya")
+    )
+    with patch("services.session_pipeline.parse_user_message", return_value=(p_t, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response") as mock_gen:
+        mock_gen.return_value = (GeneratorOutput(teks="Berikut beberapa opsi kebutuhan yang bisa dipilih."), {})
+        res2, state_out2 = pipeline.process_turn("belum tahu pastinya", session_state=state_t)
+        assert state_out2["tanya_beruntun"] == 2
+        pilihan = res2.fakta_eksekusi.get("pilihan_konkret", [])
+        assert 2 <= len(pilihan) <= 3
+        # Pastikan tidak ada kode profil internal seperti P01, P07 di pilihan
+        assert not any(p.startswith("P0") or p.startswith("P1") for p in pilihan)
+
+
+
 
 
 

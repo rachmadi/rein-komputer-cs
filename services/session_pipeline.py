@@ -28,7 +28,8 @@ from services.action_engine import ActionEngine, ActionResult, parse_int_safe
 from services.llm_generator import generate_response, GeneratorOutput, build_deterministic_fallback_text
 from services.grounding_checker import GroundingChecker, EMERGENCY_FALLBACK_TEXT
 from services.product_card import format_product_cards_message
-from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AlasanTidakJelasEnum
+from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AlasanTidakJelasEnum, JenisEnum
+from core.config import KONTAK_STAF
 
 logger = logging.getLogger(__name__)
 
@@ -301,6 +302,70 @@ class SessionPipeline:
             rujukan_list = action_res.fakta.get("rujukan_dipakai")
             if rujukan_list and len(rujukan_list) == 1:
                 state["produk_terakhir_dibahas"] = rujukan_list[0]
+
+        # ---------------------------------------------------------------------
+        # 3b. PENGHITUNG KELUHAN & TANYA BERUNTUN (Butir 10)
+        # ---------------------------------------------------------------------
+        keluhan_beruntun = int(state.get("keluhan_beruntun", 0) or 0)
+        tanya_beruntun = int(state.get("tanya_beruntun", 0) or 0)
+
+        is_keluhan = (
+            parsed.aksi == ActionEnum.PERBAIKI_PERCAKAPAN
+            and (getattr(parsed.argumen, "jenis", None) in ("keluhan", JenisEnum.KELUHAN)
+                 or "keluhan" in str(getattr(parsed.argumen, "rujukan", "")).lower())
+        )
+
+        has_clear_direction = bool(
+            (action_res.produk_list and len(action_res.produk_list) > 0)
+            or (parsed.argumen.kebutuhan_teks and len(parsed.argumen.kebutuhan_teks.strip()) >= 4)
+            or (parsed.aksi in (ActionEnum.CARI_PRODUK, ActionEnum.MINTA_REKOMENDASI) and (parsed.argumen.merek or parsed.argumen.kategori or parsed.argumen.max_harga))
+        )
+
+        if is_keluhan:
+            keluhan_beruntun += 1
+        elif has_clear_direction:
+            keluhan_beruntun = 0
+
+        # tanya_beruntun: bertambah bila bot menanyakan kebutuhan/arah belum jelas
+        if has_clear_direction:
+            tanya_beruntun = 0
+        else:
+            if action_res.fakta.get("status") in ("tanya_kebutuhan", "profil_tidak_ditemukan", "tidak_jelas") or parsed.aksi in (ActionEnum.JAWAB_PERTANYAAN_BOT, ActionEnum.TIDAK_JELAS):
+                tanya_beruntun += 1
+            else:
+                tanya_beruntun = 0
+
+        # Trigger jika mencapai ambang batas
+        if keluhan_beruntun >= 2:
+            action_res.fakta["tawarkan_staf"] = True
+            action_res.fakta["kontak_staf"] = KONTAK_STAF
+
+        if tanya_beruntun >= 2 and not action_res.produk_list:
+            profiles_raw = []
+            try:
+                from services.knowledge_service import get_all_profiles
+                profiles_raw = get_all_profiles()
+            except Exception:
+                pass
+            pilihan = []
+            for pr in profiles_raw:
+                j = pr.get("judul") or pr.get("nama")
+                if j:
+                    j_clean = re.sub(r"^[A-Z]\d{2}\s*[-–—:]\s*", "", str(j)).strip()
+                    if j_clean and j_clean not in pilihan:
+                        pilihan.append(j_clean)
+                    if len(pilihan) >= 3:
+                        break
+            if not pilihan:
+                pilihan = [
+                    "Kantoran, Belajar, dan Penggunaan Harian",
+                    "Desain Grafis dan Ilustrasi Digital",
+                    "Gaming dan Pemrosesan Grafis Berat"
+                ]
+            action_res.fakta["pilihan_konkret"] = pilihan[:3]
+
+        state["keluhan_beruntun"] = keluhan_beruntun
+        state["tanya_beruntun"] = tanya_beruntun
 
         # ---------------------------------------------------------------------
         # 4. GENERATOR LLM & 5. PEMERIKSA GROUNDING
