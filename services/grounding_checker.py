@@ -466,8 +466,51 @@ class GroundingChecker:
                 if val and attr != "spek_umum":
                     val_str = str(val).lower()
                     val_tokens = [tok for tok in re.split(r"[\s\|\,\;]+", val_str) if len(tok) >= 2 and tok not in ("inci", "fhd", "ips", "ram", "ssd", "ddr4", "ddr5", "tipe")]
-                    if val_str not in teks.lower() and not any(tok in teks.lower() for tok in val_tokens):
-                        violations.append(f"Teks tanya_spesifikasi tidak memuat nilai spesifikasi yang diminta ({val}).")
+        # 16. Putaran 14 Butir 5: Tolak balasan yang menyebut kategori/merek di luar katalog kecuali penolakan
+        from core.db import get_catalog_inventory
+        inv = get_catalog_inventory()
+        known_outside = [
+            "monitor", "tablet", "kamera", "keyboard", "mouse", "headset", "speaker", "smartwatch",
+            "macbook", "apple", "dell", "samsung", "toshiba", "sony", "logitech", "razer", "xiaomi", "huawei", "msi"
+        ]
+        known_outside = [k for k in known_outside if k not in inv["kategori"] and k not in inv["merek"]]
+        for item in known_outside:
+            if re.search(r"\b" + re.escape(item) + r"\b", teks, re.IGNORECASE):
+                pola_penolakan = rf"(?:tidak|belum|bukan)\s+(?:ada|jual|menjual|sedia|menyediakan|punya)\s+(?:produk\s+|merek\s+|kategori\s+)?\b{re.escape(item)}\b|\b{re.escape(item)}\b[^\.\,\;]{{0,30}}\b(?:tidak|belum)\s+(?:dijual|tersedia|ada)\b"
+                if not re.search(pola_penolakan, teks, re.IGNORECASE):
+                    violations.append(f"Menyebutkan kategori/merek di luar katalog '{item}' di luar kalimat penolakan.")
+                    break
+
+        # 17. Putaran 14 Butir 5: Tolak balasan yang mengklaim sukses/menemukan produk jika status != 'sukses'
+        if status_fakta != "sukses":
+            pola_klaim_sukses = [
+                r"\b(?:berikut|kami)\s+(?:rekomendasikan|rekomendasi|menemukan|pilihan\s+produk|rekomendasi\s+unit)\b",
+                r"\b(?:menemukan\s+produk|produk\s+yang\s+(?:cocok|pas|sesuai)|unit\s+yang\s+(?:cocok|pas|memenuhi))\b",
+                r"\b(?:kami\s+punya\s+beberapa\s+pilihan\s+yang\s+cocok)\b",
+                r"\b(?:rekomendasi\s+yang\s+paling\s+sesuai)\b"
+            ]
+            for pat in pola_klaim_sukses:
+                if re.search(pat, teks, re.IGNORECASE):
+                    violations.append(f"Mengklaim berhasil menemukan/merekomendasikan produk padahal status hasil adalah '{status_fakta}'.")
+                    break
+
+        # 18. Putaran 14 Butir 5: Tolak atribusi kriteria ke pelanggan jika tidak pernah disebut
+        m_atribusi = re.search(r"\b(?:karena|sesuai\s+(?:dengan\s+)?permintaan|sebagaimana)\s+(?:kakak|anda|kamu)\s+(?:mencari|membutuhkan|butuh|ingin|menginginkan|minta)\s+([a-zA-Z0-9\s]{3,60}?)(?:[,\.\!\?]|\s+kami|\s+berikut)", teks, re.IGNORECASE)
+        if m_atribusi:
+            frasa_kriteria = m_atribusi.group(1).strip().lower()
+            cust_texts = []
+            if state and state.get("_pesan_pelanggan"):
+                cust_texts.append(str(state.get("_pesan_pelanggan")).lower())
+            if state and state.get("kriteria_pelanggan"):
+                for kv in state["kriteria_pelanggan"].values():
+                    cust_texts.append(str(kv).lower())
+            if state and state.get("kebutuhan_teks"):
+                cust_texts.append(str(state["kebutuhan_teks"]).lower())
+            stop_words = {"yang", "dan", "untuk", "buat", "atau", "di", "ke", "laptop", "pc", "komputer", "printer"}
+            tokens_kriteria = [tok for tok in re.findall(r"\w+", frasa_kriteria) if tok not in stop_words and len(tok) >= 3]
+            all_cust_joined = " ".join(cust_texts)
+            if tokens_kriteria and not any(tok in all_cust_joined for tok in tokens_kriteria):
+                violations.append(f"Mengatribusikan kriteria '{frasa_kriteria}' ke pelanggan padahal pelanggan tidak pernah menyebutnya.")
 
         is_valid = len(violations) == 0
         return is_valid, violations

@@ -160,3 +160,44 @@ def test_butir4_fallback_teks_tidak_dijual_menyebut_konteks_toko_tanpa_pengganti
     assert "padanan terdekat" not in teks.lower()
 
 
+# =============================================================================
+# BUTIR 5 — GroundingChecker (Jaring Pengaman)
+# =============================================================================
+def test_butir5_tolak_kategori_merek_luar_katalog_di_luar_penolakan():
+    """Tolak balasan yang menyebut kategori/merek di luar katalog di luar kalimat penolakan."""
+    from services.grounding_checker import GroundingChecker
+    gc = GroundingChecker()
+    # Kalimat promosi barang luar katalog -> harus ditolak
+    teks_ilegal = "Kami menyediakan tablet canggih untuk aktivitas harian Kakak."
+    ok, violations = gc.check(teks_ilegal, fakta={"status": "sukses"})
+    assert ok is False
+    assert any("tablet" in v for v in violations)
+
+    # Kalimat penolakan resmi -> sah dan lolos
+    teks_sah = "Mohon maaf Kak, saat ini kami tidak menjual tablet di ReIn Komputer."
+    ok_sah, violations_sah = gc.check(teks_sah, fakta={"status": "tidak_dijual"})
+    assert not any("tablet" in v for v in violations_sah)
+
+
+def test_butir5_tolak_klaim_sukses_jika_status_bukan_sukses():
+    """Tolak balasan yang mengklaim sukses/menemukan rekomendasi padahal status bukan sukses."""
+    from services.grounding_checker import GroundingChecker
+    gc = GroundingChecker()
+    teks_klaim = "Berikut kami rekomendasikan unit laptop yang sangat cocok untuk Anda."
+    ok, violations = gc.check(teks_klaim, fakta={"status": "tidak_ditemukan"})
+    assert ok is False
+    assert any("Mengklaim berhasil menemukan" in v for v in violations)
+
+
+def test_butir5_tolak_atribusi_kriteria_tanpa_disebut_pelanggan():
+    """Tolak balasan yang mengatribusikan kriteria ke pelanggan jika tidak pernah disebut."""
+    from services.grounding_checker import GroundingChecker
+    gc = GroundingChecker()
+    teks_atribusi = "Karena Kakak mencari laptop ringan untuk dibawa bepergian, kami sarankan unit ini."
+    state = {"_pesan_pelanggan": "saya cari laptop buat main game berat"}
+    ok, violations = gc.check(teks_atribusi, fakta={"status": "sukses"}, state=state)
+    assert ok is False
+    assert any("Mengatribusikan kriteria" in v for v in violations)
+
+
+
