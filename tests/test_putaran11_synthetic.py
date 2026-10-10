@@ -339,6 +339,35 @@ def test_butir11_pertahankan_merek():
             assert "asus" in p.get("nama", "").lower()
 
 
+def test_butir12_jawab_pertanyaan_bot_tanpa_buka_produk():
+    """Butir 12: Menjawab pertanyaan bot tentang pemakai/bukan kriteria produk tidak memicu pencarian katalog."""
+    from services.session_pipeline import SessionPipeline
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, SlotEnum
+    from services.llm_generator import GeneratorOutput
+    from unittest.mock import patch
+
+    pipeline = SessionPipeline()
+
+    # Sesi sudah memiliki kategori 'laptop'
+    session_state = {"kategori": "laptop", "pending_question": "pemakai"}
+
+    # Pelanggan menjawab menjelaskan pemakai: 'bukan buat saya, buat adik'
+    p = ParserOutput(
+        aksi=ActionEnum.JAWAB_PERTANYAAN_BOT,
+        argumen=ActionArguments(slot=SlotEnum.PERSONA, nilai="adik")
+    )
+
+    with patch("services.session_pipeline.parse_user_message", return_value=(p, {"json_valid": True})), \
+         patch("services.session_pipeline.generate_response", return_value=(GeneratorOutput(teks="Baik Kak, untuk adik ya. Rencana dipakai untuk apa saja?"), {})):
+        res, state_out = pipeline.process_turn("bukan buat saya, ini buat adik", session_state=session_state)
+        # Tidak boleh ada kartu produk atau pencarian produk yang terbuka
+        assert res.kartu_produk_html is None
+        assert res.fakta_eksekusi.get("status") in ("tanya_kebutuhan", "jawaban_dicatat")
+        assert not res.fakta_eksekusi.get("produk")
+        assert state_out.get("persona") == "adik"
+
+
+
 
 
 
