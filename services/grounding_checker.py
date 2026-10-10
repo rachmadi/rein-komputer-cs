@@ -141,6 +141,7 @@ class GroundingChecker:
         for p in raw_prods:
             if isinstance(p, dict):
                 specs = p.get("spesifikasi", {}) if isinstance(p.get("spesifikasi"), dict) else {}
+                ls = p.get("lembar_spesifikasi", {}) if isinstance(p.get("lembar_spesifikasi"), dict) else {}
                 for k in ("ram_gb", "storage_ssd_gb", "vram_gb", "ram", "ssd", "vram"):
                     v = specs.get(k) or p.get(k)
                     if isinstance(v, (int, float)) and v > 0:
@@ -151,6 +152,21 @@ class GroundingChecker:
                         m_dig = re.findall(r"\b(\d+)\s*(?:gb|tb)\b", v.lower())
                         for md in m_dig:
                             nums.add(int(md))
+                for lk, lv in ls.items():
+                    if isinstance(lv, (int, float)) and lv > 0:
+                        nums.add(int(lv))
+                        if lv >= 512:
+                            nums.add(1)
+                    elif isinstance(lv, str):
+                        for dig in re.findall(r"\b(\d+)\b", lv):
+                            try:
+                                n_val = int(dig)
+                                if n_val > 0:
+                                    nums.add(n_val)
+                                    if n_val >= 512:
+                                        nums.add(1)
+                            except ValueError:
+                                pass
         return nums
 
     @staticmethod
@@ -213,6 +229,30 @@ class GroundingChecker:
         for tw in technical_words:
             if re.search(rf"\b{tw}\b", teks, re.IGNORECASE):
                 violations.append(f"Menyebut istilah teknis internal '{tw}'.")
+
+        # C-Spek: Larang frasa 'sistem mendeteksi' / 'sistem kami mendeteksi'
+        if re.search(r"\b(?:sistem(?: kami)? mendeteksi|kami mendeteksi|sistem kami melihat|sistem mencatat)\b", teks, re.IGNORECASE):
+            violations.append("Menyebut frasa terlarang 'sistem mendeteksi' / 'sistem kami mendeteksi'.")
+
+        # C-Grounding: Melarang generator menyebut produk memenuhi=False sebagai 'cocok'/'sangat membantu'/'memadai'
+        all_eval_prods = list(fakta.get("produk", []) or []) + list(fakta.get("evaluasi_produk", []) or [])
+        for p in all_eval_prods:
+            if not isinstance(p, dict):
+                continue
+            cat_min = p.get("catatan_minimum") or {}
+            is_unmet = (cat_min.get("memenuhi") is False) or (p.get("status_kecocokan") == "di_bawah_minimum")
+            if is_unmet:
+                pola_puji = r"\b(?:cocok|sangat\s+cocok|sangat\s+membantu|memadai|cukup\s+memadai)\b"
+                if re.search(pola_puji, teks, re.IGNORECASE):
+                    pola_negasi = r"\b(?:kurang|tidak|belum|bukan)\s+(?:cocok|memadai|sangat\s+cocok|sangat\s+membantu)\b"
+                    puji_matches = list(re.finditer(pola_puji, teks, re.IGNORECASE))
+                    for pm in puji_matches:
+                        start_pos = max(0, pm.start() - 25)
+                        snippet = teks[start_pos:pm.end()].lower()
+                        if not re.search(pola_negasi, snippet):
+                            p_name = p.get("nama") or "tersebut"
+                            violations.append(f"Menyebut produk yang tidak memenuhi spesifikasi ({p_name}) sebagai 'cocok'/'sangat membantu'/'memadai'.")
+                            break
 
         # 4. Periksa klaim garansi palsu jika data_tersedia == False
         if fakta.get("topik") == "garansi" and fakta.get("data_tersedia") is False:

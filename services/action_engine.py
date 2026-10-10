@@ -110,6 +110,57 @@ def cpu_tier_to_description(tier: int) -> str:
     return mapping.get(tier, f"Kelas prosesor tingkat {tier}")
 
 
+def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
+    """Merakit lembar spesifikasi lengkap: semua kolom tidak kosong + isi raw_data (Putaran 13 Butir C)."""
+    if not isinstance(p, dict):
+        return {}
+    specs: dict[str, Any] = {}
+
+    field_labels = {
+        "nama": "nama",
+        "kategori": "kategori",
+        "brand": "merek",
+        "cpu": "prosesor",
+        "ram": "ram",
+        "storage": "penyimpanan",
+        "gpu": "grafis",
+        "display": "layar",
+        "os": "sistem_operasi",
+    }
+    for k, label in field_labels.items():
+        v = p.get(k)
+        if v not in (None, "", [], {}):
+            specs[label] = v
+
+    p_price = p.get("harga") or p.get("harga_idr")
+    if p_price:
+        specs["harga"] = format_rupiah(int(p_price))
+
+    raw = p.get("raw_data")
+    if raw:
+        raw_dict = {}
+        if isinstance(raw, dict):
+            raw_dict = raw
+        elif isinstance(raw, str):
+            try:
+                raw_dict = json.loads(raw)
+            except Exception:
+                pass
+        for rk, rv in raw_dict.items():
+            if rv not in (None, "", [], {}):
+                lbl = "kecepatan_cetak" if rk == "kecepatan" else rk
+                specs[lbl] = rv
+
+    extra_fields = ["fungsi", "teknologi", "kecepatan", "resolusi", "konektivitas", "garansi"]
+    for ef in extra_fields:
+        v = p.get(ef)
+        if v not in (None, "", [], {}) and ef not in specs:
+            lbl = "kecepatan_cetak" if ef == "kecepatan" else ef
+            specs[lbl] = v
+
+    return specs
+
+
 class ActionEngine:
     def __init__(self, catalog: Catalog | None = None, db_path: str | None = None):
         if catalog:
@@ -498,7 +549,11 @@ class ActionEngine:
         filters = prof_data.get("filter", [])
         candidates = []
         for p in self.catalog.products:
-            if kategori and p.get("kategori", "").lower() != kategori.lower():
+            p_kat = p.get("kategori", "").lower()
+            if kategori and p_kat != kategori.lower():
+                continue
+            has_pc_req = any(f.get("field") in ("ram_gb", "ram", "cpu_tier", "cpu", "storage_ssd_gb", "gpu", "vram_gb") for f in filters)
+            if not kategori and p_kat == "printer" and has_pc_req:
                 continue
             if budget_max and get_product_price(p) > budget_max:
                 continue
@@ -508,7 +563,12 @@ class ActionEngine:
                 m_clean = str(merek).strip().lower()
                 if m_clean != p_brand and m_clean not in p_brand and m_clean not in p_nama:
                     continue
-            passed, failure_reason, penalty, report = apply_filters(p, filters)
+            prod_kat = str(p.get("kategori", "")).lower()
+            effective_filters = filters
+            if prod_kat == "printer":
+                pc_fields = {"ram_gb", "ram", "storage_ssd_gb", "storage", "cpu_tier", "cpu", "vram_gb", "gpu_dedicated", "gpu", "screen_inch"}
+                effective_filters = [f for f in filters if f.get("field") not in pc_fields]
+            passed, failure_reason, penalty, report = apply_filters(p, effective_filters)
             candidates.append({
                 "product": p,
                 "passed": passed,
@@ -574,6 +634,11 @@ class ActionEngine:
                     "harga": get_product_price(closest_prod),
                     "harga_formatted": format_rupiah(get_product_price(closest_prod)),
                     "spesifikasi": clean_specs(closest_prod),
+                    "lembar_spesifikasi": build_lembar_spesifikasi(closest_prod),
+                    "catatan_minimum": {
+                        "memenuhi": False,
+                        "alasan": ", ".join(unmet)
+                    },
                     "kekurangan": unmet
                 },
                 "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
@@ -596,6 +661,10 @@ class ActionEngine:
             p = item["product"]
             rep = item["report"]
             p_price = get_product_price(p)
+            cat_min = {
+                "memenuhi": bool(item["passed"]),
+                "alasan": "Memenuhi seluruh spesifikasi minimum" if item["passed"] else (item.get("failure_reason") or "Belum memenuhi sebagian spesifikasi")
+            }
             formatted_prods.append({
                 "kode": p.get("kode"),
                 "nama": p.get("nama"),
@@ -603,6 +672,8 @@ class ActionEngine:
                 "harga": p_price,
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi": clean_specs(p),
+                "lembar_spesifikasi": build_lembar_spesifikasi(p),
+                "catatan_minimum": cat_min,
                 "image_url": p.get("image_url"),
                 "match_report": {
                     "lolos_semua": item["passed"],
@@ -783,6 +854,8 @@ class ActionEngine:
                 "harga": p_price,
                 "harga_formatted": format_rupiah(p_price),
                 "spesifikasi": clean_specs(p),
+                "lembar_spesifikasi": build_lembar_spesifikasi(p),
+                "catatan_minimum": {"memenuhi": True, "alasan": "Sesuai kriteria pencarian"},
                 "cpu": p.get("cpu"),
                 "cpu_tier": p.get("cpu_tier"),
                 "ram": p.get("ram"),
@@ -816,7 +889,9 @@ class ActionEngine:
                     "merek": get_product_brand(closest),
                     "harga": get_product_price(closest),
                     "harga_formatted": format_rupiah(get_product_price(closest)),
-                    "spesifikasi": clean_specs(closest)
+                    "spesifikasi": clean_specs(closest),
+                    "lembar_spesifikasi": build_lembar_spesifikasi(closest),
+                    "catatan_minimum": {"memenuhi": True, "alasan": "Padanan terdekat di katalog"}
                 } if closest else {}
                 prod_diminta = merek or nama_model
                 fakta = {
@@ -1074,6 +1149,11 @@ class ActionEngine:
                     "ram_gb": (p_ram - rec_ram) if p_ram is not None else 0,
                     "ssd_gb": (p_ssd - rec_ssd) if p_ssd is not None else 0,
                     "gpu_vram_gb": (p_vram - rec_vram) if p_vram is not None else 0
+                },
+                "lembar_spesifikasi": build_lembar_spesifikasi(p),
+                "catatan_minimum": {
+                    "memenuhi": (status_kecocokan != "di_bawah_minimum"),
+                    "alasan": f"Status kecocokan: {status_kecocokan}"
                 }
             })
 
@@ -1083,6 +1163,7 @@ class ActionEngine:
             "profil_id": profil_id,
             "profil_judul": prof_data.get("judul") if prof_data else None,
             "evaluasi_produk": eval_results,
+            "produk": eval_results,
             "rujukan_dipakai": [p.get("kode") for p in catalog_products]
         }
         return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
@@ -1225,7 +1306,9 @@ class ActionEngine:
                     "atribut": attr.value if hasattr(attr, "value") else str(attr),
                     "nilai": str(val),
                     "nilai_spesifikasi": str(val),
-                    "ringkasan_spek": clean_specs(p)
+                    "ringkasan_spek": clean_specs(p),
+                    "lembar_spesifikasi": build_lembar_spesifikasi(p),
+                    "catatan_minimum": {"memenuhi": True, "alasan": f"Atribut {attr.value if hasattr(attr, 'value') else str(attr)} tersedia"}
                 })
 
         if ada_tidak_tersedia and not fakta_items:
@@ -1241,6 +1324,7 @@ class ActionEngine:
                 "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
                 "spesifikasi": fakta_items,
                 "spesifikasi_produk": fakta_items,
+                "produk": [dict(p, lembar_spesifikasi=build_lembar_spesifikasi(p), catatan_minimum={"memenuhi": True, "alasan": "Sesuai spesifikasi yang diminta"}) for p in catalog_products[:3]],
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
 
@@ -1266,7 +1350,9 @@ class ActionEngine:
                 "gpu": p.get("gpu"),
                 "ram": p.get("ram") or f"{p.get('ram_gb', '')} GB",
                 "storage": p.get("storage") or f"{p.get('storage_ssd_gb', '')} GB",
-                "display": p.get("display") or f"{p.get('ukuran_layar', '')} inci"
+                "display": p.get("display") or f"{p.get('ukuran_layar', '')} inci",
+                "lembar_spesifikasi": build_lembar_spesifikasi(p),
+                "catatan_minimum": {"memenuhi": True, "alasan": "Unit pembanding"}
             })
 
         produk_luar = args.produk_luar_katalog or []
@@ -1285,6 +1371,7 @@ class ActionEngine:
             "status": status,
             "total_dibandingkan": len(items),
             "perbandingan": items,
+            "produk": items,
             "produk_luar_katalog": produk_luar,
             "catatan": catatan
         }
