@@ -66,7 +66,8 @@ ATURAN INTENT & KONTEKS:
     Jika menanyakan fitur yang tidak ada di daftar atribut (misal stylus, pendingin ruang uap, sertifikasi militer) -> 'atribut': 'lainnya'.
 - Jawaban pelanggan yang bukan jawaban atas pertanyaan bot -> 'jawab_pertanyaan_bot' tanpa membuka pencarian produk.
 - Mencabut atau menghapus batas budget (misal 'tanpa batas budget' / 'bebas budget') -> gunakan 'perbaiki_percakapan' (koreksi) atau 'lanjutan_hasil' (yang_lain) dengan 'pembaruan_state': {'budget': 0}.
-- 'lanjutan_hasil' HANYA jika 'produk_tampil' tidak kosong.
+- Pertanyaan ketersediaan produk/kategori (misal 'ada X?', 'apakah ada laptop?', 'ada printer apa gak?') adalah 'cari_produk', BUKAN 'perbaiki_percakapan'.
+- Pesan majemuk: jika pelanggan mengoreksi atau mengeluh sambil menyebut kriteria produk yang dicari (kategori/merek/kebutuhan/budget), tetap cantumkan kriteria tersebut di argumen atau pembaruan_state agar pencarian katalog tetap dijalankan.
 - Jangan menyebut kode internal produk katalog. Rujukan produk gunakan nomor urut ([1], [2]) atau nama dari produk tampil."""
 
 # 8 CONTOH SINTETIS DAN BERAGAM YANG MENGGAMBARKAN BATAS ANTAR AKSI

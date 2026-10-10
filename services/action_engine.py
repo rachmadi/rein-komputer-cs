@@ -265,6 +265,21 @@ class ActionEngine:
         aksi = parsed.aksi
         args = parsed.argumen
 
+        # C1: Jika parser mengeluarkan kriteria produk di aksi non-pencarian (tidak_jelas, basa_basi, sapa), jalankan pencarian
+        if aksi in (ActionEnum.TIDAK_JELAS, ActionEnum.BASA_BASI, ActionEnum.SAPA):
+            has_crit = bool(
+                args.kategori or args.merek or (args.max_harga is not None) or (args.budget_max is not None) or
+                args.kebutuhan_teks or (parsed.pembaruan_state and (
+                    parsed.pembaruan_state.kategori or parsed.pembaruan_state.merek or
+                    parsed.pembaruan_state.kebutuhan_teks or (parsed.pembaruan_state.budget is not None)
+                ))
+            )
+            if has_crit:
+                if args.kebutuhan_teks or state.get("kebutuhan_teks"):
+                    return self._handle_minta_rekomendasi(args, state)
+                else:
+                    return self._handle_cari_produk(args, state)
+
         if aksi == ActionEnum.MINTA_REKOMENDASI:
             return self._handle_minta_rekomendasi(args, state)
         elif aksi == ActionEnum.CARI_PRODUK:
@@ -1600,8 +1615,9 @@ class ActionEngine:
             (state_up and (state_up.kategori or (state_up.budget is not None) or state_up.persona or state_up.kebutuhan_teks))
         )
 
-        # Butir 9: koreksi menyangkut produk/kriteria -> cari ulang; keluhan/salah_paham non-produk -> tanpa pencarian
-        if jenis == "koreksi" and has_criteria:
+        # C1: Jika ada kriteria produk di perbaiki_percakapan (koreksi, keluhan, salah_paham), jalankan pencarian;
+        # keluhan hanya mengubah nada (flag ke generator), bukan membuang permintaan.
+        if has_criteria:
             if state.get("kebutuhan_teks"):
                 search_res = self._handle_minta_rekomendasi(args, state)
             else:
@@ -1618,6 +1634,10 @@ class ActionEngine:
                 "produk_tampil": state.get("produk_tampil", []),
                 "pending_question": state.get("pending_question")
             })
+            if jenis in ("keluhan", "salah_paham") or state.get("_ada_keluhan_pesan"):
+                fakta["ada_keluhan"] = True
+                fakta["nada"] = "keluhan"
+
             return ActionResult(
                 aksi=ActionEnum.PERBAIKI_PERCAKAPAN,
                 fakta=fakta,

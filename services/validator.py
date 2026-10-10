@@ -523,7 +523,7 @@ def validate_parser_output(
         ActionEnum.BANDINGKAN: {"rujukan_produk", "produk", "produk_luar_katalog"},
         ActionEnum.LANJUTAN_HASIL: {"jenis", "merek_kecuali", "filter", "max_harga", "min_harga"},
         ActionEnum.TANYA_INFO_TOKO: {"topik"},
-        ActionEnum.PERBAIKI_PERCAKAPAN: {"jenis", "rujukan"},
+        ActionEnum.PERBAIKI_PERCAKAPAN: {"jenis", "rujukan", "kategori", "merek", "kebutuhan_teks", "persona", "max_harga", "min_harga", "budget_max", "budget_min", "ram_gb_min", "storage_gb_min", "gpu"},
         ActionEnum.BASA_BASI: {"jenis"},
         ActionEnum.TIDAK_JELAS: {"alasan"}
     }

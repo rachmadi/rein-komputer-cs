@@ -280,6 +280,23 @@ class SessionPipeline:
             else:
                 state["kategori"] = detected_kategori
 
+        # C2: Pertanyaan "ada X?" dengan kategori eksplisit = pencarian, bukan perbaikan
+        is_tanya_kategori = bool(
+            detected_kategori and (
+                re.search(r"\b(ada|tersedia|punya|jual|stok|ready)\b", pesan_pelanggan, re.IGNORECASE)
+                or re.search(r"\b(apa\s*gak|apa\s*nggak|apa\s*tidak)\b", pesan_pelanggan, re.IGNORECASE)
+            )
+        )
+        if is_tanya_kategori and parsed.aksi == ActionEnum.PERBAIKI_PERCAKAPAN:
+            is_keluhan_tone = (
+                getattr(parsed.argumen, "jenis", None) in ("keluhan", JenisEnum.KELUHAN)
+                or bool(re.search(r"\b(kok|capek|kecewa|kesal|lelet|gimana sih)\b", pesan_pelanggan, re.IGNORECASE))
+            )
+            parsed.aksi = ActionEnum.CARI_PRODUK
+            parsed.argumen.kategori = detected_kategori
+            if is_keluhan_tone:
+                state["_ada_keluhan_pesan"] = True
+
         # E3: Deteksi jika pesan pelanggan membawa kebutuhan komputasi baru yang belum terisi di argumen
         if not parsed.argumen.kebutuhan_teks and parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.MINTA_REKOMENDASI):
             m_keb = re.search(r"(?:dipakai|buat|untuk|kebutuhan)\s+([a-zA-Z0-9\s\+\#]{4,40}?)(?:\s+apakah|\s+bisa|\s+kuat|\?|$)", pesan_pelanggan, re.IGNORECASE)
@@ -369,6 +386,9 @@ class SessionPipeline:
         action_res: ActionResult = self.action_engine.execute(parsed, session_state=state)
         lat_mesin = (time.perf_counter() - t_engine_0) * 1000.0
         state.pop("_pesan_pelanggan", None)
+        if state.pop("_ada_keluhan_pesan", None):
+            action_res.fakta["ada_keluhan"] = True
+            action_res.fakta["nada"] = "keluhan"
 
         # Update state dari argumen & pembaruan_state parser
         state.pop("_cabut_budget", None)
