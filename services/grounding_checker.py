@@ -265,7 +265,8 @@ class GroundingChecker:
         if fakta.get("belum_dicari"):
             klaim_tanpa_lookup = [
                 r"\b(?:stok(?:nya)?\s+ada|kami\s+punya|kami\s+ada|tersedia\s+di\s+toko|tersedia\s+stok|stok\s+tersedia)\b",
-                r"\b(?:stok(?:nya)?\s+(?:kosong|habis)|kami\s+tidak\s+(?:ada|punya|jual)|tidak\s+tersedia\s+di\s+toko|tidak\s+ada\s+stok)\b"
+                r"\b(?:stok(?:nya)?\b.*?\b(?:kosong|habis|ada|tersedia))\b",
+                r"\b(?:kami\s+tidak\s+(?:ada|punya|jual)|tidak\s+tersedia\s+di\s+toko|tidak\s+ada\s+stok)\b"
             ]
             for pat in klaim_tanpa_lookup:
                 if re.search(pat, teks, re.IGNORECASE):
