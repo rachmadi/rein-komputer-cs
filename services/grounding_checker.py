@@ -263,10 +263,17 @@ class GroundingChecker:
 
         # D1: Jika belum_dicari == True, generator dilarang menyatakan "ada" atau "tidak ada" tanpa lookup
         if fakta.get("belum_dicari"):
+            # Pola dipersempit agar hanya mengenai klaim ketersediaan produk/stok (disertai kata laptop/desktop/printer/komputer/pc/stok/unit/barang)
             klaim_tanpa_lookup = [
-                r"\b(?:stok(?:nya)?\s+ada|kami\s+punya|kami\s+ada|tersedia\s+di\s+toko|tersedia\s+stok|stok\s+tersedia)\b",
-                r"\b(?:stok(?:nya)?\b.*?\b(?:kosong|habis|ada|tersedia))\b",
-                r"\b(?:kami\s+tidak\s+(?:ada|punya|jual)|tidak\s+tersedia\s+di\s+toko|tidak\s+ada\s+stok)\b"
+                r"\b(?:stok(?:nya)?\s+ada|tersedia\s+stok|stok\s+tersedia)\b",
+                r"\b(?:kami\s+(?:punya|ada))\b[^\.\,\;]{0,40}\b(?:stok|unit|barang|produk|laptop|desktop|printer|komputer|pc)\b",
+                r"\b(?:tersedia|ready)\s+di\s+toko\b[^\.\,\;]{0,40}\b(?:stok|unit|barang|produk|laptop|desktop|printer|komputer|pc)\b",
+                r"\b(?:stok|unit|barang|produk|laptop|desktop|printer|komputer|pc)\b[^\.\,\;]{0,40}\b(?:tersedia|ready)\s+di\s+toko\b",
+                r"\b(?:stok(?:nya)?\b[^\.\,\;]*?\b(?:kosong|habis|ada|tersedia))\b",
+                r"\b(?:kami\s+tidak\s+(?:jual|sedia))\b[^\.\,\;]{0,40}\b(?:unit|barang|produk|laptop|desktop|printer|komputer|pc)\b",
+                r"\b(?:kami\s+tidak\s+(?:ada|punya))\b[^\.\,\;]{0,40}\b(?:stok|unit|barang|produk|laptop|desktop|printer|komputer|pc)\b",
+                r"\b(?:tidak\s+ada\s+stok|stok\s+habis|stok\s+kosong)\b",
+                r"\b(?:tidak\s+tersedia\s+di\s+toko)\b[^\.\,\;]{0,40}\b(?:stok|unit|barang|produk|laptop|desktop|printer|komputer|pc)\b",
             ]
             for pat in klaim_tanpa_lookup:
                 if re.search(pat, teks, re.IGNORECASE):

@@ -189,3 +189,32 @@ def test_trace_a2_printer_canon_kebutuhan(action_engine, capsys):
     # 3. Status akhir adalah 'belum_ada_yang_memenuhi'
     assert res.fakta.get("status") == "belum_ada_yang_memenuhi"
 
+
+def test_d1_false_positive_non_produk_diizinkan():
+    """D1 False Positive: Memastikan balasan sah memuat 'kami ada'/'kami punya' untuk hal non-produk tidak terblokir."""
+    checker = GroundingChecker()
+    fakta_belum_dicari = {
+        "status": "sapaan",
+        "belum_dicari": True
+    }
+
+    # Frasa non-produk sah (layanan, garansi, jam buka, staf)
+    teks_layanan = "Halo Kak! Di ReIn Komputer kami ada layanan konsultasi dan servis gratis untuk pelanggan."
+    is_valid_layanan, viol_layanan = checker.check(teks_layanan, fakta_belum_dicari)
+    assert is_valid_layanan is True, f"Layanan terblokir salah: {viol_layanan}"
+
+    teks_garansi = "Halo Kak! Kami ada garansi resmi distributor untuk setiap pembelian perangkat di toko."
+    is_valid_garansi, viol_garansi = checker.check(teks_garansi, fakta_belum_dicari)
+    assert is_valid_garansi is True, f"Garansi terblokir salah: {viol_garansi}"
+
+    teks_jam_buka = "Halo Kak! Kami punya jam buka operasional mulai pukul 09.00 hingga 18.00 WIB."
+    is_valid_jam, viol_jam = checker.check(teks_jam_buka, fakta_belum_dicari)
+    assert is_valid_jam is True, f"Jam buka terblokir salah: {viol_jam}"
+
+    # Namun klaim stok/produk tetap wajib terblokir
+    teks_stok_laptop = "Halo Kak! Kami punya stok laptop Asus yang siap dibeli sekarang."
+    is_valid_stok, viol_stok = checker.check(teks_stok_laptop, fakta_belum_dicari)
+    assert is_valid_stok is False
+    assert any("belum_dicari" in v for v in viol_stok)
+
+
