@@ -642,7 +642,7 @@ def validate_parser_output(
             if parsed.aksi == ActionEnum.BANDINGKAN:
                 failed_list = [failed_ref] if isinstance(failed_ref, str) else list(failed_ref)
                 failed_clean = [f for f in failed_list if f not in ("rujukan_kosong", "rujukan_ambigu", "rujukan_tidak_ada")]
-                args.produk = resolved_codes if resolved_codes else [p.get("kode") for p in produk_tampil_list if p.get("kode")]
+                args.produk = resolved_codes if resolved_codes else []
                 if failed_clean:
                     args.produk_luar_katalog = failed_clean
                     for fc in failed_clean:

@@ -73,3 +73,53 @@ def test_butir2_kategori_katalog_valid(kat_katalog):
     ki = out.kontrak_intent
     assert ki["argumen_valid"].get("kategori") == kat_katalog
     assert not any(d["field"] == "kategori" for d in ki["argumen_ditolak"])
+
+
+# =============================================================================
+# BUTIR 3 — Kontrak Hasil (ActionEngine)
+# =============================================================================
+@pytest.mark.parametrize("luar_item,field", [
+    ("monitor", "kategori"),
+    ("tablet", "kategori"),
+    ("kamera", "kategori"),
+    ("keyboard", "kategori"),
+    ("apple", "merek"),
+    ("logitech", "merek"),
+    ("samsung", "merek"),
+])
+def test_butir3_argumen_ditolak_status_tidak_dijual(luar_item, field):
+    """Jika ada argumen ditolak: status tidak_dijual, tanpa pencarian, tanpa produk_list/kartu."""
+    engine = ActionEngine()
+    raw = {
+        "aksi": "cari_produk",
+        "argumen": {field: luar_item},
+        "pembaruan_state": {field: luar_item}
+    }
+    validated, is_valid = validate_parser_output(raw)
+    res = engine.execute(validated, session_state={})
+    assert res.fakta["status"] == "tidak_dijual"
+    assert res.produk_list == []
+    assert res.fakta.get("belum_dicari") is True
+    assert res.fakta.get("kategori_tersedia") == get_catalog_categories()
+    assert res.fakta.get("merek_tersedia") == get_catalog_brands()
+
+
+def test_butir3_tanpa_substitusi_diam_diam_ke_state_lama_atau_default_laptop():
+    """State lama berisi laptop, pelanggan meminta monitor -> tidak boleh jatuh ke laptop atau tampilkan kartu."""
+    engine = ActionEngine()
+    state = {
+        "kategori": "laptop",
+        "produk_tampil": [{"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "harga": 5199000}]
+    }
+    raw = {
+        "aksi": "cari_produk",
+        "argumen": {"kategori": "monitor"},
+        "pembaruan_state": {"kategori": "monitor"}
+    }
+    validated, is_valid = validate_parser_output(raw, session_state=state)
+    res = engine.execute(validated, session_state=state)
+    assert res.fakta["status"] == "tidak_dijual"
+    assert res.produk_list == []
+    # Tidak boleh ada kartu produk laptop atau produk apa pun yang dikembalikan
+    assert len(res.produk_list) == 0
+

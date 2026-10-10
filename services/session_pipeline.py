@@ -343,9 +343,13 @@ class SessionPipeline:
         catalog_cats = set(get_catalog_categories())
         catalog_brands = set(get_catalog_brands())
 
+        kontrak = getattr(parsed, "kontrak_intent", None) or {}
+        arg_ditolak = kontrak.get("argumen_ditolak", [])
+        has_rejected_kat = any(d.get("field") == "kategori" for d in arg_ditolak)
+
         detected_kategori = None
         is_sys_err = (parsed.aksi == ActionEnum.TIDAK_JELAS and getattr(parsed.argumen, "alasan", None) == AlasanTidakJelasEnum.SISTEM_ERROR)
-        if not is_sys_err:
+        if not is_sys_err and not has_rejected_kat:
             if parsed.argumen.kategori and parsed.argumen.kategori.lower() in catalog_cats:
                 detected_kategori = parsed.argumen.kategori.lower()
             elif parsed.pembaruan_state.kategori and parsed.pembaruan_state.kategori.lower() in catalog_cats:

@@ -388,6 +388,44 @@ class ActionEngine:
         aksi = parsed.aksi
         args = parsed.argumen
 
+        # Putaran 14 Butir 3: Kontrak Hasil (ActionEngine)
+        # Jika ada argumen ditolak: jangan mencari, jangan buat kartu, kembalikan status tidak_dijual
+        kontrak = getattr(parsed, "kontrak_intent", None) or {}
+        arg_ditolak = kontrak.get("argumen_ditolak", [])
+        tidak_dijual_args = [d for d in arg_ditolak if d.get("alasan") == "tidak_ada_di_katalog"]
+        if aksi == ActionEnum.BANDINGKAN and getattr(args, "produk", None):
+            pass
+        elif tidak_dijual_args:
+            from services.validator import get_catalog_categories, get_catalog_brands
+            fakta = {
+                "status": "tidak_dijual",
+                "permintaan": kontrak.get("permintaan_asli", {}),
+                "argumen_ditolak": arg_ditolak,
+                "kategori_tersedia": get_catalog_categories(),
+                "merek_tersedia": get_catalog_brands(),
+                "belum_dicari": True
+            }
+            return ActionResult(
+                aksi=aksi,
+                fakta=fakta,
+                produk_list=[]
+            )
+
+        ambigu_args = [d for d in arg_ditolak if d.get("alasan") == "ambigu"]
+        if ambigu_args and any(d.get("field") in ("produk", "rujukan_produk") for d in ambigu_args):
+            fakta = {
+                "status": "ambigu",
+                "permintaan": kontrak.get("permintaan_asli", {}),
+                "argumen_ditolak": arg_ditolak,
+                "pesan": "Rujukan produk tidak jelas atau ambigu. Mohon sebutkan nama atau nomor produk yang dimaksud.",
+                "belum_dicari": True
+            }
+            return ActionResult(
+                aksi=aksi,
+                fakta=fakta,
+                produk_list=[]
+            )
+
         # C1: Jika parser mengeluarkan kriteria produk di aksi non-pencarian (tidak_jelas, basa_basi, sapa), jalankan pencarian
         # (Kecuali jika alasan adalah sistem_error)
         is_sys_err = getattr(args, "alasan", None) in (AlasanTidakJelasEnum.SISTEM_ERROR, "sistem_error")
@@ -909,36 +947,48 @@ class ActionEngine:
             is_brand_outside = bool(merek and str(merek).strip().lower() not in all_brands)
 
             if is_brand_outside or (nama_model and not matches):
-                target_cat = str(kategori).lower() if kategori else "laptop"
-                cat_prods = [p for p in self.catalog.products if str(p.get("kategori", "")).lower() == target_cat]
-                if not cat_prods:
-                    cat_prods = [p for p in self.catalog.products if str(p.get("kategori", "")).lower() == "laptop"]
-                if not cat_prods and self.catalog.products:
-                    cat_prods = list(self.catalog.products)
-                closest = min(cat_prods, key=lambda x: get_product_price(x)) if cat_prods else None
-                padanan = {
-                    "kode": closest.get("kode"),
-                    "nama": closest.get("nama"),
-                    "kategori": closest.get("kategori"),
-                    "brand": get_product_brand(closest),
-                    "merek": get_product_brand(closest),
-                    "harga": get_product_price(closest),
-                    "harga_formatted": format_rupiah(get_product_price(closest)),
-                    "spesifikasi": clean_specs(closest),
-                    "lembar_spesifikasi": build_lembar_spesifikasi(closest),
-                    "catatan_minimum": {"memenuhi": True, "alasan": "Padanan terdekat di katalog"}
-                } if closest else {}
                 prod_diminta = merek or nama_model
-                fakta = {
-                    "status": "produk_tidak_di_katalog",
-                    "produk_diminta": [prod_diminta],
-                    "padanan_terdekat": padanan,
-                    "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
-                    "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
-                    "belum_dicari": False,
-                    "pesan": f"Produk/merek {prod_diminta} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
-                }
-                return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[padanan] if padanan else [])
+                minta_pengganti = bool(re.search(r"\b(pengganti|alternatif|rekomendasi\s+lain|opsi\s+lain|gantinya|padanan)\b", str(state.get("_pesan_pelanggan") or ""), re.IGNORECASE))
+                from services.validator import get_catalog_categories, get_catalog_brands
+                cats_avail = get_catalog_categories()
+                brands_avail = get_catalog_brands()
+
+                if minta_pengganti:
+                    target_cat = str(kategori).lower() if kategori else None
+                    cat_prods = [p for p in self.catalog.products if str(p.get("kategori", "")).lower() == target_cat] if target_cat else list(self.catalog.products)
+                    closest = min(cat_prods, key=lambda x: get_product_price(x)) if cat_prods else None
+                    padanan = {
+                        "kode": closest.get("kode"),
+                        "nama": closest.get("nama"),
+                        "kategori": closest.get("kategori"),
+                        "brand": get_product_brand(closest),
+                        "merek": get_product_brand(closest),
+                        "harga": get_product_price(closest),
+                        "harga_formatted": format_rupiah(get_product_price(closest)),
+                        "spesifikasi": clean_specs(closest),
+                        "lembar_spesifikasi": build_lembar_spesifikasi(closest),
+                        "catatan_minimum": {"memenuhi": True, "alasan": "Padanan terdekat di katalog"}
+                    } if closest else {}
+                    fakta = {
+                        "status": "produk_tidak_di_katalog",
+                        "produk_diminta": [prod_diminta],
+                        "padanan_terdekat": padanan,
+                        "kategori_tersedia": cats_avail,
+                        "merek_tersedia": brands_avail,
+                        "belum_dicari": False,
+                        "pesan": f"Produk/merek {prod_diminta} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+                    }
+                    return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[padanan] if padanan else [])
+                else:
+                    fakta = {
+                        "status": "produk_tidak_di_katalog" if (nama_model or is_brand_outside) else "tidak_ditemukan",
+                        "produk_diminta": [prod_diminta] if prod_diminta else [],
+                        "kategori_tersedia": cats_avail,
+                        "merek_tersedia": brands_avail,
+                        "belum_dicari": False,
+                        "pesan": f"Produk '{prod_diminta}' tidak tersedia di katalog ReIn Komputer." if prod_diminta else "Saat ini belum ada produk yang memenuhi kriteria tersebut."
+                    }
+                    return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[])
 
             fakta = {
                 "status": "tidak_ditemukan",
@@ -1057,29 +1107,33 @@ class ActionEngine:
                 }
                 return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
 
-            # B16: Produk di luar katalog -> cari padanan terdekat deterministik
-            closest = None
-            for p in self.catalog.products:
-                if str(p.get("kategori", "")).lower() == "laptop":
-                    closest = p
-                    break
-            if not closest and self.catalog.products:
-                closest = self.catalog.products[0]
-            padanan = {
-                "kode": closest.get("kode"),
-                "nama": closest.get("nama"),
-                "kategori": closest.get("kategori"),
-                "harga": get_product_price(closest),
-                "harga_formatted": format_rupiah(get_product_price(closest)),
-                "spesifikasi": clean_specs(closest)
-            } if closest else {}
-            fakta = {
-                "status": "produk_tidak_di_katalog",
-                "produk_diminta": resolved_codes or args.produk,
-                "padanan_terdekat": padanan,
-                "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
-            }
-            return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta)
+            # B16: Produk di luar katalog
+            minta_pengganti = bool(re.search(r"\b(pengganti|alternatif|rekomendasi\s+lain|opsi\s+lain|gantinya|padanan)\b", str(state.get("_pesan_pelanggan") or ""), re.IGNORECASE))
+            if minta_pengganti:
+                closest = self.catalog.products[0] if self.catalog.products else None
+                padanan = {
+                    "kode": closest.get("kode"),
+                    "nama": closest.get("nama"),
+                    "kategori": closest.get("kategori"),
+                    "harga": get_product_price(closest),
+                    "harga_formatted": format_rupiah(get_product_price(closest)),
+                    "spesifikasi": clean_specs(closest)
+                } if closest else {}
+                fakta = {
+                    "status": "produk_tidak_di_katalog",
+                    "produk_diminta": resolved_codes or args.produk,
+                    "padanan_terdekat": padanan,
+                    "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+                }
+                return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta, produk_list=[padanan] if padanan else [])
+            else:
+                fakta = {
+                    "status": "produk_tidak_di_katalog",
+                    "produk_diminta": resolved_codes or args.produk,
+                    "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer.",
+                    "belum_dicari": False
+                }
+                return ActionResult(aksi=ActionEnum.EVALUASI_KECOCOKAN, fakta=fakta, produk_list=[])
 
         filters = prof_data.get("filter", []) if prof_data else []
 
@@ -1299,28 +1353,32 @@ class ActionEngine:
                 return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
 
             # B16: Produk di luar katalog
-            closest = None
-            for p in self.catalog.products:
-                if str(p.get("kategori", "")).lower() == "laptop":
-                    closest = p
-                    break
-            if not closest and self.catalog.products:
-                closest = self.catalog.products[0]
-            padanan = {
-                "kode": closest.get("kode"),
-                "nama": closest.get("nama"),
-                "kategori": closest.get("kategori"),
-                "harga": get_product_price(closest),
-                "harga_formatted": format_rupiah(get_product_price(closest)),
-                "spesifikasi": clean_specs(closest)
-            } if closest else {}
-            fakta = {
-                "status": "produk_tidak_di_katalog",
-                "produk_diminta": resolved_codes or args.produk,
-                "padanan_terdekat": padanan,
-                "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
-            }
-            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+            minta_pengganti = bool(re.search(r"\b(pengganti|alternatif|rekomendasi\s+lain|opsi\s+lain|gantinya|padanan)\b", str(state.get("_pesan_pelanggan") or ""), re.IGNORECASE))
+            if minta_pengganti:
+                closest = self.catalog.products[0] if self.catalog.products else None
+                padanan = {
+                    "kode": closest.get("kode"),
+                    "nama": closest.get("nama"),
+                    "kategori": closest.get("kategori"),
+                    "harga": get_product_price(closest),
+                    "harga_formatted": format_rupiah(get_product_price(closest)),
+                    "spesifikasi": clean_specs(closest)
+                } if closest else {}
+                fakta = {
+                    "status": "produk_tidak_di_katalog",
+                    "produk_diminta": resolved_codes or args.produk,
+                    "padanan_terdekat": padanan,
+                    "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
+                }
+                return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=[padanan] if padanan else [])
+            else:
+                fakta = {
+                    "status": "produk_tidak_di_katalog",
+                    "produk_diminta": resolved_codes or args.produk,
+                    "pesan": f"Produk {', '.join([str(c) for c in (resolved_codes or args.produk)])} tidak tersedia di katalog ReIn Komputer.",
+                    "belum_dicari": False
+                }
+                return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=[])
 
         # F3: Kasus 1 - Atribut None / kosong -> Permintaan spesifikasi umum -> Ringkasan spek utama katalog
         if attr is None:
@@ -1436,7 +1494,9 @@ class ActionEngine:
     # 5. bandingkan (A6)
     # -------------------------------------------------------------------------
     def _handle_bandingkan(self, args: ActionArguments, state: dict) -> ActionResult:
-        target_codes = args.produk or [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
+        target_codes = args.produk or []
+        if not target_codes and not (args.produk_luar_katalog):
+            target_codes = [p.get("kode") for p in state.get("produk_tampil", []) if p.get("kode")]
         items = []
         for code in target_codes:
             p = self.get_product_by_code(code)
@@ -1503,8 +1563,8 @@ class ActionEngine:
         else:
             jenis = "yang_lain"
 
-        # B3: Kategori aktif diambil dari produk_tampil di sesi
-        kategori = tampil[0].get("kategori") or state.get("kategori") or "laptop"
+        # B3: Kategori aktif diambil dari produk_tampil di sesi atau state
+        kategori = (tampil[0].get("kategori") if tampil else None) or state.get("kategori")
 
         candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
 

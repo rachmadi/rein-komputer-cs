@@ -291,8 +291,15 @@ def should_skip_rag(text: str, catalog: Catalog) -> bool:
         if p["kode"].lower() in t:
             return True
     for b in brands:
-        if re.search(r"\b" + b + r"\b", t) and "buat" not in t and "untuk" not in t and "kebutuhan" not in t:
+        if re.search(r"\b" + re.escape(b) + r"\b", t) and "buat" not in t and "untuk" not in t and "kebutuhan" not in t:
             return True
+    # Cek kata model/seri produk langsung dari katalog (tanpa daftar hardcoded)
+    common_words = {'laptop', 'desktop', 'printer', 'intel', 'amd', 'core', 'ryzen', 'slim', 'plus', 'pro', 'max', 'home', 'gen', 'series', 'inch', 'all'}
+    for p in catalog.products:
+        for tok in re.findall(r'[a-zA-Z0-9]+', p.get('nama', '').lower()):
+            if len(tok) >= 3 and tok not in common_words:
+                if re.search(r"\b" + re.escape(tok) + r"\b", t) and "buat" not in t and "untuk" not in t and "kebutuhan" not in t:
+                    return True
     return False
 
 
@@ -305,7 +312,17 @@ def check_fast_path(text: str, catalog: Catalog, previous_lowest_price: int | No
 
     from core.db import get_catalog_inventory
     brands = get_catalog_inventory()["merek"]
-    has_brand = any(b in f" {t} " for b in brands)
+    has_brand = any(re.search(r"\b" + re.escape(b) + r"\b", t) for b in brands)
+    if not has_brand:
+        common_words = {'laptop', 'desktop', 'printer', 'intel', 'amd', 'core', 'ryzen', 'slim', 'plus', 'pro', 'max', 'home', 'gen', 'series', 'inch', 'all'}
+        for p in catalog.products:
+            for tok in re.findall(r'[a-zA-Z0-9]+', p.get('nama', '').lower()):
+                if len(tok) >= 3 and tok not in common_words:
+                    if re.search(r"\b" + re.escape(tok) + r"\b", t):
+                        has_brand = True
+                        break
+            if has_brand:
+                break
 
     narrowing_keywords = ["lebih murah", "yang lain", "yang asus", "yang ssd", "yang ram", "kalo", "kalau", "aja"]
     is_narrowing = any(k in t for k in narrowing_keywords)
