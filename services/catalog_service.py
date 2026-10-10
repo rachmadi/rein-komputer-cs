@@ -13,8 +13,8 @@ from scripts.migrate_derived_fields import cpu_tier, storage_info, gpu_info, dis
 from core.db import get_all_products, get_product, save_product, delete_product as db_delete_product
 from core.normalizer import normalize
 
-QDRANT_URL = "http://localhost:6333"
-OLLAMA_URL = "http://localhost:11434"
+QDRANT_URL = "http://127.0.0.1:6333"
+OLLAMA_URL = "http://127.0.0.1:11434"
 import os
 COLLECTION_NAME = os.getenv("QDRANT_PRODUCTS_COLLECTION", "computer_products")
 EMBED_MODEL = "bge-m3"

@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "gemma4:e4b")
 
 GENERATOR_SYSTEM_PROMPT = """Kamu adalah customer care ReIn Komputer di Telegram.
