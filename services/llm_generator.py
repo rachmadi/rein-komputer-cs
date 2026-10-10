@@ -62,7 +62,7 @@ Catatan untuk penilaian:
 from core.config import KONTAK_STAF
 EMERGENCY_FALLBACK_TEXT = (
     f"Maaf Kak, saya belum bisa menjawab ini dengan tepat. "
-    f"Boleh dicoba sekali lagi, atau Kakak bisa menghubungi staf kami di {KONTAK_STAF}."
+    f"Boleh dicoba sekali lagi, atau Kakak bisa menghubungi {KONTAK_STAF}."
 )
 
 
@@ -79,7 +79,7 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
 
     if aksi_clean == "tanya_spesifikasi" or status in ("atribut_tidak_tersedia", "spek_umum") or fakta.get("spesifikasi_produk"):
         if status == "atribut_tidak_tersedia":
-            return f"Informasi mengenai spesifikasi tersebut belum tersedia di sistem kami, Kak. Kakak dapat langsung menanyakan ke staf toko kami di {KONTAK_STAF}."
+            return f"Informasi mengenai spesifikasi tersebut belum tersedia di sistem kami, Kak. Kakak dapat langsung menghubungi {KONTAK_STAF}."
         prods = fakta.get("spesifikasi_produk") or fakta.get("spesifikasi") or []
         if prods:
             item = prods[0]
@@ -116,10 +116,10 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         return "Kami belum dapat memetakan kebutuhan tersebut ke rekomendasi spesifik, Kak. Boleh ceritakan aktivitas atau software utama yang akan sering digunakan?"
 
     if status == "profil_tidak_ditemukan_berulang":
-        return f"Kebutuhan tersebut belum teridentifikasi di sistem kami, Kak. Kakak bisa menyebutkan kategori dan anggaran langsung, atau berkonsultasi ke staf di {KONTAK_STAF}."
+        return f"Kebutuhan tersebut belum teridentifikasi di sistem kami, Kak. Kakak bisa menyebutkan kategori dan anggaran langsung, atau berkonsultasi dengan {KONTAK_STAF}."
 
     if status == "info_toko":
-        return f"Untuk informasi operasional toko, silakan langsung hubungi tim kami di {KONTAK_STAF}, Kak."
+        return f"Untuk informasi operasional toko, silakan langsung menghubungi {KONTAK_STAF}, Kak."
 
     if status == "rujukan_tidak_ada":
         return "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil, Kak. Silakan sebutkan kebutuhan atau perangkat yang dicari."

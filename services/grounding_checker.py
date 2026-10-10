@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 from core.config import KONTAK_STAF
 EMERGENCY_FALLBACK_TEXT = (
     f"Maaf Kak, saya belum bisa menjawab ini dengan tepat. "
-    f"Boleh dicoba sekali lagi, atau Kakak bisa menghubungi staf kami di {KONTAK_STAF}."
+    f"Boleh dicoba sekali lagi, atau Kakak bisa menghubungi {KONTAK_STAF}."
 )
 
 

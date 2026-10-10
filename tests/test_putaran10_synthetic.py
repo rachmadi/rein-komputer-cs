@@ -158,3 +158,16 @@ def test_butir2_lebih_murah_urutan_menaik():
     for p_val in prices:
         assert p_val < 20000000
 
+
+def test_butir4_teks_emergency_tanpa_di_kontak_staf():
+    """Menguji bahwa teks darurat B13 tidak memuat 'di' + KONTAK_STAF dan memakai pola baku."""
+    from services.grounding_checker import EMERGENCY_FALLBACK_TEXT as CHK_EMERGENCY
+    from services.llm_generator import EMERGENCY_FALLBACK_TEXT as GEN_EMERGENCY
+    from core.config import KONTAK_STAF
+
+    for text in [CHK_EMERGENCY, GEN_EMERGENCY]:
+        assert f"di {KONTAK_STAF}" not in text
+        assert f"menghubungi {KONTAK_STAF}" in text
+        assert text.endswith(f"atau Kakak bisa menghubungi {KONTAK_STAF}.")
+
+
