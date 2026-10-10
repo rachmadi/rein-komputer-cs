@@ -138,19 +138,28 @@ class ActionEngine:
         raw_codes = args.produk or args.rujukan_produk or []
         tampil = state.get("produk_tampil", [])
         history_tampil = state.get("history_produk_tampil", [])
+        fokus = state.get("produk_dibahas", [])
+        if isinstance(fokus, str):
+            fokus = [fokus]
+        prev_stack = state.get("produk_dibahas_sebelumnya", [])
 
         # Jika args.produk dan args.rujukan_produk kosong, ambil produk default:
         if not raw_codes:
-            ptd = state.get("produk_terakhir_dibahas")
-            if ptd:
-                if isinstance(ptd, list):
-                    raw_codes = [x.get("kode") if isinstance(x, dict) else str(x) for x in ptd]
-                elif isinstance(ptd, dict):
-                    raw_codes = [ptd.get("kode")] if ptd.get("kode") else []
-                else:
-                    raw_codes = [str(ptd)]
-            elif tampil:
-                raw_codes = [p.get("kode") for p in tampil if p.get("kode")]
+            if fokus:
+                raw_codes = [c for c in fokus if c]
+            elif prev_stack and isinstance(prev_stack, list) and prev_stack[0].get("kode"):
+                raw_codes = [c for c in prev_stack[0].get("kode") if c]
+            else:
+                ptd = state.get("produk_terakhir_dibahas")
+                if ptd:
+                    if isinstance(ptd, list):
+                        raw_codes = [x.get("kode") if isinstance(x, dict) else str(x) for x in ptd]
+                    elif isinstance(ptd, dict):
+                        raw_codes = [ptd.get("kode")] if ptd.get("kode") else []
+                    else:
+                        raw_codes = [str(ptd)]
+                elif tampil:
+                    raw_codes = [p.get("kode") for p in tampil if p.get("kode")]
 
         if not raw_codes:
             return [], []
@@ -160,13 +169,32 @@ class ActionEngine:
 
         for ref in raw_codes:
             ref_str = str(ref).strip()
+            ref_clean = ref_str.lower()
             matched_code = None
 
             # Cek apakah rujukan ditujukan ke riwayat/sebelumnya (F6)
-            is_history_ref = bool(re.search(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", ref_str, re.IGNORECASE))
+            is_history_ref = bool(re.search(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", ref_clean))
+
+            # 0. Rujukan afirmatif pendek / demonstratif ("boleh", "ya", "itu", "tadi", "mau", dll.)
+            if re.search(r"^(?:ya|iya|boleh|mau|ok|oke|siap|tampilkan|mau\s+lihat|itu|ini|yang\s+itu|tadi|yang\s+tadi|produk\s+tadi|laptop\s+tadi|printer\s+tadi)$", ref_clean):
+                if fokus:
+                    matched_code = fokus[0]
+                elif prev_stack and isinstance(prev_stack, list) and prev_stack[0].get("kode"):
+                    matched_code = prev_stack[0].get("kode")[0]
+                elif tampil and tampil[0].get("kode"):
+                    matched_code = tampil[0]["kode"]
+
+            # 0b. Rujukan termurah tadi / paling murah tadi
+            if not matched_code and ref_clean in ("paling murah", "yang paling murah", "termurah", "yang termurah", "yang paling murah tadi", "termurah tadi"):
+                target_src = history_tampil if is_history_ref else tampil
+                if not target_src:
+                    target_src = tampil or history_tampil
+                if target_src:
+                    cheap_p = min(target_src, key=lambda x: get_product_price(x))
+                    matched_code = cheap_p.get("kode")
 
             # 1. Cek rujukan kode langsung di katalog (misal 'KB-L01')
-            if self.get_product_by_code(ref_str):
+            if not matched_code and self.get_product_by_code(ref_str):
                 matched_code = ref_str.upper()
 
             # 2. Cek rujukan numerik (indeks 1-based, misal 1, '1', 'nomor 1', 'opsi 1 sebelumnya')
@@ -181,7 +209,6 @@ class ActionEngine:
                     elif history_tampil and 0 <= idx < len(history_tampil):
                         matched_code = history_tampil[idx].get("kode")
                     else:
-                        # Index di luar rentang tampil maupun riwayat (E8)
                         resolved_codes.append(ref_str)
                         continue
 
@@ -200,37 +227,81 @@ class ActionEngine:
                             matched_code = history_tampil[o_idx].get("kode")
                             break
 
-            # 3. Cek rujukan nama sebagian / merek terhadap produk_tampil lalu history_tampil (F6)
+            # 3. Cek rujukan nama sebagian / merek menurut hirarki: fokus -> sebelumnya -> tampil/riwayat -> katalog
             if not matched_code:
-                ref_clean = ref_str.lower()
-                clean_kw = re.sub(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", "", ref_clean).strip()
-                search_targets = (history_tampil if is_history_ref else tampil) or []
-                fallback_targets = (tampil if is_history_ref else history_tampil) or []
-                for pt in search_targets:
-                    pt_nama = str(pt.get("nama", "")).lower()
-                    pt_brand = get_product_brand(pt)
-                    if (clean_kw and clean_kw in pt_nama) or clean_kw == pt_brand:
-                        matched_code = pt.get("kode")
-                        break
+                clean_kw = re.sub(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu|yang|itu)\b", "", ref_clean).strip()
+
+                # 3a. Cek fokus
+                if fokus:
+                    fokus_matched = []
+                    for fc in fokus:
+                        p_fc = self.get_product_by_code(fc)
+                        if p_fc:
+                            if clean_kw in str(p_fc.get("nama", "")).lower() or clean_kw == get_product_brand(p_fc):
+                                fokus_matched.append(p_fc)
+                    if len(fokus_matched) == 1:
+                        matched_code = fokus_matched[0].get("kode")
+                    elif len(fokus_matched) > 1:
+                        state["_ambigu_info"] = {"ambigu": True, "kandidat": fokus_matched}
+
+                # 3b. Cek tumpukan sebelumnya
+                if not matched_code and prev_stack:
+                    prev_matched = []
+                    for entry in prev_stack:
+                        e_codes = entry.get("kode", []) if isinstance(entry, dict) else [entry]
+                        e_label = str(entry.get("label_kebutuhan", "")).lower() if isinstance(entry, dict) else ""
+                        label_hit = bool(e_label and (clean_kw in e_label or e_label in clean_kw))
+                        for ec in e_codes:
+                            p_ec = self.get_product_by_code(ec)
+                            if p_ec:
+                                if label_hit or clean_kw in str(p_ec.get("nama", "")).lower() or clean_kw == get_product_brand(p_ec):
+                                    if p_ec not in prev_matched:
+                                        prev_matched.append(p_ec)
+                        if prev_matched:
+                            break
+                    if len(prev_matched) == 1:
+                        matched_code = prev_matched[0].get("kode")
+                    elif len(prev_matched) > 1:
+                        state["_ambigu_info"] = {"ambigu": True, "kandidat": prev_matched}
+
+                # 3c. Cek produk_tampil lalu history_tampil
                 if not matched_code:
-                    for pt in fallback_targets:
+                    search_targets = (history_tampil if is_history_ref else tampil) or []
+                    fallback_targets = (tampil if is_history_ref else history_tampil) or []
+                    tampil_matched = []
+                    for pt in search_targets:
                         pt_nama = str(pt.get("nama", "")).lower()
                         pt_brand = get_product_brand(pt)
                         if (clean_kw and clean_kw in pt_nama) or clean_kw == pt_brand:
-                            matched_code = pt.get("kode")
-                            break
+                            if pt not in tampil_matched:
+                                tampil_matched.append(pt)
+                    if not tampil_matched:
+                        for pt in fallback_targets:
+                            pt_nama = str(pt.get("nama", "")).lower()
+                            pt_brand = get_product_brand(pt)
+                            if (clean_kw and clean_kw in pt_nama) or clean_kw == pt_brand:
+                                if pt not in tampil_matched:
+                                    tampil_matched.append(pt)
+                    if len(tampil_matched) == 1:
+                        matched_code = tampil_matched[0].get("kode")
+                    elif len(tampil_matched) > 1:
+                        state["_ambigu_info"] = {"ambigu": True, "kandidat": tampil_matched}
 
-            # 4. Cek rujukan nama sebagian / merek terhadap seluruh katalog (E7)
-            if not matched_code:
-                ref_clean = ref_str.lower()
-                clean_ref = re.sub(r"\b(desktop|laptop|komputer|pc|unit|seri|tipe|model|printer|sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", "", ref_clean, flags=re.IGNORECASE).strip()
-                tokens = [t for t in re.split(r"\s+", clean_ref) if len(t) >= 2]
-                for p_cat in self.catalog.products:
-                    p_nama = str(p_cat.get("nama", "")).lower()
-                    p_brand = get_product_brand(p_cat)
-                    if ref_clean in p_nama or ref_clean == p_brand or (tokens and all((tok in p_nama or tok in p_brand) for tok in tokens)):
-                        matched_code = p_cat.get("kode")
-                        break
+                # 3d. Cek katalog luas
+                if not matched_code:
+                    clean_ref = re.sub(r"\b(desktop|laptop|komputer|pc|unit|seri|tipe|model|printer)\b", "", clean_kw, flags=re.IGNORECASE).strip()
+                    tokens = [t for t in re.split(r"\s+", clean_ref) if len(t) >= 2]
+                    cat_matched = []
+                    for p_cat in self.catalog.products:
+                        p_nama = str(p_cat.get("nama", "")).lower()
+                        p_brand = get_product_brand(p_cat)
+                        if (clean_kw and clean_kw in p_nama) or clean_kw == p_brand or (tokens and all((tok in p_nama or tok in p_brand) for tok in tokens)):
+                            if p_cat not in cat_matched:
+                                cat_matched.append(p_cat)
+                    if len(cat_matched) == 1:
+                        matched_code = cat_matched[0].get("kode")
+                    elif len(cat_matched) > 1:
+                        state["_ambigu_info"] = {"ambigu": True, "kandidat": cat_matched}
 
             if matched_code:
                 full_p = self.get_product_by_code(matched_code)
@@ -306,6 +377,13 @@ class ActionEngine:
             res = self._handle_basa_basi(args, state)
         else:  # TIDAK_JELAS
             res = self._handle_tidak_jelas(args, state)
+
+        if state.get("_ambigu_info", {}).get("ambigu"):
+            res.fakta["ambigu"] = True
+            cands = state["_ambigu_info"].get("kandidat", [])
+            res.fakta["kandidat_ambigu"] = [p.get("nama") for p in cands if isinstance(p, dict)]
+            if res.fakta.get("kandidat_ambigu"):
+                res.fakta["pesan"] = f"Ada beberapa pilihan yang cocok ({', '.join(res.fakta['kandidat_ambigu'])}). Maksud Kakak yang mana?"
 
         if "belum_dicari" not in res.fakta:
             res.fakta["belum_dicari"] = False if res.produk_list else True
@@ -1292,10 +1370,27 @@ class ActionEngine:
 
         batas_dipakai = None
         if jenis == "termurah_dari_tampil":
+            target_source = tampil
+            if args.rujukan_produk:
+                ref_str = str(args.rujukan_produk[0]).lower()
+                if any(w in ref_str for w in ["sebelumnya", "tadi", "riwayat", "kemarin", "dulu"]):
+                    target_source = state.get("history_produk_tampil") or tampil
+            if not target_source:
+                target_source = state.get("history_produk_tampil", [])
+
             resolved_tampil = []
-            for p in tampil:
+            for p in target_source:
                 full_p = self.get_product_by_code(p.get("kode")) if p.get("kode") else p
                 resolved_tampil.append(full_p or p)
+
+            if not resolved_tampil:
+                fakta = {
+                    "status": "belum_ada_hasil",
+                    "pesan": "Belum ada produk yang ditampilkan untuk dipilih yang paling murah.",
+                    "total_ditemukan": 0,
+                    "produk": []
+                }
+                return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
 
             cheapest_item = min(resolved_tampil, key=lambda x: get_product_price(x))
             cheapest_price = get_product_price(cheapest_item)
@@ -1324,6 +1419,7 @@ class ActionEngine:
                 "jenis_lanjutan": "termurah_dari_tampil",
                 "filter_dipakai": filter_dipakai,
                 "produk_termurah": formatted_item,
+                "rujukan_dipakai": [cheapest_item.get("kode")],
                 "produk": [formatted_item],
                 "total_ditemukan": 1,
                 "pesan": f"Di antara produk yang sedang ditampilkan, opsi paling terjangkau adalah {formatted_item.get('nama', '')} dengan harga {formatted_item.get('harga_formatted', '')}."

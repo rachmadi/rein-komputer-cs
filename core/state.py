@@ -19,6 +19,8 @@ def new_state() -> dict:
             "portabilitas": None    # "ringan", "tipis"
         },
         "shown_products": [],
+        "produk_dibahas": [],
+        "produk_dibahas_sebelumnya": [],
         "profil_aktif": None,
 
         # Kompatibilitas State Mesin

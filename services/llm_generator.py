@@ -232,11 +232,59 @@ def build_generator_messages(
         if words:
             pembuka_terakhir.append(" ".join(words[:2]))
 
+    # Format produk fokus saat ini (nama, bukan kode)
+    fokus_codes = state.get("produk_dibahas", [])
+    if isinstance(fokus_codes, str):
+        fokus_codes = [fokus_codes]
+    fokus_names = []
+
+    # Format tumpukan fokus lama (nama, bukan kode; sertakan label_kebutuhan)
+    prev_stack_raw = state.get("produk_dibahas_sebelumnya", [])
+    prev_stack_clean = []
+
+    # Helper cari nama dari kode
+    cat_inst = None
+    try:
+        from services.catalog_service import get_active_catalog
+        cat_inst = get_active_catalog()
+    except Exception:
+        pass
+
+    def _code_to_name(c):
+        if not c:
+            return ""
+        if cat_inst and cat_inst.by_code.get(c.upper()):
+            return cat_inst.by_code[c.upper()].get("nama", c)
+        for pt in state.get("produk_tampil", []):
+            if isinstance(pt, dict) and pt.get("kode", "").upper() == str(c).upper():
+                return pt.get("nama", c)
+        return str(c)
+
+    for fc in (fokus_codes or []):
+        nm = _code_to_name(fc)
+        if nm and nm not in fokus_names:
+            fokus_names.append(nm)
+
+    if isinstance(prev_stack_raw, list):
+        for entry in prev_stack_raw:
+            if isinstance(entry, dict):
+                e_codes = entry.get("kode", [])
+                if isinstance(e_codes, str):
+                    e_codes = [e_codes]
+                e_names = [_code_to_name(c) for c in e_codes if c]
+                prev_stack_clean.append({
+                    "nama_produk": e_names,
+                    "label_kebutuhan": entry.get("label_kebutuhan", ""),
+                    "giliran": entry.get("giliran")
+                })
+
     context_data = {
         "pesan_pelanggan_giliran_ini": pesan_pelanggan,
         "aksi": aksi,
         "fakta": clean_fakta,
         "produk_tampil": prods_clean,
+        "produk_fokus_saat_ini": fokus_names,
+        "produk_dibahas_sebelumnya": prev_stack_clean,
         "hal_yang_sudah_diketahui": hal_diketahui,
         "sebutan_pelanggan": sebutan,
         "persona_pengguna_perangkat": state.get("persona"),

@@ -69,23 +69,36 @@ def get_catalog_categories(db_path: str | None = None) -> list[str]:
 def resolve_product_references(
     produk_refs: List[Any] | None,
     produk_tampil: List[Dict[str, Any]] | None,
-    history_tampil: List[Dict[str, Any]] | None = None
+    history_tampil: List[Dict[str, Any]] | None = None,
+    produk_dibahas: List[str] | None = None,
+    produk_dibahas_sebelumnya: List[Dict[str, Any]] | None = None
 ) -> Tuple[List[str], bool, str | None]:
     """
-    Menyelesaikan rujukan_produk (nomor urut, ordinal, harga ekstrim, nama/merek, atau riwayat sesi)
-    menjadi daftar kode produk katalog dari produk_tampil atau history_produk_tampil di state percakapan.
+    Menyelesaikan rujukan_produk (nomor urut, ordinal, harga ekstrim, nama/merek,
+    afirmasi singkat, fokus saat ini, atau riwayat sesi)
+    menjadi daftar kode produk katalog.
+    Urutan resolusi: fokus (produk_dibahas) -> sebelumnya (produk_dibahas_sebelumnya)
+    -> riwayat set (tampil/hist) -> katalog menurut nama.
 
     Mengembalikan: (resolved_codes, is_valid, failed_reference_str)
     Jika rujukan tidak ditemukan atau ambigu, is_valid = False.
     """
     tampil = produk_tampil or []
     hist = history_tampil or []
+    fokus = produk_dibahas or []
+    prev_stack = produk_dibahas_sebelumnya or []
 
-    if not tampil and not hist:
+    if not tampil and not hist and not fokus and not prev_stack:
         return [], False, "tidak_ada_produk_tampil"
 
     # Jika rujukan tidak disertakan tapi aksi produk dipanggil
     if not produk_refs:
+        if fokus:
+            return [c for c in fokus if c], True, None
+        if prev_stack:
+            first_c = prev_stack[0].get("kode", [])
+            if first_c:
+                return [c for c in first_c if c], True, None
         # Default ke seluruh produk yang tampil jika ada
         return [p.get("kode") for p in tampil if p.get("kode")], True, None
 
@@ -134,21 +147,36 @@ def resolve_product_references(
         ref_clean = str(raw_ref).lower().strip()
         is_prev = bool(re.search(r"\b(sebelumnya|tadi|kemarin|lalu|riwayat|dulu)\b", ref_clean))
 
+        # 0. Rujukan pendek afirmatif / demonstratif ("boleh", "ya", "itu", "tadi", "mau", dll.)
+        if re.search(r"^(?:ya|iya|boleh|mau|ok|oke|siap|tampilkan|mau\s+lihat|itu|ini|yang\s+itu|tadi|yang\s+tadi|produk\s+tadi|laptop\s+tadi|printer\s+tadi)$", ref_clean):
+            if fokus:
+                resolved.extend([c for c in fokus if c])
+                continue
+            elif prev_stack:
+                first_c = prev_stack[0].get("kode", [])
+                if first_c:
+                    resolved.extend([c for c in first_c if c])
+                    continue
+            elif tampil:
+                if tampil[0].get("kode"):
+                    resolved.append(tampil[0]["kode"])
+                    continue
+
         # 1. Rujukan kata kunci 'semua'
         if ref_clean in ("semua", "semuanya", "tampil", "seluruhnya"):
             resolved.extend([p.get("kode") for p in tampil if p.get("kode")])
             continue
 
         # 2. Rujukan superlativ harga
-        if ref_clean in ("paling murah", "yang paling murah", "termurah", "yang termurah", "murah"):
-            target_list = hist if (is_prev and hist) else tampil
+        if any(k in ref_clean for k in ("paling murah", "termurah", "paling terjangkau", "murah")):
+            target_list = hist if (is_prev and hist) else (tampil or hist)
             cheapest = min(target_list, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0)) if target_list else {}
             if cheapest.get("kode"):
                 resolved.append(cheapest["kode"])
             continue
 
-        if ref_clean in ("paling mahal", "yang paling mahal", "termahal", "yang termahal", "mahal"):
-            target_list = hist if (is_prev and hist) else tampil
+        if any(k in ref_clean for k in ("paling mahal", "termahal", "mahal")):
+            target_list = hist if (is_prev and hist) else (tampil or hist)
             priciest = max(target_list, key=lambda p: int(p.get("harga") or p.get("harga_idr") or 0)) if target_list else {}
             if priciest.get("kode"):
                 resolved.append(priciest["kode"])
@@ -196,33 +224,92 @@ def resolve_product_references(
 
         # 4. Rujukan nama / merek / kode produk
         search_kw = ref_clean.replace("yang", "").replace("tadi", "").replace("itu", "").strip()
+
+        # 4a. Cek fokus saat ini
+        if fokus:
+            fokus_matches = []
+            for fc in fokus:
+                if str(fc).lower() == search_kw:
+                    fokus_matches.append(fc)
+                else:
+                    for pt in tampil + hist:
+                        if pt.get("kode", "").lower() == str(fc).lower():
+                            pt_nama = str(pt.get("nama", "")).lower()
+                            pt_brand = str(pt.get("brand", "")).lower()
+                            if search_kw in pt_nama or search_kw == pt_brand:
+                                fokus_matches.append(fc)
+                                break
+            if len(fokus_matches) == 1:
+                resolved.append(fokus_matches[0])
+                continue
+            elif len(fokus_matches) > 1:
+                return [], False, "rujukan_ambigu"
+
+        # 4b. Cek tumpukan fokus sebelumnya (produk_dibahas_sebelumnya)
+        if prev_stack:
+            prev_matches = []
+            for entry in prev_stack:
+                e_codes = entry.get("kode", []) if isinstance(entry, dict) else [entry]
+                e_label = str(entry.get("label_kebutuhan", "")).lower() if isinstance(entry, dict) else ""
+                label_matched = bool(e_label and (search_kw in e_label or e_label in search_kw))
+                for ec in e_codes:
+                    if label_matched or str(ec).lower() == search_kw:
+                        if ec not in prev_matches:
+                            prev_matches.append(ec)
+                    else:
+                        for pt in tampil + hist:
+                            if pt.get("kode", "").lower() == str(ec).lower():
+                                pt_nama = str(pt.get("nama", "")).lower()
+                                pt_brand = str(pt.get("brand", "")).lower()
+                                if search_kw in pt_nama or search_kw == pt_brand:
+                                    if ec not in prev_matches:
+                                        prev_matches.append(ec)
+                                    break
+                if prev_matches:
+                    break
+            if len(prev_matches) == 1:
+                resolved.append(prev_matches[0])
+                continue
+            elif len(prev_matches) > 1:
+                return [], False, "rujukan_ambigu"
+
+        # 4c. Cek produk_tampil lalu history_tampil
+        search_targets = (hist if is_prev else tampil) or []
+        fallback_targets = (tampil if is_prev else hist) or []
         matched_candidates = []
-        for p in tampil:
-            p_kode = str(p.get("kode", "")).lower()
-            p_nama = str(p.get("nama", "")).lower()
-            p_brand = str(p.get("brand", "")).lower()
 
-            p_cat_nama = ""
-            if p_kode:
-                try:
-                    from services.catalog_service import get_active_catalog
-                    cat = get_active_catalog()
-                    full_p = cat.by_code.get(p_kode.upper()) or cat.by_code.get(p_kode)
-                    if full_p:
-                        p_cat_nama = str(full_p.get("nama", "")).lower()
-                        if not p_brand:
-                            p_brand = str(full_p.get("brand", "")).lower()
-                except Exception:
-                    pass
+        def _match_list(cand_list):
+            m = []
+            for p in cand_list:
+                p_kode = str(p.get("kode", "")).lower()
+                p_nama = str(p.get("nama", "")).lower()
+                p_brand = str(p.get("brand", "")).lower()
+                p_cat_nama = ""
+                if p_kode:
+                    try:
+                        from services.catalog_service import get_active_catalog
+                        cat = get_active_catalog()
+                        full_p = cat.by_code.get(p_kode.upper()) or cat.by_code.get(p_kode)
+                        if full_p:
+                            p_cat_nama = str(full_p.get("nama", "")).lower()
+                            if not p_brand:
+                                p_brand = str(full_p.get("brand", "")).lower()
+                    except Exception:
+                        pass
+                p_tokens = [t for t in re.split(r"\s+", search_kw) if len(t) >= 2]
+                if search_kw and (
+                    search_kw == p_kode or search_kw == p_brand or
+                    search_kw in p_nama or (p_brand and p_brand in search_kw) or
+                    (p_cat_nama and search_kw in p_cat_nama) or
+                    (p_tokens and (all(tok in p_nama or tok in p_brand for tok in p_tokens) or (p_cat_nama and all(tok in p_cat_nama or tok in p_brand for tok in p_tokens))))
+                ):
+                    if p not in m:
+                        m.append(p)
+            return m
 
-            p_tokens = [t for t in re.split(r"\s+", search_kw) if len(t) >= 2]
-            if search_kw and (
-                search_kw == p_kode or search_kw == p_brand or
-                search_kw in p_nama or (p_brand and p_brand in search_kw) or
-                (p_cat_nama and search_kw in p_cat_nama) or
-                (p_tokens and (all(tok in p_nama or tok in p_brand for tok in p_tokens) or (p_cat_nama and all(tok in p_cat_nama or tok in p_brand for tok in p_tokens))))
-            ):
-                matched_candidates.append(p)
+        matched_candidates = _match_list(search_targets)
+        if not matched_candidates and fallback_targets:
+            matched_candidates = _match_list(fallback_targets)
 
         if len(matched_candidates) == 1:
             resolved.append(matched_candidates[0]["kode"])
@@ -243,15 +330,19 @@ def resolve_product_references(
                 p_c_nama = str(p_cat.get("nama", "")).lower()
                 p_c_brand = str(p_cat.get("brand", "")).lower()
                 if search_kw == p_c_kode or clean_search == p_c_kode:
-                    cat_matches.append(p_cat)
+                    if p_cat not in cat_matches:
+                        cat_matches.append(p_cat)
                     break
                 if tokens and all((tok in p_c_nama or tok in p_c_brand) for tok in tokens):
-                    cat_matches.append(p_cat)
+                    if p_cat not in cat_matches:
+                        cat_matches.append(p_cat)
         except Exception as e:
             logger.warning(f"Gagal cek katalog pada resolve_product_references: {e}")
 
-        if cat_matches:
+        if len(cat_matches) == 1:
             resolved.append(cat_matches[0]["kode"])
+        elif len(cat_matches) > 1:
+            return [], False, "rujukan_ambigu"
         else:
             failed_refs.append(str(raw_ref))
 
@@ -408,8 +499,10 @@ def validate_parser_output(
 
     # 4b. Validasi & resolusi rujukan produk untuk evaluasi_kecocokan, tanya_spesifikasi, dan bandingkan
     history_tampil_list = state.get("history_produk_tampil", [])
-    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list and not history_tampil_list:
-        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil dan riwayat kosong (B9)")
+    fokus_list = state.get("produk_dibahas", [])
+    prev_stack_list = state.get("produk_dibahas_sebelumnya", [])
+    if (args.rujukan_produk is not None or parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN)) and not produk_tampil_list and not history_tampil_list and not fokus_list and not prev_stack_list:
+        logger.warning("Rujukan produk diberikan atau aksi berbasis produk saat produk_tampil, fokus, dan riwayat kosong (B9)")
         return (
             ParserOutput(
                 aksi=ActionEnum.TIDAK_JELAS,
@@ -421,20 +514,26 @@ def validate_parser_output(
 
     if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
         raw_refs = args.rujukan_produk if args.rujukan_produk is not None else args.produk
-        if not raw_refs and produk_tampil_list:
-            ptd = state.get("produk_terakhir_dibahas")
-            if ptd:
-                if isinstance(ptd, list):
-                    raw_refs = [x.get("kode") if isinstance(x, dict) else str(x) for x in ptd]
-                elif isinstance(ptd, dict):
-                    raw_refs = [ptd.get("kode")] if ptd.get("kode") else []
+        if not raw_refs:
+            if fokus_list:
+                raw_refs = [c for c in fokus_list if c]
+            elif prev_stack_list and isinstance(prev_stack_list, list) and prev_stack_list[0].get("kode"):
+                raw_refs = [c for c in prev_stack_list[0].get("kode") if c]
+            elif produk_tampil_list:
+                ptd = state.get("produk_terakhir_dibahas")
+                if ptd:
+                    if isinstance(ptd, list):
+                        raw_refs = [x.get("kode") if isinstance(x, dict) else str(x) for x in ptd]
+                    elif isinstance(ptd, dict):
+                        raw_refs = [ptd.get("kode")] if ptd.get("kode") else []
+                    else:
+                        raw_refs = [str(ptd)]
                 else:
-                    raw_refs = [str(ptd)]
-            else:
-                raw_refs = [p.get("kode") for p in produk_tampil_list if p.get("kode")]
+                    raw_refs = [p.get("kode") for p in produk_tampil_list if p.get("kode")]
 
         resolved_codes, is_ref_valid, failed_ref = resolve_product_references(
-            raw_refs, produk_tampil_list, history_tampil=history_tampil_list
+            raw_refs, produk_tampil_list, history_tampil=history_tampil_list,
+            produk_dibahas=fokus_list, produk_dibahas_sebelumnya=prev_stack_list
         )
 
         if not is_ref_valid:
@@ -459,7 +558,10 @@ def validate_parser_output(
         if args.produk_luar_katalog:
             still_outside = []
             for luar_item in args.produk_luar_katalog:
-                res_codes, ok, _ = resolve_product_references([luar_item], produk_tampil_list, history_tampil=history_tampil_list)
+                res_codes, ok, _ = resolve_product_references(
+                    [luar_item], produk_tampil_list, history_tampil=history_tampil_list,
+                    produk_dibahas=fokus_list, produk_dibahas_sebelumnya=prev_stack_list
+                )
                 if ok and res_codes:
                     if not args.produk:
                         args.produk = []

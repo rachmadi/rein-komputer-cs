@@ -126,6 +126,84 @@ def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None)
     return None
 
 
+def update_product_focus(state: dict, action_res=None, gen_out=None, catalog=None) -> None:
+    """Memperbarui state['produk_dibahas'] dan tumpukan state['produk_dibahas_sebelumnya'] (Putaran 13 Butir B)."""
+    new_focus_codes = []
+
+    # 1. Dari keluaran generator (bisa nama produk atau kode)
+    if gen_out and gen_out.produk_dibahas:
+        raw_db = gen_out.produk_dibahas
+        if isinstance(raw_db, str):
+            raw_db = [raw_db]
+        for item in raw_db:
+            if not item:
+                continue
+            item_str = str(item).strip()
+            p = None
+            if catalog:
+                if hasattr(catalog, "get_by_code"):
+                    p = catalog.get_by_code(item_str)
+                elif hasattr(catalog, "by_code"):
+                    p = catalog.by_code.get(item_str.upper()) or catalog.by_code.get(item_str)
+            if p and p.get("kode"):
+                if p["kode"] not in new_focus_codes:
+                    new_focus_codes.append(p["kode"])
+            else:
+                matched_c = None
+                for pt in state.get("produk_tampil", []):
+                    if isinstance(pt, dict) and (item_str.lower() in str(pt.get("nama", "")).lower() or item_str.lower() == str(pt.get("kode", "")).lower()):
+                        matched_c = pt.get("kode")
+                        break
+                if matched_c and matched_c not in new_focus_codes:
+                    new_focus_codes.append(matched_c)
+                elif catalog:
+                    for cp in catalog.products:
+                        if item_str.lower() in str(cp.get("nama", "")).lower():
+                            if cp.get("kode") not in new_focus_codes:
+                                new_focus_codes.append(cp.get("kode"))
+                            break
+
+    # 2. Jika belum ada dari generator, cek rujukan_dipakai di fakta atau aksi
+    if not new_focus_codes and action_res and getattr(action_res, "fakta", None):
+        rujukan = action_res.fakta.get("rujukan_dipakai")
+        if rujukan:
+            if isinstance(rujukan, list):
+                new_focus_codes = [c for c in rujukan if c]
+            elif isinstance(rujukan, str):
+                new_focus_codes = [rujukan]
+        elif action_res.fakta.get("produk_termurah"):
+            pt_code = action_res.fakta["produk_termurah"].get("kode")
+            if pt_code:
+                new_focus_codes = [pt_code]
+        elif action_res.fakta.get("kode_produk"):
+            new_focus_codes = [action_res.fakta["kode_produk"]]
+        elif len(action_res.produk_list or []) == 1:
+            one_c = action_res.produk_list[0].get("kode")
+            if one_c:
+                new_focus_codes = [one_c]
+
+    # Batasi 1-3 kode
+    new_focus_codes = [c.upper() for c in new_focus_codes if c][:3]
+
+    current_focus = state.get("produk_dibahas") or []
+    if new_focus_codes and new_focus_codes != current_focus:
+        if current_focus:
+            prev_stack = list(state.get("produk_dibahas_sebelumnya") or [])
+            # Dedupe: buang jika entri dengan set kode yang sama sudah ada
+            prev_stack = [e for e in prev_stack if set(e.get("kode", [])) != set(current_focus)]
+            hist_len = len(state.get("history", []))
+            turn_num = (hist_len // 2) + 1
+            prev_stack.insert(0, {
+                "kode": list(current_focus),
+                "label_kebutuhan": state.get("kebutuhan_teks") or "",
+                "giliran": turn_num
+            })
+            state["produk_dibahas_sebelumnya"] = prev_stack[:5]
+
+        state["produk_dibahas"] = new_focus_codes
+        state["produk_terakhir_dibahas"] = new_focus_codes[0] if len(new_focus_codes) == 1 else new_focus_codes
+
+
 class SessionPipeline:
     def __init__(self, action_engine: ActionEngine | None = None):
         self.action_engine = action_engine or ActionEngine()
@@ -281,6 +359,8 @@ class SessionPipeline:
                 state["produk_tampil"] = []
                 state["produk_terakhir_dibahas"] = None
                 state["history_produk_tampil"] = []
+                state["produk_dibahas"] = []
+                state["produk_dibahas_sebelumnya"] = []
                 state["profil_aktif"] = None
                 state["batas_bot"] = {}
                 state["kriteria_pelanggan"] = {
@@ -443,7 +523,8 @@ class SessionPipeline:
 
         # Simpan produk yang tampil jika aksi menghasilkan produk
         if action_res.produk_list:
-            state["produk_tampil"] = action_res.produk_list
+            if action_res.fakta.get("jenis_lanjutan") != "termurah_dari_tampil":
+                state["produk_tampil"] = action_res.produk_list
             if "history_produk_tampil" not in state or not isinstance(state["history_produk_tampil"], list):
                 state["history_produk_tampil"] = []
             hist_codes = {p.get("kode") for p in state["history_produk_tampil"] if isinstance(p, dict) and p.get("kode")}
@@ -458,6 +539,9 @@ class SessionPipeline:
             rujukan_list = action_res.fakta.get("rujukan_dipakai")
             if rujukan_list and len(rujukan_list) == 1:
                 state["produk_terakhir_dibahas"] = rujukan_list[0]
+
+        # Update pelacakan produk dari hasil aksi mesin (Putaran 13 Butir B)
+        update_product_focus(state, action_res=action_res, catalog=getattr(self.action_engine, "catalog", None))
 
         # ---------------------------------------------------------------------
         # 3b. PENGHITUNG KELUHAN & TANYA BERUNTUN (Butir 10)
@@ -672,6 +756,9 @@ class SessionPipeline:
             if raw_judul:
                 judul_rek = re.sub(r"^[A-Z]\d{2}\s*[-–—:]\s*", "", str(raw_judul)).strip()
             kartu_html = format_product_cards_message(prods_to_card, judul_rekomendasi=judul_rek)
+
+        # Update pelacakan produk setelah generator selesai (Putaran 13 Butir B)
+        update_product_focus(state, action_res=action_res, gen_out=gen_out, catalog=getattr(self.action_engine, "catalog", None))
 
         # Update riwayat percakapan (maks 8 pesan)
         current_history.append({"role": "assistant", "content": gen_out.teks, "text": gen_out.teks})

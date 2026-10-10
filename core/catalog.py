@@ -687,6 +687,12 @@ class Catalog:
         self.prices = {p["harga_idr"] for p in self.products}
         self._build_aliases()
 
+    def get_by_code(self, code: str) -> dict | None:
+        if not code:
+            return None
+        c_str = str(code).strip()
+        return self.by_code.get(c_str.upper()) or self.by_code.get(c_str)
+
     @classmethod
     def from_qdrant(cls, url: str = "http://localhost:6333", collection: str = "computer_knowledge") -> Catalog:
         import requests
