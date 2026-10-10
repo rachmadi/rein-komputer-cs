@@ -266,7 +266,9 @@ class ActionEngine:
         args = parsed.argumen
 
         # C1: Jika parser mengeluarkan kriteria produk di aksi non-pencarian (tidak_jelas, basa_basi, sapa), jalankan pencarian
-        if aksi in (ActionEnum.TIDAK_JELAS, ActionEnum.BASA_BASI, ActionEnum.SAPA):
+        # (Kecuali jika alasan adalah sistem_error)
+        is_sys_err = getattr(args, "alasan", None) in (AlasanTidakJelasEnum.SISTEM_ERROR, "sistem_error")
+        if aksi in (ActionEnum.TIDAK_JELAS, ActionEnum.BASA_BASI, ActionEnum.SAPA) and not is_sys_err:
             has_crit = bool(
                 args.kategori or args.merek or (args.max_harga is not None) or (args.budget_max is not None) or
                 args.kebutuhan_teks or (parsed.pembaruan_state and (
@@ -281,29 +283,33 @@ class ActionEngine:
                     return self._handle_cari_produk(args, state)
 
         if aksi == ActionEnum.MINTA_REKOMENDASI:
-            return self._handle_minta_rekomendasi(args, state)
+            res = self._handle_minta_rekomendasi(args, state)
         elif aksi == ActionEnum.CARI_PRODUK:
-            return self._handle_cari_produk(args, state)
+            res = self._handle_cari_produk(args, state)
         elif aksi == ActionEnum.EVALUASI_KECOCOKAN:
-            return self._handle_evaluasi_kecocokan(args, state)
+            res = self._handle_evaluasi_kecocokan(args, state)
         elif aksi == ActionEnum.TANYA_SPESIFIKASI:
-            return self._handle_tanya_spesifikasi(args, state)
+            res = self._handle_tanya_spesifikasi(args, state)
         elif aksi == ActionEnum.BANDINGKAN:
-            return self._handle_bandingkan(args, state)
+            res = self._handle_bandingkan(args, state)
         elif aksi == ActionEnum.LANJUTAN_HASIL:
-            return self._handle_lanjutan_hasil(args, state)
+            res = self._handle_lanjutan_hasil(args, state)
         elif aksi == ActionEnum.TANYA_INFO_TOKO:
-            return self._handle_tanya_info_toko(args, state)
+            res = self._handle_tanya_info_toko(args, state)
         elif aksi == ActionEnum.JAWAB_PERTANYAAN_BOT:
-            return self._handle_jawab_pertanyaan_bot(args, state)
+            res = self._handle_jawab_pertanyaan_bot(args, state)
         elif aksi == ActionEnum.PERBAIKI_PERCAKAPAN:
-            return self._handle_perbaiki_percakapan(args, state, parsed=parsed)
+            res = self._handle_perbaiki_percakapan(args, state, parsed=parsed)
         elif aksi == ActionEnum.SAPA:
-            return self._handle_sapa(args, state)
+            res = self._handle_sapa(args, state)
         elif aksi == ActionEnum.BASA_BASI:
-            return self._handle_basa_basi(args, state)
+            res = self._handle_basa_basi(args, state)
         else:  # TIDAK_JELAS
-            return self._handle_tidak_jelas(args, state)
+            res = self._handle_tidak_jelas(args, state)
+
+        if "belum_dicari" not in res.fakta:
+            res.fakta["belum_dicari"] = False if res.produk_list else True
+        return res
 
     # -------------------------------------------------------------------------
     # 1. minta_rekomendasi (B1, B3, B4, B5, B6, B7)
@@ -319,6 +325,7 @@ class ActionEngine:
                 "status": "tanya_kebutuhan",
                 "persona": persona,
                 "slot_diisi": "persona",
+                "belum_dicari": True,
                 "pesan": f"Persona '{persona}' telah dicatat. Tanyakan aktivitas atau kebutuhan spesifik yang akan dijalankan."
             }
             return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
@@ -356,6 +363,9 @@ class ActionEngine:
                         "harga_termurah_kategori": min_cat_price,
                         "harga_termurah_kategori_formatted": format_rupiah(min_cat_price),
                         "kategori": kategori or "katalog",
+                        "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                        "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                        "belum_dicari": False,
                         "pesan": f"Belum ada produk dalam rentang anggaran {format_rupiah(budget_max)}. Opsi termurah yang tersedia adalah {format_rupiah(min_cat_price)}."
                     }
                     if merek:
@@ -437,6 +447,9 @@ class ActionEngine:
                     "status": "produk_tidak_di_katalog",
                     "merek": merek,
                     "kontak_staf": KONTAK_STAF,
+                    "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                    "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                    "belum_dicari": False,
                     "pesan": f"Produk dengan merek '{merek}' saat ini belum tersedia di katalog ReIn Komputer."
                 }
                 return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
@@ -446,6 +459,9 @@ class ActionEngine:
                     "merek": merek,
                     "kategori": kategori,
                     "kontak_staf": KONTAK_STAF,
+                    "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                    "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                    "belum_dicari": False,
                     "pesan": "Saat ini belum ada produk yang memenuhi kriteria tersebut."
                 }
                 return ActionResult(aksi=ActionEnum.MINTA_REKOMENDASI, fakta=fakta, produk_list=[])
@@ -482,6 +498,9 @@ class ActionEngine:
                     "spesifikasi": clean_specs(closest_prod),
                     "kekurangan": unmet
                 },
+                "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                "belum_dicari": False,
                 "kontak_staf": KONTAK_STAF,
                 "pesan": "Saat ini belum ada stok produk yang memenuhi syarat minimum kebutuhan tersebut."
             }
@@ -726,6 +745,9 @@ class ActionEngine:
                     "status": "produk_tidak_di_katalog",
                     "produk_diminta": [prod_diminta],
                     "padanan_terdekat": padanan,
+                    "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                    "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                    "belum_dicari": False,
                     "pesan": f"Produk/merek {prod_diminta} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
                 }
                 return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[padanan] if padanan else [])
@@ -738,7 +760,8 @@ class ActionEngine:
                     "gpu": gpu, "max_harga": max_harga, "ram_gb_min": ram_gb_min
                 },
                 "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
-                "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p))))
+                "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                "belum_dicari": False
             }
             if kriteria_diabaikan:
                 fakta["kriteria_diabaikan_data_tak_ada"] = kriteria_diabaikan
@@ -752,7 +775,8 @@ class ActionEngine:
                 "total_cocok": len(matches),
                 "total_ditemukan": len(formatted_prods),
                 "produk": formatted_prods,
-                "butuh_persempit": is_broad
+                "butuh_persempit": is_broad,
+                "belum_dicari": False
             }
             if kriteria_diabaikan:
                 fakta["kriteria_diabaikan_data_tak_ada"] = kriteria_diabaikan
@@ -1457,6 +1481,7 @@ class ActionEngine:
             "topik": topik,
             "data_tersedia": False,
             "kontak_staf": kontak_staf,
+            "belum_dicari": True,
             "arahan": f"Berikan kontak staf toko di {kontak_staf} secara sopan tanpa menyebut estimasi durasi respons atau janji spesifik."
         }
         return ActionResult(aksi=ActionEnum.TANYA_INFO_TOKO, fakta=fakta, produk_list=[])
@@ -1509,6 +1534,7 @@ class ActionEngine:
                 "status": "tanya_kebutuhan",
                 "persona": state.get("persona") or slot_val,
                 "slot_diisi": slot,
+                "belum_dicari": True,
                 "pesan": f"Informasi pemakai '{slot_val}' telah dicatat. Tanyakan kebutuhan atau aktivitas spesifik yang akan dijalankan."
             }
             return ActionResult(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, fakta=fakta, produk_list=[])
@@ -1519,6 +1545,7 @@ class ActionEngine:
                 "status": "jawaban_dicatat",
                 "slot_diisi": slot,
                 "nilai": slot_val,
+                "belum_dicari": True,
                 "pesan": "Jawaban telah dicatat."
             }
             return ActionResult(aksi=ActionEnum.JAWAB_PERTANYAAN_BOT, fakta=fakta, produk_list=[])
@@ -1654,7 +1681,8 @@ class ActionEngine:
             "kategori": state.get("kategori"),
             "pemakai": state.get("persona") or state.get("pemakai"),
             "produk_tampil": state.get("produk_tampil", []),
-            "pending_question": state.get("pending_question")
+            "pending_question": state.get("pending_question"),
+            "belum_dicari": True
         }
         return ActionResult(aksi=ActionEnum.PERBAIKI_PERCAKAPAN, fakta=fakta, produk_list=[])
 
@@ -1664,7 +1692,8 @@ class ActionEngine:
     def _handle_sapa(self, args: ActionArguments, state: dict) -> ActionResult:
         fakta = {
             "status": "sapaan",
-            "sebutan": state.get("sebutan")
+            "sebutan": state.get("sebutan"),
+            "belum_dicari": True
         }
         return ActionResult(aksi=ActionEnum.SAPA, fakta=fakta, produk_list=[])
 
@@ -1672,7 +1701,8 @@ class ActionEngine:
         jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
         fakta = {
             "status": "basa_basi",
-            "jenis": jenis
+            "jenis": jenis,
+            "belum_dicari": True
         }
         return ActionResult(aksi=ActionEnum.BASA_BASI, fakta=fakta, produk_list=[])
 
@@ -1691,7 +1721,8 @@ class ActionEngine:
             "status": "sistem_error" if alasan == "sistem_error" else "tidak_jelas",
             "alasan": alasan,
             "kontak_staf": KONTAK_STAF,
-            "pesan": pesan_map[alasan]
+            "pesan": pesan_map.get(alasan, pesan_map["tidak_dipahami"]),
+            "belum_dicari": True
         }
         return ActionResult(aksi=ActionEnum.TIDAK_JELAS, fakta=fakta, produk_list=[])
 

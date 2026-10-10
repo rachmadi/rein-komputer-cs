@@ -261,6 +261,31 @@ class GroundingChecker:
                     violations.append("Mengklaim produk tersedia padahal fakta total_ditemukan = 0 atau status tidak ditemukan.")
                     break
 
+        # D1: Jika belum_dicari == True, generator dilarang menyatakan "ada" atau "tidak ada" tanpa lookup
+        if fakta.get("belum_dicari"):
+            klaim_tanpa_lookup = [
+                r"\b(?:stok(?:nya)?\s+ada|kami\s+punya|kami\s+ada|tersedia\s+di\s+toko|tersedia\s+stok|stok\s+tersedia)\b",
+                r"\b(?:stok(?:nya)?\s+(?:kosong|habis)|kami\s+tidak\s+(?:ada|punya|jual)|tidak\s+tersedia\s+di\s+toko|tidak\s+ada\s+stok)\b"
+            ]
+            for pat in klaim_tanpa_lookup:
+                if re.search(pat, teks, re.IGNORECASE):
+                    violations.append("Menyatakan produk/stok ada atau tidak ada padahal belum_dicari bernilai True.")
+                    break
+
+        # D3: Jangan menyebut "data belum tercatat/belum lengkap" untuk kategori yang ada di katalog
+        catalog_cats = ["laptop", "desktop", "printer", "komputer", "pc"]
+        cat_present = any(c in teks.lower() for c in catalog_cats) or (state and str(state.get("kategori", "")).lower() in catalog_cats) or (str(fakta.get("kategori", "")).lower() in catalog_cats)
+        if cat_present:
+            pola_data_belum_ada = [
+                r"\b(?:data\s+.*?(?:belum\s+(?:tercatat|lengkap|ada)|tidak\s+lengkap))\b",
+                r"\b(?:belum\s+tercatat\s+di\s+(?:sistem|data|katalog))\b",
+                r"\b(?:informasi\s+.*?(?:kategori|produk)\s+.*?(?:belum\s+(?:tercatat|lengkap)))\b"
+            ]
+            for pat in pola_data_belum_ada:
+                if re.search(pat, teks, re.IGNORECASE):
+                    violations.append("Menyebut 'data belum tercatat/belum lengkap' untuk kategori yang ada di katalog.")
+                    break
+
         # 8. Kartu produk harus cocok dengan produk yang disebut di teks
         produk_list = fakta.get("produk") or fakta.get("perbandingan") or (state.get("produk_tampil") if state else [])
         produk_luar = fakta.get("produk_luar_katalog") or []

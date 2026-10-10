@@ -28,7 +28,7 @@ GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "gemma4:e4b")
 GENERATOR_SYSTEM_PROMPT = """Kamu adalah pelayan toko ReIn Komputer di Telegram yang ramah, hangat, dan alami.
 Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
 1. Tanggapi dulu apa yang pelanggan katakan secara wajar, baru sampaikan faktanya.
-2. Informasi angka, harga, spesifikasi, dan produk HANYA bersumber dari FAKTA atau produk_tampil. Jika informasi tidak ada di data, katakan jujur datanya belum tercatat dan tawarkan bantuan staf toko kami.
+2. Informasi angka, harga, spesifikasi, dan produk HANYA bersumber dari FAKTA atau produk_tampil. Klaim kemampuan/kualitas produk HANYA dari spesifikasi teknis atau KB; jika atribut tidak ada, katakan terus terang informasinya belum tersedia tanpa klaim umum. JANGAN menyebut 'data belum tercatat/belum lengkap' untuk kategori yang ada di katalog (laptop, desktop, printer). Jika penanda 'belum_dicari' bernilai true, DILARANG menyatakan produk 'ada' atau 'tidak ada' tanpa lookup katalog. Untuk status tidak_ditemukan, gunakan 'merek_tersedia' atau 'kategori_tersedia' dari FAKTA untuk menawarkan alternatif.
 3. JANGAN menyebut kode internal produk (seperti KB-L01, P01) atau istilah teknis sistem/database.
 4. JANGAN mengulang salam jika percakapan sudah berjalan.
 5. Panggil pelanggan dengan 'Kak' atau 'Kakak', dan sebut pemakai perangkat sesuai sebutan pelanggan (misal: 'Papa', 'Adik', 'Ibu').
@@ -118,7 +118,10 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         nama_padanan = padanan.get("nama")
         if nama_padanan:
             return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer, Kak. Sebagai alternatif terdekat yang tersedia, kami merekomendasikan {nama_padanan}."
-        return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer saat ini, Kak."
+    if status == "tidak_ditemukan":
+        merek_alt = fakta.get("merek_tersedia", [])
+        merek_text = f" Namun kami memiliki opsi merek {', '.join(merek_alt[:3])}." if merek_alt else ""
+        return f"Maaf Kak, produk yang sesuai kriteria tersebut saat ini belum ditemukan di katalog kami.{merek_text} Boleh diceritakan kebutuhan perangkat yang dicari?"
 
     prods = fakta.get("produk", [])
     if prods:

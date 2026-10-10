@@ -194,17 +194,19 @@ class SessionPipeline:
         catalog_brands = set(get_catalog_brands())
 
         detected_kategori = None
-        if parsed.argumen.kategori and parsed.argumen.kategori.lower() in catalog_cats:
-            detected_kategori = parsed.argumen.kategori.lower()
-        elif parsed.pembaruan_state.kategori and parsed.pembaruan_state.kategori.lower() in catalog_cats:
-            detected_kategori = parsed.pembaruan_state.kategori.lower()
-        else:
-            if re.search(r"\b(laptop|notebook|komputer jinjing)\b", pesan_pelanggan, re.IGNORECASE):
-                detected_kategori = "laptop"
-            elif re.search(r"\b(desktop|pc|komputer meja)\b", pesan_pelanggan, re.IGNORECASE):
-                detected_kategori = "desktop"
-            elif re.search(r"\b(printer)\b", pesan_pelanggan, re.IGNORECASE):
-                detected_kategori = "printer"
+        is_sys_err = (parsed.aksi == ActionEnum.TIDAK_JELAS and getattr(parsed.argumen, "alasan", None) == AlasanTidakJelasEnum.SISTEM_ERROR)
+        if not is_sys_err:
+            if parsed.argumen.kategori and parsed.argumen.kategori.lower() in catalog_cats:
+                detected_kategori = parsed.argumen.kategori.lower()
+            elif parsed.pembaruan_state.kategori and parsed.pembaruan_state.kategori.lower() in catalog_cats:
+                detected_kategori = parsed.pembaruan_state.kategori.lower()
+            else:
+                if re.search(r"\b(laptop|notebook|komputer jinjing)\b", pesan_pelanggan, re.IGNORECASE):
+                    detected_kategori = "laptop"
+                elif re.search(r"\b(desktop|pc|komputer meja)\b", pesan_pelanggan, re.IGNORECASE):
+                    detected_kategori = "desktop"
+                elif re.search(r"\b(printer)\b", pesan_pelanggan, re.IGNORECASE):
+                    detected_kategori = "printer"
 
         if detected_kategori:
             parsed.argumen.kategori = detected_kategori
