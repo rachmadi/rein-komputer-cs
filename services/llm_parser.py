@@ -72,7 +72,7 @@ KEBIJAKAN BATAS AKSI (B1, B2, B3):
   * Atribut: 'harga', 'ram', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'storage', 'lainnya'.
   * Bila pelanggan menanyakan gambaran rincian spesifikasi secara umum atau ringkasan teknis tanpa menyebut satu komponen khusus, isi 'atribut' dengan null (BUKAN 'lainnya', BUKAN 'spek_umum').
   * Gunakan 'lainnya' HANYA jika menanyakan fitur teknis khusus yang tidak ada pada daftar atribut di atas (seperti pena digital stylus, sensor khusus, bahan sasis).
-- Kebutuhan baru di pesan:
+- Pembaruan kebutuhan pelanggan:
   * Jika pelanggan menyebutkan aktivitas atau software komputasi baru (misal: 'editing video 4K', 'animasi blender', 'programming docker', 'render 3D', 'kasir toko'), argumen 'kebutuhan_teks' WAJIB terisi dengan ringkasan aktivitas tersebut!
 - Untuk referensi produk pada 'evaluasi_kecocokan', 'tanya_spesifikasi', dan 'bandingkan', keluarkan 'rujukan_produk' berupa nomor urut ([1], [2], [1, 2]) atau nama/merek parsial (misal ['advan'], ['asus']) dari daftar yang ada pada layar. JANGAN mengeluarkan kode produk internal katalog.
 - Untuk kartu grafis diskrit (misal rtx 4060, rtx 4050, gtx 1650), masukkan ke argumen 'gpu', BUKAN 'nama_model'.

@@ -1,0 +1,8 @@
+{
+  "dataset": "eval/replay_putaran9.jsonl",
+  "total_turns": 134,
+  "repetitions": 3,
+  "identical_turns": 134,
+  "determinism_percent": 100.0,
+  "status": "PASS"
+}

@@ -132,6 +132,7 @@ class ActionArguments(BaseModel):
 
     # lanjutan_hasil, perbaiki_percakapan, basa_basi
     jenis: Optional[JenisEnum] = None
+    jenis_lanjutan: Optional[Union[JenisEnum, str, None]] = None
     filter: Optional[Dict[str, Any]] = None
 
     # tanya_info_toko

@@ -39,8 +39,8 @@ ATURAN UTAMA (BATASAN RESPONS C):
 6. ATURAN SLOT: Jangan pernah menanyakan ulang slot yang sudah terisi di 'slot_sudah_diketahui' (misal jika kategori sudah diketahui, jangan tanyakan kategori; jika persona atau kebutuhan/aktivitas sudah diketahui, jangan tanyakan hal tersebut). Jika ada slot penting yang belum diketahui, tanyakan MAKSIMAL SATU slot saja di 'pertanyaan_diajukan' dan teksmu.
 7. Jika pelanggan menegur, mengoreksi, atau komplain, akui dan minta maaf secukupnya secara sopan, lalu fokus ke kebutuhan pelanggan.
 8. JANGAN mengulang salam jika percakapan sudah berjalan.
-9. JANGAN menyebut kode internal produk (seperti 'KB-L01', 'P01'), nama kolom database, atau istilah sistem internal seperti kata 'tier', 'cpu_tier', atau 'selisih'. Gunakan deskripsi spesifikasi yang ramah pelanggan (misal sebutkan lini prosesor terkait, besaran RAM, dan media simpan SSD).
-10. Untuk garansi, servis, pembayaran, dan info toko yang datanya tidak ada, sarankan pelanggan agar berkonsultasi ke perwakilan toko bantuan kami tanpa membuat janji berlebih.
+9. JANGAN menyebut kode internal produk (seperti 'KB-L01', 'P01'), nama kolom database, atau istilah sistem internal seperti kata 'tier', 'cpu_tier', 'selisih', 'filter', 'kriteria', 'slot', atau 'state'. Gunakan deskripsi spesifikasi yang ramah pelanggan (misal sebutkan lini prosesor terkait, besaran RAM, dan media simpan SSD).
+10. Untuk garansi, servis, pembayaran, dan info toko yang datanya tidak ada, sarankan pelanggan agar berkonsultasi langsung melalui narahubung resmi tanpa membuat janji berlebih.
 11. Jika status fakta adalah 'sebagian_tidak_di_katalog' atau terdapat 'produk_luar_katalog', jelaskan secara jujur dan ramah bahwa unit terkait belum tercantum pada etalase toko kami, lalu berikan komparasi spesifikasi unit etalase yang ada.
 12. Giliran informasi murni (tanya_spesifikasi, tanya_info_toko, bandingkan) DILARANG mengajukan pertanyaan di akhir pesan.
 13. Khusus aksi tanya_spesifikasi: Teks jawaban WAJIB secara eksplisit memuat nilai spesifikasi yang ditanyakan (seperti kapasitas RAM, tipe prosesor, ukuran layar) sesuai FAKTA. Jangan pernah menjawab hanya secara umum tanpa mencantumkan nilai spesifiknya, dan selalu konsisten dengan kategori produk aktif (laptop/desktop/printer).
@@ -277,6 +277,11 @@ def generate_response(
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", out.teks.strip()) if s.strip()]
     if len(sentences) > 3:
         out.teks = " ".join(sentences[:3]).strip()
+
+    if out.teks:
+        out.teks = re.sub(r"\bfilter\b", "pencarian", out.teks, flags=re.IGNORECASE)
+        out.teks = re.sub(r"\btier\b", "tingkat", out.teks, flags=re.IGNORECASE)
+        out.teks = re.sub(r"\bselisih\b", "perbedaan", out.teks, flags=re.IGNORECASE)
 
     if len(out.teks) > 420:
         truncated = out.teks[:420]

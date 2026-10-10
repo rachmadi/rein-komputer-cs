@@ -263,7 +263,7 @@ def check_g6() -> Tuple[bool, str]:
     eval_files = glob.glob("eval/**", recursive=True)
     eval_ngrams = set()
     for ef in eval_files:
-        if os.path.isfile(ef) and not ef.endswith(".json") and not ef.endswith(".jsonl") and "evidence" not in ef:
+        if os.path.isfile(ef) and not ef.endswith(".json") and not ef.endswith(".jsonl"):
             # Batasi ke teks/csv mentah eval
             try:
                 with open(ef, "r", encoding="utf-8") as f:

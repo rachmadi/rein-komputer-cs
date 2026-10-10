@@ -476,12 +476,11 @@ class ActionEngine:
     def _handle_cari_produk(self, args: ActionArguments, state: dict) -> ActionResult:
         kategori = args.kategori or state.get("kategori")
         merek = args.merek
-        merek_kecuali = args.merek_kecuali
-        nama_model = args.nama_model
-        gpu = args.gpu
-
         kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
         batas_bot = state.get("batas_bot", {}) or {}
+        merek_kecuali = args.merek_kecuali or state.get("merek_kecuali") or kriteria_pelanggan.get("merek_kecuali")
+        nama_model = args.nama_model
+        gpu = args.gpu
 
         # Prioritaskan budget pelanggan di atas batas bot (F1)
         cust_max_harga = kriteria_pelanggan.get("max_harga")
@@ -573,8 +572,8 @@ class ActionEngine:
                 if m_clean != p_brand and m_clean not in p_brand and m_clean not in p_nama:
                     continue
             if merek_kecuali:
-                mk_clean = str(merek_kecuali).strip().lower()
-                if mk_clean == p_brand or mk_clean in p_brand or mk_clean in p_nama:
+                mk_list = [str(x).strip().lower() for x in (merek_kecuali if isinstance(merek_kecuali, list) else str(merek_kecuali).split(","))]
+                if any(mk == p_brand or mk in p_brand or mk in p_nama for mk in mk_list):
                     continue
             if nama_model and nama_model.strip().lower() not in p_nama:
                 continue
@@ -1141,18 +1140,16 @@ class ActionEngine:
             }
             return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
 
-        jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
+        raw_j = getattr(args, "jenis", None) or getattr(args, "jenis_lanjutan", None)
+        if raw_j and str(raw_j).lower() != "none":
+            jenis = raw_j.value if hasattr(raw_j, "value") else str(raw_j)
+        else:
+            jenis = "yang_lain"
 
         # B3: Kategori aktif diambil dari produk_tampil di sesi
         kategori = tampil[0].get("kategori") or state.get("kategori") or "laptop"
 
         candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
-
-        # E4: Pertahankan filter merek jika ada di args atau state
-        merek = args.merek or state.get("merek")
-        if merek:
-            m_clean = str(merek).strip().lower()
-            candidates = [p for p in candidates if m_clean == get_product_brand(p) or m_clean in str(p.get("nama", "")).lower()]
 
         kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
         batas_bot = state.get("batas_bot", {}) or {}
@@ -1173,11 +1170,25 @@ class ActionEngine:
         else:
             user_max_harga = None
 
-        merek_kecuali = args.merek_kecuali
+        merek_kecuali = args.merek_kecuali or state.get("merek_kecuali") or kriteria_pelanggan.get("merek_kecuali")
         if jenis == "yang_lain" and not merek_kecuali:
             curr_brand = get_product_brand(tampil[0]) if tampil else None
             if curr_brand and not args.merek:
                 merek_kecuali = curr_brand
+
+        # E4: Pertahankan filter merek jika ada di args atau state (kecuali jika jenis yang_lain / ada merek_kecuali)
+        if (jenis == "yang_lain" or merek_kecuali) and not args.merek:
+            merek = None
+        else:
+            merek = args.merek or state.get("merek")
+
+        if merek:
+            m_clean = str(merek).strip().lower()
+            candidates = [p for p in candidates if m_clean == get_product_brand(p) or m_clean in str(p.get("nama", "")).lower()]
+
+        mk_list = [str(x).strip().lower() for x in (merek_kecuali if isinstance(merek_kecuali, list) else str(merek_kecuali).split(","))] if merek_kecuali else []
+        if mk_list:
+            candidates = [p for p in candidates if not any(mk == get_product_brand(p) or mk in get_product_brand(p) or mk in str(p.get("nama", "")).lower() for mk in mk_list)]
 
         filter_dipakai = {
             "kategori": kategori,
@@ -1190,13 +1201,15 @@ class ActionEngine:
             filter_dipakai["merek_kecuali"] = merek_kecuali
 
         batas_dipakai = None
-        if jenis == "lebih_murah" or user_max_harga is not None:
+        if jenis == "lebih_murah":
             lowest_p = min((get_product_price(p) for p in tampil), default=10_000_000)
             target_max = user_max_harga if user_max_harga is not None else lowest_p
-            matches = [p for p in candidates if get_product_price(p) <= target_max and (user_max_harga is not None or get_product_price(p) < lowest_p)]
+            matches = [p for p in candidates if get_product_price(p) < lowest_p and (user_max_harga is None or get_product_price(p) <= user_max_harga)]
             # Jika user_max_harga is None dan merek tidak punya opsi lebih murah, cari opsi lebih murah di seluruh kategori
             if not matches and user_max_harga is None and merek and not args.merek:
                 cat_candidates = [p for p in self.catalog.products if p.get("kategori", "").lower() == str(kategori).lower()]
+                if mk_list:
+                    cat_candidates = [p for p in cat_candidates if not any(mk == get_product_brand(p) or mk in get_product_brand(p) or mk in str(p.get("nama", "")).lower() for mk in mk_list)]
                 matches = [p for p in cat_candidates if get_product_price(p) < lowest_p]
             matches.sort(key=lambda x: -get_product_price(x))
 
@@ -1267,33 +1280,16 @@ class ActionEngine:
             batas_dipakai = highest_p
             state["budget"] = get_product_price(matches[-1]) if matches else highest_p
 
-        elif jenis == "yang_lain" or jenis == "filter_tambahan" or merek_kecuali or args.filter:
+        elif jenis in ("yang_lain", "filter_tambahan") or merek_kecuali or args.filter:
             seen_kodes = {p.get("kode") for p in tampil}
             matches = [p for p in candidates if p.get("kode") not in seen_kodes]
             if user_max_harga is not None:
                 matches = [p for p in matches if get_product_price(p) <= user_max_harga]
-            if not matches:
+            if not matches and not seen_kodes:
                 matches = [p for p in candidates if user_max_harga is None or get_product_price(p) <= user_max_harga]
-            if merek_kecuali:
-                mk_clean = str(merek_kecuali).strip().lower()
-                matches = [
-                    p for p in matches
-                    if mk_clean != get_product_brand(p)
-                    and mk_clean not in get_product_brand(p)
-                    and mk_clean not in str(p.get("nama", "")).lower()
-                ]
             matches.sort(key=lambda x: get_product_price(x))
         else:
             matches = []
-
-        if merek_kecuali and jenis != "yang_lain":
-            mk_clean = str(merek_kecuali).strip().lower()
-            matches = [
-                p for p in matches
-                if mk_clean != get_product_brand(p)
-                and mk_clean not in get_product_brand(p)
-                and mk_clean not in str(p.get("nama", "")).lower()
-            ]
 
         top = matches[:3]
         formatted = []
@@ -1319,6 +1315,16 @@ class ActionEngine:
                 "screen_inch": p.get("screen_inch"),
                 "image_url": p.get("image_url")
             })
+
+        if not formatted:
+            fakta = {
+                "status": "tidak_ditemukan",
+                "filter_dipakai": filter_dipakai,
+                "kategori": kategori,
+                "kategori_dipakai": kategori,
+                "pesan": "Tidak ada pilihan lain yang tersedia di katalog dengan kriteria tersebut."
+            }
+            return ActionResult(aksi=ActionEnum.LANJUTAN_HASIL, fakta=fakta, produk_list=[])
 
         fakta = {
             "status": "sukses",

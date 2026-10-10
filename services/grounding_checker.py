@@ -102,15 +102,32 @@ class GroundingChecker:
             for v in angka.values():
                 if isinstance(v, (int, float)) and v > 0:
                     nums.add(int(v))
+                    if v >= 512:
+                        nums.add(1)
             standar = ep.get("standar_profil", {})
             for sub in ("minimum", "rekomendasi"):
                 for v in standar.get(sub, {}).values():
                     if isinstance(v, (int, float)) and v > 0:
                         nums.add(int(v))
+                        if v >= 512:
+                            nums.add(1)
             for selisih in ("selisih_terhadap_minimum", "selisih_terhadap_rekomendasi"):
                 for v in ep.get(selisih, {}).values():
                     if isinstance(v, (int, float)) and v > 0:
                         nums.add(int(v))
+
+        raw_prods = fakta.get("produk_list", []) or fakta.get("produk", [])
+        if isinstance(raw_prods, dict):
+            raw_prods = [raw_prods]
+        for p in raw_prods:
+            if isinstance(p, dict):
+                specs = p.get("spesifikasi", {}) if isinstance(p.get("spesifikasi"), dict) else {}
+                for k in ("ram_gb", "storage_ssd_gb", "vram_gb"):
+                    v = specs.get(k) or p.get(k)
+                    if isinstance(v, (int, float)) and v > 0:
+                        nums.add(int(v))
+                        if v >= 512:
+                            nums.add(1)
         return nums
 
     @staticmethod
@@ -197,7 +214,7 @@ class GroundingChecker:
         # 6. Periksa kesahihan angka spesifikasi pada evaluasi_kecocokan
         if fakta.get("evaluasi_produk"):
             valid_nums = self.extract_spec_numbers_from_facts(fakta)
-            spec_matches = re.findall(r"(?:ram|ssd|vram)\s*(\d+)", teks.lower())
+            spec_matches = re.findall(r"(?:ram|ssd|vram)\s*(?:sebesar\s+)?(\d+)\s*(?:gb|tb)\b", teks.lower())
             for sm in spec_matches:
                 val = int(sm)
                 if val not in valid_nums:

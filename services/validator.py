@@ -90,9 +90,9 @@ def resolve_product_references(
         return [p.get("kode") for p in tampil if p.get("kode")], True, None
 
     ordinal_map = {
-        "1": 0, "pertama": 0, "yang pertama": 0, "kesatu": 0, "no 1": 0, "no. 1": 0, "ke-1": 0,
-        "2": 1, "kedua": 1, "yang kedua": 1, "no 2": 1, "no. 2": 1, "ke-2": 1,
-        "3": 2, "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2, "ke-3": 2,
+        "pertama": 0, "yang pertama": 0, "kesatu": 0, "no 1": 0, "no. 1": 0, "ke-1": 0,
+        "kedua": 1, "yang kedua": 1, "no 2": 1, "no. 2": 1, "ke-2": 1,
+        "ketiga": 2, "yang ketiga": 2, "no 3": 2, "no. 3": 2, "ke-3": 2,
     }
 
     norm_tampil = []
@@ -202,19 +202,26 @@ def resolve_product_references(
             p_nama = str(p.get("nama", "")).lower()
             p_brand = str(p.get("brand", "")).lower()
 
-            # Hidrasi nama dan brand dari katalog jika tampil hanya memuat kode
-            if (not p_brand or p_nama == p_kode) and p_kode:
+            p_cat_nama = ""
+            if p_kode:
                 try:
                     from services.catalog_service import get_active_catalog
                     cat = get_active_catalog()
                     full_p = cat.by_code.get(p_kode.upper()) or cat.by_code.get(p_kode)
                     if full_p:
-                        p_nama = str(full_p.get("nama", "")).lower()
-                        p_brand = str(full_p.get("brand", "")).lower()
+                        p_cat_nama = str(full_p.get("nama", "")).lower()
+                        if not p_brand:
+                            p_brand = str(full_p.get("brand", "")).lower()
                 except Exception:
                     pass
 
-            if search_kw and (search_kw == p_kode or search_kw == p_brand or search_kw in p_nama or (p_brand and p_brand in search_kw)):
+            p_tokens = [t for t in re.split(r"\s+", search_kw) if len(t) >= 2]
+            if search_kw and (
+                search_kw == p_kode or search_kw == p_brand or
+                search_kw in p_nama or (p_brand and p_brand in search_kw) or
+                (p_cat_nama and search_kw in p_cat_nama) or
+                (p_tokens and (all(tok in p_nama or tok in p_brand for tok in p_tokens) or (p_cat_nama and all(tok in p_cat_nama or tok in p_brand for tok in p_tokens))))
+            ):
                 matched_candidates.append(p)
 
         if len(matched_candidates) == 1:
@@ -326,6 +333,15 @@ def validate_parser_output(
         cat_clean = state_up.kategori.lower().strip()
         if cat_clean in catalog_cats:
             state_up.kategori = cat_clean
+
+    # 3a. Normalisasi merek_kecuali jika terisi nama GPU/chipmaker
+    if args.merek_kecuali:
+        mk_val = str(args.merek_kecuali).lower()
+        gpu_chipmakers = ["nvidia", "geforce", "rtx", "gtx", "radeon"]
+        if any(chip in mk_val for chip in gpu_chipmakers):
+            if not args.gpu:
+                args.gpu = args.merek_kecuali
+            args.merek_kecuali = None
 
     # 3b. Validasi nilai slot: tolak nilai kosong atau negasi -> bertentangan
     if parsed.aksi == ActionEnum.JAWAB_PERTANYAAN_BOT:
