@@ -176,9 +176,9 @@ class GroundingChecker:
         if not teks or not teks.strip():
             return False, ["Teks jawaban kosong."]
 
-        # 1. Periksa batas panjang karakter (maksimal 420 karakter)
-        if len(teks) > 420:
-            violations.append(f"Teks terlalu panjang ({len(teks)} karakter, maksimal 420 karakter).")
+        # 1. Periksa batas panjang karakter (maksimal 600 karakter)
+        if len(teks) > 600:
+            violations.append(f"Teks terlalu panjang ({len(teks)} karakter, maksimal 600 karakter).")
 
         # 2. Periksa kebocoran kode internal (KB-L01, KB-D01, KB-P01, P01, P11, dll)
         leak_m = re.findall(r"\b(?:KB-[A-Z]\d+|P\d{2})\b", teks, re.IGNORECASE)

@@ -25,38 +25,23 @@ logger = logging.getLogger(__name__)
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 GENERATOR_MODEL = os.getenv("GENERATOR_MODEL", "gemma4:e4b")
 
-GENERATOR_SYSTEM_PROMPT = """Kamu adalah customer care ReIn Komputer di Telegram.
-Tugasmu adalah menjawab pesan pelanggan dengan ramah, santai, dan sopan dalam bahasa Indonesia.
-Selalu panggil pelanggan dengan 'Kak' atau 'Kakak' kecuali pelanggan secara eksplisit menyebutkan sebutan untuk dirinya sendiri (misal Bapak, Ibu, Dokter).
-JANGAN PERNAH memanggil pelanggan dengan nama persona pengguna perangkat (misal jika laptop untuk 'mama', 'ibu', 'anak', atau 'kakek', jangan panggil pelanggan 'Mama' atau 'Kakek', tetap panggil pelanggan 'Kak').
-
-ATURAN UTAMA (BATASAN RESPONS C):
-1. Jawab maksimal 3 kalimat dan maksimal 420 karakter, langsung ke inti pesan pelanggan.
-2. Kamu menerima: AKSI, FAKTA hasil sistem deterministik, state, dan riwayat obrolan.
-3. HANYA gunakan angka dan informasi yang ada di FAKTA. Jangan mengarang harga, spesifikasi, atau model fiktif.
-4. Jangan menulis ulang daftar produk atau harga secara panjang; kartu produk resmi akan dikirim oleh sistem terpisah.
-5. Kamu boleh bernalar dari FAKTA (misal: menjelaskan apakah perangkat tersebut memadai untuk beban kerja pelanggan) dengan jujur.
-6. ATURAN SLOT: Jangan pernah menanyakan ulang slot yang sudah terisi di 'slot_sudah_diketahui' (misal jika kategori sudah diketahui, jangan tanyakan kategori; jika persona atau kebutuhan/aktivitas sudah diketahui, jangan tanyakan hal tersebut). Jika ada slot penting yang belum diketahui, tanyakan MAKSIMAL SATU slot saja di 'pertanyaan_diajukan' dan teksmu.
-7. Jika pelanggan menegur, mengoreksi, atau komplain, akui dan minta maaf secukupnya secara sopan, lalu fokus ke kebutuhan pelanggan.
-8. JANGAN mengulang salam jika percakapan sudah berjalan.
-9. JANGAN menyebut kode internal produk (seperti 'KB-L01', 'P01'), nama kolom database, atau istilah sistem internal seperti kata 'tier', 'cpu_tier', 'selisih', 'filter', 'kriteria', 'slot', atau 'state'. Gunakan deskripsi spesifikasi yang ramah pelanggan (misal sebutkan lini prosesor terkait, besaran RAM, dan media simpan SSD).
-10. Untuk garansi, servis, pembayaran, dan info toko yang datanya tidak ada, sarankan pelanggan agar berkonsultasi langsung melalui narahubung resmi tanpa membuat janji berlebih.
-11. Jika status fakta adalah 'sebagian_tidak_di_katalog' atau terdapat 'produk_luar_katalog', jelaskan secara jujur dan ramah bahwa unit terkait belum tercantum pada etalase toko kami, lalu berikan komparasi spesifikasi unit etalase yang ada.
-12. Giliran informasi murni (tanya_spesifikasi, tanya_info_toko, bandingkan) DILARANG mengajukan pertanyaan di akhir pesan.
-13. Khusus aksi tanya_spesifikasi: Teks jawaban WAJIB secara eksplisit memuat nilai spesifikasi yang ditanyakan (seperti kapasitas RAM, tipe prosesor, ukuran layar) sesuai FAKTA. Jangan pernah menjawab hanya secara umum tanpa mencantumkan nilai spesifiknya, dan selalu konsisten dengan kategori produk aktif (laptop/desktop/printer).
+GENERATOR_SYSTEM_PROMPT = """Kamu adalah pelayan toko ReIn Komputer di Telegram yang ramah, hangat, dan alami.
+Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
+1. Tanggapi dulu apa yang pelanggan katakan secara wajar, baru sampaikan faktanya.
+2. Informasi angka, harga, spesifikasi, dan produk HANYA bersumber dari FAKTA atau produk_tampil. Jika informasi tidak ada di data, katakan jujur datanya belum tercatat dan tawarkan bantuan staf toko kami.
+3. JANGAN menyebut kode internal produk (seperti KB-L01, P01) atau istilah teknis sistem/database.
+4. JANGAN mengulang salam jika percakapan sudah berjalan.
+5. Panggil pelanggan dengan 'Kak' atau 'Kakak', dan sebut pemakai perangkat sesuai sebutan pelanggan (misal: 'Papa', 'Adik', 'Ibu').
+6. Bertanya balik HANYA jika ada informasi kebutuhan yang benar-benar kurang atau ambigu, dan gunakan kalimat yang berbeda dari pertanyaan di riwayat obrolan sebelumnya.
+7. Format jawaban mengalir alami, wajar (maksimal sekitar 600 karakter), tanpa daftar butir berpoin.
+8. Jaring pengaman: jika FAKTA terasa tidak nyambung dengan pesan pelanggan, utamakan memahami maksud pesan pelanggan, jangan mengarang fakta, dan ajukan klarifikasi secara sopan.
 
 Kembalikan format JSON persis sesuai skema:
 {
-  "teks": "<kalimat jawaban untuk pelanggan>",
-  "pertanyaan_diajukan": "<slot yang ditanyakan: 'kebutuhan' | 'budget' | 'kategori' | null>",
-  "penilaian": {
-    "<kode_produk>": "di_bawah_minimum" | "memenuhi_minimum" | "memenuhi_rekomendasi"
-  }
-}
-Catatan untuk penilaian:
-- Khusus aksi evaluasi_kecocokan, isi 'penilaian' dengan status kecocokan tiap produk yang dievaluasi ('di_bawah_minimum', 'memenuhi_minimum', atau 'memenuhi_rekomendasi') sesuai fakta.
-- Untuk aksi selain evaluasi_kecocokan, isi 'penilaian' dengan null.
-"""
+  "teks": "<jawaban ramah dan alami>",
+  "pertanyaan_diajukan": "<slot yang ditanyakan jika ada: 'kebutuhan' | 'budget' | 'kategori' | null>",
+  "penilaian": null
+}"""
 
 
 from core.config import KONTAK_STAF
@@ -302,27 +287,16 @@ def generate_response(
             pertanyaan_diajukan=None
         )
 
-    # Batasan Respons C (maksimal 3 kalimat, maksimal 420 karakter, tanpa pertanyaan pada info murni):
-    if aksi in ("tanya_spesifikasi", "tanya_info_toko", "bandingkan"):
-        out.pertanyaan_diajukan = None
-        if out.teks and out.teks.rstrip().endswith("?"):
-            parts = re.split(r"(?<=[.!?])\s+", out.teks.strip())
-            if len(parts) > 1 and parts[-1].endswith("?"):
-                out.teks = " ".join(parts[:-1]).strip()
-
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", out.teks.strip()) if s.strip()]
-    if len(sentences) > 3:
-        out.teks = " ".join(sentences[:3]).strip()
-
     if out.teks:
         out.teks = re.sub(r"\bfilter\b", "pencarian", out.teks, flags=re.IGNORECASE)
         out.teks = re.sub(r"\btier\b", "tingkat", out.teks, flags=re.IGNORECASE)
         out.teks = re.sub(r"\bselisih\b", "perbedaan", out.teks, flags=re.IGNORECASE)
 
-    if len(out.teks) > 420:
-        truncated = out.teks[:420]
+    # Batas wajar respons: maksimal ~600 karakter
+    if len(out.teks) > 600:
+        truncated = out.teks[:600]
         last_punct = max(truncated.rfind("."), truncated.rfind("?"), truncated.rfind("!"))
-        if last_punct > 120:
+        if last_punct > 200:
             out.teks = truncated[:last_punct + 1].strip()
         else:
             out.teks = truncated.rstrip()

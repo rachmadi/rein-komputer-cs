@@ -58,3 +58,20 @@ def test_butir1_grounding_checker_mengakui_produk_tampil():
     teks = "Laptop Mitra Belajar ini tersedia seharga Rp5.199.000 dengan RAM 8 GB, Kak."
     is_valid, violations = checker.check(teks, fakta, state=state)
     assert is_valid is True, f"Pelanggaran tidak terduga: {violations}"
+
+
+def test_butir2_generator_prompt_dan_panjang_teks():
+    """Menguji bahwa prompt generator baru ringkas (<=25 baris) dan teks hingga 550 karakter lolos pemeriksa."""
+    from services.llm_generator import GENERATOR_SYSTEM_PROMPT
+    lines = [line for line in GENERATOR_SYSTEM_PROMPT.strip().split("\n")]
+    assert len(lines) <= 25, f"Prompt generator terlalu panjang: {len(lines)} baris"
+    assert "ATURAN UTAMA (BATASAN RESPONS C)" not in GENERATOR_SYSTEM_PROMPT
+    assert "420 karakter" not in GENERATOR_SYSTEM_PROMPT
+
+    # Teks alami 460 karakter lolos (sebelumnya gagal di 420 karakter)
+    checker = GroundingChecker()
+    teks_panjang = "Halo Kak! " + ("Kami siap membantu mencarikan perangkat yang tepat untuk kebutuhan harian. " * 6)
+    assert 420 < len(teks_panjang) <= 600
+    is_valid, violations = checker.check(teks_panjang, {"status": "sapaan"})
+    assert is_valid is True, f"Teks wajar 460 karakter harus lolos: {violations}"
+

@@ -346,14 +346,10 @@ class SessionPipeline:
         lat_gen = (time.perf_counter() - t_gen_0) * 1000.0
         lat_total = (time.perf_counter() - t_start) * 1000.0
 
-        # Update pending_question di state (A5, A6, A10: info murni tidak pernah membuka pertanyaan)
-        if parsed.aksi in (ActionEnum.TANYA_SPESIFIKASI, ActionEnum.TANYA_INFO_TOKO, ActionEnum.BANDINGKAN):
-            gen_out.pertanyaan_diajukan = None
-            state["pending_question"] = None
-        else:
-            state["pending_question"] = gen_out.pertanyaan_diajukan
-            if gen_out.pertanyaan_diajukan:
-                state["last_asked_slot"] = gen_out.pertanyaan_diajukan
+        # Update pending_question di state sesuai keluaran generator
+        state["pending_question"] = gen_out.pertanyaan_diajukan
+        if gen_out.pertanyaan_diajukan:
+            state["last_asked_slot"] = gen_out.pertanyaan_diajukan
 
         # ---------------------------------------------------------------------
         # 6. KARTU PRODUK HTML
