@@ -221,6 +221,51 @@ def test_butir8_tidak_jelas_klarifikasi_alami_vs_sistem_error():
             assert "Boleh dijelaskan" in res_unclear.teks_jawaban
 
 
+def test_butir9_perbaiki_percakapan_keluhan_vs_koreksi():
+    """Butir 9: keluhan non-produk tanpa pencarian katalog vs koreksi produk mencari ulang."""
+    from services.action_engine import ActionEngine
+    from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, JenisEnum, StateUpdate
+
+    engine = ActionEngine()
+    state = {
+        "kategori": "laptop",
+        "merek": "asus",
+        "kebutuhan_teks": "ketik kantor",
+        "persona": "staf admin",
+        "produk_tampil": [{"kode": "KB-L01", "nama": "Laptop Alpha", "harga": 6000000}],
+        "pending_question": "budget"
+    }
+
+    # 1. Keluhan non-produk (mis. layanan/pertanyaan terlewat) -> tanpa pencarian katalog
+    p_keluhan = ParserOutput(
+        aksi=ActionEnum.PERBAIKI_PERCAKAPAN,
+        argumen=ActionArguments(jenis=JenisEnum.KELUHAN, rujukan="pertanyaan garansi terlewat"),
+        pembaruan_state=StateUpdate()
+    )
+    res_keluhan = engine.execute(p_keluhan, session_state=state)
+    assert res_keluhan.aksi == ActionEnum.PERBAIKI_PERCAKAPAN
+    assert len(res_keluhan.produk_list) == 0
+    assert res_keluhan.fakta["jenis"] == "keluhan"
+    assert res_keluhan.fakta["kebutuhan"] == "ketik kantor"
+    assert res_keluhan.fakta["merek"] == "asus"
+    assert res_keluhan.fakta["kategori"] == "laptop"
+    assert res_keluhan.fakta["pemakai"] == "staf admin"
+    assert res_keluhan.fakta["pending_question"] == "budget"
+    assert len(res_keluhan.fakta["produk_tampil"]) == 1
+
+    # 2. Koreksi kriteria produk -> update kriteria dan cari ulang
+    p_koreksi = ParserOutput(
+        aksi=ActionEnum.PERBAIKI_PERCAKAPAN,
+        argumen=ActionArguments(jenis=JenisEnum.KOREKSI, kategori="desktop", rujukan="bukan laptop tapi desktop"),
+        pembaruan_state=StateUpdate(kategori="desktop")
+    )
+    res_koreksi = engine.execute(p_koreksi, session_state=state)
+    assert res_koreksi.aksi == ActionEnum.PERBAIKI_PERCAKAPAN
+    assert res_koreksi.fakta["kategori"] == "desktop"
+    assert len(res_koreksi.produk_list) > 0
+
+
+
 
 
 

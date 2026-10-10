@@ -282,7 +282,7 @@ class ActionEngine:
         elif aksi == ActionEnum.JAWAB_PERTANYAAN_BOT:
             return self._handle_jawab_pertanyaan_bot(args, state)
         elif aksi == ActionEnum.PERBAIKI_PERCAKAPAN:
-            return self._handle_perbaiki_percakapan(args, state)
+            return self._handle_perbaiki_percakapan(args, state, parsed=parsed)
         elif aksi == ActionEnum.SAPA:
             return self._handle_sapa(args, state)
         elif aksi == ActionEnum.BASA_BASI:
@@ -1426,14 +1426,71 @@ class ActionEngine:
     # -------------------------------------------------------------------------
     # 9. perbaiki_percakapan
     # -------------------------------------------------------------------------
-    def _handle_perbaiki_percakapan(self, args: ActionArguments, state: dict) -> ActionResult:
+    def _handle_perbaiki_percakapan(self, args: ActionArguments, state: dict, parsed: Optional[ParserOutput] = None) -> ActionResult:
         jenis = args.jenis.value if hasattr(args.jenis, "value") else str(args.jenis)
+        state_up = parsed.pembaruan_state if parsed else None
+
+        # Terapkan pembaruan state jika ada
+        if state_up:
+            if state_up.kategori:
+                state["kategori"] = state_up.kategori
+            if state_up.budget:
+                state["budget"] = state_up.budget
+            if state_up.persona:
+                state["persona"] = state_up.persona
+            if state_up.kebutuhan_teks:
+                state["kebutuhan_teks"] = state_up.kebutuhan_teks
+        if args.kategori:
+            state["kategori"] = args.kategori
+        if args.merek:
+            state["merek"] = args.merek
+        if args.max_harga is not None:
+            state["budget"] = parse_int_safe(args.max_harga)
+        if args.persona:
+            state["persona"] = args.persona
+        if args.kebutuhan_teks:
+            state["kebutuhan_teks"] = args.kebutuhan_teks
+
+        has_criteria = bool(
+            args.kategori or args.merek or (args.max_harga is not None) or args.kebutuhan_teks or args.persona or args.gpu or args.ram_gb_min or
+            (state_up and (state_up.kategori or state_up.budget or state_up.persona or state_up.kebutuhan_teks))
+        )
+
+        # Butir 9: koreksi menyangkut produk/kriteria -> cari ulang; keluhan/salah_paham non-produk -> tanpa pencarian
+        if jenis == "koreksi" and has_criteria:
+            if state.get("kebutuhan_teks"):
+                search_res = self._handle_minta_rekomendasi(args, state)
+            else:
+                search_res = self._handle_cari_produk(args, state)
+
+            fakta = dict(search_res.fakta)
+            fakta.update({
+                "jenis": jenis,
+                "rujukan": args.rujukan,
+                "kebutuhan": state.get("kebutuhan_teks") or state.get("kebutuhan_diketahui"),
+                "merek": state.get("merek"),
+                "kategori": state.get("kategori"),
+                "pemakai": state.get("persona") or state.get("pemakai"),
+                "produk_tampil": state.get("produk_tampil", []),
+                "pending_question": state.get("pending_question")
+            })
+            return ActionResult(
+                aksi=ActionEnum.PERBAIKI_PERCAKAPAN,
+                fakta=fakta,
+                produk_list=search_res.produk_list,
+                profil_id=search_res.profil_id
+            )
+
         fakta = {
             "status": "sukses",
             "jenis": jenis,
             "rujukan": args.rujukan,
-            "kebutuhan_terekam": state.get("kebutuhan_teks"),
-            "pertanyaan_terakhir_bot": state.get("pending_question")
+            "kebutuhan": state.get("kebutuhan_teks") or state.get("kebutuhan_diketahui"),
+            "merek": state.get("merek"),
+            "kategori": state.get("kategori"),
+            "pemakai": state.get("persona") or state.get("pemakai"),
+            "produk_tampil": state.get("produk_tampil", []),
+            "pending_question": state.get("pending_question")
         }
         return ActionResult(aksi=ActionEnum.PERBAIKI_PERCAKAPAN, fakta=fakta, produk_list=[])
 
