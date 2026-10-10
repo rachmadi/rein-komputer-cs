@@ -995,7 +995,7 @@ class ActionEngine:
                 "spesifikasi_produk": fakta_items,
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
-            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=catalog_products)
 
         # F3: Kasus 2 - Atribut LAINNYA -> Atribut spesifik tidak dikenal / tidak ada di katalog -> B15
         if attr == AtributSpesifikasiEnum.LAINNYA:
@@ -1077,7 +1077,7 @@ class ActionEngine:
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
 
-        return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+        return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=catalog_products if not ada_tidak_tersedia or fakta_items else [])
 
     # -------------------------------------------------------------------------
     # 5. bandingkan (A6)
@@ -1121,7 +1121,8 @@ class ActionEngine:
             "produk_luar_katalog": produk_luar,
             "catatan": catatan
         }
-        return ActionResult(aksi=ActionEnum.BANDINGKAN, fakta=fakta)
+        prods = [self.get_product_by_code(code) for code in target_codes if self.get_product_by_code(code)]
+        return ActionResult(aksi=ActionEnum.BANDINGKAN, fakta=fakta, produk_list=prods)
 
     # -------------------------------------------------------------------------
     # 6. lanjutan_hasil (B3, B8, B9)

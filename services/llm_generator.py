@@ -40,7 +40,9 @@ Kembalikan format JSON persis sesuai skema:
 {
   "teks": "<jawaban ramah dan alami>",
   "pertanyaan_diajukan": "<slot yang ditanyakan jika ada: 'kebutuhan' | 'budget' | 'kategori' | null>",
-  "penilaian": null
+  "penilaian": null,
+  "tampilkan_kartu": null,
+  "produk_dibahas": null
 }"""
 
 
@@ -128,9 +130,11 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
 
 
 class GeneratorOutput(BaseModel):
-    teks: str = Field(description="Jawaban percakapan untuk pelanggan, maksimal 3 kalimat.")
+    teks: str = Field(description="Jawaban percakapan untuk pelanggan.")
     pertanyaan_diajukan: Optional[str] = Field(default=None, description="Slot yang ditanyakan bot jika ada, misal 'kebutuhan', 'budget', atau null.")
-    penilaian: Optional[Dict[str, str]] = Field(default=None, description="Untuk evaluasi_kecocokan: mapping kode produk ke status kecocokan ('di_bawah_minimum', 'memenuhi_minimum', 'memenuhi_rekomendasi').")
+    penilaian: Optional[Dict[str, str]] = Field(default=None, description="Untuk evaluasi_kecocokan: mapping kode produk ke status kecocokan.")
+    tampilkan_kartu: Optional[bool] = Field(default=None, description="Apakah kartu produk perlu ditampilkan ke pelanggan.")
+    produk_dibahas: Optional[Union[str, List[str], None]] = Field(default=None, description="Kode produk yang sedang dibahas jika ada.")
 
     model_config = {
         "extra": "ignore"

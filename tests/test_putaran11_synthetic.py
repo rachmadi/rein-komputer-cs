@@ -96,3 +96,27 @@ def test_butir3_parser_prompt_dan_few_shots():
     assert len(user_turns) == 8
 
 
+def test_butir4_kartu_produk_tanpa_kode_internal():
+    """Menguji bahwa kartu produk tidak memuat kode internal seperti [KB-xxx] dan judul bersih dari P07."""
+    from services.product_card import format_product_card, format_product_cards_message
+
+    prod = {
+        "kode": "KB-L05",
+        "nama": "Ultrabook Prime 14",
+        "harga": 11500000,
+        "spesifikasi": "Core i5 | RAM 16GB | SSD 512GB",
+        "match_report": {"lolos_semua": True}
+    }
+
+    card_text = format_product_card(prod, index=1)
+    assert "KB-L05" not in card_text
+    assert "[KB-" not in card_text
+    assert "Ultrabook Prime 14" in card_text
+
+    msg = format_product_cards_message([prod], judul_rekomendasi="P07 — Desain Grafis")
+    assert "P07" not in msg
+    assert "Desain Grafis" in msg
+    assert "KB-L05" not in msg
+
+
+

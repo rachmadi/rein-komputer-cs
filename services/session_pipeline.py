@@ -352,12 +352,83 @@ class SessionPipeline:
             state["last_asked_slot"] = gen_out.pertanyaan_diajukan
 
         # ---------------------------------------------------------------------
-        # 6. KARTU PRODUK HTML
+        # 6. KARTU PRODUK HTML (Butir 4)
         # ---------------------------------------------------------------------
         kartu_html = None
-        if action_res.produk_list:
-            judul_rek = (action_res.fakta.get("profil") or {}).get("judul")
-            kartu_html = format_product_cards_message(action_res.produk_list, judul_rekomendasi=judul_rek)
+        
+        # Ekstrak semua kode produk yang secara sah ada di fakta eksekusi
+        fakta_codes = set()
+        for p in action_res.fakta.get("produk", []):
+            if isinstance(p, dict) and p.get("kode"):
+                fakta_codes.add(p["kode"])
+            elif isinstance(p, str):
+                fakta_codes.add(p)
+        for p in action_res.fakta.get("spesifikasi_produk", []):
+            if isinstance(p, dict) and p.get("kode"):
+                fakta_codes.add(p["kode"])
+        for p in action_res.fakta.get("spesifikasi", []):
+            if isinstance(p, dict) and p.get("kode"):
+                fakta_codes.add(p["kode"])
+        for p in action_res.fakta.get("perbandingan", []):
+            if isinstance(p, dict) and p.get("kode"):
+                fakta_codes.add(p["kode"])
+        if action_res.fakta.get("rujukan_dipakai"):
+            for c in action_res.fakta.get("rujukan_dipakai"):
+                if c:
+                    fakta_codes.add(c)
+        if action_res.fakta.get("kode_produk"):
+            fakta_codes.add(action_res.fakta["kode_produk"])
+
+        raw_candidates = list(action_res.produk_list or [])
+        if not raw_candidates and action_res.fakta.get("produk"):
+            catalog = getattr(self.engine, "catalog", None)
+            if catalog:
+                for fp in action_res.fakta.get("produk"):
+                    c_code = fp.get("kode") if isinstance(fp, dict) else fp
+                    p_obj = catalog.get_by_code(c_code)
+                    if p_obj:
+                        raw_candidates.append(p_obj)
+
+        # Kode merakit kartu HANYA untuk kode yang ada di fakta
+        valid_products = [
+            p for p in raw_candidates
+            if (p.get("kode") in fakta_codes if fakta_codes else True)
+        ]
+
+        aksi_name = parsed.aksi.value if hasattr(parsed.aksi, "value") else str(parsed.aksi)
+        should_show_card = False
+
+        if aksi_name in ("tanya_spesifikasi", "bandingkan"):
+            should_show_card = True
+        elif aksi_name in ("cari_produk", "minta_rekomendasi"):
+            if gen_out.tampilkan_kartu is not None:
+                should_show_card = bool(gen_out.tampilkan_kartu)
+            else:
+                should_show_card = bool(valid_products)
+        else:
+            if gen_out.tampilkan_kartu is True:
+                should_show_card = True
+            else:
+                should_show_card = False
+
+        if should_show_card and valid_products:
+            prods_to_card = valid_products
+            if gen_out.produk_dibahas:
+                dibahas_code = gen_out.produk_dibahas
+                if isinstance(dibahas_code, str):
+                    matched = [p for p in valid_products if p.get("kode") == dibahas_code]
+                    if matched:
+                        prods_to_card = matched
+                elif isinstance(dibahas_code, list):
+                    matched = [p for p in valid_products if p.get("kode") in dibahas_code]
+                    if matched:
+                        prods_to_card = matched
+
+            raw_judul = (action_res.fakta.get("profil") or {}).get("judul")
+            judul_rek = None
+            if raw_judul:
+                judul_rek = re.sub(r"^[A-Z]\d{2}\s*[-–—:]\s*", "", str(raw_judul)).strip()
+            kartu_html = format_product_cards_message(prods_to_card, judul_rekomendasi=judul_rek)
 
         # Update riwayat percakapan (maks 8 pesan)
         current_history.append({"role": "assistant", "content": gen_out.teks, "text": gen_out.teks})

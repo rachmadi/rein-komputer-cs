@@ -13,6 +13,7 @@ Aturan:
 from __future__ import annotations
 
 import html
+import re
 from typing import Any, Dict, List, Optional
 
 
@@ -29,17 +30,15 @@ def format_product_card(product: dict, index: int | None = None) -> str:
             harga_val = "Harga hubungi kami"
     harga = html.escape(str(harga_val))
     spek = html.escape(str(product.get("spesifikasi", "")))
-    kode = html.escape(str(product.get("kode", "")))
 
     match_report = product.get("match_report") or {}
     lolos = match_report.get("lolos_semua") is True
 
     prefix = f"{index}. " if index is not None else ""
     check_badge = " ✅" if lolos else ""
-    kode_suffix = f" [{kode}]" if kode else ""
 
     lines = [
-        f"<b>{prefix}{nama}{kode_suffix}{check_badge}</b>",
+        f"<b>{prefix}{nama}{check_badge}</b>",
         f"💰 Harga: <b>{harga}</b>",
         f"⚙️ Spek: {spek}"
     ]
@@ -64,9 +63,13 @@ def format_product_cards_message(
     cards = []
     has_match_badge = any((p.get("match_report") or {}).get("lolos_semua") is True for p in products)
 
+    clean_judul = None
+    if judul_rekomendasi:
+        clean_judul = re.sub(r"^[A-Z]\d{2}\s*[-–—:]\s*", "", str(judul_rekomendasi)).strip()
+
     header = ""
-    if judul_rekomendasi and has_match_badge:
-        header = f"<b>Rekomendasi untuk {html.escape(judul_rekomendasi)}:</b>\n\n"
+    if clean_judul and has_match_badge:
+        header = f"<b>Rekomendasi untuk {html.escape(clean_judul)}:</b>\n\n"
     elif products:
         header = "<b>Daftar Pilihan Produk:</b>\n\n"
 
