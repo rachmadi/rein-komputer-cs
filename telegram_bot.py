@@ -24,6 +24,9 @@ from datetime import datetime
 import hashlib
 import json
 import uuid
+import urllib.request
+import urllib.error
+import time
 
 from telegram import (
     InlineKeyboardButton,
@@ -323,6 +326,70 @@ async def feedback_callback_handler(update: Update, context: ContextTypes.DEFAUL
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error('Exception while handling an update:', exc_info=context.error)
 
+def warmup_models(timeout: float = 60.0) -> None:
+    """
+    Pemanasan model saat startup bot:
+    1. Memuat gemma4:e4b dengan prompt kosong dan keep_alive 30m via 127.0.0.1.
+    2. Satu panggilan embed bge-m3 via 127.0.0.1.
+    Jika gagal atau timeout (maks 60 detik), catat peringatan dan bot tetap jalan.
+    """
+    base_url = "http://127.0.0.1:11434"
+    logger.info("Memulai pemanasan model (gemma4:e4b & bge-m3)...")
+    t0 = time.time()
+
+    # 1. Panggilan pemuatan gemma4:e4b (prompt kosong, keep_alive 30m)
+    try:
+        req_chat = urllib.request.Request(
+            f"{base_url}/api/chat",
+            data=json.dumps({
+                "model": "gemma4:e4b",
+                "messages": [],
+                "keep_alive": "30m"
+            }).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req_chat, timeout=min(30.0, timeout)) as resp:
+            resp.read()
+        logger.info("Pemanasan gemma4:e4b berhasil (%.2fs)", time.time() - t0)
+    except Exception as exc:
+        logger.warning("Peringatan pemanasan gemma4:e4b gagal: %s", exc)
+
+    # 2. Panggilan embed bge-m3
+    elapsed = time.time() - t0
+    rem_time = max(5.0, timeout - elapsed)
+    t1 = time.time()
+    try:
+        req_embed = urllib.request.Request(
+            f"{base_url}/api/embed",
+            data=json.dumps({
+                "model": "bge-m3",
+                "input": "pemanasan"
+            }).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req_embed, timeout=rem_time) as resp:
+                resp.read()
+            logger.info("Pemanasan embed bge-m3 berhasil (%.2fs)", time.time() - t1)
+        except urllib.error.HTTPError as he:
+            if he.code == 404:
+                req_old = urllib.request.Request(
+                    f"{base_url}/api/embeddings",
+                    data=json.dumps({
+                        "model": "bge-m3",
+                        "prompt": "pemanasan"
+                    }).encode("utf-8"),
+                    headers={"Content-Type": "application/json"}
+                )
+                with urllib.request.urlopen(req_old, timeout=rem_time) as resp_old:
+                    resp_old.read()
+                logger.info("Pemanasan embeddings bge-m3 (fallback) berhasil (%.2fs)", time.time() - t1)
+            else:
+                raise he
+    except Exception as exc:
+        logger.warning("Peringatan pemanasan embed bge-m3 gagal: %s", exc)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Bobby Computer Telegram Bot")
     parser.add_argument("--token", help="Telegram Bot Token dari BotFather", default=None)
@@ -351,6 +418,9 @@ def main() -> None:
     logger.info("RAG Threshold  : %s", rag_threshold)
     logger.info("Kontak Staf    : %s", kontak_staf)
     logger.info("===============================")
+
+    # Butir 5: Pemanasan model (timeout maks 60 detik)
+    warmup_models(timeout=60.0)
 
     app = ApplicationBuilder().token(token).build()
 
