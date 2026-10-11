@@ -29,7 +29,16 @@ def format_product_card(product: dict, index: int | None = None) -> str:
         else:
             harga_val = "Harga hubungi kami"
     harga = html.escape(str(harga_val))
-    spek = html.escape(str(product.get("spesifikasi", "")))
+    spek_val = product.get("spesifikasi") or product.get("spek_ringkas")
+    if not spek_val:
+        from services.catalog_search import clean_specs
+        spek_val = clean_specs(product)
+        if not spek_val:
+            from services.action_engine import build_lembar_spesifikasi
+            lembar = build_lembar_spesifikasi(product)
+            if lembar:
+                spek_val = " | ".join(f"{v}" for v in lembar.values() if v)
+    spek = html.escape(str(spek_val or "-"))
 
     match_report = product.get("match_report") or {}
     lolos = match_report.get("lolos_semua") is True

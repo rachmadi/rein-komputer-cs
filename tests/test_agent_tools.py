@@ -235,3 +235,20 @@ def test_format_tool_history_message():
     assert "katalog" in msg
     assert "KB-D12" in msg
     assert "KB-D11" in msg
+
+
+def test_property_product_card_spek_not_empty(catalog):
+    """Properti: untuk SETIAP produk di katalog, kartu yang dirender dari data
+    katalog mentahnya memiliki baris Spek yang tidak kosong (Putaran 18e Butir 1).
+    """
+    from services.product_card import format_product_card
+
+    assert len(catalog.by_code) > 0
+    for p in catalog.by_code.values():
+        card = format_product_card(p)
+        spek_lines = [line for line in card.split("\n") if "Spek:" in line]
+        assert len(spek_lines) == 1, f"Produk {p.get('kode')} tidak memiliki baris Spek di kartu"
+        spek_text = spek_lines[0].replace("⚙️ Spek:", "").strip()
+        assert len(spek_text) > 0 and spek_text != "-", (
+            f"Baris Spek kosong pada produk {p.get('kode')} ({p.get('nama')})"
+        )
