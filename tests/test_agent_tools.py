@@ -288,3 +288,33 @@ def test_product_cards_render_up_to_5_and_ordered_by_mention():
     ordered_prods = [item[1] for item in pos_items]
     ordered_codes = [p["kode"] for p in ordered_prods]
     assert ordered_codes == ["KB-L04", "KB-L02", "KB-L05", "KB-L01", "KB-L03"]
+
+
+def test_property_katalog_ada_foto(catalog):
+    """Properti: untuk setiap produk di katalog, ada_foto == berkas image_file-nya ada
+    (Putaran 18e Butir 3), baik pada hasil ringkas maupun detail.
+    """
+    from pathlib import Path
+    assert len(catalog.by_code) > 0
+
+    for p in catalog.by_code.values():
+        img_f = (p.get("image_file") or "").strip()
+        expected_ada_foto = bool(img_f and Path(img_f).is_file())
+
+        # 1. Uji Cabang Detail
+        res_detail = katalog(kode_atau_nama=p["kode"], catalog=catalog)
+        assert res_detail["status"] == "sukses"
+        assert len(res_detail["detail"]) == 1
+        d = res_detail["detail"][0]
+        assert d["ada_foto"] == expected_ada_foto, (
+            f"Detail {p['kode']}: diharapkan ada_foto={expected_ada_foto}, dapat {d['ada_foto']}"
+        )
+
+        # 2. Uji Cabang Ringkas
+        res_ringkas = katalog(kode_atau_nama=None, kata_kunci=p["nama"], catalog=catalog)
+        assert res_ringkas["status"] == "sukses"
+        matched = next((item for item in res_ringkas.get("produk", []) if item["kode"] == p["kode"]), None)
+        if matched:
+            assert matched["ada_foto"] == expected_ada_foto, (
+                f"Ringkas {p['kode']}: diharapkan ada_foto={expected_ada_foto}, dapat {matched['ada_foto']}"
+            )

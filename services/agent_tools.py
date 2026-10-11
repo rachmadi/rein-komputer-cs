@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import re
+from pathlib import Path
 from typing import Any
 import requests
 
@@ -31,6 +32,8 @@ def _format_rupiah(angka: int | float | None) -> str:
 def _format_ringkas(p: dict) -> dict[str, Any]:
     """Format ringkas produk untuk keluaran alat katalog."""
     p_price = p.get("harga") or p.get("harga_idr") or 0
+    img_f = (p.get("image_file") or "").strip()
+    has_photo = bool(img_f and Path(img_f).is_file())
     return {
         "kode": p.get("kode"),
         "nama": p.get("nama"),
@@ -39,7 +42,8 @@ def _format_ringkas(p: dict) -> dict[str, Any]:
         "harga": _format_rupiah(p_price),
         "harga_idr": int(p_price),
         "spek_ringkas": clean_specs(p),
-        "usage_text": p.get("usage_text", "")
+        "usage_text": p.get("usage_text", ""),
+        "ada_foto": has_photo
     }
 
 
@@ -198,12 +202,15 @@ def katalog(
                     raw_dict = json.loads(raw_val)
                 except Exception:
                     raw_dict = {}
+            img_f = (p.get("image_file") or "").strip()
+            has_photo = bool(img_f and Path(img_f).is_file())
             output_details.append({
                 "kode": p.get("kode"),
                 "nama": p.get("nama"),
                 "harga": _format_rupiah(p.get("harga") or p.get("harga_idr")),
                 "lembar_spesifikasi": lembar,
-                "raw_data": raw_dict
+                "raw_data": raw_dict,
+                "ada_foto": has_photo
             })
 
         return {
