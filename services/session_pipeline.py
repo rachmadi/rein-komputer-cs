@@ -108,31 +108,35 @@ def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None)
 
     # 1. Cek apakah SELURUH kata termasuk dalam sapaan
     if all(w in sapaan_words for w in words) and any(w in greeting_roots for w in words):
+        from core.db import format_daftar_kategori
+        cats = format_daftar_kategori(konjungsi="atau")
         if has_history:
             if "assalamualaikum" in words:
-                reply = "Waalaikumsalam, Kak! Ada yang bisa kami bantu lagi untuk kebutuhan komputer atau laptopnya?"
+                reply = f"Waalaikumsalam, Kak! Ada yang bisa kami bantu lagi untuk kebutuhan {cats}nya?"
             else:
-                reply = "Iya, Kak! Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan lagi?"
+                reply = f"Iya, Kak! Ada kebutuhan {cats} yang bisa kami bantu carikan lagi?"
         else:
             if "pagi" in words:
-                reply = "Selamat pagi, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+                reply = f"Selamat pagi, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan {cats} yang bisa kami bantu carikan hari ini?"
             elif "siang" in words:
-                reply = "Selamat siang, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+                reply = f"Selamat siang, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan {cats} yang bisa kami bantu carikan hari ini?"
             elif "sore" in words:
-                reply = "Selamat sore, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+                reply = f"Selamat sore, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan {cats} yang bisa kami bantu carikan hari ini?"
             elif "malam" in words:
-                reply = "Selamat malam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+                reply = f"Selamat malam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan {cats} yang bisa kami bantu carikan hari ini?"
             elif "assalamualaikum" in words:
-                reply = "Waalaikumsalam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+                reply = f"Waalaikumsalam, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan {cats} yang bisa kami bantu carikan hari ini?"
             else:
-                reply = "Halo, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan komputer atau laptop yang bisa kami bantu carikan hari ini?"
+                reply = f"Halo, Kak! Selamat datang di ReIn Komputer. Ada kebutuhan {cats} yang bisa kami bantu carikan hari ini?"
         return ("sapa", reply, "sapaan")
 
     # 2. Cek apakah SELURUH kata termasuk dalam terima kasih
     cleaned_phrase = " ".join(words)
     has_tk_root = "makasih" in words or "thanks" in words or "terima kasih" in cleaned_phrase
     if all(w in terima_kasih_words for w in words) and has_tk_root:
-        reply = "Sama-sama, Kak! Senang bisa membantu di ReIn Komputer. Silakan beri tahu jika ada kebutuhan komputer atau laptop lain yang ingin dicari."
+        from core.db import format_daftar_kategori
+        cats = format_daftar_kategori(konjungsi="atau")
+        reply = f"Sama-sama, Kak! Senang bisa membantu di ReIn Komputer. Silakan beri tahu jika ada kebutuhan {cats} lain yang ingin dicari."
         return ("basa_basi", reply, "terima_kasih")
 
     return None

@@ -80,10 +80,14 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         return f"Untuk informasi lebih lanjut mengenai toko kami, Kakak dapat menghubungi staf kami di {KONTAK_STAF}."
 
     if aksi_clean in ("sapa", "sapaan") or status in ("sapa", "sapaan"):
-        return "Halo! Selamat datang di ReIn Komputer. Ada yang bisa kami bantu seputar kebutuhan laptop atau komputer hari ini?"
+        from core.db import format_daftar_kategori
+        cats = format_daftar_kategori(konjungsi="atau")
+        return f"Halo! Selamat datang di ReIn Komputer. Ada yang bisa kami bantu seputar kebutuhan {cats} hari ini?"
 
     if aksi_clean == "basa_basi" or status == "basa_basi":
-        return "Sama-sama Kak! Senang bisa membantu di ReIn Komputer. Jangan ragu bertanya kembali jika butuh informasi lain seputar laptop atau komputer."
+        from core.db import format_daftar_kategori
+        cats = format_daftar_kategori(konjungsi="atau")
+        return f"Sama-sama Kak! Senang bisa membantu di ReIn Komputer. Jangan ragu bertanya kembali jika butuh informasi lain seputar {cats}."
 
     if aksi_clean == "tanya_spesifikasi" or status in ("atribut_tidak_tersedia", "spek_umum") or fakta.get("spesifikasi_produk"):
         if status == "atribut_tidak_tersedia":
@@ -171,7 +175,8 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
     if prods:
         nama_list = [p.get("nama") for p in prods[:3] if p.get("nama")]
         if nama_list:
-            kat = fakta.get("kategori") or "laptop atau komputer"
+            from core.db import format_daftar_kategori
+            kat = fakta.get("kategori") or format_daftar_kategori(konjungsi="atau")
             return f"Berikut rekomendasi {kat} yang sesuai kebutuhan di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
 
     if status == "sistem_error" or fakta.get("alasan") == "sistem_error":
@@ -184,7 +189,9 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
         elif alasan == "bertentangan":
             return "Informasinya agak membingungkan nih, Kak. Boleh diperjelas kembali kebutuhan atau spesifikasi yang diinginkan?"
         else:
-            return "Boleh diceritakan lebih detail kebutuhan komputer atau laptop yang sedang Kakak cari?"
+            from core.db import format_daftar_kategori
+            cats = format_daftar_kategori(konjungsi="atau")
+            return f"Boleh diceritakan lebih detail kebutuhan {cats} yang sedang Kakak cari?"
 
     return EMERGENCY_FALLBACK_TEXT
 

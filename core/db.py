@@ -28,6 +28,57 @@ def get_catalog_inventory(db_path: str | None = None) -> dict[str, list[str]]:
     except Exception:
         return {"kategori": [], "merek": []}
 
+def format_daftar_kategori(kategori_list: list[str] | None = None, konjungsi: str = "atau", db_path: str | None = None) -> str:
+    """Format daftar kategori dari katalog ke teks bahasa alami (Putaran 16 Butir 1b).
+    Jika kategori_list tidak diberikan, mengambil dari get_catalog_inventory(db_path)['kategori'].
+    Contoh: ['desktop', 'laptop', 'monitor', 'printer'] -> 'desktop, laptop, monitor, atau printer'
+    """
+    if kategori_list is None:
+        kategori_list = get_catalog_inventory(db_path).get("kategori", [])
+    if not kategori_list:
+        return "produk"
+    cats = [str(c).strip().lower() for c in kategori_list if c]
+    unique_cats = []
+    for c in cats:
+        if c not in unique_cats:
+            unique_cats.append(c)
+    if not unique_cats:
+        return "produk"
+    if len(unique_cats) == 1:
+        return unique_cats[0]
+    if len(unique_cats) == 2:
+        return f"{unique_cats[0]} {konjungsi} {unique_cats[1]}"
+    return f"{', '.join(unique_cats[:-1])}, {konjungsi} {unique_cats[-1]}"
+
+def extract_kategori_from_products(prods: list[Any], catalog=None) -> str:
+    """Ekstrak kategori level-atas dari daftar produk aktual (Putaran 16 Butir 1a).
+    Jika satu kategori: sebut kategori itu (mis. 'monitor').
+    Jika campuran: sebut sesuai isinya (mis. 'laptop dan monitor').
+    """
+    if not prods:
+        return format_daftar_kategori()
+
+    cats: list[str] = []
+    for p in prods:
+        k = None
+        if isinstance(p, dict):
+            k = p.get("kategori")
+            if not k and catalog and p.get("kode"):
+                cat_p = getattr(catalog, "by_code", {}).get(p.get("kode"))
+                if cat_p:
+                    k = cat_p.get("kategori")
+        elif hasattr(p, "kategori"):
+            k = getattr(p, "kategori")
+
+        if k and str(k).strip():
+            k_clean = str(k).strip().lower()
+            if k_clean not in cats:
+                cats.append(k_clean)
+
+    if not cats:
+        return format_daftar_kategori()
+    return format_daftar_kategori(cats, konjungsi="dan")
+
 def init_db(db_path: str = DB_PATH):
     import os
     os.makedirs(os.path.dirname(db_path), exist_ok=True)

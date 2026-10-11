@@ -501,7 +501,9 @@ def run_agentic_tool(
     if intent == "di-luar-topik":
         low = user_text.lower()
         if any(k in low for k in ["jam buka", "buka jam", "tutup jam"]):
-            reply = "Toko Bobby Computer buka setiap hari Senin - Sabtu pukul 09.00 - 20.00 WIB, dan Minggu pukul 10.00 - 17.00 WIB. Ada yang bisa kami bantu terkait perangkat komputer atau laptop?"
+            from core.db import format_daftar_kategori
+            cats = format_daftar_kategori(konjungsi="atau")
+            reply = f"Toko Bobby Computer buka setiap hari Senin - Sabtu pukul 09.00 - 20.00 WIB, dan Minggu pukul 10.00 - 17.00 WIB. Ada yang bisa kami bantu terkait perangkat {cats}?"
         elif any(k in low for k in ["alamat", "lokasi"]):
             reply = "Toko fisik kami beralamat di Jalan Komputer No. 45. Kakak juga bisa berkonsultasi langsung dengan staf toko kami di WhatsApp: 0812-3456-7890."
         elif any(k in low for k in ["cicil", "kredit", "paylater"]):

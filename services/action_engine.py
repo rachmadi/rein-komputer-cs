@@ -719,6 +719,15 @@ class ActionEngine:
 
         if "belum_dicari" not in res.fakta:
             res.fakta["belum_dicari"] = False if res.produk_list else True
+
+        # Putaran 16 Butir 1a: Setiap fakta yang membawa produk wajib punya "kategori" level atas,
+        # diambil dari kategori produk yang benar-benar tampil (bukan dari state lama).
+        # Jika produk campuran kategori, sebut sesuai isinya.
+        prods_in_fact = res.fakta.get("produk") or res.produk_list or []
+        if prods_in_fact:
+            from core.db import extract_kategori_from_products
+            res.fakta["kategori"] = extract_kategori_from_products(prods_in_fact, self.catalog)
+
         return res
 
     # -------------------------------------------------------------------------
@@ -1317,8 +1326,10 @@ class ActionEngine:
         else:
             # B2: Kategori saja atau merek saja -> tandai butuh dipersempit
             is_broad = bool((merek or kategori) and not (nama_model or gpu or ram_gb_min or max_harga))
+            from core.db import extract_kategori_from_products
             fakta = {
                 "status": "sukses",
+                "kategori": extract_kategori_from_products(formatted_prods, self.catalog),
                 "filter_dipakai": filter_dipakai,
                 "merek_kecuali": merek_kecuali,
                 "total_cocok": len(matches),

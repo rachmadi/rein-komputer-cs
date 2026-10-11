@@ -186,7 +186,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         cards_html = res.get("kartu_produk_html")
         reply_text = (res.get("reply") or "").strip()
         if not reply_text:
-            reply_text = "Mohon maaf Kak, ada kendala teknis sesaat. Ada produk komputer atau laptop yang bisa saya bantu carikan?"
+            from core.db import format_daftar_kategori
+            cats = format_daftar_kategori(konjungsi="atau")
+            reply_text = f"Mohon maaf Kak, ada kendala teknis sesaat. Ada produk {cats} yang bisa saya bantu carikan?"
         products = res.get("products", [])
         route = res.get("route", "")
 
