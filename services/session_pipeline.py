@@ -286,6 +286,7 @@ class SessionPipeline:
         """
         t_start = time.perf_counter()
         state = dict(session_state or {})
+        state["_pesan_pelanggan"] = pesan_pelanggan
         history = history or state.get("history", [])
 
         # ---------------------------------------------------------------------
@@ -492,12 +493,23 @@ class SessionPipeline:
                     parsed.pembaruan_state.kebutuhan_teks = extracted_keb
 
         # E4: Ekstrak batas anggaran jika ada pada lanjutan_hasil
-        if parsed.aksi == ActionEnum.LANJUTAN_HASIL and not parsed.argumen.max_harga:
-            from services.catalog_search import parse_budget_from_text
-            b_text = parse_budget_from_text(pesan_pelanggan)
-            if b_text:
-                parsed.argumen.max_harga = b_text
-                state["budget"] = b_text
+        if parsed.aksi == ActionEnum.LANJUTAN_HASIL:
+            # Putaran 15c Butir 4: Jika pesan merujuk unit termurah dari pilihan yang tampil ("paling murah", "termurah")
+            # maka jenis lanjutan adalah termurah_dari_tampil, bukan lebih_murah
+            is_termurah_dari_tampil = bool(
+                re.search(r"\b(paling\s+murah|termurah|paling\s+terjangkau)\b", pesan_pelanggan, re.IGNORECASE)
+                and re.search(r"\b(pilihan|opsi|unit|tadi|tampil|nawarin|dari)\b", pesan_pelanggan, re.IGNORECASE)
+            )
+            if is_termurah_dari_tampil:
+                parsed.argumen.jenis = JenisEnum.TERMURAH_DARI_TAMPIL
+                if getattr(parsed, "kontrak_intent", None) and isinstance(parsed.kontrak_intent, dict):
+                    parsed.kontrak_intent.setdefault("argumen_valid", {})["jenis"] = JenisEnum.TERMURAH_DARI_TAMPIL
+            elif not parsed.argumen.max_harga:
+                from services.catalog_search import parse_budget_from_text
+                b_text = parse_budget_from_text(pesan_pelanggan)
+                if b_text:
+                    parsed.argumen.max_harga = b_text
+                    state["budget"] = b_text
 
         # Update kriteria_pelanggan & batas_bot terpisah di state (F1)
         if "kriteria_pelanggan" not in state or not isinstance(state["kriteria_pelanggan"], dict):
@@ -576,7 +588,6 @@ class SessionPipeline:
         t_engine_0 = time.perf_counter()
         action_res: ActionResult = self.action_engine.execute(parsed, session_state=state)
         lat_mesin = (time.perf_counter() - t_engine_0) * 1000.0
-        state.pop("_pesan_pelanggan", None)
         if state.pop("_ada_keluhan_pesan", None):
             action_res.fakta["ada_keluhan"] = True
             action_res.fakta["nada"] = "keluhan"

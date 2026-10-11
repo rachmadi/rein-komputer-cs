@@ -460,6 +460,33 @@ class ActionEngine:
                     cheap_p = min(target_src, key=lambda x: get_product_price(x))
                     matched_code = cheap_p.get("kode")
 
+            # 0c. Rujukan posisional himpunan ("3 pilihan tadi", "pilihan tadi", "3 opsi tadi", dll)
+            word_to_num = {
+                "satu": 1, "dua": 2, "tiga": 3, "empat": 4, "lima": 5,
+                "semua": 99, "seluruh": 99, "ketiga": 3, "kedua": 2
+            }
+            is_ordinal_single = bool(re.search(r"\b(?:opsi|pilihan|unit|produk|nomor|no\.?)\s*\d+\b", ref_clean))
+            m_set = None
+            if not is_ordinal_single:
+                m_set = re.search(
+                    r"\b(?:(\d+|satu|dua|tiga|empat|lima|semua|seluruh|ketiga|kedua)\s+)?(?:pilihan|opsi|unit|rekomendasi|produk|laptop|komputer|desktop|printer)(?:\s+(?:tadi|sebelumnya|ini|itu|tersebut))?\b",
+                    ref_clean
+                )
+            if not matched_code and m_set and not re.search(r"\b(ke-?\s*\d+|pertama|kesatu|kedua\s*$|ketiga\s*$)\b", ref_clean):
+                target_src = history_tampil if is_history_ref else tampil
+                if not target_src:
+                    target_src = tampil or history_tampil
+                num_str = m_set.group(1)
+                limit = int(num_str) if (num_str and num_str.isdigit()) else word_to_num.get(str(num_str).lower(), len(target_src))
+                for p_item in target_src[:limit]:
+                    p_code = p_item.get("kode")
+                    if p_code and p_code not in resolved_codes:
+                        full_p = self.get_product_by_code(p_code) or p_item
+                        resolved_products.append(full_p)
+                        resolved_codes.append(p_code)
+                if resolved_codes:
+                    continue
+
             # 1. Cek rujukan kode langsung di katalog (misal 'KB-L01')
             if not matched_code and self.get_product_by_code(ref_str):
                 matched_code = ref_str.upper()

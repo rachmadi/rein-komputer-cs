@@ -68,6 +68,92 @@ def is_valid_kebutuhan_teks(text: str | None, db_path: str | None = None) -> boo
 
 
 
+def extract_model_substring_reference(
+    user_message: str,
+    produk_tampil: List[Dict[str, Any]] | None = None,
+    history_tampil: List[Dict[str, Any]] | None = None,
+    produk_dibahas: List[str] | None = None,
+    produk_dibahas_sebelumnya: List[Dict[str, Any]] | None = None,
+    db_path: str | None = None
+) -> List[str]:
+    """
+    Mendeteksi apakah user_message menyebutkan nama model/produk secara spesifik
+    sebagai substring case-insensitive dari produk di:
+    1. produk_tampil
+    2. produk_dibahas / produk_dibahas_sebelumnya
+    3. history_tampil
+    4. katalog luas
+    Mengembalikan daftar kode produk yang cocok jika ada kecocokan yang jelas.
+    """
+    if not user_message:
+        return []
+
+    text_clean = str(user_message).lower().strip()
+    STOPWORDS = {
+        'bisa', 'untuk', 'buat', 'apakah', 'kalau', 'gimana', 'bagus', 'mana', 'yang', 'ada',
+        'tadi', 'ini', 'itu', 'dari', 'laptop', 'komputer', 'desktop', 'printer', 'monitor',
+        'pc', 'unit', 'opsi', 'pilihan', 'rekomendasi', 'lokal', 'kantor', 'kuliah', 'sekolah',
+        'kerja', 'gaming', 'desain', 'editing', 'render', 'ai', 'bisnis', 'model', 'harga',
+        'murah', 'mahal', 'spek', 'spesifikasi', 'daya', 'watt', 'ram', 'ssd', 'layar', 'inch',
+        'berat', 'baterai', 'port', 'slot', 'kak', 'kakak', 'halo', 'hai', 'terima', 'kasih',
+        'saya', 'mau', 'dong', 'sih', 'kan', 'apa', 'dan', 'atau', 'tapi', 'sama', 'punya',
+        'lebih', 'paling', 'kurang', 'sangat', 'cukup', 'belum', 'sudah', 'tahu', 'mau', 'katalog'
+    }
+    words = [w for w in re.findall(r'[a-zA-Z0-9\-\+]+', text_clean) if len(w) >= 3 and w not in STOPWORDS]
+    if not words:
+        return []
+
+    tokens = words + [f"{words[i]} {words[i+1]}" for i in range(len(words)-1)]
+
+    def _check_pool(pool):
+        matched = []
+        for p in (pool or []):
+            if not isinstance(p, dict):
+                continue
+            p_nama = str(p.get("nama", "")).lower()
+            p_kode = str(p.get("kode", "")).lower()
+            for tok in tokens:
+                if re.search(r'\b' + re.escape(tok) + r'\b', p_nama) or tok == p_kode:
+                    k = p.get("kode")
+                    if k and k not in matched:
+                        matched.append(k)
+        return matched
+
+    # Prioritas 1: produk_tampil
+    m_tampil = _check_pool(produk_tampil)
+    if m_tampil:
+        return m_tampil
+
+    # Prioritas 2: fokus & tumpukan sebelumnya
+    fokus_prods = []
+    for c in (produk_dibahas or []):
+        fokus_prods.append({"kode": c, "nama": c})
+    for entry in (produk_dibahas_sebelumnya or []):
+        c_list = entry.get("kode", []) if isinstance(entry, dict) else [entry]
+        for c in c_list:
+            fokus_prods.append({"kode": c, "nama": c})
+    m_fokus = _check_pool(fokus_prods)
+    if m_fokus:
+        return m_fokus
+
+    # Prioritas 3: history_tampil
+    m_hist = _check_pool(history_tampil)
+    if m_hist:
+        return m_hist
+
+    # Prioritas 4: seluruh produk katalog
+    try:
+        from services.catalog_service import get_active_catalog
+        cat = get_active_catalog()
+        m_cat = _check_pool(cat.products)
+        if m_cat:
+            return m_cat
+    except Exception as e:
+        logger.warning(f"Gagal cek katalog pada extract_model_substring_reference: {e}")
+
+    return []
+
+
 def resolve_product_references(
     produk_refs: List[Any] | None,
     produk_tampil: List[Dict[str, Any]] | None,
@@ -168,6 +254,27 @@ def resolve_product_references(
         if ref_clean in ("semua", "semuanya", "tampil", "seluruhnya"):
             resolved.extend([p.get("kode") for p in tampil if p.get("kode")])
             continue
+
+        # 1b. Rujukan posisional himpunan ("3 pilihan tadi", "pilihan tadi", "3 opsi tadi", "opsi tadi", dll)
+        word_to_num = {
+            "satu": 1, "dua": 2, "tiga": 3, "empat": 4, "lima": 5,
+            "semua": 99, "seluruh": 99, "ketiga": 3, "kedua": 2
+        }
+        is_ordinal_single = bool(re.search(r"\b(?:opsi|pilihan|unit|produk|nomor|no\.?)\s*\d+\b", ref_clean))
+        m_set = None
+        if not is_ordinal_single:
+            m_set = re.search(
+                r"\b(?:(\d+|satu|dua|tiga|empat|lima|semua|seluruh|ketiga|kedua)\s+)?(?:pilihan|opsi|unit|rekomendasi|produk|laptop|komputer|desktop|printer)(?:\s+(?:tadi|sebelumnya|ini|itu|tersebut))?\b",
+                ref_clean
+            )
+        if m_set and not re.search(r"\b(ke-?\s*\d+|pertama|kesatu|kedua\s*$|ketiga\s*$)\b", ref_clean):
+            target_list = hist if (is_prev and hist) else (tampil or hist)
+            num_val = m_set.group(1)
+            limit = int(num_val) if (num_val and num_val.isdigit()) else word_to_num.get(str(num_val).lower(), len(target_list))
+            matched_set = [p.get("kode") for p in target_list[:limit] if p.get("kode")]
+            if matched_set:
+                resolved.extend(matched_set)
+                continue
 
         # 2. Rujukan superlativ harga
         if any(k in ref_clean for k in ("paling murah", "termurah", "paling terjangkau", "murah")):
@@ -624,8 +731,22 @@ def validate_parser_output(
         )
 
     if parsed.aksi in (ActionEnum.EVALUASI_KECOCOKAN, ActionEnum.TANYA_SPESIFIKASI, ActionEnum.BANDINGKAN):
+        user_msg = state.get("_pesan_pelanggan") or ""
+        model_name_refs = extract_model_substring_reference(
+            user_msg,
+            produk_tampil=produk_tampil_list,
+            history_tampil=history_tampil_list,
+            produk_dibahas=fokus_list,
+            produk_dibahas_sebelumnya=prev_stack_list,
+            db_path=db_path
+        )
         raw_refs = args.rujukan_produk if args.rujukan_produk is not None else args.produk
-        if not raw_refs:
+        if model_name_refs:
+            # Jika pelanggan secara eksplisit menyebut nama model di pesan (misal "Nitro", "TUF"), prioritaskan produk tersebut
+            raw_refs = model_name_refs
+            args.rujukan_produk = model_name_refs
+            args.produk = model_name_refs
+        elif not raw_refs:
             if fokus_list:
                 raw_refs = [c for c in fokus_list if c]
             elif prev_stack_list and isinstance(prev_stack_list, list) and prev_stack_list[0].get("kode"):
@@ -678,6 +799,9 @@ def validate_parser_output(
         else:
             args.produk = resolved_codes
             argumen_valid["produk"] = resolved_codes
+            if args.rujukan_produk is not None:
+                args.rujukan_produk = resolved_codes
+                argumen_valid["rujukan_produk"] = resolved_codes
 
         if args.produk_luar_katalog:
             still_outside = []
