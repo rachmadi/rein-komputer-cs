@@ -29,13 +29,30 @@ from services.catalog_search import clean_specs
 
 logger = logging.getLogger("agentic_tool_engine")
 
-def build_agent_system_prompt() -> str:
+PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "C")
+
+PARAGRAF_ANTI_TEBAK_VARIAN_B = (
+    "Setiap nama produk, angka, ukuran, jumlah, atau spesifikasi yang kamu sebut "
+    "harus tertulis di hasil alat yang sudah kamu terima. Jika belum ada, panggil "
+    "alat dulu; jangan menebak dari nama produk atau dari ingatan. Jangan mengatakan "
+    "sudah mengecek bila di giliran ini kamu tidak memanggil alat. Jumlah produk yang "
+    "kamu sebut harus sama dengan jumlah produk yang kamu namai."
+)
+
+PENGINGAT_SISTEM_VARIAN_C = (
+    "Pengingat: putuskan lagi untuk pesan terbaru ini. Jika jawabannya menyangkut "
+    "produk, harga, spesifikasi, jumlah, foto, atau kebijakan toko dan faktanya belum "
+    "ada di hasil alat yang kamu terima, panggil alat sekarang."
+)
+
+
+def build_agent_system_prompt(varian: Optional[str] = None) -> str:
     from core.db import get_catalog_inventory
     inv = get_catalog_inventory()
     kategori_str = ", ".join(inv.get("kategori", []))
     merek_str = ", ".join(inv.get("merek", []))
 
-    return (
+    prompt_a = (
         'Untuk setiap pesan pelanggan, putuskan dulu: jika menyangkut produk, harga, '
         'spesifikasi, ketersediaan, atau jumlah produk, panggil alat katalog; jika '
         'menyangkut penjelasan produk, panduan memilih, atau kebijakan toko, panggil '
@@ -73,10 +90,51 @@ def build_agent_system_prompt() -> str:
         'dari ingatan.'
     )
 
+    v = (varian or PROMPT_VARIAN).upper()
+    if v in ("B", "C"):
+        return f"{prompt_a}\n\n{PARAGRAF_ANTI_TEBAK_VARIAN_B}"
+    return prompt_a
+
 
 SYSTEM_PROMPT = build_agent_system_prompt()
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
+
+
+def summarize_tool_result(fn_name: str, result: Any) -> str:
+    """Membuat ringkasan singkat dari hasil alat untuk pencatatan log."""
+    if not isinstance(result, dict):
+        return str(result)[:100]
+    if fn_name in ("cari_produk", "katalog"):
+        prods = result.get("produk", [])
+        if prods:
+            codes = [p.get("kode", "") for p in prods if p.get("kode")]
+            return f"Ditemukan {len(prods)} produk: {', '.join(codes)}"
+        termurah = result.get("harga_termurah_katalog")
+        if termurah:
+            return f"0 produk. Harga termurah katalog: {termurah}"
+        details = result.get("detail", [])
+        if details:
+            codes = [it.get("kode", "") for it in details if it.get("kode")]
+            return f"Detail lembar spesifikasi: {', '.join(codes)}"
+        return f"{result.get('total_cocok', 0)} produk ditemukan"
+    elif fn_name == "detail_produk":
+        items = result.get("detail", [])
+        codes = [it.get("kode", "") for it in items if it.get("kode")]
+        return f"Detail lembar spesifikasi: {', '.join(codes)}"
+    elif fn_name in ("pengetahuan_kebutuhan", "pengetahuan"):
+        items = result.get("pengetahuan", [])
+        if items:
+            juduls = [it.get("judul", "") for it in items if it.get("judul")]
+            return f"Pengetahuan: {', '.join(juduls[:2])}"
+        sumber = result.get("sumber", "")
+        profil = result.get("profil_id") or result.get("judul", "")
+        return f"Pengetahuan: {profil} ({sumber})"
+    elif fn_name == "info_toko":
+        topik = result.get("topik", "")
+        return f"Info toko topik: {topik}"
+    return str(result)[:100]
+
 
 _PRODUCT_KEYS_CACHE: dict[int, dict[str, list[str]]] = {}
 
@@ -288,6 +346,7 @@ def run_agentic_tool(
     model: str = "gemma4:e4b",
     url: str = "http://localhost:11434",
     session_state: Optional[dict] = None,
+    varian: Optional[str] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -320,7 +379,8 @@ def run_agentic_tool(
                 break
         mentioned_notes = "\n".join(lines)
 
-    system_content = build_agent_system_prompt()
+    active_var = (varian or kwargs.get("varian") or PROMPT_VARIAN).upper()
+    system_content = build_agent_system_prompt(varian=active_var)
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
 
@@ -337,6 +397,10 @@ def run_agentic_tool(
         content = m.get("content") or m.get("text") or ""
         if content:
             messages.append({"role": role, "content": content})
+
+    if active_var == "C":
+        messages.append({"role": "system", "content": PENGINGAT_SISTEM_VARIAN_C})
+
     messages.append({"role": "user", "content": user_text})
 
     MAX_TOOL_ROUNDS = 3
