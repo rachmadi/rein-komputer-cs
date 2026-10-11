@@ -61,9 +61,8 @@ ATURAN INTENT & KONTEKS:
 - Pertanyaan ragu tentang produk yang sedang dibahas di layar:
   * Keraguan kelayakan/kemampuan beban kerja -> 'evaluasi_kecocokan' ('rujukan_produk': nomor urut produk tampil [1], [2]).
   * Keraguan harga atau rincian komponen/fitur fisik perangkat tampil (termasuk kelengkapan, pendingin, ketahanan/sertifikasi) -> 'tanya_spesifikasi' ('rujukan_produk': nomor urut produk tampil [1], [2]).
-    Atribut spesifik: 'ram', 'storage', 'cpu', 'gpu', 'layar', 'baterai', 'port', 'bobot', 'keyboard', 'kamera', 'harga'.
-    Jika menanyakan gambaran/ringkasan spek umum secara utuh -> 'atribut': null.
-    Jika menanyakan fitur fisik/spesifikasi di luar daftar atribut (misal stylus, pendingin ruang uap, sertifikasi uji jatuh) -> 'atribut': 'lainnya'.
+    Atribut spesifik: kirim atribut teknis atau pertanyaan spesifikasi sebagai teks bebas sesuai pertanyaan pelanggan (misal 'cetak foto', 'tabung tinta', 'ram', 'layar', 'port', 'baterai', 'kelebihan', dll).
+    Jika menanyakan gambaran/ringkasan spek umum secara utuh (misal 'spesifikasinya?') -> 'atribut': null.
 - Jawaban pelanggan yang bukan jawaban atas pertanyaan bot -> 'jawab_pertanyaan_bot' tanpa membuka pencarian produk.
 - Mencabut atau menghapus batas budget (misal 'tanpa batas budget' / 'bebas budget') -> gunakan 'perbaiki_percakapan' (koreksi) atau 'lanjutan_hasil' (yang_lain) dengan 'pembaruan_state': {'budget': 0}.
 - Pertanyaan ketersediaan produk/kategori (misal 'ada X?', 'apakah ada laptop?', 'ada printer apa gak?') adalah 'cari_produk', BUKAN 'perbaiki_percakapan'.

@@ -463,7 +463,7 @@ class GroundingChecker:
             for sp in specs:
                 val = sp.get("nilai") or sp.get("nilai_spesifikasi")
                 attr = sp.get("atribut")
-                if val and attr != "spek_umum":
+                if val and attr not in ("spek_umum", "spesifikasi", "kelebihan") and fakta.get("tipe_jawaban") not in ("kelebihan", "ringkasan_spesifikasi"):
                     val_str = str(val).lower()
                     val_tokens = [tok for tok in re.split(r"[\s\|\,\;]+", val_str) if len(tok) >= 2 and tok not in ("inci", "fhd", "ips", "ram", "ssd", "ddr4", "ddr5", "tipe")]
                     if val_str not in teks.lower() and not any(tok in teks.lower() for tok in val_tokens):

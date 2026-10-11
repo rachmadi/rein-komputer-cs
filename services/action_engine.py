@@ -113,7 +113,7 @@ def cpu_tier_to_description(tier: int) -> str:
 
 
 def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
-    """Merakit lembar spesifikasi lengkap: semua kolom tidak kosong + isi raw_data (Putaran 13 Butir C)."""
+    """Merakit lembar spesifikasi lengkap: semua kolom tidak kosong + isi raw_data (Putaran 13 Butir C, Putaran 15b Butir 4)."""
     if not isinstance(p, dict):
         return {}
     specs: dict[str, Any] = {}
@@ -132,6 +132,12 @@ def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
         "srgb_pct": "akurasi_warna_srgb",
         "screen_inch": "ukuran_layar",
         "os": "sistem_operasi",
+        "ram_gb": "ram_gb",
+        "storage_ssd_gb": "storage_ssd_gb",
+        "vram_gb": "vram_gb",
+        "cpu_tier": "cpu_tier",
+        "gpu_class": "gpu_class",
+        "gpu_dedicated": "gpu_dedicated",
     }
     for k, label in field_labels.items():
         v = p.get(k)
@@ -142,11 +148,13 @@ def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
                 specs[label] = f"{int(v)}% sRGB"
             elif label == "ukuran_layar" and isinstance(v, (int, float)):
                 specs[label] = f"{v} inci"
+            elif label == "gpu_dedicated":
+                specs[label] = bool(v)
             else:
                 specs[label] = v
 
     p_price = p.get("harga") or p.get("harga_idr")
-    if p_price:
+    if p_price not in (None, "", 0):
         specs["harga"] = format_rupiah(int(p_price))
 
     raw = p.get("raw_data")
@@ -166,21 +174,169 @@ def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
                     specs[lbl] = ", ".join(str(x) for x in rv)
                 else:
                     specs[lbl] = rv
+                if rk != lbl and rk not in specs:
+                    specs[rk] = specs[lbl]
 
-    extra_fields = [
-        "fungsi", "teknologi", "kecepatan", "resolusi", "konektivitas",
-        "garansi", "port", "tipe_printer", "wifi", "duplex"
-    ]
-    for ef in extra_fields:
-        v = p.get(ef)
-        if v not in (None, "", [], {}) and ef not in specs:
-            lbl = "kecepatan_cetak" if ef == "kecepatan" else ef
-            if isinstance(v, list):
-                specs[lbl] = ", ".join(str(x) for x in v)
-            else:
-                specs[lbl] = v
+    skip_cols = {
+        "kode", "raw_data", "id", "created_at", "image_url", "sumber_url",
+        "image_file", "tanggal_harga", "is_accessory"
+    }
+    for col, val in p.items():
+        if col not in skip_cols and col not in field_labels and col not in specs:
+            if val not in (None, "", [], {}):
+                if isinstance(val, list):
+                    specs[col] = ", ".join(str(x) for x in val)
+                else:
+                    specs[col] = val
 
     return specs
+
+
+SYNONYMS_SPEC = {
+    "harga": ["harga", "harga_idr", "price", "banderol", "biaya"],
+    "ram": ["ram", "ram_gb", "ram_type", "memori", "memory"],
+    "storage": ["storage", "storage_ssd_gb", "penyimpanan", "ssd", "hdd", "rom", "kapasitas"],
+    "cpu": ["cpu", "prosesor", "processor", "cpu_vendor", "cpu_tier"],
+    "gpu": ["gpu", "grafis", "vga", "gpu_class", "gpu_dedicated", "vram_gb", "kartu_grafis"],
+    "layar": ["display", "layar", "screen", "monitor", "screen_inch", "panel", "refresh_hz", "srgb_pct"],
+    "baterai": ["baterai", "battery", "daya"],
+    "port": ["port", "ports", "colokan", "konektivitas", "koneksi", "io"],
+    "bobot": ["bobot", "berat", "weight"],
+    "keyboard": ["keyboard", "papan_ketik"],
+    "kamera": ["webcam", "kamera", "camera"],
+    "os": ["os", "sistem_operasi", "operating_system"],
+    "cetak_foto": ["cetak_foto", "cetak foto", "foto", "borderless", "cetak tanpa tepi"],
+    "tipe_printer": ["tipe_printer", "tipe printer", "tangki tinta", "tabung tinta", "ink tank", "tinta"],
+    "kecepatan_cetak": ["kecepatan_cetak", "kecepatan cetak", "kecepatan", "ipm", "ppm"],
+    "hasil_cetak_tinta": ["hasil_cetak_tinta", "hasil cetak tinta", "kapasitas cetak", "kapasitas tinta"],
+    "fungsi": ["fungsi", "scan", "copy", "fitur"],
+    "wifi": ["wifi", "nirkabel", "wireless"],
+    "duplex": ["duplex", "bolak balik", "cetak bolak-balik"],
+}
+
+
+def lookup_attribute_in_product(p: dict, attr_query: str, lembar: dict[str, Any]) -> Tuple[bool, Any, str]:
+    """Mencari nilai atribut teknis secara data-driven dari lembar spesifikasi, kolom tabel, atau raw_data."""
+    if not attr_query:
+        return False, None, ""
+    q = str(attr_query).lower().strip()
+    q_clean = re.sub(r"[^a-z0-9]", "", q)
+
+    raw = p.get("raw_data")
+    raw_dict = {}
+    if isinstance(raw, dict):
+        raw_dict = raw
+    elif isinstance(raw, str):
+        try:
+            raw_dict = json.loads(raw)
+        except Exception:
+            pass
+
+    # 1. Exact match di lembar
+    if q in lembar and lembar[q] not in (None, "", [], {}):
+        return True, lembar[q], q
+    for k, v in lembar.items():
+        if q_clean == re.sub(r"[^a-z0-9]", "", k.lower()) and v not in (None, "", [], {}):
+            return True, v, k
+
+    # 2. Match di p langsung
+    if q in p:
+        val = p[q]
+        if val not in (None, "", [], {}):
+            return True, str(val), q
+        else:
+            return False, None, q
+
+    # 3. Match di raw_dict langsung
+    if q in raw_dict:
+        val = raw_dict[q]
+        if val not in (None, "", [], {}):
+            return True, str(val), q
+        else:
+            return False, None, q
+
+    # 4. Synonym match
+    matched_target = None
+    for syn_key, syn_list in SYNONYMS_SPEC.items():
+        if q == syn_key or q_clean == re.sub(r"[^a-z0-9]", "", syn_key) or any(q == s or q_clean == re.sub(r"[^a-z0-9]", "", s) for s in syn_list):
+            matched_target = syn_list
+            break
+    if matched_target:
+        for cand in matched_target:
+            if cand in lembar and lembar[cand] not in (None, "", [], {}):
+                return True, lembar[cand], cand
+            if cand in raw_dict and raw_dict[cand] not in (None, "", [], {}):
+                return True, raw_dict[cand], cand
+            if cand in p and p[cand] not in (None, "", [], {}):
+                return True, p[cand], cand
+
+    # 5. Substring / fuzzy match di lembar dan raw_dict
+    if len(q_clean) >= 3:
+        for k, v in lembar.items():
+            k_clean = re.sub(r"[^a-z0-9]", "", k.lower())
+            if (q_clean in k_clean or k_clean in q_clean) and v not in (None, "", [], {}):
+                return True, v, k
+
+    # 6. Kata kunci khusus domain
+    if "tinta" in q or "tabung" in q:
+        for k in ("tipe_printer", "hasil_cetak_tinta"):
+            if k in raw_dict and raw_dict[k]:
+                return True, raw_dict[k], k
+            if k in lembar and lembar[k]:
+                return True, lembar[k], k
+    if "foto" in q:
+        if "cetak_foto" in raw_dict and raw_dict["cetak_foto"]:
+            return True, raw_dict["cetak_foto"], "cetak_foto"
+
+    return False, None, q
+
+
+def build_perbandingan_kelebihan(target_p: dict, comp_prods: list[dict], lembar: dict[str, Any]) -> str:
+    """Membangun ringkasan kelebihan produk berbasis data murni (dibandingkan produk tampil lain jika ada)."""
+    nama_target = target_p.get("nama", "produk ini")
+    poin = []
+
+    if comp_prods:
+        comp = comp_prods[0]
+        nama_comp = comp.get("nama", "produk pembanding")
+        lembar_comp = build_lembar_spesifikasi(comp)
+
+        p_price = target_p.get("harga") or target_p.get("harga_idr") or 0
+        c_price = comp.get("harga") or comp.get("harga_idr") or 0
+        if p_price and c_price and p_price < c_price:
+            selisih = c_price - p_price
+            poin.append(f"harga lebih terjangkau selisih {format_rupiah(selisih)} dibandingkan {nama_comp}")
+
+        for k, v in lembar.items():
+            if k in ("nama", "kategori", "merek", "harga", "kode", "sumber_spek", "catatan_sumber"):
+                continue
+            v_comp = lembar_comp.get(k)
+            if v and not v_comp:
+                poin.append(f"memiliki fitur {k}: {v}")
+            elif k in ("ram_gb", "storage_ssd_gb", "vram_gb", "refresh_hz", "cpu_tier") and isinstance(v, (int, float)) and isinstance(v_comp, (int, float)) and v > v_comp:
+                poin.append(f"{k} lebih tinggi ({v} vs {v_comp} pada {nama_comp})")
+            elif k == "wifi" and str(v).lower() in ("ya", "true") and str(v_comp).lower() not in ("ya", "true"):
+                poin.append("sudah dilengkapi koneksi Wi-Fi nirkabel")
+            elif k == "cetak_foto" and v and not v_comp:
+                poin.append(f"mendukung cetak foto ({v})")
+            elif k == "hasil_cetak_tinta" and v and not v_comp:
+                poin.append(f"kapasitas cetak tinta {v}")
+
+    if not poin:
+        fitur_unggulan = []
+        for k in ("wifi", "cetak_foto", "hasil_cetak_tinta", "duplex", "kecepatan_cetak", "baterai", "panel", "refresh_rate", "layar"):
+            if k in lembar and lembar[k]:
+                fitur_unggulan.append(f"{k}: {lembar[k]}")
+        if fitur_unggulan:
+            poin.extend(fitur_unggulan[:3])
+        else:
+            spek_ringkas = clean_specs(target_p)
+            if spek_ringkas:
+                poin.append(f"spesifikasi teknis: {spek_ringkas}")
+
+    if poin:
+        return f"{nama_target} memiliki keunggulan pada {'; '.join(poin)}"
+    return f"Spesifikasi {nama_target}: {clean_specs(target_p)}"
 
 
 class ActionEngine:
@@ -1463,130 +1619,111 @@ class ActionEngine:
             }
             return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=[padanan] if (closest and minta_pengganti) else [])
 
-        # F3: Kasus 1 - Atribut None / kosong -> Permintaan spesifikasi umum -> Ringkasan spek utama katalog
-        if attr is None:
+        # Penanganan pertanyaan spesifikasi teknis berbasis data (Putaran 15b Butir 4)
+        attr_raw = args.atribut
+        attr_str = str(attr_raw.value if hasattr(attr_raw, "value") else (attr_raw or "")).strip()
+        attr_lower = attr_str.lower()
+
+        # Kasus 1: "Spesifikasinya?" / spek umum / atribut kosong
+        if not attr_raw or attr_lower in ("", "none", "spesifikasi", "spek", "spesifikasinya", "speknya", "spek_umum", "ringkasan"):
             fakta_items = []
             for p in catalog_products:
+                lembar = build_lembar_spesifikasi(p)
                 spek_ringkas = clean_specs(p) or f"{p.get('cpu', '')} | {p.get('ram', '')} | {p.get('storage', '')} | {p.get('display', '')}"
                 fakta_items.append({
                     "kode": p.get("kode"),
                     "nama": p.get("nama"),
-                    "atribut": "spek_umum",
+                    "atribut": "spesifikasi",
                     "nilai": spek_ringkas,
                     "nilai_spesifikasi": spek_ringkas,
                     "ringkasan_spek": spek_ringkas,
-                    "spesifikasi_ringkas": spek_ringkas
+                    "spesifikasi_ringkas": spek_ringkas,
+                    "lembar_spesifikasi": lembar
                 })
             fakta = {
                 "status": "sukses",
-                "atribut_ditanya": "spek_umum",
+                "tipe_jawaban": "ringkasan_spesifikasi",
+                "atribut_ditanya": "spesifikasi",
                 "ringkasan_spek": fakta_items[0]["ringkasan_spek"] if fakta_items else "",
                 "spesifikasi_ringkas": fakta_items[0]["spesifikasi_ringkas"] if fakta_items else "",
+                "lembar_spesifikasi": fakta_items[0]["lembar_spesifikasi"] if fakta_items else {},
                 "spesifikasi": fakta_items,
                 "spesifikasi_produk": fakta_items,
+                "produk": [dict(p, lembar_spesifikasi=build_lembar_spesifikasi(p), catatan_minimum={"memenuhi": True, "alasan": "Spesifikasi produk"}) for p in catalog_products],
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
             return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=catalog_products)
 
-        # F3: Kasus 2 - Atribut LAINNYA -> Atribut spesifik tidak dikenal / tidak ada di katalog -> B15
-        if attr == AtributSpesifikasiEnum.LAINNYA:
+        # Kasus 2: "Kelebihannya?" / kelebihan produk
+        if attr_lower in ("kelebihan", "kelebihannya", "keunggulan", "keunggulannya", "plus") or "kelebihan" in attr_lower:
+            target_p = catalog_products[0]
+            lembar = build_lembar_spesifikasi(target_p)
+            all_shown = state.get("produk_tampil", [])
+            comp_prods = [p for p in all_shown if isinstance(p, dict) and p.get("kode") != target_p.get("kode")]
+            ringkasan_kelebihan = build_perbandingan_kelebihan(target_p, comp_prods, lembar)
+
+            fakta_items = [{
+                "kode": target_p.get("kode"),
+                "nama": target_p.get("nama"),
+                "atribut": "kelebihan",
+                "nilai": ringkasan_kelebihan,
+                "nilai_spesifikasi": ringkasan_kelebihan,
+                "lembar_spesifikasi": lembar
+            }]
             fakta = {
-                "status": "atribut_tidak_tersedia",
-                "atribut_ditanya": "lainnya",
-                "pesan": "Informasi mengenai spesifikasi tersebut belum tersedia di sistem kami. Kakak dapat langsung menanyakan ke staf toko kami di 0812-3456-7890 (WhatsApp).",
+                "status": "sukses",
+                "tipe_jawaban": "kelebihan",
+                "atribut_ditanya": "kelebihan",
+                "nama": target_p.get("nama"),
+                "ringkasan_kelebihan": ringkasan_kelebihan,
+                "lembar_spesifikasi": lembar,
+                "produk_pembanding": [dict(cp, lembar_spesifikasi=build_lembar_spesifikasi(cp)) for cp in comp_prods],
+                "spesifikasi": fakta_items,
+                "spesifikasi_produk": fakta_items,
+                "produk": [dict(p, lembar_spesifikasi=build_lembar_spesifikasi(p)) for p in catalog_products],
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
-            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta)
+            return ActionResult(aksi=ActionEnum.TANYA_SPESIFIKASI, fakta=fakta, produk_list=catalog_products)
 
-        # F3: Kasus 3 - Atribut spesifik yang dikenal
+        # Kasus 3: Atribut spesifik (berbasis data murni, tanpa aturan kategori manual)
         fakta_items = []
         ada_tidak_tersedia = False
 
         for p in catalog_products:
-            kategori = str(p.get("kategori", "")).lower()
-            val = None
+            lembar = build_lembar_spesifikasi(p)
+            found, val, matched_k = lookup_attribute_in_product(p, attr_str, lembar)
 
-            if attr == AtributSpesifikasiEnum.HARGA:
-                p_price = get_product_price(p)
-                val = format_rupiah(p_price)
-            elif attr == AtributSpesifikasiEnum.RAM:
-                if kategori in ("laptop", "desktop", "all-in-one"):
-                    val = p.get("ram") or (f"{p.get('ram_gb')} GB" if p.get("ram_gb") else None)
-            elif attr == AtributSpesifikasiEnum.STORAGE:
-                if kategori in ("laptop", "desktop", "all-in-one"):
-                    val = p.get("storage") or (f"{p.get('storage_ssd_gb')} GB" if p.get("storage_ssd_gb") else None)
-            elif attr == AtributSpesifikasiEnum.CPU:
-                if kategori in ("laptop", "desktop", "all-in-one"):
-                    val = p.get("cpu")
-            elif attr == AtributSpesifikasiEnum.GPU:
-                if kategori in ("laptop", "desktop", "all-in-one"):
-                    val = p.get("gpu")
-            elif attr == AtributSpesifikasiEnum.LAYAR:
-                if kategori in ("laptop", "monitor", "desktop", "all-in-one"):
-                    val = p.get("display") or (f"{p.get('screen_inch')} inci" if p.get("screen_inch") else None)
-            elif attr == AtributSpesifikasiEnum.BATERAI:
-                if kategori == "laptop":
-                    val = p.get("baterai")
-            elif attr == AtributSpesifikasiEnum.PORT:
-                ports = p.get("ports") or p.get("port")
-                if isinstance(ports, list):
-                    val = ", ".join(str(x) for x in ports)
-                else:
-                    val = ports
-            elif attr == AtributSpesifikasiEnum.BOBOT:
-                val = p.get("bobot")
-            elif attr == AtributSpesifikasiEnum.KEYBOARD:
-                val = p.get("keyboard")
-            elif attr == AtributSpesifikasiEnum.KAMERA:
-                if kategori == "laptop":
-                    val = p.get("webcam") or p.get("kamera")
-            else:
-                attr_key = attr.value if hasattr(attr, "value") else str(attr)
-                val = p.get(attr_key)
-
-            if not val:
-                raw = p.get("raw_data")
-                if raw:
-                    raw_dict = raw if isinstance(raw, dict) else {}
-                    if isinstance(raw, str):
-                        try:
-                            raw_dict = json.loads(raw)
-                        except Exception:
-                            pass
-                    attr_key = attr.value if hasattr(attr, "value") else str(attr)
-                    val = raw_dict.get(attr_key)
-                    if isinstance(val, list):
-                        val = ", ".join(str(x) for x in val)
-                    elif isinstance(val, bool):
-                        val = "Ya" if val else "Tidak"
-
-            if not val:
+            if not found or val in (None, "", [], {}):
                 ada_tidak_tersedia = True
             else:
+                val_display = "Ya" if val is True else ("Tidak" if val is False else str(val))
                 fakta_items.append({
                     "kode": p.get("kode"),
                     "nama": p.get("nama"),
-                    "atribut": attr.value if hasattr(attr, "value") else str(attr),
-                    "nilai": str(val),
-                    "nilai_spesifikasi": str(val),
+                    "atribut": matched_k or attr_str,
+                    "nilai": val_display,
+                    "nilai_spesifikasi": val_display,
                     "ringkasan_spek": clean_specs(p),
-                    "lembar_spesifikasi": build_lembar_spesifikasi(p),
-                    "catatan_minimum": {"memenuhi": True, "alasan": f"Atribut {attr.value if hasattr(attr, 'value') else str(attr)} tersedia"}
+                    "lembar_spesifikasi": lembar,
+                    "catatan_minimum": {"memenuhi": True, "alasan": f"Atribut {attr_str} tersedia"}
                 })
 
         if ada_tidak_tersedia and not fakta_items:
             fakta = {
                 "status": "atribut_tidak_tersedia",
-                "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
-                "pesan": f"Informasi spesifikasi '{attr.value if hasattr(attr, 'value') else str(attr)}' tidak tersedia untuk produk tersebut.",
+                "atribut_ditanya": attr_str,
+                "pesan": f"Informasi spesifikasi '{attr_str}' tidak tersedia untuk produk tersebut.",
+                "lembar_spesifikasi": build_lembar_spesifikasi(catalog_products[0]) if catalog_products else {},
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }
         else:
             fakta = {
                 "status": "sukses",
-                "atribut_ditanya": attr.value if hasattr(attr, "value") else str(attr),
+                "atribut_ditanya": attr_str,
                 "spesifikasi": fakta_items,
                 "spesifikasi_produk": fakta_items,
+                "lembar_spesifikasi": fakta_items[0]["lembar_spesifikasi"] if fakta_items else {},
+                "nilai": fakta_items[0]["nilai"] if fakta_items else "",
                 "produk": [dict(p, lembar_spesifikasi=build_lembar_spesifikasi(p), catatan_minimum={"memenuhi": True, "alasan": "Sesuai spesifikasi yang diminta"}) for p in catalog_products[:3]],
                 "rujukan_dipakai": [p.get("kode") for p in catalog_products]
             }

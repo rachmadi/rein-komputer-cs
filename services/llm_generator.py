@@ -38,6 +38,7 @@ Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
 9. Gaya & Variasi: Maaf paling banyak sekali per beberapa giliran, lalu langsung bertindak; jika 'sudah_minta_maaf' bernilai true, jangan minta maaf lagi; jangan mengulang pembuka yang sama dengan daftar 'pembuka_terakhir'.
 10. Batas budget pelanggan adalah FILTER KERAS: DILARANG menawarkan, menyebut, atau merekomendasikan produk dengan harga di atas budget pelanggan sebagai pilihan. Jika tidak ada yang memenuhi seluruh syarat minimum, tampilkan produk di dalam budget yang paling mendekati dengan catatan jujur kekurangannya. Jika tidak ada produk sama sekali di dalam budget, katakan jujur dan tanyakan apakah pelanggan bersedia menaikkan budget — jangan menawarkan produk di luar budget tanpa diminta.
 11. Kontrak Konteks Toko: (a) Jika status != 'sukses', jangan menyatakan produk tersedia atau merekomendasikan produk. (b) Jika status 'tidak_dijual', sampaikan barang/merek tidak dijual di ReIn Komputer, sebutkan isi Konteks Toko, dan jangan menawarkan produk pengganti kecuali diminta. (c) Jangan pernah mengklaim pelanggan menginginkan kriteria yang tidak ada di Permintaan Pelanggan Giliran Ini atau riwayat obrolan. (d) Jangan pernah menyebut kategori atau merek di luar Konteks Toko kecuali mengonfirmasi toko tidak menjualnya. (e) Pertanyaan tentang toko menjual apa dijawab langsung dari Konteks Toko tanpa mencari produk.
+12. Pertanyaan spesifikasi berbasis data (tanya_spesifikasi): Jawab HANYA dari lembar_spesifikasi atau data produk di FAKTA. Jika informasinya tidak ada di data (status 'atribut_tidak_tersedia'), katakan terus terang informasinya belum tersedia dalam data kami tanpa menebak dan tanpa mengalihkan ke spesifikasi lain. Jika menanyakan spesifikasi umum ('spesifikasinya?'), jawab dengan ringkasan lembar spesifikasi. Jika menanyakan kelebihan ('kelebihannya?'), jawab dengan perbandingan terhadap produk pembanding yang sedang dibahas, hanya dari data.
 
 Contoh respons sintetis saat pelanggan kecewa:
 - Contoh 1: Pelanggan: "Lama sekali responnya, butuh laptop kerja segera!" | FAKTA: {"status": "sukses", "produk_list": [{"nama": "Acro 14", "harga": 7000000, "ram": "16 GB"}]}
@@ -86,12 +87,16 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
 
     if aksi_clean == "tanya_spesifikasi" or status in ("atribut_tidak_tersedia", "spek_umum") or fakta.get("spesifikasi_produk"):
         if status == "atribut_tidak_tersedia":
-            return f"Informasi mengenai spesifikasi tersebut belum tersedia di sistem kami, Kak. Kakak dapat langsung menghubungi {KONTAK_STAF}."
+            attr = fakta.get("atribut_ditanya") or "tersebut"
+            return f"Informasi mengenai spesifikasi {attr} belum tersedia dalam data kami, Kak."
+        if fakta.get("tipe_jawaban") == "kelebihan":
+            ringkasan = fakta.get("ringkasan_kelebihan") or fakta.get("pesan") or ""
+            return f"Kelebihan {fakta.get('nama', 'produk tersebut')}: {ringkasan}."
         prods = fakta.get("spesifikasi_produk") or fakta.get("spesifikasi") or []
         if prods:
             item = prods[0]
-            if item.get("atribut") == "spek_umum":
-                return f"Berikut spesifikasi {item.get('nama', 'produk ini')}: {item.get('nilai', '')}."
+            if item.get("atribut") in ("spek_umum", "spesifikasi") or fakta.get("tipe_jawaban") == "ringkasan_spesifikasi":
+                return f"Berikut spesifikasi {item.get('nama', 'produk ini')}: {item.get('nilai') or item.get('ringkasan_spek', '')}."
             return f"Spesifikasi {item.get('atribut', 'perangkat')} untuk {item.get('nama', 'produk ini')} adalah {item.get('nilai', '')}."
 
     if status == "tidak_ada_dalam_anggaran":
@@ -166,7 +171,8 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
     if prods:
         nama_list = [p.get("nama") for p in prods[:3] if p.get("nama")]
         if nama_list:
-            return f"Berikut beberapa pilihan yang sesuai di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+            kat = fakta.get("kategori") or "laptop atau komputer"
+            return f"Berikut rekomendasi {kat} yang sesuai kebutuhan di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
 
     if status == "sistem_error" or fakta.get("alasan") == "sistem_error":
         return EMERGENCY_FALLBACK_TEXT

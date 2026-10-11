@@ -130,7 +130,7 @@ class ActionArguments(BaseModel):
     rujukan_produk: Optional[List[Union[int, str]]] = None  # nomor urut (1, 2, dll) atau nama dari produk_tampil
     produk: Optional[List[str]] = None                      # kode produk hasil resolusi validator
     produk_luar_katalog: Optional[List[str]] = None         # rujukan produk yang tidak ada di katalog ReIn Komputer
-    atribut: Optional[AtributSpesifikasiEnum] = None
+    atribut: Optional[Union[AtributSpesifikasiEnum, str]] = None
 
     # lanjutan_hasil, perbaiki_percakapan, basa_basi
     jenis: Optional[JenisEnum] = None
@@ -186,4 +186,12 @@ def get_parser_json_schema(allowed_actions: Optional[List[ActionEnum]] = None) -
         allowed_vals = [a.value if hasattr(a, "value") else str(a) for a in allowed_actions]
         if "$defs" in schema and "ActionEnum" in schema["$defs"]:
             schema["$defs"]["ActionEnum"]["enum"] = allowed_vals
+    if "$defs" in schema and "ActionArguments" in schema["$defs"]:
+        props = schema["$defs"]["ActionArguments"].get("properties", {})
+        if "atribut" in props:
+            props["atribut"] = {
+                "anyOf": [{"type": "string"}, {"type": "null"}],
+                "default": None,
+                "title": "Atribut"
+            }
     return schema
