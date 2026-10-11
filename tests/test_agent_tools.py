@@ -392,3 +392,64 @@ def test_grounding_checker_usage_text_exemption():
     assert not any("kuliah" in v.lower() for v in violations_k), (
         f"Peruntukan 'kuliah' ada di usage_text produk sehingga tidak boleh ditandai: {violations_k}"
     )
+
+
+def test_property_product_mention_keys(catalog):
+    """Putaran 19 Butir 4: Tes berbasis properti untuk pencocok kartu produk."""
+    from services.agentic_tool_engine import (
+        build_product_key_index,
+        get_product_mention_position,
+        is_product_mentioned_in_reply,
+    )
+    from core.catalog import Catalog
+
+    # Ambil 40 produk resmi katalog aktif (mengabaikan produk fixture warisan KB-L01..10, KB-D01..05, KB-P01..05)
+    legacy_codes = {f"KB-L{i:02d}" for i in range(1, 11)} | {f"KB-D{i:02d}" for i in range(1, 6)} | {f"KB-P{i:02d}" for i in range(1, 6)}
+    active_records = [p for p in catalog.products if p["kode"] not in legacy_codes]
+    assert len(active_records) == 40
+    active_catalog = Catalog(active_records)
+
+    index = build_product_key_index(active_catalog)
+    assert len(index) == len(active_catalog.by_code)
+
+    # 1. Properti: untuk setiap produk di katalog, setiap kunci di indeksnya tidak pernah cocok dengan produk lain
+    for code, keys in index.items():
+        prod = active_catalog.by_code[code]
+        for key in keys:
+            assert is_product_mentioned_in_reply(prod, key, catalog=active_catalog), (
+                f"Kunci '{key}' tidak cocok dengan produk asalnya {code}"
+            )
+            for other_code, other_prod in active_catalog.by_code.items():
+                if other_code == code:
+                    continue
+                assert not is_product_mentioned_in_reply(other_prod, key, catalog=active_catalog), (
+                    f"Kolisi kunci! Kunci '{key}' milik {code} ({prod.get('nama')}) "
+                    f"juga cocok dengan {other_code} ({other_prod.get('nama')})"
+                )
+
+    # 2. Contoh nyata
+    cases = [
+        ("Mac mini M2", "KB-D11"),
+        ("VG27AQ", "KB-M05"),
+        ("T82X", "KB-P09"),
+        ("24MP400", "KB-M01"),
+        ("MacBook Pro", "KB-L30"),
+    ]
+    for text, expected_code in cases:
+        expected_prod = active_catalog.by_code[expected_code]
+        pos = get_product_mention_position(expected_prod, text, catalog=active_catalog)
+        assert pos >= 0, f"'{text}' diharapkan cocok dengan {expected_code}, tapi pos={pos}"
+        for other_code, other_prod in active_catalog.by_code.items():
+            if other_code != expected_code:
+                assert not is_product_mentioned_in_reply(other_prod, text, catalog=active_catalog), (
+                    f"'{text}' diharapkan hanya milik {expected_code}, tapi juga cocok dengan {other_code}"
+                )
+
+    # 3. Kalimat generik tidak mencocokkan produk mana pun
+    generic_text = "cocok untuk gaming, slim, modern, dan layar oled"
+    for code, prod in active_catalog.by_code.items():
+        pos = get_product_mention_position(prod, generic_text, catalog=active_catalog)
+        assert pos == -1, (
+            f"Kalimat generik mencocokkan {code} ({prod.get('nama')}) pada pos {pos}"
+        )
+

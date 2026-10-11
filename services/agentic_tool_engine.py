@@ -78,73 +78,122 @@ SYSTEM_PROMPT = build_agent_system_prompt()
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
 
-STOP_WORDS = {
-    "asus", "acer", "lenovo", "hp", "msi", "apple", "intel", "axioo", "dell", "lg", "brother", "epson", "canon",
-    "laptop", "desktop", "monitor", "printer", "tower", "pro", "mini", "inch", "essential", "gen", "plus"
-}
+_PRODUCT_KEYS_CACHE: dict[int, dict[str, list[str]]] = {}
 
 
-def summarize_tool_result(fn_name: str, result: Any) -> str:
-    """Membuat ringkasan singkat dari hasil alat untuk pencatatan log."""
-    if not isinstance(result, dict):
-        return str(result)[:100]
-    if fn_name == "cari_produk":
-        prods = result.get("produk", [])
-        if prods:
-            codes = [p.get("kode", "") for p in prods if p.get("kode")]
-            return f"Ditemukan {len(prods)} produk: {', '.join(codes)}"
-        termurah = result.get("harga_termurah_katalog")
-        if termurah:
-            return f"0 produk. Harga termurah katalog: {termurah}"
-        return "0 produk ditemukan"
-    elif fn_name == "detail_produk":
-        items = result.get("detail", [])
-        codes = [it.get("kode", "") for it in items if it.get("kode")]
-        return f"Detail lembar spesifikasi: {', '.join(codes)}"
-    elif fn_name == "pengetahuan_kebutuhan":
-        sumber = result.get("sumber", "")
-        profil = result.get("profil_id") or result.get("judul", "")
-        return f"Pengetahuan kebutuhan: {profil} ({sumber})"
-    elif fn_name == "info_toko":
-        topik = result.get("topik", "")
-        return f"Info toko topik: {topik}"
-    return str(result)[:100]
+def build_product_key_index(catalog: Optional[Catalog] = None) -> dict[str, list[str]]:
+    """Membangun indeks kunci produk dari katalog sekali saja (Putaran 19 Butir 4)."""
+    global _PRODUCT_KEYS_CACHE
+    cat_inst = catalog or get_active_catalog()
+    cat_id = id(cat_inst)
+    if cat_id in _PRODUCT_KEYS_CACHE:
+        return _PRODUCT_KEYS_CACHE[cat_id]
+
+    product_keys: dict[str, set[str]] = {}
+    token_to_codes: dict[str, set[str]] = {}
+    phrase_to_codes: dict[str, set[str]] = {}
+
+    for code, p in cat_inst.by_code.items():
+        product_keys[code] = set()
+
+        # 1. Kode produk
+        product_keys[code].add(code.lower())
+
+        nama = str(p.get("nama") or "").strip()
+        brand = str(p.get("brand") or p.get("merek") or "").strip()
+
+        # 2. Nama lengkap
+        if nama:
+            product_keys[code].add(nama.lower())
+
+        # 3. Nama tanpa merek di depannya
+        if brand and nama.lower().startswith(brand.lower()):
+            nama_no_brand = nama[len(brand):].strip().lstrip("-").strip()
+            if nama_no_brand and len(nama_no_brand) >= 3 and nama_no_brand.lower() != nama.lower():
+                product_keys[code].add(nama_no_brand.lower())
+
+        # 4. Token alfanumerik khas (termasuk potongan di kiri/kanan tanda hubung)
+        raw_tokens = re.split(r"\s+", nama)
+        sub_tokens = set()
+        for rt in raw_tokens:
+            cleaned = rt.strip(".,;:()\"'[]{}")
+            if cleaned:
+                parts = cleaned.split("-")
+                if len(parts) > 1:
+                    for part in parts:
+                        p_clean = part.strip(".,;:()\"'[]{}")
+                        if p_clean:
+                            sub_tokens.add(p_clean)
+                sub_tokens.add(cleaned)
+
+        for tok in sub_tokens:
+            tok_low = tok.lower()
+            if len(tok) >= 3 and any(c.isalpha() for c in tok) and any(c.isdigit() for c in tok):
+                token_to_codes.setdefault(tok_low, set()).add(code)
+
+        # 5. Frasa dua kata berurutan dari nama (tanpa merek, hanya bagian sebelum "+")
+        nama_pre_plus = nama.split("+")[0].strip()
+        if brand and nama_pre_plus.lower().startswith(brand.lower()):
+            nama_pre_plus = nama_pre_plus[len(brand):].strip().lstrip("-").strip()
+
+        words = [w.strip(".,;:()\"'[]{}") for w in re.split(r"\s+", nama_pre_plus) if w.strip(".,;:()\"'[]{}")]
+        for i in range(len(words) - 1):
+            w1 = words[i]
+            w2 = words[i + 1]
+            if len(w1) >= 2 and len(w2) >= 2:
+                phrase = f"{w1} {w2}".strip()
+                phrase_to_codes.setdefault(phrase.lower(), set()).add(code)
+
+    # Tambahkan token alfanumerik unik
+    for tok_low, codes in token_to_codes.items():
+        if len(codes) == 1:
+            c = next(iter(codes))
+            product_keys[c].add(tok_low)
+
+    # Tambahkan frasa dua kata unik
+    for phr_low, codes in phrase_to_codes.items():
+        if len(codes) == 1:
+            c = next(iter(codes))
+            product_keys[c].add(phr_low)
+
+    final_index = {
+        code: sorted(list(keys), key=lambda k: len(k), reverse=True)
+        for code, keys in product_keys.items()
+    }
+    _PRODUCT_KEYS_CACHE[cat_id] = final_index
+    return final_index
 
 
-def get_product_mention_position(product: dict, reply_text: str) -> int:
+def get_product_mention_position(product: dict, reply_text: str, catalog: Optional[Catalog] = None) -> int:
     """
-    Mengembalikan posisi indeks kemunculan pertama produk di teks balasan (atau -1 jika tidak disebut).
-    Mencari kode produk terlebih dahulu, lalu token model unik dari nama.
+    Mengembalikan posisi indeks kemunculan kunci produk paling awal di teks balasan (atau -1 jika tidak disebut).
+    (Putaran 19 Butir 4).
     """
-    reply_lower = reply_text.lower()
-    pos = len(reply_text) + 1000
+    if not reply_text or not product:
+        return -1
+    code = product.get("kode")
+    if not code:
+        return -1
 
-    kode = product.get("kode", "").lower()
-    if kode:
-        m = re.search(rf"\b{re.escape(kode)}\b", reply_lower)
+    index = build_product_key_index(catalog)
+    keys = index.get(code, [])
+    if not keys:
+        return -1
+
+    earliest_pos = -1
+    for k in keys:
+        pattern = rf"(?<!\w){re.escape(k)}(?!\w)"
+        m = re.search(pattern, reply_text, re.IGNORECASE)
         if m:
-            pos = min(pos, m.start())
+            if earliest_pos == -1 or m.start() < earliest_pos:
+                earliest_pos = m.start()
 
-    nama = product.get("nama", "")
-    tokens = [t.lower() for t in re.split(r"[\s\+\-/]+", nama) if len(t) >= 3 and t.lower() not in STOP_WORDS]
-    model_tokens = [t for t in tokens if any(c.isalpha() for c in t) and not t.isdigit()]
-
-    for tok in model_tokens:
-        m = re.search(rf"\b{re.escape(tok)}\b", reply_lower)
-        if m:
-            pos = min(pos, m.start())
-
-    if pos <= len(reply_text):
-        return pos
-    return -1
+    return earliest_pos
 
 
-def is_product_mentioned_in_reply(product: dict, reply_text: str) -> bool:
-    """
-    Mengecek apakah produk secara spesifik disebut di balasan akhir LLM.
-    Mencocokkan kode produk (misal KB-L19) atau token model unik dari namanya.
-    """
-    return get_product_mention_position(product, reply_text) >= 0
+def is_product_mentioned_in_reply(product: dict, reply_text: str, catalog: Optional[Catalog] = None) -> bool:
+    """Mengecek apakah produk secara spesifik disebut di balasan akhir LLM."""
+    return get_product_mention_position(product, reply_text, catalog=catalog) >= 0
 
 
 def call_ollama_chat_raw(
