@@ -533,8 +533,8 @@ class GroundingChecker:
                 # (a) Pola klaim kebutuhan eksplisit
                 m_keb = re.search(
                     r"\b(?:berdasarkan|sesuai(?:\s+dengan)?)\s+kebutuhan\s+(?:kakak|anda|kamu)\b|"
-                    r"\bkebutuhan\s+(?:kakak|anda|kamu)\s+untuk\s+([a-zA-Z0-9\s]+)|"
-                    r"\buntuk\s+kebutuhan\s+(?:kakak|anda|kamu)\s+(?:akan|terkait|dalam)\s+([a-zA-Z0-9\s]+)",
+                    r"\bkebutuhan\s+(?:kakak|anda|kamu)\s+(?:untuk|buat)\s+([a-zA-Z0-9\s]+)|"
+                    r"\b(?:untuk|buat)\s+kebutuhan\s+(?:kakak|anda|kamu)\s+(?:akan|terkait|dalam)\s+([a-zA-Z0-9\s]+)",
                     k_lower
                 )
                 if m_keb and not is_pertanyaan:
@@ -543,9 +543,9 @@ class GroundingChecker:
 
                 # (b) Pola klaim peruntukan / penggunaan spesifik
                 m_peruntukan = re.search(
-                    r"\b(?:untuk|cocok\s+untuk|pas\s+untuk|ideal\s+untuk)\s+(?:penggunaan|keperluan|aktivitas|pemakaian)\s+([a-zA-Z0-9\s/]+)|"
-                    r"\b(?:cocok\s+untuk|pas\s+untuk|ideal\s+untuk)\s+(kerja\s+kantor|kuliah|sekolah|gaming|desain|editing|render|koding|coding|office|harian)\b|"
-                    r"\buntuk\s+(?:kerja\s+kantor|kuliah|sekolah|gaming|desain\s+grafis|editing\s+video|office\s+dan\s+harian|harian\s+dan\s+office)\b",
+                    r"\b(?:cocok|pas|ideal|sangat\s+baik|bagus)\s+(?:untuk|buat)\s+(?:kebutuhan\s+|penggunaan\s+|keperluan\s+|aktivitas\s+|pemakaian\s+)*([a-zA-Z0-9\s/]+)|"
+                    r"\b(?:untuk|buat)\s+(?:kebutuhan\s+|penggunaan\s+|keperluan\s+|aktivitas\s+|pemakaian\s+)+(kerja\s+kantor|kuliah|sekolah|gaming|desain|editing|render|koding|coding|office|bisnis)\b|"
+                    r"\b(?:untuk|buat)\s+(?:kerja\s+kantor|kuliah|sekolah|gaming|desain\s+grafis|editing\s+video|office\s+dan\s+harian|harian\s+dan\s+office|kuliah\s+dan\s+kantor|kuliah\s+dan\s+kerja|kuliah\s+atau\s+kerja|kerja\s+atau\s+kuliah)\b",
                     k_lower
                 )
                 if m_peruntukan and not is_pertanyaan:
