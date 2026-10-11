@@ -38,3 +38,50 @@ from scripts.migrate_derived_fields import cpu_tier
 ])
 def test_butir2_cpu_tier_apple_dan_pc(cpu_str, expected_tier):
     assert cpu_tier(cpu_str) == expected_tier
+
+
+# =============================================================================
+# BUTIR 3 — Data Kosong dan Keterangan Produk
+# =============================================================================
+def test_butir3_data_kosong_tidak_dianggap_memenuhi_syarat():
+    """Kolom spesifikasi kosong berarti tidak diketahui/tidak termasuk. Jangan dianggap 0 dan jangan dianggap memenuhi syarat."""
+    from services.catalog_search import apply_filters
+    
+    # Produk barebone (SSD None, RAM None)
+    prod_barebone = {
+        "kode": "SYN-D01",
+        "nama": "Mini PC Barebone",
+        "kategori": "desktop",
+        "cpu_tier": 2,
+        "ram_gb": None,
+        "storage_ssd_gb": None,
+        "gpu_dedicated": 0,
+        "raw_data": '{"barebone": true, "catatan": "Belum termasuk RAM dan SSD"}'
+    }
+    
+    # Filter butuh SSD >= 256
+    filters = [{"field": "storage_ssd_gb", "op": ">=", "value": 256, "strength": "soft"}]
+    passed, reason, penalty, report = apply_filters(prod_barebone, filters)
+    assert passed is False
+    assert "storage_ssd_gb" in reason
+    assert "storage_ssd_gb (tidak tersedia/tidak termasuk)" in report["tidak_terpenuhi"]
+
+
+def test_butir3_raw_data_keterangan_masuk_lembar_spesifikasi():
+    """Keterangan di raw_data (barebone, paket, catatan) wajib masuk lembar spesifikasi."""
+    from services.action_engine import build_lembar_spesifikasi
+    
+    p = {
+        "kode": "SYN-D02",
+        "nama": "Komputer Bundling",
+        "kategori": "desktop",
+        "harga_idr": 10000000,
+        "raw_data": '{"barebone": false, "paket": "Termasuk monitor 24 inci", "catatan": "Garansi resmi 3 tahun", "bonus": "Keyboard & Mouse"}'
+    }
+    
+    specs = build_lembar_spesifikasi(p)
+    assert specs.get("paket") == "Termasuk monitor 24 inci"
+    assert specs.get("catatan") == "Garansi resmi 3 tahun"
+    assert specs.get("bonus") == "Keyboard & Mouse"
+    assert specs.get("barebone") is False
+

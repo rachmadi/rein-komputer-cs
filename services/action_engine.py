@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import re
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -1149,27 +1150,37 @@ class ActionEngine:
             rec_ssd = max(512, min_ssd * 2) if min_ssd < 512 else min_ssd
             rec_vram = max(min_vram, 4 if min_vram > 0 else 0)
 
+            kurang_spesifikasi = False
             diff_min = []
-            if p_cpu_tier is not None:
-                diff_min.append(p_cpu_tier - min_cpu)
-            if p_ram is not None:
-                diff_min.append(p_ram - min_ram)
-            if p_ssd is not None:
-                diff_min.append(p_ssd - min_ssd)
-            if p_vram is not None:
-                diff_min.append(p_vram - min_vram)
+            if min_cpu is not None:
+                if p_cpu_tier is None:
+                    kurang_spesifikasi = True
+                else:
+                    diff_min.append(p_cpu_tier - min_cpu)
+            if min_ram is not None:
+                if p_ram is None:
+                    kurang_spesifikasi = True
+                else:
+                    diff_min.append(p_ram - min_ram)
+            if min_ssd is not None:
+                if p_ssd is None:
+                    kurang_spesifikasi = True
+                else:
+                    diff_min.append(p_ssd - min_ssd)
+            if min_vram > 0:
+                if p_vram is None:
+                    kurang_spesifikasi = True
+                else:
+                    diff_min.append(p_vram - min_vram)
 
             diff_rec = []
-            if p_cpu_tier is not None:
-                diff_rec.append(p_cpu_tier - rec_cpu)
-            if p_ram is not None:
-                diff_rec.append(p_ram - rec_ram)
-            if p_ssd is not None:
-                diff_rec.append(p_ssd - rec_ssd)
-            if p_vram is not None:
-                diff_rec.append(p_vram - rec_vram)
+            diff_rec.append((p_cpu_tier - rec_cpu) if p_cpu_tier is not None else -1)
+            diff_rec.append((p_ram - rec_ram) if p_ram is not None else -1)
+            diff_rec.append((p_ssd - rec_ssd) if p_ssd is not None else -1)
+            if rec_vram > 0:
+                diff_rec.append((p_vram - rec_vram) if p_vram is not None else -1)
 
-            if any(d < 0 for d in diff_min):
+            if kurang_spesifikasi or any(d < 0 for d in diff_min):
                 status_kecocokan = "di_bawah_minimum"
             elif all(d >= 0 for d in diff_rec):
                 status_kecocokan = "memenuhi_rekomendasi"

@@ -100,6 +100,26 @@ def clean_specs(p_item: dict) -> str:
         parts.append(f"RAM {r}")
     if p_item.get("storage"):
         parts.append(str(p_item["storage"]))
+    if p_item.get("display"):
+        parts.append(str(p_item["display"]))
+    raw = p_item.get("raw_data")
+    if raw:
+        raw_dict = {}
+        if isinstance(raw, dict):
+            raw_dict = raw
+        elif isinstance(raw, str):
+            try:
+                raw_dict = json.loads(raw)
+            except Exception:
+                pass
+        if raw_dict.get("catatan"):
+            parts.append(str(raw_dict["catatan"]))
+        elif raw_dict.get("paket"):
+            parts.append(str(raw_dict["paket"]))
+        elif raw_dict.get("barebone"):
+            parts.append("Barebone (tanpa RAM & SSD)")
+        if raw_dict.get("tipe_printer"):
+            parts.append(f"Tipe {raw_dict['tipe_printer']}")
     return " | ".join(parts) if parts else "Spesifikasi standar"
 
 
@@ -211,15 +231,14 @@ def apply_filters(product: dict, filters: list[dict]) -> tuple[bool, str | None,
                 penalty -= 10
                 continue
 
-        if pval is None:
+        if pval is None or pval == "":
             report["tidak_diketahui"].append(field)
             unknown_details.append(field)
-            if mandatory:
-                failed_reasons.append(field)
-                report["tidak_terpenuhi"].append(f"{field} (tidak tersedia)")
-                penalty -= 50
-            else:
-                penalty -= 5
+            # Putaran 15 Butir 3: Kolom spesifikasi kosong berarti tidak diketahui atau tidak termasuk.
+            # Jangan dianggap 0 dan jangan dianggap memenuhi syarat.
+            failed_reasons.append(field)
+            report["tidak_terpenuhi"].append(f"{field} (tidak tersedia/tidak termasuk)")
+            penalty -= 50
             continue
 
         passed = False
