@@ -498,7 +498,7 @@ def generate_response(
         "keep_alive": "30m",
         "options": {
             "temperature": 0.4,
-            "num_predict": 384,
+            "num_predict": 1024,
             "num_ctx": 4096
         }
     }
