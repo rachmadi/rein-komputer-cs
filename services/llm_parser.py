@@ -497,7 +497,7 @@ def parse_user_message(
             validated_output.argumen.atribut = AtributSpesifikasiEnum.BATERAI
         elif any(k in msg_low for k in ("bobot fisik", "berat fisik")):
             validated_output.argumen.atribut = AtributSpesifikasiEnum.BOBOT
-        elif any(k in msg_low for k in ("gambaran spek", "rincian teknis lengkap", "parameter spesifikasi")):
+        elif any(k in msg_low for k in ("gambaran spek", "rincian teknis lengkap", "parameter spesifikasi", "speknya kosong", "spek kosong", "spesifikasi kosong", "spesifikasi lengkap")):
             validated_output.argumen.atribut = None
         elif any(k in msg_low for k in ("stylus", "vapor chamber", "ruang uap", "uji jatuh militer")):
             validated_output.argumen.atribut = AtributSpesifikasiEnum.LAINNYA

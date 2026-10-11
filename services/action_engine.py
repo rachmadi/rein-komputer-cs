@@ -215,6 +215,44 @@ SYNONYMS_SPEC = {
 }
 
 
+def is_general_spec_query(attr_query: str | None) -> bool:
+    """Mengecek apakah pertanyaan spesifikasi adalah permintaan spesifikasi umum/lengkap,
+    atau keluhan spek kosong/belum tampil, bukan menanyakan atribut teknis spesifik."""
+    if not attr_query:
+        return True
+    s = str(attr_query).lower().strip()
+    if s in ("", "none", "null"):
+        return True
+
+    GENERAL_TERMS = {
+        "spesifikasi", "spek", "spesifikasinya", "speknya", "spesifikasi lengkap",
+        "spek lengkap", "spesifikasi detail", "spek detail", "spek umum", "spesifikasi umum",
+        "lembar spesifikasi", "rincian spesifikasi", "rincian spek", "daftar spesifikasi",
+        "daftar spek", "seluruh spesifikasi", "semua spesifikasi", "semua spek",
+        "kosong", "spek kosong", "speknya kosong", "spesifikasi kosong", "spesifikasinya kosong",
+        "lengkap", "detail", "umum", "ringkasan", "semua", "seluruh", "rincian", "gambaran spek",
+        "speknya apa", "apa speknya", "mana speknya", "lihat spek", "tampilkan spek"
+    }
+    if s in GENERAL_TERMS:
+        return True
+
+    cleaned = re.sub(r"\b(apa|itu|mana|dong|kah|ya|kan|ini|yang|nya|dan|secara|secara\s+umum)\b", "", s).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    if cleaned in GENERAL_TERMS:
+        return True
+
+    if any(k in s for k in ("spek", "spesifikasi")):
+        specific_hw = (
+            "ram", "cpu", "gpu", "vga", "prosesor", "processor", "storage", "ssd", "hdd",
+            "layar", "display", "baterai", "battery", "port", "bobot", "berat", "kamera",
+            "webcam", "keyboard", "harga", "foto", "tinta", "wifi", "duplex", "panel", "refresh"
+        )
+        if not any(hw in s for hw in specific_hw):
+            return True
+
+    return False
+
+
 def lookup_attribute_in_product(p: dict, attr_query: str, lembar: dict[str, Any]) -> Tuple[bool, Any, str]:
     """Mencari nilai atribut teknis secara data-driven dari lembar spesifikasi, kolom tabel, atau raw_data."""
     if not attr_query:
@@ -1624,8 +1662,8 @@ class ActionEngine:
         attr_str = str(attr_raw.value if hasattr(attr_raw, "value") else (attr_raw or "")).strip()
         attr_lower = attr_str.lower()
 
-        # Kasus 1: "Spesifikasinya?" / spek umum / atribut kosong
-        if not attr_raw or attr_lower in ("", "none", "spesifikasi", "spek", "spesifikasinya", "speknya", "spek_umum", "ringkasan"):
+        # Kasus 1: "Spesifikasinya?" / spek umum / rincian lengkap / komplain spek kosong
+        if is_general_spec_query(attr_str):
             fakta_items = []
             for p in catalog_products:
                 lembar = build_lembar_spesifikasi(p)
