@@ -148,7 +148,9 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
                 produk_dibahas TEXT,
                 produk_dibahas_sebelumnya TEXT,
                 catatan_minimum TEXT,
-                generator_calls TEXT
+                generator_calls TEXT,
+                tool_calls TEXT,
+                pemeriksa_catatan TEXT
             )
         """)
         # Migrasi kolom jika tabel lama belum memiliki kolom baru
@@ -208,6 +210,10 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN sumber_balasan TEXT")
         if "generator_calls" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN generator_calls TEXT")
+        if "tool_calls" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN tool_calls TEXT")
+        if "pemeriksa_catatan" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN pemeriksa_catatan TEXT")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -257,13 +263,16 @@ def log_turn(
     generator_error: str | None = None,
     sumber_balasan: str | None = None,
     generator_calls: list[dict[str, Any]] | None = None,
+    tool_calls: list[dict[str, Any]] | None = None,
+    llm_calls: list[dict[str, Any]] | None = None,
+    pemeriksa_catatan: Any = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
     Menyimpan ke file JSONL dan tabel SQLite secara aman dan terisolasi.
     """
     effective_penguji = penguji or ("otomatis" if is_test_mode() else "manusia")
-    effective_engine = engine_mode or os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
+    effective_engine = engine_mode or os.getenv("CHAT_ENGINE_MODE", "agentic_tool")
 
     # Anonimisasi session_id mentah dengan HMAC
     anon_session = anonymize_id(session_id, penguji=effective_penguji)
@@ -363,7 +372,10 @@ def log_turn(
         "status_hasil": status_fakta,
         "generator_error": generator_error,
         "sumber_balasan": sumber_balasan,
-        "generator_calls": generator_calls if generator_calls is not None else [],
+        "generator_calls": generator_calls if generator_calls is not None else (llm_calls if llm_calls is not None else []),
+        "llm_calls": llm_calls if llm_calls is not None else (generator_calls if generator_calls is not None else []),
+        "tool_calls": tool_calls if tool_calls is not None else [],
+        "pemeriksa_catatan": pemeriksa_catatan,
     }
 
     jsonl_path, db_path = get_log_paths(penguji=effective_penguji)
@@ -396,8 +408,8 @@ def log_turn(
                     is_emergency_fallback, jumlah_retry, pelanggaran, kartu_isi,
                     produk_dibahas, produk_dibahas_sebelumnya, catatan_minimum,
                     permintaan_asli, argumen_ditolak, konteks_toko, fakta_lengkap,
-                    generator_error, sumber_balasan, generator_calls
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    generator_error, sumber_balasan, generator_calls, tool_calls, pemeriksa_catatan
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
@@ -440,6 +452,8 @@ def log_turn(
                 generator_error,
                 sumber_balasan,
                 json.dumps(generator_calls, ensure_ascii=False) if generator_calls else None,
+                json.dumps(tool_calls, ensure_ascii=False) if tool_calls else None,
+                json.dumps(pemeriksa_catatan, ensure_ascii=False) if isinstance(pemeriksa_catatan, (list, dict)) else (str(pemeriksa_catatan) if pemeriksa_catatan else None),
             ))
             conn.commit()
             conn.close()

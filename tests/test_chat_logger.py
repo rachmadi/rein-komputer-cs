@@ -135,3 +135,52 @@ def test_log_failure_counter_and_error_handling():
     assert get_log_failure_count() == 2
     reset_log_failure_count()
     assert get_log_failure_count() == 0
+
+
+def test_agentic_turn_logging_tool_calls_and_pemeriksa_catatan(tmp_path):
+    """Putaran 18 Butir 4: Memverifikasi pencatatan tool_calls, llm_calls, engine_mode, dan pemeriksa_catatan."""
+    dummy_llm_calls = [{
+        "urutan": 1,
+        "prompt_eval_count": 150,
+        "eval_count": 45,
+        "done_reason": "stop",
+        "latensi": 850.5,
+        "raw_output": "Halo Kak, ada printer Epson EcoTank L3210."
+    }]
+    dummy_tool_calls = [{
+        "nama": "cari_produk",
+        "argumen": {"kategori": "printer"},
+        "ringkasan_hasil": "Ditemukan 1 produk: KB-P06",
+        "latensi": 12.3
+    }]
+    dummy_pemeriksa = ["Teks aman, tidak ada pelanggaran fakta"]
+
+    res = log_turn(
+        session_id="test_session_agentic_log",
+        user_text="cari printer epson",
+        bot_reply="Halo Kak, ada printer Epson EcoTank L3210.",
+        route="AGENTIC_TOOL",
+        engine_mode="agentic_tool",
+        generator_calls=dummy_llm_calls,
+        tool_calls=dummy_tool_calls,
+        llm_calls=dummy_llm_calls,
+        pemeriksa_catatan=dummy_pemeriksa,
+        penguji="otomatis"
+    )
+
+    assert res["engine_mode"] == "agentic_tool"
+    assert res["tool_calls"] == dummy_tool_calls
+    assert res["pemeriksa_catatan"] == dummy_pemeriksa
+    assert len(res["generator_calls"]) == 1
+    assert res["generator_calls"][0]["prompt_eval_count"] == 150
+
+    eval_log_path = os.path.join("logs", "eval", "eval_chat_history.jsonl")
+    with open(eval_log_path, "r", encoding="utf-8") as f:
+        last_line = f.readlines()[-1]
+        data = json.loads(last_line)
+        assert data["engine_mode"] == "agentic_tool"
+        assert data["tool_calls"] == dummy_tool_calls
+        assert data["pemeriksa_catatan"] == dummy_pemeriksa
+        assert data["generator_calls"][0]["eval_count"] == 45
+        assert data["llm_calls"][0]["prompt_eval_count"] == 150
+

@@ -339,6 +339,23 @@ def run_agentic_tool(
                 "harga": p.get("harga") or p.get("harga_idr")
             })
 
+    # GroundingChecker LOG SAJA (Butir 4b): tidak memblokir, tidak memicu retry, tidak mengganti balasan
+    pemeriksa_catatan: list[str] = []
+    try:
+        from services.grounding_checker import GroundingChecker
+        checker = GroundingChecker()
+        fakta_log = {
+            "produk": mentioned_this_turn or all_tools_products_returned,
+            "produk_tampil": mentioned_this_turn or all_tools_products_returned,
+            "tool_calls": all_tool_calls_logged,
+            "status": "sukses" if not is_emergency_fallback else "sistem_error",
+        }
+        _, violations = checker.check(final_reply, fakta=fakta_log, state=state)
+        pemeriksa_catatan = violations
+    except Exception as check_err:
+        logger.warning(f"GroundingChecker log-only error: {check_err}")
+        pemeriksa_catatan = [f"checker_error: {check_err}"]
+
     total_latency_ms = (time.perf_counter() - t_start) * 1000
 
     return {
@@ -354,4 +371,5 @@ def run_agentic_tool(
         "is_emergency_fallback": is_emergency_fallback,
         "emergency_error": emergency_error,
         "mentioned_products": new_mentioned,
+        "pemeriksa_catatan": pemeriksa_catatan,
     }
