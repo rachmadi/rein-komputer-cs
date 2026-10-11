@@ -634,3 +634,48 @@ def get_log_stats(penguji: str = "manusia") -> dict[str, Any]:
         "top_routes": top_routes,
         "avg_latency_ms": round(avg_latency, 2),
     }
+
+
+def log_foto_terkirim(
+    session_id: str | int,
+    kode_produk_list: list[str],
+    alasan: str = "",
+    foto_diminta: bool = False,
+    penguji: str | None = None,
+) -> dict[str, Any]:
+    """Mencatat aktivitas pengiriman foto produk (Putaran 18e Butir 5).
+    Tipe: 'foto_terkirim'.
+    - session_id anonim dengan HMAC
+    - timestamp
+    - kode_produk: list kode produk yang berhasil dikirim
+    - alasan: 'tidak ada produk aktif', 'tidak ada berkas', atau empty string
+    """
+    effective_penguji = penguji or ("otomatis" if is_test_mode() else "manusia")
+    anon_session = anonymize_id(session_id, penguji=effective_penguji)
+    now_iso = datetime.now().isoformat()
+    log_id = f"foto_{uuid.uuid4().hex[:12]}"
+
+    record = {
+        "log_id": log_id,
+        "type": "foto_terkirim",
+        "session_id": anon_session,
+        "timestamp": now_iso,
+        "kode_produk": list(kode_produk_list),
+        "alasan": alasan,
+        "foto_diminta": foto_diminta,
+        "penguji": effective_penguji
+    }
+
+    jsonl_path, _ = get_log_paths(penguji=effective_penguji)
+
+    with _lock:
+        try:
+            os.makedirs(os.path.dirname(jsonl_path) or ".", exist_ok=True)
+            with open(jsonl_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.error("Gagal mencatat foto_terkirim ke %s: %s", jsonl_path, e)
+            record_log_failure()
+            raise
+
+    return record

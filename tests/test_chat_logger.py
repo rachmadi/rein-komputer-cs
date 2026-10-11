@@ -18,6 +18,7 @@ from core.chat_logger import (
     record_log_failure,
     reset_log_failure_count,
     get_recent_logs,
+    log_foto_terkirim,
 )
 from services.chat_service import process_chat_message, reset_chat_session
 
@@ -183,4 +184,52 @@ def test_agentic_turn_logging_tool_calls_and_pemeriksa_catatan(tmp_path):
         assert data["pemeriksa_catatan"] == dummy_pemeriksa
         assert data["generator_calls"][0]["eval_count"] == 45
         assert data["llm_calls"][0]["prompt_eval_count"] == 150
+
+
+def test_log_foto_terkirim_records_entries():
+    """Putaran 18e Butir 5: Memverifikasi pencatatan log_foto_terkirim (berhasil kirim dan alasan jika gagal)."""
+    # 1. Kasus foto berhasil dikirim
+    rec_sent = log_foto_terkirim(
+        session_id="tg_987654321",
+        kode_produk_list=["KB-L01", "KB-D02"],
+        foto_diminta=False,
+        penguji="otomatis"
+    )
+    assert rec_sent["type"] == "foto_terkirim"
+    assert rec_sent["kode_produk"] == ["KB-L01", "KB-D02"]
+    assert rec_sent["alasan"] == ""
+    assert rec_sent["foto_diminta"] is False
+    assert "tg_987654321" not in rec_sent["session_id"]
+
+    # 2. Kasus foto diminta tapi tidak ada produk aktif
+    rec_no_prod = log_foto_terkirim(
+        session_id="tg_987654321",
+        kode_produk_list=[],
+        alasan="tidak ada produk aktif",
+        foto_diminta=True,
+        penguji="otomatis"
+    )
+    assert rec_no_prod["type"] == "foto_terkirim"
+    assert rec_no_prod["kode_produk"] == []
+    assert rec_no_prod["alasan"] == "tidak ada produk aktif"
+    assert rec_no_prod["foto_diminta"] is True
+
+    # 3. Kasus foto diminta tapi tidak ada berkas
+    rec_no_file = log_foto_terkirim(
+        session_id="tg_987654321",
+        kode_produk_list=[],
+        alasan="tidak ada berkas",
+        foto_diminta=True,
+        penguji="otomatis"
+    )
+    assert rec_no_file["type"] == "foto_terkirim"
+    assert rec_no_file["alasan"] == "tidak ada berkas"
+
+    # Verifikasi baris di file log eval
+    eval_log_path = os.path.join("logs", "eval", "eval_chat_history.jsonl")
+    with open(eval_log_path, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f if line.strip()]
+        last_rec = json.loads(lines[-1])
+        assert last_rec["type"] == "foto_terkirim"
+        assert last_rec["alasan"] == "tidak ada berkas"
 

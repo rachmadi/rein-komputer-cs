@@ -51,7 +51,7 @@ load_dotenv()
 from services.chat_service import process_chat_message, reset_chat_session, CHAT_ENGINE_MODE
 
 from core.config import KONTAK_STAF
-from core.chat_logger import anonymize_id, log_session_boundary
+from core.chat_logger import anonymize_id, log_session_boundary, log_foto_terkirim
 
 FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
 
@@ -249,6 +249,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     # Ambil maksimal 2 produk baru untuk dikirimkan fotonya
                     prods_to_send = new_products[:2]
 
+        sent_codes_this_turn = []
         if prods_to_send:
             for p in prods_to_send:
                 # Putaran 15b Butir 3: telegram_bot.py hanya mengirim foto dari image_file yang ada.
@@ -282,8 +283,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     # Tandai bahwa foto produk ini sudah dikirimkan
                     if p.get("kode"):
                         sent_photos.add(p["kode"])
+                        sent_codes_this_turn.append(p["kode"])
                 except Exception as img_err:
                     logger.warning(f"Gagal mengirim foto {nama}: {img_err}")
+
+        # Putaran 18e Butir 5: Catat foto yang terkirim / alasan gagal bila diminta
+        if sent_codes_this_turn:
+            try:
+                log_foto_terkirim(
+                    session_id=session_id,
+                    kode_produk_list=sent_codes_this_turn,
+                    alasan="",
+                    foto_diminta=is_photo_requested
+                )
+            except Exception as log_err:
+                logger.warning(f"Gagal mencatat foto terkirim: {log_err}")
+        elif is_photo_requested:
+            alasan = "tidak ada berkas" if prods_to_send else "tidak ada produk aktif"
+            try:
+                log_foto_terkirim(
+                    session_id=session_id,
+                    kode_produk_list=[],
+                    alasan=alasan,
+                    foto_diminta=True
+                )
+            except Exception as log_err:
+                logger.warning(f"Gagal mencatat foto diminta tetapi tidak terkirim: {log_err}")
 
         # Simpan produk yang aktif di giliran ini
         if products:
