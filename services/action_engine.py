@@ -22,7 +22,7 @@ from services.schema_actions import (
     SlotEnum, AlasanTidakJelasEnum
 )
 from services.catalog_search import apply_filters, clean_specs, format_natural_unmet_requirements, parse_budget_from_text
-from services.knowledge_service import get_usage_requirements, get_profile_by_id
+from services.knowledge_service import get_usage_requirements, get_profile_by_id, infer_category_from_data
 from services.validator import get_catalog_categories, is_valid_kebutuhan_teks
 from core.catalog import Catalog
 from core.config import KONTAK_STAF
@@ -504,13 +504,7 @@ class ActionEngine:
         kriteria_pelanggan = state.get("kriteria_pelanggan", {}) or {}
         merek = args.merek or state.get("merek") or kriteria_pelanggan.get("merek")
         if not kategori and kebutuhan_teks:
-            k_low = kebutuhan_teks.lower()
-            if any(w in k_low for w in ["bawa-bawa", "mobile", "kuliah", "sekolah", "kampus", "kafe", "mobilitas", "baterai"]):
-                kategori = "laptop"
-            elif any(w in k_low for w in ["kasir", "pos", "toko kelontong", "pc tetap", "desktop"]):
-                kategori = "desktop"
-            elif "printer" in k_low or "cetak" in k_low:
-                kategori = "printer"
+            kategori = infer_category_from_data(kebutuhan_teks, self.catalog)
 
         # B7: Anggaran di bawah harga terendah katalog
         if budget_max:
@@ -888,8 +882,13 @@ class ActionEngine:
                 gpu_req = gpu.strip().lower()
                 p_gpu = str(p.get("gpu", "")).strip().lower()
                 is_discrete_req = any(kw in gpu_req for kw in ["dedicated", "diskrit", "kartu grafis", "vga eksternal", "vga terpisah"])
+                vram_val = p.get("vram_gb")
+                try:
+                    has_vram = vram_val is not None and int(float(str(vram_val).strip())) > 0
+                except (ValueError, TypeError):
+                    has_vram = False
                 is_discrete_prod = bool(
-                    (p.get("vram_gb") and p.get("vram_gb") > 0) or
+                    has_vram or
                     any(kw in p_gpu for kw in ["rtx", "gtx", "geforce", "radeon rx", "arc a"])
                 )
                 if is_discrete_req:
@@ -902,10 +901,20 @@ class ActionEngine:
                 continue
             if max_harga and get_product_price(p) > max_harga:
                 continue
-            if ram_gb_min and (p.get("ram_gb") or 0) < ram_gb_min:
-                continue
-            if storage_gb_min and (p.get("storage_ssd_gb") or 0) < storage_gb_min:
-                continue
+            if ram_gb_min:
+                try:
+                    p_ram = int(float(str(p.get("ram_gb") or 0).strip()))
+                except (ValueError, TypeError):
+                    p_ram = 0
+                if p_ram < ram_gb_min:
+                    continue
+            if storage_gb_min:
+                try:
+                    p_ssd = int(float(str(p.get("storage_ssd_gb") or 0).strip()))
+                except (ValueError, TypeError):
+                    p_ssd = 0
+                if p_ssd < storage_gb_min:
+                    continue
             if ukuran_layar is not None:
                 p_inch = get_product_screen_inch(p)
                 if p_inch is not None and abs(p_inch - ukuran_layar) > 0.6:

@@ -16,7 +16,7 @@ import re
 import logging
 from typing import Any
 from core.catalog import Catalog
-from services.knowledge_service import get_profile_by_id
+from services.knowledge_service import get_profile_by_id, load_kb_category_rules, infer_category_from_data
 
 logger = logging.getLogger(__name__)
 
@@ -439,12 +439,25 @@ def execute_tool(
 
         check_text = (query + " " + user_text).lower()
 
-        # Deteksi kebutuhan "baterai awet"
-        is_baterai_req = any(k in check_text for k in ["baterai awet", "daya tahan baterai", "batre awet", "baterai tahan lama", "batre tahan lama", "baterainya awet"])
-        if is_baterai_req:
-            explicit_cat = "laptop"
-            profil_id = "P01"
-            filters_to_apply = [{"field": "gpu_dedicated", "op": "==", "value": 0, "strength": "hard"}]
+        # Penentuan kategori dan profil dari data KB jika belum ditentukan
+        if not explicit_cat:
+            inferred_cat = infer_category_from_data(check_text, catalog)
+            if inferred_cat:
+                explicit_cat = inferred_cat
+
+        # Jika kebutuhan berkaitan dengan karakteristik hemat daya/baterai awet di profil KB
+        is_baterai_req = False
+        kb_rules = load_kb_category_rules()
+        for r in kb_rules:
+            if r["id"] == "P01" and any(kw in check_text for kw in ["baterai", "batre", "daya tahan"]):
+                is_baterai_req = True
+                if not explicit_cat:
+                    explicit_cat = r["kategori"]
+                if not profil_id:
+                    profil_id = r["id"]
+                if not filters_to_apply:
+                    filters_to_apply = [{"field": "gpu_dedicated", "op": "==", "value": 0, "strength": "hard"}]
+                break
 
         # Parsing spesifikasi generik: RAM, SSD, dan Budget
         # 1. RAM generik

@@ -29,6 +29,7 @@ from services.llm_generator import generate_response, GeneratorOutput, build_det
 from services.grounding_checker import GroundingChecker, EMERGENCY_FALLBACK_TEXT
 from services.product_card import format_product_cards_message
 from services.catalog_search import clean_specs
+from services.knowledge_service import infer_category_from_data
 from services.schema_actions import ParserOutput, ActionEnum, ActionArguments, AlasanTidakJelasEnum, JenisEnum
 from core.config import KONTAK_STAF
 
@@ -269,6 +270,10 @@ class SessionPipeline:
         self.action_engine = action_engine or ActionEngine()
         self.grounding_checker = GroundingChecker()
 
+    @property
+    def catalog(self):
+        return getattr(self.action_engine, "catalog", None)
+
     def process_turn(
         self,
         pesan_pelanggan: str,
@@ -359,12 +364,9 @@ class SessionPipeline:
             elif parsed.pembaruan_state.kategori and parsed.pembaruan_state.kategori.lower() in catalog_cats:
                 detected_kategori = parsed.pembaruan_state.kategori.lower()
             else:
-                if re.search(r"\b(laptop|notebook|komputer jinjing)\b", pesan_pelanggan, re.IGNORECASE):
-                    detected_kategori = "laptop"
-                elif re.search(r"\b(desktop|pc|komputer meja)\b", pesan_pelanggan, re.IGNORECASE):
-                    detected_kategori = "desktop"
-                elif re.search(r"\b(printer)\b", pesan_pelanggan, re.IGNORECASE):
-                    detected_kategori = "printer"
+                inferred = infer_category_from_data(pesan_pelanggan, self.catalog)
+                if inferred and inferred.lower() in catalog_cats:
+                    detected_kategori = inferred.lower()
 
         if detected_kategori:
             parsed.argumen.kategori = detected_kategori

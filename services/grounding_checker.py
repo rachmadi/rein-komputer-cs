@@ -469,22 +469,7 @@ class GroundingChecker:
                     if val_str not in teks.lower() and not any(tok in teks.lower() for tok in val_tokens):
                         violations.append(f"Teks tanya_spesifikasi tidak memuat nilai spesifikasi yang diminta ({val}).")
 
-        # 16. Putaran 14 Butir 5: Tolak balasan yang menyebut kategori/merek di luar katalog kecuali penolakan
-        from core.db import get_catalog_inventory
-        inv = get_catalog_inventory()
-        known_outside = [
-            "monitor", "tablet", "kamera", "keyboard", "mouse", "headset", "speaker", "smartwatch",
-            "macbook", "apple", "dell", "samsung", "toshiba", "sony", "logitech", "razer", "xiaomi", "huawei", "msi"
-        ]
-        known_outside = [k for k in known_outside if k not in inv["kategori"] and k not in inv["merek"]]
-        for item in known_outside:
-            if re.search(r"\b" + re.escape(item) + r"\b", teks, re.IGNORECASE):
-                pola_penolakan = rf"(?:tidak|belum|bukan)\s+(?:ada|jual|menjual|sedia|menyediakan|punya)\s+(?:produk\s+|merek\s+|kategori\s+)?\b{re.escape(item)}\b|\b{re.escape(item)}\b[^\.\,\;]{{0,30}}\b(?:tidak|belum)\s+(?:dijual|tersedia|ada)\b"
-                if not re.search(pola_penolakan, teks, re.IGNORECASE):
-                    violations.append(f"Menyebutkan kategori/merek di luar katalog '{item}' di luar kalimat penolakan.")
-                    break
-
-        # 17. Putaran 14 Butir 5: Tolak balasan yang mengklaim sukses/menemukan produk jika status != 'sukses'
+        # 16. Putaran 14 Butir 5: Tolak balasan yang mengklaim sukses/menemukan produk jika status != 'sukses'
         if status_fakta != "sukses":
             pola_klaim_sukses = [
                 r"\b(?:berikut|kami)\s+(?:rekomendasikan|rekomendasi|menemukan|pilihan\s+produk|rekomendasi\s+unit)\b",

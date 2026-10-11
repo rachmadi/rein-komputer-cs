@@ -130,3 +130,95 @@ def get_all_profiles() -> list[dict]:
     except:
         return []
 
+
+_KB_CATEGORY_RULES = None
+
+def load_kb_category_rules() -> list[dict[str, Any]]:
+    global _KB_CATEGORY_RULES
+    if _KB_CATEGORY_RULES is not None:
+        return _KB_CATEGORY_RULES
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    kb_path = os.path.join(base_dir, "data", "knowledge", "panduan_kebutuhan_v2.md")
+    rules = []
+    if os.path.exists(kb_path):
+        with open(kb_path, "r", encoding="utf-8") as f:
+            text = f.read()
+        sections = text.split("\n## ")
+        for sec in sections:
+            if not sec.strip():
+                continue
+            cid_m = re.search(r"\*\*ID:\*\*\s*([A-Z0-9]+)", sec)
+            if not cid_m:
+                continue
+            cid = cid_m.group(1)
+            perangkat = re.search(r"\*\*(?:Perangkat|Kategori katalog):\*\*\s*([^\n\r|]+)", sec)
+            dev = perangkat.group(1).lower().strip() if perangkat else ""
+            kat = None
+            if "monitor" in dev:
+                kat = "monitor"
+            elif "printer" in dev:
+                kat = "printer"
+            elif "desktop (utama)" in dev or "desktop atau" in dev or "desktop (ideal)" in dev or dev.startswith("desktop"):
+                kat = "desktop"
+            elif "laptop" in dev:
+                kat = "laptop"
+
+            kw_m = re.search(r"\*\*Kata kunci pelanggan:\*\*\s*([^\n\r]+)", sec)
+            kws = [k.strip().lower() for k in kw_m.group(1).split(",")] if kw_m else []
+            char_m = re.search(r"\*\*Karakteristik yang dicari:\*\*\s*([^\n\r]+)", sec)
+            if char_m:
+                kws.extend([w.strip().lower() for w in char_m.group(1).split(",")])
+            if kat and kws:
+                rules.append({"id": cid, "kategori": kat, "keywords": kws})
+    _KB_CATEGORY_RULES = rules
+    return rules
+
+
+def infer_category_from_data(text: str, catalog=None) -> str | None:
+    if not text:
+        return None
+    t_low = text.lower()
+    from core.db import get_catalog_inventory
+    inv = get_catalog_inventory()
+    valid_cats = inv.get("kategori", [])
+
+    # 1. Direct match nama kategori dari KB atau katalog
+    known_all_cats = set(valid_cats) | {"laptop", "desktop", "monitor", "printer"}
+    for c in known_all_cats:
+        if re.search(r"\b" + re.escape(c) + r"\b", t_low):
+            return c
+
+    # 2. Match kata kunci dari data KB panduan kebutuhan
+    rules = load_kb_category_rules()
+    for r in rules:
+        kat = r["kategori"]
+        for kw in r["keywords"]:
+            if not kw or len(kw) < 2:
+                continue
+            if re.search(r"\b" + re.escape(kw) + r"\b", t_low):
+                return kat
+
+    # 3. Match catalog product tags / usage_text
+    products = getattr(catalog, "products", None) if catalog else None
+    if products:
+        cat_scores = {c: 0 for c in valid_cats}
+        for p in products:
+            p_cat = str(p.get("kategori", "")).lower()
+            if p_cat not in cat_scores:
+                continue
+            u_text = str(p.get("usage_text", "")).lower()
+            tags = p.get("tags") or []
+            if isinstance(tags, str):
+                tags = [tags]
+            for word in re.findall(r"\w+", t_low):
+                if len(word) >= 3:
+                    if word in u_text:
+                        cat_scores[p_cat] += 1
+                    if any(word in str(t).lower() for t in tags):
+                        cat_scores[p_cat] += 2
+        best_cat = max(cat_scores, key=cat_scores.get)
+        if cat_scores[best_cat] > 0:
+            return best_cat
+
+    return None
+

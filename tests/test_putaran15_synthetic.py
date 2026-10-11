@@ -85,3 +85,52 @@ def test_butir3_raw_data_keterangan_masuk_lembar_spesifikasi():
     assert specs.get("bonus") == "Keyboard & Mouse"
     assert specs.get("barebone") is False
 
+
+# =============================================================================
+# BUTIR 4 — Lepas Ketergantungan Dummy & Inferensi Data
+# =============================================================================
+def test_butir4_infer_category_from_data_kb_and_catalog():
+    """Pemetaan kebutuhan ke kategori diturunkan dari data KB dan katalog, bukan daftar manual."""
+    from services.knowledge_service import infer_category_from_data
+
+    assert infer_category_from_data("butuh komputer kasir toko") == "desktop"
+    assert infer_category_from_data("cari printer cetak dokumen kantor") == "printer"
+    assert infer_category_from_data("laptop buat kuliah dan tugas skripsi") == "laptop"
+    assert infer_category_from_data("monitor layar lebar untuk multitasking") == "monitor"
+    assert infer_category_from_data("butuh laptop baterai awet") == "laptop"
+
+
+def test_butir4_grounding_checker_tidak_ada_known_outside():
+    """GroundingChecker tidak boleh memiliki daftar manual known_outside."""
+    from services.grounding_checker import GroundingChecker
+    import inspect
+
+    src = inspect.getsource(GroundingChecker.check)
+    assert "known_outside" not in src, "known_outside dilarang ada di GroundingChecker!"
+
+
+def test_butir4_dynamic_item_luar_katalog_ditolak():
+    """Item luar katalog ditentukan dinamis saat runtime dengan mengecek ketiadaannya di katalog."""
+    from core.db import get_catalog_inventory
+    from services.action_engine import ActionEngine
+    from services.validator import validate_parser_output
+
+    inv = get_catalog_inventory()
+    # Pilih kategori dan merek yang benar-benar tidak ada di inventory saat ini
+    kandidat_kat = ["tablet", "kamera", "smartwatch", "drone", "proyektor"]
+    kandidat_merek = ["sony", "samsung", "toshiba", "logitech", "huawei"]
+
+    item_kat = next(k for k in kandidat_kat if k not in inv["kategori"])
+    item_merek = next(m for m in kandidat_merek if m not in inv["merek"])
+
+    engine = ActionEngine()
+    raw = {
+        "aksi": "cari_produk",
+        "argumen": {"kategori": item_kat, "merek": item_merek},
+        "pembaruan_state": {"kategori": item_kat, "merek": item_merek}
+    }
+    validated, is_valid = validate_parser_output(raw)
+    res = engine.execute(validated, session_state={})
+    assert res.fakta["status"] == "tidak_dijual"
+    assert res.produk_list == []
+

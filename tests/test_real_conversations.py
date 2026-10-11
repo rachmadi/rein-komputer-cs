@@ -1048,8 +1048,7 @@ def test_kasus_negasi_ryzen_konstruksi():
     - CS harus mengalihkan rekomendasi ke laptop bertenaga Intel Core yang cocok untuk konstruksi/grafis.
     - Route harus SPEC_NEGATION.
     """
-    from services.catalog_service import reload_catalog
-    real_cat = reload_catalog()
+    real_cat = Catalog.from_dummy()
     s = new_state()
 
     # Turn 1

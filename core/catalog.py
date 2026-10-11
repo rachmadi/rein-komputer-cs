@@ -407,7 +407,8 @@ def infer_tags_from_specs(rec: dict) -> list[dict]:
             tags.append(entry)
 
     cat = rec.get("kategori", "")
-    harga = rec.get("harga_idr", 0)
+    h_raw = rec.get("harga_idr")
+    harga = int(h_raw) if h_raw is not None and str(h_raw).strip().isdigit() else (int(h_raw) if isinstance(h_raw, (int, float)) else 0)
 
     # 1. PRINTER
     if cat == "printer":
@@ -443,13 +444,14 @@ def infer_tags_from_specs(rec: dict) -> list[dict]:
                 
         return tags
 
-    # 2. KOMPUTER (LAPTOP & DESKTOP)
     cpu = (rec.get("cpu") or "").lower()
     gpu = (rec.get("gpu") or "").lower()
-    ram_gb = rec.get("ram_gb") or 0
+    ram_gb_raw = rec.get("ram_gb")
+    ram_gb = int(ram_gb_raw) if ram_gb_raw is not None and str(ram_gb_raw).strip().isdigit() else (int(ram_gb_raw) if isinstance(ram_gb_raw, (int, float)) else 0)
     display = (rec.get("display") or "").lower()
     gpu_type = rec.get("gpu_type") or ("discrete" if any(x in gpu for x in ("geforce", "rtx", "gtx", "radeon rx", "arc")) else "integrated")
-    gpu_vram = rec.get("gpu_vram")
+    gpu_vram_raw = rec.get("gpu_vram")
+    gpu_vram = int(gpu_vram_raw) if gpu_vram_raw is not None and str(gpu_vram_raw).strip().isdigit() else None
 
     # Identifikasi level GPU
     has_rtx_high = any(x in gpu for x in ("rtx 4070", "rtx 4080", "rtx 4090"))

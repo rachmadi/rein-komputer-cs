@@ -91,6 +91,27 @@ def row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
     if d.get("kategori") == "desktop":
         d["includes_monitor"] = False
 
+    for int_col in ("harga_idr", "harga", "ram_gb", "vram_gb", "cpu_tier", "storage_ssd_gb", "gpu_dedicated", "refresh_hz", "srgb_pct"):
+        if int_col in d and d[int_col] is not None and str(d[int_col]).strip() != "":
+            try:
+                d[int_col] = int(float(str(d[int_col]).strip()))
+            except (ValueError, TypeError):
+                pass
+        elif int_col in d and str(d[int_col]).strip() == "":
+            d[int_col] = None
+
+    if "harga" not in d or d["harga"] is None:
+        if "harga_idr" in d:
+            d["harga"] = d.get("harga_idr")
+
+    if "screen_inch" in d and d["screen_inch"] is not None and str(d["screen_inch"]).strip() != "":
+        try:
+            d["screen_inch"] = float(str(d["screen_inch"]).strip())
+        except (ValueError, TypeError):
+            pass
+    elif "screen_inch" in d and str(d["screen_inch"]).strip() == "":
+        d["screen_inch"] = None
+
     if not d.get("brand") or d.get("brand") == "other":
         nama_low = d.get("nama", "").lower()
         for b in ("acer", "asus", "lenovo", "hp", "canon", "epson", "brother", "dell", "apple"):
