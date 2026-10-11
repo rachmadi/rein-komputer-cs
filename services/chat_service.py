@@ -88,19 +88,10 @@ class SessionManager:
 import os
 from dotenv import load_dotenv
 
-_explicit_engine_mode = os.environ.get("CHAT_ENGINE_MODE")
 load_dotenv()
 
 DEFAULT_CHAT_MODEL = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
-
-# Putaran 18: Default diganti ke mesin agent ('agentic_tool')
-# antigravity_v2 tetap bisa dipilih lewat CHAT_ENGINE_MODE di environment
-if _explicit_engine_mode:
-    CHAT_ENGINE_MODE = _explicit_engine_mode
-elif os.getenv("CHAT_ENGINE_MODE") and os.getenv("CHAT_ENGINE_MODE") != "antigravity_v2":
-    CHAT_ENGINE_MODE = os.getenv("CHAT_ENGINE_MODE")
-else:
-    CHAT_ENGINE_MODE = "agentic_tool"
+CHAT_ENGINE_MODE = os.getenv("CHAT_ENGINE_MODE", "agentic_tool")
 
 logger.info(
     "ChatService initialized: CHAT_ENGINE_MODE=%s, DEFAULT_CHAT_MODEL=%s",

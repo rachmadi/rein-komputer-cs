@@ -48,7 +48,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Integrasi dengan Unified Chat Service
-from services.chat_service import process_chat_message, reset_chat_session
+from services.chat_service import process_chat_message, reset_chat_session, CHAT_ENGINE_MODE
 
 from core.config import KONTAK_STAF
 from core.chat_logger import anonymize_id, log_session_boundary
@@ -415,7 +415,7 @@ def main() -> None:
         sys.exit(1)
 
     print("Memulai ReIn Komputer Telegram Bot...")
-    engine_mode = os.getenv("CHAT_ENGINE_MODE", "antigravity_v2")
+    engine_mode = CHAT_ENGINE_MODE
     model_name = os.getenv("CHAT_LLM_MODEL", "gemma4:e4b")
     rag_threshold = os.getenv("RAG_SCORE_THRESHOLD", "0.40")
     kontak_staf = KONTAK_STAF
