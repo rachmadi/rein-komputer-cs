@@ -213,7 +213,7 @@ def test_execute_agent_tool_dispatcher(catalog):
 
 
 def test_format_tool_history_message():
-    """Menguji penyusunan pesan ringkasan riwayat alat 3 giliran terakhir (Butir 4)."""
+    """Menguji penyusunan pesan ringkasan riwayat alat (Putaran 19 Butir 3b)."""
     from services.agentic_tool_engine import format_tool_history_message
     sample_turns = [
         {
@@ -221,10 +221,32 @@ def test_format_tool_history_message():
                 {
                     "nama": "katalog",
                     "argumen": {"kata_kunci": "mini desktop"},
-                    "total_cocok": 2,
+                    "total_cocok": 3,
                     "produk": [
-                        {"kode": "KB-D12", "nama": "Intel NUC 11 Essential", "harga": "Rp3.199.000"},
-                        {"kode": "KB-D11", "nama": "Apple Mac mini M2", "harga": "Rp11.499.000"}
+                        {
+                            "kode": "KB-D12",
+                            "nama": "Intel NUC 11 Essential",
+                            "harga": "Rp3.199.000",
+                            "spek": "Celeron N5105 | RAM 4GB"
+                        },
+                        {
+                            "kode": "KB-D11",
+                            "nama": "Apple Mac mini M2",
+                            "harga": "Rp11.499.000",
+                            "spek": "Apple M2 | RAM 8GB"
+                        }
+                    ]
+                },
+                {
+                    "nama": "pengetahuan",
+                    "argumen": {"pertanyaan": "garansi toko"},
+                    "total_cocok": 1,
+                    "pengetahuan": [
+                        {
+                            "id": "K01",
+                            "judul": "Kebijakan Garansi Toko",
+                            "cuplikan": "Garansi toko berlaku 7 hari ganti baru untuk cacat pabrik."
+                        }
                     ]
                 }
             ]
@@ -232,9 +254,10 @@ def test_format_tool_history_message():
     ]
     msg = format_tool_history_message(sample_turns)
     assert msg is not None
-    assert "katalog" in msg
-    assert "KB-D12" in msg
-    assert "KB-D11" in msg
+    assert "KB-D12 Intel NUC 11 Essential (Rp3.199.000; Celeron N5105 | RAM 4GB)" in msg
+    assert "Apple Mac mini M2 (Rp11.499.000; Apple M2 | RAM 8GB)" in msg
+    assert "(total 3 produk cocok)" in msg
+    assert "Kebijakan Garansi Toko: Garansi toko berlaku 7 hari ganti baru untuk cacat pabrik." in msg
 
 
 def test_property_product_card_spek_not_empty(catalog):

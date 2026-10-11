@@ -25,6 +25,7 @@ from core.catalog import Catalog
 from services.catalog_service import get_active_catalog
 from services.agent_tools import AGENT_TOOLS_SCHEMA, execute_agent_tool
 from services.product_card import format_product_cards_message
+from services.catalog_search import clean_specs
 
 logger = logging.getLogger("agentic_tool_engine")
 
@@ -188,7 +189,7 @@ def call_ollama_chat_raw(
 
 
 def format_tool_history_message(recent_tool_turns: list[dict]) -> str | None:
-    """Menyusun ringkasan hasil alat dari giliran sebelumnya sebagai satu pesan system singkat."""
+    """Menyusun ringkasan hasil alat dari giliran sebelumnya sebagai satu pesan system singkat (Putaran 19 Butir 3b)."""
     if not recent_tool_turns:
         return None
     lines = ["Ringkasan hasil alat 3 giliran terakhir:"]
@@ -199,14 +200,33 @@ def format_tool_history_message(recent_tool_turns: list[dict]) -> str | None:
             total = tc.get("total_cocok", 0)
             prods = tc.get("produk", [])
             if prods:
-                p_items = [f"{p.get('kode')} {p.get('nama')} ({p.get('harga')})" for p in prods[:5]]
+                p_items = []
+                for p in prods[:5]:
+                    kode = p.get("kode", "")
+                    nama = p.get("nama", "")
+                    harga = p.get("harga", "")
+                    spek = p.get("spek", "")
+                    if spek:
+                        p_items.append(f"{kode} {nama} ({harga}; {spek})".strip())
+                    else:
+                        p_items.append(f"{kode} {nama} ({harga})".strip())
                 p_str = "; ".join(p_items)
                 if total > len(p_items):
                     p_str += f" (total {total} produk cocok)"
                 lines.append(f"- {t_name}({t_args}): {p_str}")
             elif tc.get("pengetahuan"):
-                k_items = [it.get("judul", "") for it in tc.get("pengetahuan", [])]
-                lines.append(f"- {t_name}({t_args}): topik {', '.join(k_items)}")
+                k_items = []
+                for it in tc.get("pengetahuan", []):
+                    judul = it.get("judul", "")
+                    cuplikan = it.get("cuplikan", "")
+                    if cuplikan:
+                        k_items.append(f"{judul}: {cuplikan}")
+                    else:
+                        k_items.append(f"{judul}")
+                k_str = "; ".join(k_items)
+                if total > len(k_items):
+                    k_str += f" (total {total} cocok)"
+                lines.append(f"- {t_name}({t_args}): {k_str}")
             else:
                 lines.append(f"- {t_name}({t_args}): total {total} cocok")
     return "\n".join(lines)
@@ -353,28 +373,41 @@ def run_agentic_tool(
                     if isinstance(prods, list):
                         all_tools_products_returned.extend(prods)
                         for p in prods:
+                            spek_val = p.get("spek_ringkas")
+                            if not spek_val:
+                                cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
+                                spek_val = clean_specs(cat_p or p)
                             prod_summary_list.append({
                                 "kode": p.get("kode"),
                                 "nama": p.get("nama"),
-                                "harga": p.get("harga") or p.get("harga_idr")
+                                "harga": p.get("harga") or p.get("harga_idr"),
+                                "spek": spek_val
                             })
                 elif "detail" in tool_res:
                     details = tool_res.get("detail", [])
                     if isinstance(details, list):
                         all_tools_products_returned.extend(details)
                         for d in details:
+                            spek_val = d.get("spek_ringkas")
+                            if not spek_val:
+                                cat_d = cat.by_code.get(d.get("kode")) if d.get("kode") else None
+                                spek_val = clean_specs(cat_d or d)
                             prod_summary_list.append({
                                 "kode": d.get("kode"),
                                 "nama": d.get("nama"),
-                                "harga": d.get("harga")
+                                "harga": d.get("harga"),
+                                "spek": spek_val
                             })
                 elif "pengetahuan" in tool_res:
                     k_items = tool_res.get("pengetahuan", [])
                     if isinstance(k_items, list):
                         for it in k_items:
+                            chunk_teks = str(it.get("teks") or it.get("konten") or it.get("isi") or "").strip()
+                            cuplikan = chunk_teks[:200]
                             pengetahuan_summary_list.append({
                                 "id": it.get("id"),
-                                "judul": it.get("judul")
+                                "judul": it.get("judul"),
+                                "cuplikan": cuplikan
                             })
 
             this_turn_tool_summaries.append({
