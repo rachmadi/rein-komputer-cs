@@ -107,6 +107,7 @@ def call_ollama_chat_raw(
         "model": model,
         "messages": messages,
         "stream": False,
+        "think": False,
         "options": {
             "num_predict": num_predict,
             "num_ctx": num_ctx,
