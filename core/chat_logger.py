@@ -147,7 +147,8 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
                 kartu_isi TEXT,
                 produk_dibahas TEXT,
                 produk_dibahas_sebelumnya TEXT,
-                catatan_minimum TEXT
+                catatan_minimum TEXT,
+                generator_calls TEXT
             )
         """)
         # Migrasi kolom jika tabel lama belum memiliki kolom baru
@@ -205,6 +206,8 @@ def init_chat_log_storage(db_path: str | None = None) -> None:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN generator_error TEXT")
         if "sumber_balasan" not in existing_cols:
             cur.execute("ALTER TABLE chat_logs ADD COLUMN sumber_balasan TEXT")
+        if "generator_calls" not in existing_cols:
+            cur.execute("ALTER TABLE chat_logs ADD COLUMN generator_calls TEXT")
 
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_session ON chat_logs(session_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_chat_logs_timestamp ON chat_logs(timestamp)")
@@ -253,6 +256,7 @@ def log_turn(
     fakta_lengkap: dict[str, Any] | None = None,
     generator_error: str | None = None,
     sumber_balasan: str | None = None,
+    generator_calls: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Mencatat 1 turn percakapan pelanggan dan jawaban bot.
@@ -359,6 +363,7 @@ def log_turn(
         "status_hasil": status_fakta,
         "generator_error": generator_error,
         "sumber_balasan": sumber_balasan,
+        "generator_calls": generator_calls if generator_calls is not None else [],
     }
 
     jsonl_path, db_path = get_log_paths(penguji=effective_penguji)
@@ -391,8 +396,8 @@ def log_turn(
                     is_emergency_fallback, jumlah_retry, pelanggaran, kartu_isi,
                     produk_dibahas, produk_dibahas_sebelumnya, catatan_minimum,
                     permintaan_asli, argumen_ditolak, konteks_toko, fakta_lengkap,
-                    generator_error, sumber_balasan
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    generator_error, sumber_balasan, generator_calls
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 log_id,
                 now_iso,
@@ -434,6 +439,7 @@ def log_turn(
                 json.dumps(fakta_lengkap, ensure_ascii=False) if fakta_lengkap else None,
                 generator_error,
                 sumber_balasan,
+                json.dumps(generator_calls, ensure_ascii=False) if generator_calls else None,
             ))
             conn.commit()
             conn.close()

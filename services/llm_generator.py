@@ -503,12 +503,12 @@ def generate_response(
         }
     }
 
-    raw_content = ""
+    raw_content = None
     json_valid = False
     error_msg = None
-
-    prompt_eval_count = 0
-    eval_count = 0
+    done_reason = None
+    prompt_eval_count = None
+    eval_count = None
     load_duration = 0
     prompt_eval_duration = 0
     eval_duration = 0
@@ -520,9 +520,10 @@ def generate_response(
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            raw_content = data.get("message", {}).get("content", "").strip()
-            prompt_eval_count = data.get("prompt_eval_count", 0)
-            eval_count = data.get("eval_count", 0)
+            raw_content = data.get("message", {}).get("content", "")
+            prompt_eval_count = data.get("prompt_eval_count")
+            eval_count = data.get("eval_count")
+            done_reason = data.get("done_reason")
             load_duration = data.get("load_duration", 0)
             prompt_eval_duration = data.get("prompt_eval_duration", 0)
             eval_duration = data.get("eval_duration", 0)
@@ -557,14 +558,19 @@ def generate_response(
     sumber_balasan = "llm" if not error_msg else ("emergency_fallback" if out.teks == EMERGENCY_FALLBACK_TEXT else "fallback_deterministik")
     metrics = {
         "latency_ms": round(dt_ms, 2),
+        "latensi_ms": round(dt_ms, 2),
         "json_valid": json_valid,
         "error": error_msg,
         "sumber_balasan": sumber_balasan,
         "raw_content": raw_content,
+        "raw_output": raw_content,
         "prompt_eval_count": prompt_eval_count,
         "eval_count": eval_count,
-        "load_duration_ms": round(load_duration / 1e6, 2),
-        "prompt_eval_duration_ms": round(prompt_eval_duration / 1e6, 2),
-        "eval_duration_ms": round(eval_duration / 1e6, 2)
+        "done_reason": done_reason,
+        "num_predict": req_data["options"]["num_predict"],
+        "num_ctx": req_data["options"]["num_ctx"],
+        "load_duration_ms": round(load_duration / 1e6, 2) if load_duration else 0.0,
+        "prompt_eval_duration_ms": round(prompt_eval_duration / 1e6, 2) if prompt_eval_duration else 0.0,
+        "eval_duration_ms": round(eval_duration / 1e6, 2) if eval_duration else 0.0
     }
     return out, metrics

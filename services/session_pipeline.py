@@ -83,6 +83,7 @@ class TurnExecutionResult:
     fakta_lengkap: Optional[Dict[str, Any]] = None
     generator_error: Optional[str] = None
     sumber_balasan: Optional[str] = None
+    generator_calls: List[Dict[str, Any]] = field(default_factory=list)
 
 
 def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None) -> Optional[Tuple[str, str, str]]:
@@ -338,6 +339,7 @@ class SessionPipeline:
                 catatan_minimum=None,
                 generator_error=None,
                 sumber_balasan="aturan_deterministik",
+                generator_calls=[],
             )
             return turn_result, state
 
@@ -826,6 +828,8 @@ class SessionPipeline:
         gen_error: Optional[str] = None
         sumber_balasan: str = "llm"
 
+        generator_calls: List[Dict[str, Any]] = []
+
         # B10 & Butir 8: Teks darurat B13 HANYA untuk sistem_error (Ollama gagal)
         if action_res.fakta.get("status") == "sistem_error" or action_res.fakta.get("alasan") == "sistem_error":
             t_gen_0 = time.perf_counter()
@@ -845,12 +849,36 @@ class SessionPipeline:
                     pesan_pelanggan=pesan_pelanggan
                 )
                 gen_error = gen_metrics.get("error")
+                generator_calls.append({
+                    "urutan": "pertama",
+                    "num_predict": gen_metrics.get("num_predict", 1024),
+                    "num_ctx": gen_metrics.get("num_ctx", 4096),
+                    "prompt_eval_count": gen_metrics.get("prompt_eval_count"),
+                    "eval_count": gen_metrics.get("eval_count"),
+                    "done_reason": gen_metrics.get("done_reason"),
+                    "latensi_ms": gen_metrics.get("latensi_ms", round((time.perf_counter() - t_gen_0) * 1000.0, 2)),
+                    "json_valid": gen_metrics.get("json_valid", False),
+                    "error": gen_error,
+                    "raw_output": gen_metrics.get("raw_output"),
+                })
             except Exception as e:
                 logger.error(f"Kegagalan eksekusi generate_response: {e}")
                 gen_error = str(e)
                 fallback_teks = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
                 gen_out = GeneratorOutput(teks=fallback_teks, pertanyaan_diajukan=None)
                 gen_metrics = {"error": gen_error}
+                generator_calls.append({
+                    "urutan": "pertama",
+                    "num_predict": 1024,
+                    "num_ctx": 4096,
+                    "prompt_eval_count": None,
+                    "eval_count": None,
+                    "done_reason": None,
+                    "latensi_ms": round((time.perf_counter() - t_gen_0) * 1000.0, 2),
+                    "json_valid": False,
+                    "error": gen_error,
+                    "raw_output": None,
+                })
 
             if gen_error:
                 is_valid = True
@@ -869,6 +897,7 @@ class SessionPipeline:
             logger.warning(f"Pelanggaran pemeriksa: {violations}. Meminta generator menulis ulang...")
             feedback_note = f"Perbaiki kalimatmu: {'; '.join(violations)}. Jangan sebut hal tersebut."
             # Retry 1 kali
+            t_retry_0 = time.perf_counter()
             try:
                 gen_out_retry, retry_metrics = generate_response(
                     aksi=parsed.aksi.value,
@@ -879,10 +908,34 @@ class SessionPipeline:
                     feedback_note=feedback_note
                 )
                 retry_error = retry_metrics.get("error")
+                generator_calls.append({
+                    "urutan": "retry",
+                    "num_predict": retry_metrics.get("num_predict", 1024),
+                    "num_ctx": retry_metrics.get("num_ctx", 4096),
+                    "prompt_eval_count": retry_metrics.get("prompt_eval_count"),
+                    "eval_count": retry_metrics.get("eval_count"),
+                    "done_reason": retry_metrics.get("done_reason"),
+                    "latensi_ms": retry_metrics.get("latensi_ms", round((time.perf_counter() - t_retry_0) * 1000.0, 2)),
+                    "json_valid": retry_metrics.get("json_valid", False),
+                    "error": retry_error,
+                    "raw_output": retry_metrics.get("raw_output"),
+                })
             except Exception as e:
                 logger.error(f"Kegagalan eksekusi generate_response saat retry: {e}")
                 retry_error = str(e)
                 retry_metrics = {"error": retry_error}
+                generator_calls.append({
+                    "urutan": "retry",
+                    "num_predict": 1024,
+                    "num_ctx": 4096,
+                    "prompt_eval_count": None,
+                    "eval_count": None,
+                    "done_reason": None,
+                    "latensi_ms": round((time.perf_counter() - t_retry_0) * 1000.0, 2),
+                    "json_valid": False,
+                    "error": retry_error,
+                    "raw_output": None,
+                })
             if retry_error:
                 gen_error = retry_error
                 fallback_teks = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
@@ -1112,7 +1165,8 @@ class SessionPipeline:
             konteks_toko={"kategori_dijual": sorted(list(catalog_cats)), "merek_dijual": sorted(list(catalog_brands))},
             fakta_lengkap=action_res.fakta,
             generator_error=gen_error,
-            sumber_balasan=sumber_balasan
+            sumber_balasan=sumber_balasan,
+            generator_calls=generator_calls
         )
 
         return turn_result, state

@@ -189,6 +189,7 @@ def process_chat_message(
                 fakta_lengkap=getattr(turn_res, "fakta_eksekusi", None),
                 generator_error=getattr(turn_res, "generator_error", None),
                 sumber_balasan=getattr(turn_res, "sumber_balasan", None),
+                generator_calls=getattr(turn_res, "generator_calls", None),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
