@@ -412,3 +412,10 @@ Dokumen ini berisi pedoman umum untuk mencocokkan kebutuhan pelanggan dengan spe
   - Printer thermal: untuk struk kasir (lihat P15); tidak memakai tinta.
 - **Fitur tambahan:** Multifungsi (print, scan, copy), duplex (cetak bolak-balik), ADF (pemindai dokumen otomatis), Wi-Fi.
 - **Pertanyaan klarifikasi:** Berapa volume cetak per bulan? Hitam putih atau warna? Perlu cetak foto? Perlu scan atau fotokopi?
+
+---
+
+## Kebijakan Toko
+
+Paket desktop tidak termasuk monitor, kecuali disebutkan di nama atau spesifikasi produk.
+
