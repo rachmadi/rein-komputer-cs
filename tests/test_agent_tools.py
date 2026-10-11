@@ -453,3 +453,37 @@ def test_property_product_mention_keys(catalog):
             f"Kalimat generik mencocokkan {code} ({prod.get('nama')}) pada pos {pos}"
         )
 
+
+def test_prompt_variants_v0_v3_match_baselines():
+    """Putaran 19b Butir 2: V0 harus sama persis dengan prompt sebelum-putaran19,
+    dan V3 harus sama persis dengan prompt sebelum-putaran19b.
+    """
+    import subprocess
+    from services.agentic_tool_engine import build_agent_system_prompt
+
+    # 1. Baseline sebelum-putaran19
+    src_19 = subprocess.check_output(
+        ["git", "show", "sebelum-putaran19:services/agentic_tool_engine.py"],
+        encoding="utf-8"
+    )
+    loc_19 = {}
+    exec(compile(src_19, "<string>", "exec"), loc_19)
+    baseline_19 = loc_19["build_agent_system_prompt"]()
+
+    # 2. Baseline sebelum-putaran19b
+    src_19b = subprocess.check_output(
+        ["git", "show", "sebelum-putaran19b:services/agentic_tool_engine.py"],
+        encoding="utf-8"
+    )
+    loc_19b = {}
+    exec(compile(src_19b, "<string>", "exec"), loc_19b)
+    baseline_19b = loc_19b["build_agent_system_prompt"]("C")
+
+    # Uji kesamaan persis
+    v0_prompt = build_agent_system_prompt("V0")
+    v3_prompt = build_agent_system_prompt("V3")
+
+    assert v0_prompt == baseline_19, "V0 tidak sama persis dengan prompt sebelum-putaran19"
+    assert v3_prompt == baseline_19b, "V3 tidak sama persis dengan prompt sebelum-putaran19b"
+
+

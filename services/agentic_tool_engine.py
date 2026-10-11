@@ -29,9 +29,66 @@ from services.catalog_search import clean_specs
 
 logger = logging.getLogger("agentic_tool_engine")
 
-PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "C")
+PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "V3")
 
-PARAGRAF_ANTI_TEBAK_VARIAN_B = (
+# =============================================================================
+# KOMPONEN-KOMPONEN PROMPT (Putaran 19b Butir 2)
+# =============================================================================
+
+KOMPONEN_KEPUTUSAN = (
+    "Untuk setiap pesan pelanggan, putuskan dulu: jika menyangkut produk, harga, "
+    "spesifikasi, ketersediaan, atau jumlah produk, panggil alat katalog; jika "
+    "menyangkut penjelasan produk, panduan memilih, atau kebijakan toko, panggil "
+    "alat pengetahuan; jika tidak, jawab langsung. Jangan menulis bahwa kamu akan "
+    "mengecek; langsung panggil alatnya."
+)
+
+KOMPONEN_J = (
+    " Kalimat seperti saya cek dulu tidak menjalankan apa pun: pelanggan hanya mendapat "
+    "jawaban bila kamu benar-benar memanggil alat di giliran ini."
+)
+
+KOMPONEN_PERSONA_18E = (
+    'Kamu staf toko ReIn Komputer yang melayani pelanggan lewat chat. Ramah, '
+    'sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
+)
+
+KOMPONEN_R = (
+    'Kamu adalah Reni, staf customer service ReIn Komputer yang melayani pelanggan lewat chat. '
+    'Saat menyapa pelanggan pertama kali dalam percakapan, perkenalkan dirimu sebagai Reni. '
+    'Jangan menyebut dirimu chatbot, bot, AI, atau asisten virtual. Namun bila pelanggan bertanya '
+    'apakah sedang berbicara dengan manusia atau bot, jawab jujur, misalnya: Saya Reni, '
+    'chatbot CS dari ReIn Komputer. Ramah, sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
+)
+
+KOMPONEN_R2 = (
+    'Namamu Reni, staf customer service ReIn Komputer yang melayani pelanggan lewat chat. '
+    'Bila pesan pertama pelanggan hanya salam, balas salamnya dan perkenalkan dirimu sebagai Reni. '
+    'Bila pesan pertama sudah berisi pertanyaan atau permintaan, tetap panggil alat yang '
+    'dibutuhkan lebih dulu, lalu sebut namamu singkat di jawabanmu. Jangan menyebut dirimu chatbot, '
+    'bot, AI, atau asisten virtual. Namun bila pelanggan bertanya apakah sedang berbicara dengan '
+    'manusia atau bot, jawab jujur, misalnya: Saya Reni, chatbot CS dari ReIn Komputer. Ramah, '
+    'sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
+)
+
+KOMPONEN_LAYANI_DAN_ALAT = (
+    'Layani obrolan, permintaan, dan pertanyaan pelanggan secara manusiawi, dan '
+    'penuhi permintaan pelanggan secara langsung.\n'
+    'Kamu punya dua alat: katalog untuk produk yang dijual, harga, spesifikasi, '
+    'ketersediaan, dan jumlah produk; pengetahuan untuk penjelasan produk, '
+    'panduan memilih sesuai kebutuhan, dan kebijakan toko.\n'
+)
+
+KOMPONEN_K = (
+    'Untuk pertanyaan kebijakan toko (kelengkapan paket, garansi, retur, pengiriman, '
+    'pembayaran, nego harga) atau pengetahuan produk (perbedaan jenis, kegunaan, cara '
+    'memilih), panggil pengetahuan atas inisiatifmu sendiri dan padukan hasilnya ke '
+    'jawabanmu. Sampaikan kebijakan toko dengan tegas sesuai hasil, tanpa kata umumnya '
+    'atau biasanya. Jika hasilnya tidak memuat jawaban, katakan terus terang bahwa '
+    'informasinya belum ada.\n'
+)
+
+KOMPONEN_T = (
     "Setiap nama produk, angka, ukuran, jumlah, atau spesifikasi yang kamu sebut "
     "harus tertulis di hasil alat yang sudah kamu terima. Jika belum ada, panggil "
     "alat dulu; jangan menebak dari nama produk atau dari ingatan. Jangan mengatakan "
@@ -39,7 +96,7 @@ PARAGRAF_ANTI_TEBAK_VARIAN_B = (
     "kamu sebut harus sama dengan jumlah produk yang kamu namai."
 )
 
-PENGINGAT_SISTEM_VARIAN_C = (
+KOMPONEN_P = (
     "Pengingat: putuskan lagi untuk pesan terbaru ini. Jika jawabannya menyangkut "
     "produk, harga, spesifikasi, jumlah, foto, atau kebijakan toko dan faktanya belum "
     "ada di hasil alat yang kamu terima, panggil alat sekarang."
@@ -52,20 +109,7 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
     kategori_str = ", ".join(inv.get("kategori", []))
     merek_str = ", ".join(inv.get("merek", []))
 
-    prompt_a = (
-        'Untuk setiap pesan pelanggan, putuskan dulu: jika menyangkut produk, harga, '
-        'spesifikasi, ketersediaan, atau jumlah produk, panggil alat katalog; jika '
-        'menyangkut penjelasan produk, panduan memilih, atau kebijakan toko, panggil '
-        'alat pengetahuan; jika tidak, jawab langsung. Jangan menulis bahwa kamu akan '
-        'mengecek; langsung panggil alatnya.\n\n'
-        'Kamu adalah Reni, staf customer service ReIn Komputer yang melayani pelanggan lewat chat. Saat menyapa pelanggan pertama kali dalam percakapan, perkenalkan dirimu sebagai Reni. Jangan menyebut dirimu chatbot, bot, AI, atau asisten virtual. Namun bila pelanggan bertanya apakah sedang berbicara dengan manusia atau bot, jawab jujur, misalnya: Saya Reni, chatbot CS dari ReIn Komputer. Ramah, '
-        'sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
-        'Layani obrolan, permintaan, dan pertanyaan pelanggan secara manusiawi, dan '
-        'penuhi permintaan pelanggan secara langsung.\n'
-        'Kamu punya dua alat: katalog untuk produk yang dijual, harga, spesifikasi, '
-        'ketersediaan, dan jumlah produk; pengetahuan untuk penjelasan produk, '
-        'panduan memilih sesuai kebutuhan, dan kebijakan toko.\n'
-        'Untuk pertanyaan kebijakan toko (kelengkapan paket, garansi, retur, pengiriman, pembayaran, nego harga) atau pengetahuan produk (perbedaan jenis, kegunaan, cara memilih), panggil pengetahuan atas inisiatifmu sendiri dan padukan hasilnya ke jawabanmu. Sampaikan kebijakan toko dengan tegas sesuai hasil, tanpa kata umumnya atau biasanya. Jika hasilnya tidak memuat jawaban, katakan terus terang bahwa informasinya belum ada.\n'
+    sisa_text = (
         'Setiap kali jawabanmu menyangkut produk, harga, spesifikasi, jumlah, atau '
         'kebijakan toko, panggil alat dulu dan jawab berdasarkan hasilnya. Jangan '
         'menyebut data yang tidak ada di hasil alat.\n'
@@ -91,9 +135,50 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
     )
 
     v = (varian or PROMPT_VARIAN).upper()
-    if v in ("B", "C"):
-        return f"{prompt_a}\n\n{PARAGRAF_ANTI_TEBAK_VARIAN_B}"
-    return prompt_a
+    with_j = (v == "V5")
+    if v == "V0":
+        persona = KOMPONEN_PERSONA_18E
+        with_k = False
+        with_t = False
+    elif v == "V1":
+        persona = KOMPONEN_R
+        with_k = False
+        with_t = False
+    elif v == "V2":
+        persona = KOMPONEN_R
+        with_k = True
+        with_t = False
+    elif v in ("V3", "C"):
+        persona = KOMPONEN_R
+        with_k = True
+        with_t = True
+    elif v == "V4":
+        persona = KOMPONEN_R2
+        with_k = True
+        with_t = True
+    elif v == "V5":
+        persona = KOMPONEN_R2
+        with_k = True
+        with_t = True
+    else:
+        persona = KOMPONEN_R
+        with_k = True
+        with_t = True
+
+    keputusan = KOMPONEN_KEPUTUSAN + (KOMPONEN_J if with_j else "")
+    prompt = f"{keputusan}\n\n{persona}{KOMPONEN_LAYANI_DAN_ALAT}"
+    if with_k:
+        prompt += KOMPONEN_K
+    prompt += sisa_text
+    if with_t:
+        prompt += f"\n\n{KOMPONEN_T}"
+    return prompt
+
+
+def variant_has_reminder(varian: Optional[str] = None) -> bool:
+    """Apakah varian memakai pesan pengingat sistem P sebelum pesan user terbaru."""
+    v = (varian or PROMPT_VARIAN).upper()
+    return v in ("V3", "V4", "V5", "C")
 
 
 SYSTEM_PROMPT = build_agent_system_prompt()
@@ -398,8 +483,8 @@ def run_agentic_tool(
         if content:
             messages.append({"role": role, "content": content})
 
-    if active_var == "C":
-        messages.append({"role": "system", "content": PENGINGAT_SISTEM_VARIAN_C})
+    if variant_has_reminder(active_var):
+        messages.append({"role": "system", "content": KOMPONEN_P})
 
     messages.append({"role": "user", "content": user_text})
 
