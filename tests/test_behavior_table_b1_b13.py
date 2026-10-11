@@ -97,7 +97,13 @@ def test_b6_tidak_ada_produk_memenuhi_minimum(engine):
     res = engine.execute(parsed, session_state={})
     # Anggaran 5 jt untuk render 3D arsitektur akan terpicu tidak_ada_dalam_anggaran atau belum_ada_yang_memenuhi
     assert res.fakta["status"] in ("tidak_ada_dalam_anggaran", "belum_ada_yang_memenuhi")
-    assert len(res.produk_list) == 0
+    # Putaran 15 Butir 5: Menampilkan produk terdekat dalam budget beserta catatan kekurangannya
+    if res.fakta["status"] == "belum_ada_yang_memenuhi":
+        assert len(res.produk_list) > 0
+        for p in res.produk_list:
+            assert (p.get("harga") or p.get("harga_idr")) <= 5000000
+    else:
+        assert len(res.produk_list) == 0
 
 
 def test_b7_anggaran_di_bawah_harga_terendah_katalog(engine):
@@ -116,10 +122,9 @@ def test_b7_anggaran_di_bawah_harga_terendah_katalog(engine):
 
 def test_b8_tidak_ada_opsi_lebih_murah_atau_lebih_mahal(engine):
     """B8: lanjutan_hasil lebih_murah jika sudah termurah -> tidak_ada_lebih_murah."""
+    min_laptop = min([p for p in engine.catalog.products if p.get("kategori") == "laptop"], key=lambda x: x.get("harga_idr") or x.get("harga", 999999999))
     state = {
-        "produk_tampil": [
-            {"kode": "KB-L01", "nama": "Acer Aspire Lite 14", "kategori": "laptop", "harga": 5199000}
-        ],
+        "produk_tampil": [min_laptop],
         "kategori": "laptop"
     }
     # KB-L01 adalah laptop termurah (5.199.000)

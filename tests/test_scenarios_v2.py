@@ -330,10 +330,9 @@ def test_B7_tidak_ada_dalam_anggaran_dan_opsi_termurah(engine):
 
 def test_B8_tidak_ada_opsi_lebih_murah_atau_lebih_mahal(engine):
     """B8: Opsi lebih murah / lebih mahal simetris melaporkan batas katalog."""
+    min_laptop = min([p for p in engine.catalog.products if p.get("kategori") == "laptop"], key=lambda x: x.get("harga_idr") or x.get("harga", 999999999))
     state = {
-        "produk_tampil": [
-            {"kode": "KB-L05", "nama": "Lenovo IdeaPad 1", "kategori": "laptop", "harga": 5199000}
-        ],
+        "produk_tampil": [min_laptop],
         "kategori": "laptop"
     }
     parsed = ParserOutput(

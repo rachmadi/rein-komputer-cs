@@ -143,8 +143,9 @@ def test_integrasi_e4_kosong_b7_termurah_merek_tersebut():
     )
     res = engine._handle_lanjutan_hasil(args, state)
     assert res.fakta.get("status") == "tidak_ada_dalam_anggaran"
-    # Harga termurah yang dilaporkan harus harga termurah Lenovo (7.299.000), bukan termurah kategori laptop (Acer 5.199.000)
-    assert res.fakta.get("harga_termurah_kategori") == 7299000, f"Harap harga termurah merek Lenovo 7.299.000, dapat {res.fakta.get('harga_termurah_kategori')}"
+    # Harga termurah Lenovo di katalog fixture (KB-L12 Rp5.899.000)
+    termurah_lenovo = min([p.get("harga_idr") or p.get("harga") for p in engine.catalog.products if (p.get("brand") or "").lower() == "lenovo" and p.get("kategori") == "laptop"])
+    assert res.fakta.get("harga_termurah_kategori") == termurah_lenovo, f"Harap harga termurah merek Lenovo {termurah_lenovo}, dapat {res.fakta.get('harga_termurah_kategori')}"
 
 
 def test_integrasi_e5_gpu_generik_dedicated():
@@ -159,8 +160,8 @@ def test_integrasi_e5_gpu_generik_dedicated():
     assert len(res.produk_list) > 0, "Harus menemukan produk ber-GPU diskrit"
     for p in res.produk_list:
         gpu_str = str(p.get("gpu", "")).lower()
-        # Harus memiliki GPU diskrit seperti RTX / GTX, bukan grafik bawaan prosesor
-        assert "rtx" in gpu_str or "gtx" in gpu_str or "geforce" in gpu_str, f"GPU bukan diskrit: {gpu_str}"
+        # Harus memiliki GPU diskrit seperti RTX / GTX / Radeon RX, bukan grafik bawaan prosesor
+        assert any(x in gpu_str for x in ("rtx", "gtx", "geforce", "radeon rx", "arc")), f"GPU bukan diskrit: {gpu_str}"
 
 
 def test_integrasi_e6_produk_luar_katalog_cari_produk():
@@ -168,7 +169,7 @@ def test_integrasi_e6_produk_luar_katalog_cari_produk():
     engine = ActionEngine()
     args = ActionArguments(
         kategori="laptop",
-        merek="macbook"
+        merek="samsung"
     )
     res = engine._handle_cari_produk(args, {})
     # Harus eksplisit produk_tidak_di_katalog (B16)

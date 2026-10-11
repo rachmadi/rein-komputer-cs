@@ -21,7 +21,7 @@ from services.action_engine import ActionEngine
 from services.session_pipeline import SessionPipeline
 
 
-@pytest.mark.parametrize("luar_kategori", ["monitor", "tablet", "kamera", "keyboard", "smartwatch"])
+@pytest.mark.parametrize("luar_kategori", ["tablet", "kamera", "keyboard", "smartwatch", "proyektor"])
 def test_butir2_kategori_di_luar_katalog_diklasifikasikan_tidak_ada(luar_kategori):
     """Kategori di luar katalog tidak dihapus diam-diam, melainkan masuk argumen_ditolak: tidak_ada_di_katalog."""
     raw = {
@@ -40,7 +40,7 @@ def test_butir2_kategori_di_luar_katalog_diklasifikasikan_tidak_ada(luar_kategor
     )
 
 
-@pytest.mark.parametrize("luar_merek", ["macbook", "apple", "dell", "samsung", "toshiba"])
+@pytest.mark.parametrize("luar_merek", ["samsung", "toshiba", "sony", "huawei", "logitech"])
 def test_butir2_merek_di_luar_katalog_diklasifikasikan_tidak_ada(luar_merek):
     """Merek di luar katalog diklasifikasikan ke argumen_ditolak: tidak_ada_di_katalog."""
     raw = {

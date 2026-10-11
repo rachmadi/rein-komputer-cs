@@ -183,3 +183,107 @@ def test_butir5_pilihan_terdekat_dalam_budget_render_3d():
     prices = [p.get("harga") or p.get("harga_idr") for p in res.produk_list]
     assert prices == sorted(prices, reverse=True), f"Produk harus diurutkan menurun: {prices}"
 
+
+# =============================================================================
+# BUTIR 6 — Semua Kategori Setara (Monitor & Printer)
+# =============================================================================
+def test_butir6_is_accessory_false_for_all_products():
+    """Semua produk di katalog setara; tidak ada produk ritel yang diperlakukan sebagai aksesori."""
+    from core.catalog import Catalog
+    cat = Catalog.from_db()
+    for p in cat.products:
+        assert p.get("is_accessory") is False, f"Produk {p.get('kode')} memiliki is_accessory=True!"
+
+
+def test_butir6_cari_monitor_bisa_dicari():
+    """Monitor dapat dicari dan ditampilkan dengan spesifikasi layar dan port yang jelas."""
+    from services.action_engine import ActionEngine
+    from services.validator import validate_parser_output
+
+    engine = ActionEngine()
+    raw = {
+        "aksi": "cari_produk",
+        "argumen": {"kategori": "monitor"},
+        "pembaruan_state": {"kategori": "monitor"}
+    }
+    validated, is_valid = validate_parser_output(raw)
+    assert is_valid is True
+
+    res = engine.execute(validated, session_state={})
+    assert res.fakta.get("status") == "sukses"
+    assert len(res.produk_list) > 0
+    for p in res.produk_list:
+        assert p.get("kategori") == "monitor"
+        spek = p.get("lembar_spesifikasi", {})
+        assert "layar" in spek
+        assert "port" in spek
+
+
+def test_butir6_bandingkan_printer():
+    """Printer dapat dibandingkan spesifikasinya (tipe, fungsi, wifi, duplex)."""
+    from services.action_engine import ActionEngine
+    from services.validator import validate_parser_output
+
+    engine = ActionEngine()
+    state = {"produk_tampil": [{"kode": "KB-P06"}, {"kode": "KB-P08"}]}
+    raw = {
+        "aksi": "bandingkan",
+        "argumen": {"produk": ["KB-P06", "KB-P08"]},
+        "pembaruan_state": {}
+    }
+    validated, is_valid = validate_parser_output(raw, session_state=state)
+    assert is_valid is True
+
+    res = engine.execute(validated, session_state=state)
+    assert res.fakta.get("status") == "sukses"
+    assert len(res.produk_list) == 2
+    perbandingan = res.fakta.get("perbandingan", [])
+    assert len(perbandingan) == 2
+
+    p06_spek = next(item["lembar_spesifikasi"] for item in perbandingan if item["kode"] == "KB-P06")
+    p08_spek = next(item["lembar_spesifikasi"] for item in perbandingan if item["kode"] == "KB-P08")
+
+    assert p06_spek.get("tipe_printer") == "tangki tinta"
+    assert p08_spek.get("tipe_printer") == "laser mono"
+    assert p08_spek.get("wifi") is True
+    assert p08_spek.get("duplex") is True
+
+
+def test_butir6_tanya_spesifikasi_monitor():
+    """Spesifikasi monitor (layar dan port) dapat ditanyakan secara akurat."""
+    from services.action_engine import ActionEngine
+    from services.validator import validate_parser_output
+
+    engine = ActionEngine()
+    state = {"produk_tampil": [{"kode": "KB-M04"}]}
+
+    # Tanya layar monitor KB-M04
+    raw_layar = {
+        "aksi": "tanya_spesifikasi",
+        "argumen": {"produk": ["KB-M04"], "atribut": "layar"},
+        "pembaruan_state": {}
+    }
+    val_layar, _ = validate_parser_output(raw_layar, session_state=state)
+    res_layar = engine.execute(val_layar, session_state=state)
+    assert res_layar.fakta.get("status") == "sukses"
+    spesifikasi_layar = res_layar.fakta.get("spesifikasi", [])
+    assert len(spesifikasi_layar) == 1
+    assert "27" in spesifikasi_layar[0]["nilai"]
+    assert "165Hz" in spesifikasi_layar[0]["nilai"] or "IPS" in spesifikasi_layar[0]["nilai"]
+
+    # Tanya port monitor KB-M04
+    raw_port = {
+        "aksi": "tanya_spesifikasi",
+        "argumen": {"produk": ["KB-M04"], "atribut": "port"},
+        "pembaruan_state": {}
+    }
+    val_port, _ = validate_parser_output(raw_port, session_state=state)
+    res_port = engine.execute(val_port, session_state=state)
+    assert res_port.fakta.get("status") == "sukses"
+    spesifikasi_port = res_port.fakta.get("spesifikasi", [])
+    assert len(spesifikasi_port) == 1
+    assert "HDMI" in spesifikasi_port[0]["nilai"]
+    assert "DisplayPort" in spesifikasi_port[0]["nilai"]
+    assert "USB-C" in spesifikasi_port[0]["nilai"]
+
+

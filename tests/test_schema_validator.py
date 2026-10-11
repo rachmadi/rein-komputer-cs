@@ -144,7 +144,7 @@ def test_validator_unmatched_product_reference_rejected():
 
     raw2 = {
         "aksi": "tanya_spesifikasi",
-        "argumen": {"rujukan_produk": ["macbook pro"], "atribut": "ram"},
+        "argumen": {"rujukan_produk": ["samsung galaxy book"], "atribut": "ram"},
         "pembaruan_state": {}
     }
     res2, is_valid2 = validate_parser_output(raw2, session_state=state)

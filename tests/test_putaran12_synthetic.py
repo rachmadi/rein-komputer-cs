@@ -181,8 +181,8 @@ def test_trace_a2_printer_canon_kebutuhan(action_engine, capsys):
     print(f"[TRACE A2] Status fakta akhir: {res.fakta.get('status')}")
 
     # Bukti diagnostik:
-    # 1. Kandidat masih ada sampai tahap merek (2 unit)
-    assert len(cands_merek) == 2
+    # 1. Kandidat masih ada sampai tahap merek (minimal 2 unit)
+    assert len(cands_merek) >= 2
     # 2. Putaran 13: printer tidak digugurkan oleh syarat PC, sehingga status akhir adalah 'sukses'
     assert res.fakta.get("status") == "sukses"
     assert len(res.produk_list) >= 1

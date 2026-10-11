@@ -120,6 +120,31 @@ def clean_specs(p_item: dict) -> str:
             parts.append("Barebone (tanpa RAM & SSD)")
         if raw_dict.get("tipe_printer"):
             parts.append(f"Tipe {raw_dict['tipe_printer']}")
+        if raw_dict.get("fungsi"):
+            f_val = raw_dict["fungsi"]
+            parts.append("Fungsi: " + (", ".join(f_val) if isinstance(f_val, list) else str(f_val)))
+        if raw_dict.get("port"):
+            p_val = raw_dict["port"]
+            parts.append("Port: " + (", ".join(p_val) if isinstance(p_val, list) else str(p_val)))
+        if raw_dict.get("wifi"):
+            parts.append("Wi-Fi")
+        if raw_dict.get("duplex"):
+            parts.append("Duplex")
+
+    # Ambil spesifikasi printer/monitor jika sudah ter-unpack di level atas dictionary
+    if p_item.get("tipe_printer") and not any(p.startswith("Tipe") for p in parts):
+        parts.append(f"Tipe {p_item['tipe_printer']}")
+    if p_item.get("fungsi") and not any(p.startswith("Fungsi:") for p in parts):
+        f_val = p_item["fungsi"]
+        parts.append("Fungsi: " + (", ".join(f_val) if isinstance(f_val, list) else str(f_val)))
+    if (p_item.get("port") or p_item.get("ports")) and not any(p.startswith("Port:") for p in parts):
+        p_val = p_item.get("port") or p_item.get("ports")
+        parts.append("Port: " + (", ".join(p_val) if isinstance(p_val, list) else str(p_val)))
+    if p_item.get("wifi") and "Wi-Fi" not in parts:
+        parts.append("Wi-Fi")
+    if p_item.get("duplex") and "Duplex" not in parts:
+        parts.append("Duplex")
+
     return " | ".join(parts) if parts else "Spesifikasi standar"
 
 
@@ -284,7 +309,7 @@ def _match_legacy_query(p: dict, q: str) -> bool:
         return any(b in p["nama"].lower() for b in matched_brands)
 
     common_words = [
-        "laptop", "notebook", "pc", "desktop", "komputer", "printer", "layar",
+        "laptop", "notebook", "pc", "desktop", "komputer", "printer", "monitor", "layar",
         "ram", "ssd", "gb", "tb", "jt", "juta", "murah", "di", "bawah", "dibawah", "buat", "untuk",
         "ada", "yang", "aja", "saja", "kalo", "kalau", "mau", "cari"
     ]
@@ -489,6 +514,7 @@ def execute_tool(
                 "laptop": ("laptop", "notebook"),
                 "desktop": ("desktop", "pc meja", "komputer meja", "tower", "all-in-one", "aio", "pc", "komputer"),
                 "printer": ("printer", "cetak", "print", "tinta", "ink tank"),
+                "monitor": ("monitor", "layar eksternal", "display eksternal"),
             }
             earliest_idx = 9999
             for cname, kwords in cat_keywords.items():

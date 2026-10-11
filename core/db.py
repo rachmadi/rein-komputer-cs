@@ -87,7 +87,8 @@ def row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
         except:
             d["tags"] = []
 
-    d["is_accessory"] = bool(d.get("is_accessory", 0))
+    # Putaran 15 Butir 6: Semua kategori setara, tidak ada produk ritel diperlakukan sebagai aksesori
+    d["is_accessory"] = False
     if d.get("kategori") == "desktop":
         d["includes_monitor"] = False
 

@@ -822,7 +822,7 @@ class Catalog:
     def pool(self, category: str | None) -> list[dict]:
         if category in ("laptop", "desktop", "printer", "monitor"):
             return [p for p in self.products if p["kategori"] == category]
-        return [p for p in self.products if not p["is_accessory"]]
+        return [p for p in self.products if not p.get("is_accessory", False)]
 
     def printers(self) -> list[dict]:
         return [p for p in self.products if p["kategori"] == "printer"]

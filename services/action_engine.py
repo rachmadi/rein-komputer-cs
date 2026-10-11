@@ -127,12 +127,23 @@ def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
         "storage": "penyimpanan",
         "gpu": "grafis",
         "display": "layar",
+        "panel": "panel",
+        "refresh_hz": "refresh_rate",
+        "srgb_pct": "akurasi_warna_srgb",
+        "screen_inch": "ukuran_layar",
         "os": "sistem_operasi",
     }
     for k, label in field_labels.items():
         v = p.get(k)
         if v not in (None, "", [], {}):
-            specs[label] = v
+            if label == "refresh_rate" and isinstance(v, (int, float)):
+                specs[label] = f"{int(v)} Hz"
+            elif label == "akurasi_warna_srgb" and isinstance(v, (int, float)):
+                specs[label] = f"{int(v)}% sRGB"
+            elif label == "ukuran_layar" and isinstance(v, (int, float)):
+                specs[label] = f"{v} inci"
+            else:
+                specs[label] = v
 
     p_price = p.get("harga") or p.get("harga_idr")
     if p_price:
@@ -151,14 +162,23 @@ def build_lembar_spesifikasi(p: dict) -> dict[str, Any]:
         for rk, rv in raw_dict.items():
             if rv not in (None, "", [], {}):
                 lbl = "kecepatan_cetak" if rk == "kecepatan" else rk
-                specs[lbl] = rv
+                if isinstance(rv, list):
+                    specs[lbl] = ", ".join(str(x) for x in rv)
+                else:
+                    specs[lbl] = rv
 
-    extra_fields = ["fungsi", "teknologi", "kecepatan", "resolusi", "konektivitas", "garansi"]
+    extra_fields = [
+        "fungsi", "teknologi", "kecepatan", "resolusi", "konektivitas",
+        "garansi", "port", "tipe_printer", "wifi", "duplex"
+    ]
     for ef in extra_fields:
         v = p.get(ef)
         if v not in (None, "", [], {}) and ef not in specs:
             lbl = "kecepatan_cetak" if ef == "kecepatan" else ef
-            specs[lbl] = v
+            if isinstance(v, list):
+                specs[lbl] = ", ".join(str(x) for x in v)
+            else:
+                specs[lbl] = v
 
     return specs
 
@@ -1502,13 +1522,17 @@ class ActionEngine:
                 if kategori in ("laptop", "desktop", "all-in-one"):
                     val = p.get("gpu")
             elif attr == AtributSpesifikasiEnum.LAYAR:
-                if kategori == "laptop":
+                if kategori in ("laptop", "monitor", "desktop", "all-in-one"):
                     val = p.get("display") or (f"{p.get('screen_inch')} inci" if p.get("screen_inch") else None)
             elif attr == AtributSpesifikasiEnum.BATERAI:
                 if kategori == "laptop":
                     val = p.get("baterai")
             elif attr == AtributSpesifikasiEnum.PORT:
-                val = p.get("ports") or p.get("port")
+                ports = p.get("ports") or p.get("port")
+                if isinstance(ports, list):
+                    val = ", ".join(str(x) for x in ports)
+                else:
+                    val = ports
             elif attr == AtributSpesifikasiEnum.BOBOT:
                 val = p.get("bobot")
             elif attr == AtributSpesifikasiEnum.KEYBOARD:
@@ -1519,6 +1543,22 @@ class ActionEngine:
             else:
                 attr_key = attr.value if hasattr(attr, "value") else str(attr)
                 val = p.get(attr_key)
+
+            if not val:
+                raw = p.get("raw_data")
+                if raw:
+                    raw_dict = raw if isinstance(raw, dict) else {}
+                    if isinstance(raw, str):
+                        try:
+                            raw_dict = json.loads(raw)
+                        except Exception:
+                            pass
+                    attr_key = attr.value if hasattr(attr, "value") else str(attr)
+                    val = raw_dict.get(attr_key)
+                    if isinstance(val, list):
+                        val = ", ".join(str(x) for x in val)
+                    elif isinstance(val, bool):
+                        val = "Ya" if val else "Tidak"
 
             if not val:
                 ada_tidak_tersedia = True
@@ -1573,9 +1613,10 @@ class ActionEngine:
                 "harga_formatted": format_rupiah(p_price),
                 "cpu": p.get("cpu"),
                 "gpu": p.get("gpu"),
-                "ram": p.get("ram") or f"{p.get('ram_gb', '')} GB",
-                "storage": p.get("storage") or f"{p.get('storage_ssd_gb', '')} GB",
-                "display": p.get("display") or f"{p.get('ukuran_layar', '')} inci",
+                "ram": p.get("ram") or (f"{p.get('ram_gb')} GB" if p.get("ram_gb") else None),
+                "storage": p.get("storage") or (f"{p.get('storage_ssd_gb')} GB" if p.get("storage_ssd_gb") else None),
+                "display": p.get("display") or (f"{p.get('screen_inch')} inci" if p.get("screen_inch") else None),
+                "spesifikasi_ringkas": clean_specs(p),
                 "lembar_spesifikasi": build_lembar_spesifikasi(p),
                 "catatan_minimum": {"memenuhi": True, "alasan": "Unit pembanding"}
             })
