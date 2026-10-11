@@ -180,3 +180,28 @@ def test_execute_agent_tool_dispatcher(catalog):
     res_leg = execute_agent_tool("cari_produk", {"kategori": "printer"}, catalog=catalog)
     assert res_leg["status"] == "sukses"
     assert len(res_leg["produk"]) > 0
+
+
+def test_format_tool_history_message():
+    """Menguji penyusunan pesan ringkasan riwayat alat 3 giliran terakhir (Butir 4)."""
+    from services.agentic_tool_engine import format_tool_history_message
+    sample_turns = [
+        {
+            "tool_calls": [
+                {
+                    "nama": "katalog",
+                    "argumen": {"kata_kunci": "mini desktop"},
+                    "total_cocok": 2,
+                    "produk": [
+                        {"kode": "KB-D12", "nama": "Intel NUC 11 Essential", "harga": "Rp3.199.000"},
+                        {"kode": "KB-D11", "nama": "Apple Mac mini M2", "harga": "Rp11.499.000"}
+                    ]
+                }
+            ]
+        }
+    ]
+    msg = format_tool_history_message(sample_turns)
+    assert msg is not None
+    assert "katalog" in msg
+    assert "KB-D12" in msg
+    assert "KB-D11" in msg

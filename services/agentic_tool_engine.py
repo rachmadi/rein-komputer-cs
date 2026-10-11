@@ -156,6 +156,31 @@ def call_ollama_chat_raw(
         return data
 
 
+def format_tool_history_message(recent_tool_turns: list[dict]) -> str | None:
+    """Menyusun ringkasan hasil alat dari giliran sebelumnya sebagai satu pesan system singkat."""
+    if not recent_tool_turns:
+        return None
+    lines = ["Ringkasan hasil alat 3 giliran terakhir:"]
+    for turn in recent_tool_turns:
+        for tc in turn.get("tool_calls", []):
+            t_name = tc.get("nama")
+            t_args = json.dumps(tc.get("argumen", {}), ensure_ascii=False)
+            total = tc.get("total_cocok", 0)
+            prods = tc.get("produk", [])
+            if prods:
+                p_items = [f"{p.get('kode')} {p.get('nama')} ({p.get('harga')})" for p in prods[:5]]
+                p_str = "; ".join(p_items)
+                if total > len(p_items):
+                    p_str += f" (total {total} produk cocok)"
+                lines.append(f"- {t_name}({t_args}): {p_str}")
+            elif tc.get("pengetahuan"):
+                k_items = [it.get("judul", "") for it in tc.get("pengetahuan", [])]
+                lines.append(f"- {t_name}({t_args}): topik {', '.join(k_items)}")
+            else:
+                lines.append(f"- {t_name}({t_args}): total {total} cocok")
+    return "\n".join(lines)
+
+
 def run_agentic_tool(
     user_text: str,
     history: list[dict],
@@ -199,8 +224,14 @@ def run_agentic_tool(
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
 
-    # Format riwayat pesan
+    # Format riwayat pesan: prompt sistem + ringkasan hasil alat 3 giliran terakhir + riwayat pesan
     messages: list[dict] = [{"role": "system", "content": system_content}]
+
+    recent_tools = (state.get("riwayat_alat") or [])[-3:]
+    hist_tool_msg = format_tool_history_message(recent_tools)
+    if hist_tool_msg:
+        messages.append({"role": "system", "content": hist_tool_msg})
+
     for m in history[-8:]:
         role = m.get("role") or ("assistant" if m.get("sender") in ("bot", "assistant") else "user")
         content = m.get("content") or m.get("text") or ""
@@ -216,6 +247,8 @@ def run_agentic_tool(
     all_tools_products_returned: list[dict[str, Any]] = []
     is_emergency_fallback = False
     emergency_error = None
+
+    this_turn_tool_summaries: list[dict[str, Any]] = []
 
     while round_idx < MAX_TOOL_ROUNDS:
         try:
@@ -279,14 +312,47 @@ def run_agentic_tool(
             tool_res = execute_agent_tool(fn_name, fn_args)
             t_tool = (time.perf_counter() - t0_tool) * 1000
 
-            if isinstance(tool_res, dict) and "produk" in tool_res:
-                prods = tool_res.get("produk", [])
-                if isinstance(prods, list):
-                    all_tools_products_returned.extend(prods)
-            elif isinstance(tool_res, dict) and "detail" in tool_res:
-                details = tool_res.get("detail", [])
-                if isinstance(details, list):
-                    all_tools_products_returned.extend(details)
+            prod_summary_list = []
+            pengetahuan_summary_list = []
+            total_cocok = 0
+            if isinstance(tool_res, dict):
+                total_cocok = tool_res.get("total_cocok", 0)
+                if "produk" in tool_res:
+                    prods = tool_res.get("produk", [])
+                    if isinstance(prods, list):
+                        all_tools_products_returned.extend(prods)
+                        for p in prods:
+                            prod_summary_list.append({
+                                "kode": p.get("kode"),
+                                "nama": p.get("nama"),
+                                "harga": p.get("harga") or p.get("harga_idr")
+                            })
+                elif "detail" in tool_res:
+                    details = tool_res.get("detail", [])
+                    if isinstance(details, list):
+                        all_tools_products_returned.extend(details)
+                        for d in details:
+                            prod_summary_list.append({
+                                "kode": d.get("kode"),
+                                "nama": d.get("nama"),
+                                "harga": d.get("harga")
+                            })
+                elif "pengetahuan" in tool_res:
+                    k_items = tool_res.get("pengetahuan", [])
+                    if isinstance(k_items, list):
+                        for it in k_items:
+                            pengetahuan_summary_list.append({
+                                "id": it.get("id"),
+                                "judul": it.get("judul")
+                            })
+
+            this_turn_tool_summaries.append({
+                "nama": fn_name,
+                "argumen": fn_args,
+                "total_cocok": total_cocok,
+                "produk": prod_summary_list,
+                "pengetahuan": pengetahuan_summary_list
+            })
 
             ringkasan = summarize_tool_result(fn_name, tool_res)
             all_tool_calls_logged.append({
@@ -362,6 +428,14 @@ def run_agentic_tool(
                 "nama": p.get("nama"),
                 "harga": p.get("harga") or p.get("harga_idr")
             })
+
+    # Simpan di state ringkasan hasil alat giliran ini (Putaran 18b Butir 4)
+    if this_turn_tool_summaries:
+        riwayat_alat = state.setdefault("riwayat_alat", [])
+        riwayat_alat.append({
+            "tool_calls": this_turn_tool_summaries
+        })
+        state["riwayat_alat"] = riwayat_alat[-10:]
 
     # GroundingChecker LOG SAJA (Butir 4b): tidak memblokir, tidak memicu retry, tidak mengganti balasan
     pemeriksa_catatan: list[str] = []
