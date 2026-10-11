@@ -61,7 +61,17 @@ def cpu_tier(cpu: str):
         return {"3": 1, "5": 2, "7": 3, "9": 4}[m.group(1)]
     if re.search(r"\bn\d{2,3}\b|celeron|pentium|athlon", s):
         return 1
-    return None  # termasuk Apple M-series
+    # KB G01: Apple M-series (Apple M dasar = 2, Pro = 3, Max = 4; varian lain dibiarkan NULL)
+    if "apple" in s or re.search(r"\bm[1-9]\b", s):
+        if re.search(r"\bmax\b", s):
+            return 4
+        elif re.search(r"\bpro\b", s):
+            return 3
+        elif re.search(r"\bultra\b", s):
+            return None  # varian lain dibiarkan NULL
+        elif re.search(r"\bm[1-9]\b", s):
+            return 2  # Apple M dasar
+    return None
 
 
 def storage_info(storage: str):

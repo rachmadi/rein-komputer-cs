@@ -609,6 +609,15 @@ def parse_product_text(text: str) -> dict | None:
                 return {"3": 1, "5": 2, "7": 3, "9": 4}[m.group(1)]
             if re.search(r"\bn\d{2,3}\b|celeron|pentium|athlon", s):
                 return 1
+            if "apple" in s or re.search(r"\bm[1-9]\b", s):
+                if re.search(r"\bmax\b", s):
+                    return 4
+                elif re.search(r"\bpro\b", s):
+                    return 3
+                elif re.search(r"\bultra\b", s):
+                    return 1
+                elif re.search(r"\bm[1-9]\b", s):
+                    return 2
             return 1  # default ke tier 1 jika tidak dikenali
         cpu_tier = _parse_cpu_tier(low)
 
