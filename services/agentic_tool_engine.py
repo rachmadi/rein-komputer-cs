@@ -57,7 +57,18 @@ def build_agent_system_prompt() -> str:
         'pelanggan.\n'
         'Balas maksimal 4 kalimat, tanpa markdown, emoji, atau daftar berpoin.\n'
         f'Kategori yang tersedia: {kategori_str}.\n'
-        f'Merek yang tersedia: {merek_str}.'
+        f'Merek yang tersedia: {merek_str}.\n'
+        'Saat menawarkan atau menyebut produk, sebut paling banyak 3 produk. Sebut '
+        'lebih banyak, paling banyak 5, hanya jika pelanggan memintanya.\n'
+        'Kartu produk berisi spesifikasi tampil otomatis untuk produk yang kamu sebut '
+        'namanya, beserta fotonya bila ada_foto bernilai true. Sebut nama produknya; '
+        'tidak perlu menyalin semua spesifikasi ke teks.\n'
+        'Alat adalah urusan internalmu: jangan menyebut alat, katalog, atau '
+        'pengetahuan kepada pelanggan, dan jangan menyuruh pelanggan memeriksa '
+        'sendiri. Carikan jawabannya untuk pelanggan.\n'
+        'Jika detail yang ditanyakan (spesifikasi, ukuran, harga, kebijakan) tidak '
+        'ada di hasil alat yang sudah kamu terima, panggil alat lagi; jangan menjawab '
+        'dari ingatan.'
     )
 
 
