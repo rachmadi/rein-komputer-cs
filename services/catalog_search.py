@@ -600,15 +600,20 @@ def execute_tool(
         # Urutkan menurut kecocokan dengan kebutuhan (skor tertinggi) lalu harga (termurah)
         scored_products.sort(key=lambda x: (x[0], -(x[1].get('harga_idr') or 0)), reverse=True)
         # Urut kandidat relaksasi: sedikit kegagalan dulu (naik), skor tiebreaker (turun)
-        relaxed_products.sort(
-            key=lambda x: (len(x[1].get("match_report", {}).get("tidak_terpenuhi", [])), -x[0])
-        )
+        if max_harga:
+            relaxed_products.sort(
+                key=lambda x: (len(x[1].get("match_report", {}).get("tidak_terpenuhi", [])), -(x[1].get('harga_idr') or 0))
+            )
+        else:
+            relaxed_products.sort(
+                key=lambda x: (len(x[1].get("match_report", {}).get("tidak_terpenuhi", [])), -x[0])
+            )
         top_prods = [p for s, p in scored_products[:3]]
 
         has_filter_checked = bool(filters_to_apply)
 
         if not top_prods:
-            top_relaxed = [p for s, p in relaxed_products[:2]]
+            top_relaxed = [p for s, p in relaxed_products[:3]]
             if "lebih murah" in user_text.lower() or "yang murah" in user_text.lower():
                 res_str = f"{info_profil}Tidak ada yang lebih murah yang memenuhi kebutuhan ini. Kandidat terdekat:\n"
             else:

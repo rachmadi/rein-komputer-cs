@@ -666,8 +666,11 @@ class ActionEngine:
         if candidates and all(not c["passed"] for c in candidates):
             if is_termurah:
                 candidates.sort(key=lambda x: (get_product_price(x["product"]), -x["penalty"]))
+            elif budget_max:
+                # Putaran 15 Butir 5: Urutkan berdasarkan harga mendekati budget (harga tertinggi yang masih <= budget)
+                candidates.sort(key=lambda x: (-get_product_price(x["product"]), -x["penalty"]))
             else:
-                candidates.sort(key=lambda x: (-x["penalty"], get_product_price(x["product"])))
+                candidates.sort(key=lambda x: (-x["penalty"], -get_product_price(x["product"])))
             
             from services.catalog_search import format_natural_unmet_list
             formatted_closest = []
@@ -988,6 +991,74 @@ class ActionEngine:
                     "pesan": f"Produk/merek {prod_diminta} tidak tersedia di katalog ReIn Komputer." if not minta_pengganti else f"Produk/merek {prod_diminta} tidak tersedia di katalog ReIn Komputer. Pilihan padanan terdekat yang tersedia adalah {padanan.get('nama', '')}."
                 }
                 return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=[padanan] if (closest and minta_pengganti) else [])
+
+            if max_harga:
+                cat_candidates = [
+                    p for p in self.catalog.products
+                    if (not kategori or str(p.get("kategori", "")).strip().lower() == str(kategori).strip().lower())
+                    and (not merek or str(merek).strip().lower() in get_product_brand(p) or str(merek).strip().lower() in str(p.get("nama", "")).lower())
+                    and get_product_price(p) <= max_harga
+                ]
+                if cat_candidates:
+                    # Putaran 15 Butir 5: Urutkan berdasarkan harga mendekati budget (harga tertinggi yang masih <= max_harga)
+                    cat_candidates.sort(key=lambda x: get_product_price(x), reverse=True)
+                    formatted_closest = []
+                    for cp in cat_candidates[:3]:
+                        cp_price = get_product_price(cp)
+                        unmet = []
+                        if ram_gb_min and (cp.get("ram_gb") or 0) < ram_gb_min:
+                            unmet.append(f"RAM {cp.get('ram_gb', 0)}GB (kebutuhan minimal {ram_gb_min}GB)")
+                        if storage_gb_min and (cp.get("storage_ssd_gb") or 0) < storage_gb_min:
+                            unmet.append(f"SSD {cp.get('storage_ssd_gb', 0)}GB (kebutuhan minimal {storage_gb_min}GB)")
+                        if gpu:
+                            cp_gpu = str(cp.get("gpu", "")).strip().lower()
+                            vram_val = cp.get("vram_gb")
+                            try:
+                                has_vram = vram_val is not None and int(float(str(vram_val).strip())) > 0
+                            except (ValueError, TypeError):
+                                has_vram = False
+                            is_disc = bool(has_vram or any(kw in cp_gpu for kw in ["rtx", "gtx", "geforce", "radeon rx", "arc a"]))
+                            if not is_disc:
+                                unmet.append("kartu grafis belum dedicated")
+                        alasan_unmet = f"Belum memenuhi: {', '.join(unmet)}" if unmet else "Spesifikasi di bawah kriteria pencarian"
+                        formatted_closest.append({
+                            "kode": cp.get("kode"),
+                            "nama": cp.get("nama"),
+                            "kategori": cp.get("kategori"),
+                            "brand": get_product_brand(cp),
+                            "merek": get_product_brand(cp),
+                            "harga": cp_price,
+                            "harga_formatted": format_rupiah(cp_price),
+                            "spesifikasi": clean_specs(cp),
+                            "lembar_spesifikasi": build_lembar_spesifikasi(cp),
+                            "catatan_minimum": {"memenuhi": False, "alasan": alasan_unmet},
+                            "kekurangan": unmet,
+                            "cpu": cp.get("cpu"),
+                            "cpu_tier": cp.get("cpu_tier"),
+                            "ram": cp.get("ram"),
+                            "ram_gb": cp.get("ram_gb"),
+                            "storage": cp.get("storage"),
+                            "storage_ssd_gb": cp.get("storage_ssd_gb"),
+                            "gpu": cp.get("gpu"),
+                            "display": cp.get("display"),
+                            "screen_inch": cp.get("screen_inch"),
+                            "image_url": cp.get("image_url")
+                        })
+                    fakta = {
+                        "status": "belum_ada_yang_memenuhi",
+                        "filter_dipakai": filter_dipakai,
+                        "budget_pelanggan": max_harga,
+                        "budget_pelanggan_formatted": format_rupiah(max_harga),
+                        "produk": formatted_closest,
+                        "produk_terdekat": formatted_closest[0],
+                        "total_ditemukan": len(formatted_closest),
+                        "kategori_tersedia": sorted(list(set(str(p.get("kategori")).lower() for p in self.catalog.products if p.get("kategori")))),
+                        "merek_tersedia": sorted(list(set(get_product_brand(p) for p in self.catalog.products if get_product_brand(p) and (not kategori or str(p.get("kategori", "")).lower() == str(kategori).lower())))),
+                        "belum_dicari": False,
+                        "kontak_staf": KONTAK_STAF,
+                        "pesan": f"Saat ini belum ada produk dalam budget {format_rupiah(max_harga)} yang memenuhi seluruh spesifikasi. Berikut produk dalam budget yang paling mendekati."
+                    }
+                    return ActionResult(aksi=ActionEnum.CARI_PRODUK, fakta=fakta, produk_list=formatted_closest)
 
             fakta = {
                 "status": "tidak_ditemukan",

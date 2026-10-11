@@ -134,3 +134,52 @@ def test_butir4_dynamic_item_luar_katalog_ditolak():
     assert res.fakta["status"] == "tidak_dijual"
     assert res.produk_list == []
 
+
+# =============================================================================
+# BUTIR 5 — Pilihan Terdekat dalam Budget
+# =============================================================================
+def test_butir5_pilihan_terdekat_dalam_budget_render_3d():
+    """
+    Skenario: 'budget 10 juta untuk render 3D'.
+    Karena tidak ada laptop render 3D (P03) dalam budget 10 juta,
+    sistem HARUS menampilkan produk <= 10 juta terdekat (urut harga menurun)
+    beserta catatan jujur mengenai kekurangannya, bukan status kosong atau produk di luar budget.
+    """
+    from services.action_engine import ActionEngine
+    from services.validator import validate_parser_output
+
+    engine = ActionEngine()
+    raw = {
+        "aksi": "minta_rekomendasi",
+        "argumen": {
+            "kategori": "laptop",
+            "budget_max": 10000000,
+            "kebutuhan_teks": "render 3D"
+        },
+        "pembaruan_state": {
+            "kategori": "laptop",
+            "budget": 10000000,
+            "kebutuhan_teks": "render 3D"
+        }
+    }
+    validated, is_valid = validate_parser_output(raw)
+    assert is_valid is True
+
+    res = engine.execute(validated, session_state={})
+    assert res.fakta.get("status") == "belum_ada_yang_memenuhi"
+    assert len(res.produk_list) > 0
+    assert len(res.produk_list) <= 3
+
+    # Semua produk HARUS <= budget 10 juta
+    for p in res.produk_list:
+        harga = p.get("harga") or p.get("harga_idr")
+        assert harga <= 10000000, f"Produk {p.get('nama')} seharga {harga} melebihi budget!"
+        # Catatan jujur mengenai kekurangan
+        cat_min = p.get("catatan_minimum", {})
+        assert cat_min.get("memenuhi") is False
+        assert "Belum memenuhi" in cat_min.get("alasan", "")
+
+    # Urutan harga menurun (harga tertinggi yang masih <= budget di peringkat pertama)
+    prices = [p.get("harga") or p.get("harga_idr") for p in res.produk_list]
+    assert prices == sorted(prices, reverse=True), f"Produk harus diurutkan menurun: {prices}"
+
