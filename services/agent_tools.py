@@ -284,14 +284,6 @@ def katalog(
     # Kata yang tersisa untuk dinilai
     scoring_tokens = [w for w in tokens if w not in filter_words_to_exclude]
 
-    # Sinonim dan varian bentuk khusus (misal: mini <-> nuc, aio <-> all-in-one)
-    alias_map = {
-        "mini": ["mini", "nuc"],
-        "nuc": ["nuc", "mini"],
-        "aio": ["aio", "all-in-one"],
-        "all-in-one": ["aio", "all-in-one"]
-    }
-
     if scoring_tokens:
         scored_pool = []
         for p in pool:
@@ -321,23 +313,21 @@ def katalog(
                 score += 50
 
             for tok in scoring_tokens:
-                search_variants = alias_map.get(tok, [tok])
                 tok_score = 0
-                for v in search_variants:
-                    if v in name_text:
-                        tok_score = max(tok_score, 25)
-                        if re.search(rf"\b{re.escape(v)}\b", name_text):
-                            tok_score = max(tok_score, 35)
-                    if v in brand_text:
-                        tok_score = max(tok_score, 15)
-                    if v in raw_text:
-                        tok_score = max(tok_score, 20)
-                    if v in usage_text:
-                        tok_score = max(tok_score, 15)
-                    if v in tags_text:
-                        tok_score = max(tok_score, 15)
-                    if v in specs_text:
-                        tok_score = max(tok_score, 10)
+                if tok in name_text:
+                    tok_score = max(tok_score, 25)
+                    if re.search(rf"\b{re.escape(tok)}\b", name_text):
+                        tok_score = max(tok_score, 35)
+                if tok in brand_text:
+                    tok_score = max(tok_score, 15)
+                if tok in raw_text:
+                    tok_score = max(tok_score, 20)
+                if tok in usage_text:
+                    tok_score = max(tok_score, 15)
+                if tok in tags_text:
+                    tok_score = max(tok_score, 15)
+                if tok in specs_text:
+                    tok_score = max(tok_score, 10)
                 score += tok_score
 
             if score > 0:

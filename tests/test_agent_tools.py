@@ -10,6 +10,8 @@ Memverifikasi:
 - Lembar spesifikasi: katalog(kode_atau_nama=...) mengembalikan spek lengkap dan raw_data.
 - Skema alat: tepat dua alat yaitu katalog dan pengetahuan.
 """
+import json
+import re
 import pytest
 from core.db import get_catalog_inventory
 from services.catalog_service import get_active_catalog
@@ -126,18 +128,46 @@ def test_property_pengetahuan_types_coverage():
         assert len(top_item["teks"]) > 20
 
 
-def test_katalog_mini_desktop_matches_mini_and_nuc(catalog):
-    """Menguji bahwa pencarian 'mini desktop' mengembalikan produk mini (Mac mini & NUC) dan bukan tower."""
-    res = katalog(kata_kunci="mini desktop", catalog=catalog)
-    assert res["status"] == "sukses"
-    codes = [p["kode"] for p in res["produk"]]
-    assert "KB-D11" in codes  # Apple Mac mini M2
-    assert "KB-D12" in codes  # Intel NUC 11 Essential
-    # Pastikan semua produk yang kembali adalah varian mini/nuc, bukan tower
-    for p in res["produk"]:
-        nama_low = p["nama"].lower()
-        assert "mini" in nama_low or "nuc" in nama_low
-        assert "tower" not in nama_low
+def test_property_katalog_form_factor_search(catalog):
+    """Tes properti dari data: untuk SETIAP produk yang raw_data-nya punya form_factor,
+    katalog(kata_kunci=<salah satu kata form_factor-nya>, kategori=<kategorinya>)
+    memuat produk itu. Tanpa kode produk hardcode.
+    """
+    products_with_ff = []
+    for p in catalog.by_code.values():
+        raw_val = p.get("raw_data")
+        if not raw_val:
+            continue
+        raw_dict = raw_val if isinstance(raw_val, dict) else json.loads(raw_val)
+        ff = raw_dict.get("form_factor")
+        if ff:
+            products_with_ff.append((p, ff))
+
+    assert len(products_with_ff) > 0, "Harus ada produk dengan form_factor di katalog"
+
+    for product, ff in products_with_ff:
+        # Ekstrak kata-kata form_factor bermakna (panjang >= 3)
+        words = [
+            w.lower() for w in re.findall(r"[a-zA-Z]+", ff)
+            if len(w) >= 3 and w.lower() not in ("dan", "atau", "dengan", "yang", "dari")
+        ]
+        assert len(words) > 0, f"Produk {product.get('kode')} tidak memiliki kata form_factor yang valid"
+
+        # Cari salah satu kata form_factor yang memuat produk tersebut
+        matched = False
+        kategori_prod = product.get("kategori")
+        for w in words:
+            res = katalog(kata_kunci=w, kategori=kategori_prod, catalog=catalog)
+            if res.get("status") == "sukses":
+                found_codes = [item.get("kode") for item in res.get("produk", [])]
+                if product.get("kode") in found_codes:
+                    matched = True
+                    break
+
+        assert matched, (
+            f"Produk {product.get('kode')} (kategori={kategori_prod}, form_factor='{ff}') "
+            f"tidak ditemukan di katalog dengan kata_kunci dari form_factor-nya: {words}"
+        )
 
 
 def test_katalog_detail_produk(catalog):
