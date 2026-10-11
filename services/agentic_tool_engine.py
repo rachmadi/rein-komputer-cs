@@ -98,26 +98,40 @@ def summarize_tool_result(fn_name: str, result: Any) -> str:
     return str(result)[:100]
 
 
+def get_product_mention_position(product: dict, reply_text: str) -> int:
+    """
+    Mengembalikan posisi indeks kemunculan pertama produk di teks balasan (atau -1 jika tidak disebut).
+    Mencari kode produk terlebih dahulu, lalu token model unik dari nama.
+    """
+    reply_lower = reply_text.lower()
+    pos = len(reply_text) + 1000
+
+    kode = product.get("kode", "").lower()
+    if kode:
+        m = re.search(rf"\b{re.escape(kode)}\b", reply_lower)
+        if m:
+            pos = min(pos, m.start())
+
+    nama = product.get("nama", "")
+    tokens = [t.lower() for t in re.split(r"[\s\+\-/]+", nama) if len(t) >= 3 and t.lower() not in STOP_WORDS]
+    model_tokens = [t for t in tokens if any(c.isalpha() for c in t) and not t.isdigit()]
+
+    for tok in model_tokens:
+        m = re.search(rf"\b{re.escape(tok)}\b", reply_lower)
+        if m:
+            pos = min(pos, m.start())
+
+    if pos <= len(reply_text):
+        return pos
+    return -1
+
+
 def is_product_mentioned_in_reply(product: dict, reply_text: str) -> bool:
     """
     Mengecek apakah produk secara spesifik disebut di balasan akhir LLM.
     Mencocokkan kode produk (misal KB-L19) atau token model unik dari namanya.
     """
-    reply_lower = reply_text.lower()
-    kode = product.get("kode", "").lower()
-    if kode and re.search(rf"\b{re.escape(kode)}\b", reply_lower):
-        return True
-
-    nama = product.get("nama", "")
-    tokens = [t.lower() for t in re.split(r"[\s\+\-/]+", nama) if len(t) >= 3 and t.lower() not in STOP_WORDS]
-    # Ambil token yang mengandung karakter huruf dan bukan angka murni
-    model_tokens = [t for t in tokens if any(c.isalpha() for c in t) and not t.isdigit()]
-
-    for tok in model_tokens:
-        if re.search(rf"\b{re.escape(tok)}\b", reply_lower):
-            return True
-
-    return False
+    return get_product_mention_position(product, reply_text) >= 0
 
 
 def call_ollama_chat_raw(
@@ -405,21 +419,26 @@ def run_agentic_tool(
     if is_emergency_fallback or not final_reply:
         final_reply = FALLBACK_EMERGENCY_REPLY
 
-    # Saring produk yang disebut di balasan akhir dan berasal dari hasil alat giliran ini
-    mentioned_this_turn: list[dict] = []
+    # Saring produk yang disebut di balasan akhir dan berasal dari hasil alat giliran ini (maksimal 5, urut sebutan)
+    mentioned_candidates: list[tuple[int, dict]] = []
     seen_turn_codes = set()
     for p in all_tools_products_returned:
         code = p.get("kode")
         if code and code not in seen_turn_codes:
             seen_turn_codes.add(code)
-            if is_product_mentioned_in_reply(p, final_reply):
+            pos = get_product_mention_position(p, final_reply)
+            if pos >= 0:
                 # Ambil spesifikasi lengkap dari katalog resmi jika tersedia
                 cat_p = cat.by_code.get(code)
                 prod_data = dict(cat_p) if cat_p else dict(p)
                 # Pastikan key standar tersedia
                 if "harga" not in prod_data and "harga_idr" in prod_data:
                     prod_data["harga"] = prod_data["harga_idr"]
-                mentioned_this_turn.append(prod_data)
+                mentioned_candidates.append((pos, prod_data))
+
+    # Urutkan berdasarkan urutan kemunculan di teks balasan dan batasi maksimal 5
+    mentioned_candidates.sort(key=lambda item: item[0])
+    mentioned_this_turn: list[dict] = [item[1] for item in mentioned_candidates[:5]]
 
     # Susun kartu produk Telegram HTML (hanya jika ada produk yang disebut)
     kartu_html = format_product_cards_message(mentioned_this_turn) if mentioned_this_turn else None

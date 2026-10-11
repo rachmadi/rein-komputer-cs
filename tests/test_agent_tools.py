@@ -252,3 +252,39 @@ def test_property_product_card_spek_not_empty(catalog):
         assert len(spek_text) > 0 and spek_text != "-", (
             f"Baris Spek kosong pada produk {p.get('kode')} ({p.get('nama')})"
         )
+
+
+def test_product_cards_render_up_to_5_and_ordered_by_mention():
+    """Menguji bahwa kartu produk merender hingga 5 produk (Putaran 18e Butir 2)
+    dan berurutan sesuai kemunculan di balasan.
+    """
+    from services.product_card import format_product_cards_message
+    from services.agentic_tool_engine import get_product_mention_position
+
+    prods = [
+        {"kode": f"KB-L{i:02d}", "nama": f"Laptop Model {i}", "harga": i * 1_000_000, "spesifikasi": f"Spek {i}"}
+        for i in range(1, 7)
+    ]
+
+    # Uji batas aman maksimal 5 kartu di format_product_cards_message
+    msg_all = format_product_cards_message(prods)
+    assert "1. Laptop Model 1" in msg_all
+    assert "5. Laptop Model 5" in msg_all
+    assert "6. Laptop Model 6" not in msg_all
+
+    # Uji urutan kemunculan di teks balasan
+    reply_text = (
+        "Kami menyarankan KB-L04 terlebih dahulu, lalu KB-L02, disusul KB-L05, "
+        "KB-L01, dan terakhir KB-L03."
+    )
+    # Temukan posisi masing-masing produk
+    pos_items = []
+    for p in prods[:5]:
+        pos = get_product_mention_position(p, reply_text)
+        assert pos >= 0
+        pos_items.append((pos, p))
+
+    pos_items.sort(key=lambda x: x[0])
+    ordered_prods = [item[1] for item in pos_items]
+    ordered_codes = [p["kode"] for p in ordered_prods]
+    assert ordered_codes == ["KB-L04", "KB-L02", "KB-L05", "KB-L01", "KB-L03"]

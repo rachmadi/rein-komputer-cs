@@ -24,8 +24,14 @@ def format_product_card(product: dict, index: int | None = None) -> str:
     if not harga_val:
         p_price = product.get("harga") or product.get("harga_idr")
         if p_price:
-            from services.action_engine import format_rupiah
-            harga_val = format_rupiah(p_price)
+            if isinstance(p_price, str) and p_price.strip().lower().startswith("rp"):
+                harga_val = p_price.strip()
+            else:
+                try:
+                    from services.action_engine import format_rupiah
+                    harga_val = format_rupiah(p_price)
+                except Exception:
+                    harga_val = str(p_price)
         else:
             harga_val = "Harga hubungi kami"
     harga = html.escape(str(harga_val))
@@ -65,7 +71,7 @@ def format_product_cards_message(
     products: List[Dict[str, Any]],
     judul_rekomendasi: Optional[str] = None
 ) -> str:
-    """Merakit daftar kartu produk (maksimal 3) menjadi 1 pesan Telegram HTML yang rapi."""
+    """Merakit daftar kartu produk (maksimal 5) menjadi 1 pesan Telegram HTML yang rapi."""
     if not products:
         return ""
 
@@ -82,7 +88,7 @@ def format_product_cards_message(
     elif products:
         header = "<b>Daftar Pilihan Produk:</b>\n\n"
 
-    for i, p in enumerate(products[:3], 1):
+    for i, p in enumerate(products[:5], 1):
         cards.append(format_product_card(p, index=i))
 
     return header + "\n\n".join(cards)
