@@ -480,6 +480,7 @@ def run_agentic_tool(
         fakta_log = {
             "produk": mentioned_this_turn or all_tools_products_returned,
             "produk_tampil": mentioned_this_turn or all_tools_products_returned,
+            "hasil_alat_produk": all_tools_products_returned,
             "tool_calls": all_tool_calls_logged,
             "status": "sukses" if not is_emergency_fallback else "sistem_error",
         }

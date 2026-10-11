@@ -210,6 +210,7 @@ def katalog(
                 "harga": _format_rupiah(p.get("harga") or p.get("harga_idr")),
                 "lembar_spesifikasi": lembar,
                 "raw_data": raw_dict,
+                "usage_text": p.get("usage_text", ""),
                 "ada_foto": has_photo
             })
 

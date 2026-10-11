@@ -191,6 +191,46 @@ class GroundingChecker:
                 keys.update(GroundingChecker.extract_fact_schema_keys(item))
         return keys
 
+    @staticmethod
+    def extract_usage_texts_from_facts(fakta: dict, state: dict | None = None) -> list[str]:
+        """Ekstrak semua usage_text produk dari fakta (alat giliran ini) dan state (Putaran 18e Butir 6)."""
+        usage_texts = set()
+        raw_prods = []
+        if isinstance(fakta, dict):
+            for k in ("produk", "produk_tampil", "produk_list", "alternatif_cocok", "hasil_alat_produk"):
+                v = fakta.get(k)
+                if isinstance(v, list):
+                    raw_prods.extend(v)
+            for tc in fakta.get("tool_calls", []):
+                if isinstance(tc, dict):
+                    res = tc.get("hasil") or tc.get("result")
+                    if isinstance(res, dict):
+                        for k in ("produk", "detail"):
+                            v = res.get(k)
+                            if isinstance(v, list):
+                                raw_prods.extend(v)
+        if state and isinstance(state, dict):
+            for k in ("produk_tampil", "history_produk_tampil"):
+                v = state.get(k)
+                if isinstance(v, list):
+                    raw_prods.extend(v)
+
+        for p in raw_prods:
+            if isinstance(p, dict):
+                ut = p.get("usage_text")
+                if ut and isinstance(ut, str) and ut.strip():
+                    usage_texts.add(ut.strip().lower())
+                elif p.get("kode"):
+                    try:
+                        from services.catalog_service import get_active_catalog
+                        cat = get_active_catalog()
+                        cp = cat.by_code.get(p["kode"])
+                        if cp and cp.get("usage_text"):
+                            usage_texts.add(str(cp["usage_text"]).strip().lower())
+                    except Exception:
+                        pass
+        return list(usage_texts)
+
     def check(self, teks: str, fakta: dict, state: dict | None = None, penilaian: dict | None = None) -> Tuple[bool, List[str]]:
         """
         Memeriksa apakah teks jawaban LLM mematuhi grounding dan keselamatan fakta.
@@ -199,6 +239,8 @@ class GroundingChecker:
         violations = []
         if not teks or not teks.strip():
             return False, ["Teks jawaban kosong."]
+
+        all_usage_texts = self.extract_usage_texts_from_facts(fakta, state=state)
 
         # 1. Periksa batas panjang karakter (maksimal 600 karakter)
         if len(teks) > 600:
@@ -549,8 +591,24 @@ class GroundingChecker:
                     k_lower
                 )
                 if m_peruntukan and not is_pertanyaan:
-                    violations.append(f"Mengklaim peruntukan perangkat ('{m_peruntukan.group(0)}') padahal pelanggan belum menyebutkan kebutuhan.")
-                    break
+                    # Putaran 18e Butir 6: Jangan tandai jika frasa kegunaan memang tertulis di usage_text produk giliran itu
+                    per_str = m_peruntukan.group(1) or m_peruntukan.group(2) or m_peruntukan.group(3) or m_peruntukan.group(0)
+                    claimed_acts = [act for act in AKTIVITAS_KW if re.search(rf"\b{act}\b", per_str)]
+                    is_grounded_in_usage = False
+                    if all_usage_texts:
+                        if claimed_acts:
+                            ungrounded_acts = [
+                                act for act in claimed_acts
+                                if not any(act in ut for ut in all_usage_texts) and act not in all_pelanggan_text
+                            ]
+                            if not ungrounded_acts:
+                                is_grounded_in_usage = True
+                        elif any(per_str.strip() in ut for ut in all_usage_texts):
+                            is_grounded_in_usage = True
+
+                    if not is_grounded_in_usage:
+                        violations.append(f"Mengklaim peruntukan perangkat ('{m_peruntukan.group(0)}') padahal pelanggan belum menyebutkan kebutuhan.")
+                        break
 
                 # (c) Pola klaim kriteria yang dicari
                 m_kriteria = re.search(
@@ -575,10 +633,12 @@ class GroundingChecker:
                         for act in AKTIVITAS_KW:
                             if re.search(rf"\b{act}\b", per_str):
                                 if act not in all_pelanggan_text and act not in kebutuhan_clean:
-                                    violations.append(
-                                        f"Menyebutkan peruntukan '{act}' yang tidak sesuai dengan kebutuhan_teks pelanggan ('{kebutuhan_teks}')."
-                                    )
-                                    break
+                                    # Putaran 18e Butir 6: Jangan tandai jika frasa kegunaan tertulis di usage_text
+                                    if not any(act in ut for ut in all_usage_texts):
+                                        violations.append(
+                                            f"Menyebutkan peruntukan '{act}' yang tidak sesuai dengan kebutuhan_teks pelanggan ('{kebutuhan_teks}')."
+                                        )
+                                        break
 
         is_valid = len(violations) == 0
         return is_valid, violations

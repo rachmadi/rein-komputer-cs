@@ -318,3 +318,54 @@ def test_property_katalog_ada_foto(catalog):
             assert matched["ada_foto"] == expected_ada_foto, (
                 f"Ringkas {p['kode']}: diharapkan ada_foto={expected_ada_foto}, dapat {matched['ada_foto']}"
             )
+
+
+def test_grounding_checker_usage_text_exemption():
+    """Putaran 18e Butir 6: Aturan klaim peruntukan di GroundingChecker tidak menandai
+    frasa kegunaan yang memang tertulis di usage_text produk giliran itu.
+    """
+    from services.grounding_checker import GroundingChecker
+
+    checker = GroundingChecker()
+
+    # 1. Kasus kebutuhan kosong, klaim peruntukan sesuai dengan usage_text produk
+    fakta_sesuai = {
+        "status": "sukses",
+        "produk": [{
+            "nama": "ASUS Vivobook Go 14",
+            "harga": 6299000,
+            "kategori": "laptop",
+            "usage_text": "Cocok untuk kerja kantor dan penggunaan harian."
+        }]
+    }
+    state_empty_keb = {"kategori": "laptop", "kebutuhan_teks": ""}
+    teks_sesuai = "ASUS Vivobook Go 14 cocok untuk kerja kantor dan penggunaan harian."
+    is_valid, violations = checker.check(teks_sesuai, fakta=fakta_sesuai, state=state_empty_keb)
+    assert not any("peruntukan" in v.lower() for v in violations), (
+        f"Klaim peruntukan yang ada di usage_text tidak boleh ditandai pelanggaran: {violations}"
+    )
+
+    # 2. Kasus kebutuhan kosong, klaim peruntukan TIDAK ADA di usage_text produk (misal klaim gaming)
+    teks_tidak_sesuai = "ASUS Vivobook Go 14 sangat cocok untuk gaming kompetitif."
+    is_valid_fail, violations_fail = checker.check(teks_tidak_sesuai, fakta=fakta_sesuai, state=state_empty_keb)
+    assert any("peruntukan" in v.lower() for v in violations_fail), (
+        f"Klaim peruntukan di luar usage_text harus ditandai pelanggaran: {violations_fail}"
+    )
+
+    # 3. Kasus kebutuhan ada ('kerja kantor'), tapi bot juga menyebut 'kuliah' yang ada di usage_text
+    fakta_kuliah = {
+        "status": "sukses",
+        "kebutuhan_teks": "kerja kantor",
+        "produk": [{
+            "nama": "Lenovo IdeaPad Slim 3",
+            "harga": 7000000,
+            "kategori": "laptop",
+            "usage_text": "Cocok untuk kerja kantor dan kuliah."
+        }]
+    }
+    state_ada_keb = {"kategori": "laptop", "kebutuhan_teks": "kerja kantor"}
+    teks_kuliah = "Lenovo IdeaPad Slim 3 cocok untuk kuliah dan kerja kantor."
+    is_valid_k, violations_k = checker.check(teks_kuliah, fakta=fakta_kuliah, state=state_ada_keb)
+    assert not any("kuliah" in v.lower() for v in violations_k), (
+        f"Peruntukan 'kuliah' ada di usage_text produk sehingga tidak boleh ditandai: {violations_k}"
+    )
