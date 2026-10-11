@@ -40,6 +40,7 @@ Jawab pesan pelanggan secara manusiawi dalam bahasa Indonesia:
 11. Kontrak Konteks Toko: (a) Jika status != 'sukses', jangan menyatakan produk tersedia atau merekomendasikan produk. (b) Jika status 'tidak_dijual', sampaikan barang/merek tidak dijual di ReIn Komputer, sebutkan isi Konteks Toko, dan jangan menawarkan produk pengganti kecuali diminta. (c) Jangan pernah mengklaim pelanggan menginginkan kriteria atau peruntukan yang tidak ada di Permintaan Pelanggan Giliran Ini atau riwayat obrolan. (d) Jangan pernah menyebut kategori atau merek di luar Konteks Toko kecuali mengonfirmasi toko tidak menjualnya. (e) Pertanyaan tentang toko menjual apa dijawab langsung dari Konteks Toko tanpa mencari produk.
 12. Pertanyaan spesifikasi berbasis data (tanya_spesifikasi): Jawab HANYA dari lembar_spesifikasi atau data produk di FAKTA. Jika informasinya tidak ada di data (status 'atribut_tidak_tersedia'), katakan terus terang informasinya belum tersedia dalam data kami tanpa menebak dan tanpa mengalihkan ke spesifikasi lain. Jika menanyakan spesifikasi umum ('spesifikasinya?'), jawab dengan ringkasan lembar spesifikasi. Jika menanyakan kelebihan ('kelebihannya?'), jawab dengan perbandingan terhadap produk pembanding yang sedang dibahas, hanya dari data.
 13. Dilarang Mengatribusikan Kebutuhan Yang Tidak Dinyatakan (Putaran 16 Butir 2): Jika pelanggan belum menyatakan kebutuhan atau peruntukan penggunaan perangkat (kebutuhan_teks kosong), DILARANG KERAS mengarang, menduga, atau mengklaim peruntukan/kebutuhan pelanggan (misal: 'berdasarkan kebutuhan Kakak untuk kerja kantor dan kuliah', 'untuk penggunaan harian dan office', atau 'kriteria minimum yang Kakak cari'). Jangan menebak peruntukan; bila relevan, tanyakan secara terbuka. Jika kebutuhan_teks ada, peruntukan yang disebut harus sesuai isinya.
+14. Penanganan Salah Paham & Koreksi (perbaiki_percakapan): Jika pelanggan mengoreksi asumsi bot atau mengeluhkan salah paham (misal belum menyebutkan kebutuhan atau salah tangkap), akui salah paham dengan singkat dan sopan, jangan mengulangi asumsi yang salah tersebut, dan tawarkan produk yang sedang tampil atau tanyakan kebutuhan/keinginan pelanggan secara terbuka.
 
 Contoh respons sintetis saat pelanggan kecewa:
 - Contoh 1: Pelanggan: "Lama sekali responnya, butuh laptop kerja segera!" | FAKTA: {"status": "sukses", "produk_list": [{"nama": "Acro 14", "harga": 7000000, "ram": "16 GB"}]}
@@ -59,50 +60,37 @@ EMERGENCY_FALLBACK_TEXT = (
 
 
 def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
-    """Merakit teks cadangan terstruktur langsung dari fakta_eksekusi secara deterministik (B10, B13, F5)."""
+    """
+    Merakit teks cadangan terstruktur langsung dari fakta_eksekusi secara deterministik (B10, B13, F5).
+    Menangani seluruh 12 aksi ActionEnum tanpa jatuh ke EMERGENCY_FALLBACK_TEXT kecuali status sistem_error.
+    """
+    from core.db import format_daftar_kategori, extract_kategori_from_products
+    from services.validator import get_catalog_categories, get_catalog_brands
+
     status = fakta.get("status")
+    alasan = fakta.get("alasan")
     aksi_clean = str(aksi).lower().strip()
 
+    # 1. SATU-SATUNYA kondisi yang boleh mengembalikan EMERGENCY_FALLBACK_TEXT
+    if status == "sistem_error" or alasan == "sistem_error":
+        return EMERGENCY_FALLBACK_TEXT
+
+    # 2. Kasus-kasus spesifik status / kondisi katalog
     if status == "tidak_dijual":
-        from services.validator import get_catalog_categories, get_catalog_brands
         cats = ", ".join(fakta.get("kategori_tersedia") or get_catalog_categories())
         brands = ", ".join(fakta.get("merek_tersedia") or get_catalog_brands())
         ditolak_list = fakta.get("argumen_ditolak", [])
         nama_ditolak = ", ".join([str(d.get("nilai", "")) for d in ditolak_list if d.get("nilai")]) or "barang tersebut"
         return f"Mohon maaf Kak, {nama_ditolak} saat ini tidak dijual di ReIn Komputer. Kami menyediakan kategori {cats} dari merek {brands}."
 
-    if aksi_clean == "tanya_info_toko" or status == "info_toko":
-        topik = str(fakta.get("topik", "")).lower()
-        if topik in ("produk", "katalog", "kategori", "merek", "jual_apa", "barang") or fakta.get("data_tersedia"):
-            from services.validator import get_catalog_categories, get_catalog_brands
-            cats = ", ".join(fakta.get("kategori_tersedia") or get_catalog_categories())
-            brands = ", ".join(fakta.get("merek_tersedia") or get_catalog_brands())
-            return f"Di ReIn Komputer kami menyediakan produk dengan kategori {cats} dari merek {brands}. Ada yang bisa kami bantu carikan, Kak?"
-        return f"Untuk informasi lebih lanjut mengenai toko kami, Kakak dapat menghubungi staf kami di {KONTAK_STAF}."
-
-    if aksi_clean in ("sapa", "sapaan") or status in ("sapa", "sapaan"):
-        from core.db import format_daftar_kategori
-        cats = format_daftar_kategori(konjungsi="atau")
-        return f"Halo! Selamat datang di ReIn Komputer. Ada yang bisa kami bantu seputar kebutuhan {cats} hari ini?"
-
-    if aksi_clean == "basa_basi" or status == "basa_basi":
-        from core.db import format_daftar_kategori
-        cats = format_daftar_kategori(konjungsi="atau")
-        return f"Sama-sama Kak! Senang bisa membantu di ReIn Komputer. Jangan ragu bertanya kembali jika butuh informasi lain seputar {cats}."
-
-    if aksi_clean == "tanya_spesifikasi" or status in ("atribut_tidak_tersedia", "spek_umum") or fakta.get("spesifikasi_produk"):
-        if status == "atribut_tidak_tersedia":
-            attr = fakta.get("atribut_ditanya") or "tersebut"
-            return f"Informasi mengenai spesifikasi {attr} belum tersedia dalam data kami, Kak."
-        if fakta.get("tipe_jawaban") == "kelebihan":
-            ringkasan = fakta.get("ringkasan_kelebihan") or fakta.get("pesan") or ""
-            return f"Kelebihan {fakta.get('nama', 'produk tersebut')}: {ringkasan}."
-        prods = fakta.get("spesifikasi_produk") or fakta.get("spesifikasi") or []
-        if prods:
-            item = prods[0]
-            if item.get("atribut") in ("spek_umum", "spesifikasi") or fakta.get("tipe_jawaban") == "ringkasan_spesifikasi":
-                return f"Berikut spesifikasi {item.get('nama', 'produk ini')}: {item.get('nilai') or item.get('ringkasan_spek', '')}."
-            return f"Spesifikasi {item.get('atribut', 'perangkat')} untuk {item.get('nama', 'produk ini')} adalah {item.get('nilai', '')}."
+    if status == "produk_tidak_di_katalog":
+        prod_diminta = fakta.get("produk_diminta", [])
+        nama_diminta = ", ".join([str(p) for p in prod_diminta]) if prod_diminta else "tersebut"
+        padanan = fakta.get("padanan_terdekat", {})
+        nama_padanan = padanan.get("nama") if isinstance(padanan, dict) else None
+        if nama_padanan:
+            return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer, Kak. Sebagai alternatif terdekat yang tersedia, kami merekomendasikan {nama_padanan}."
+        return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer, Kak. Boleh ceritakan spesifikasi atau kebutuhan yang Kakak cari?"
 
     if status == "tidak_ada_dalam_anggaran":
         min_p = fakta.get("harga_termurah_kategori_formatted") or f"Rp{fakta.get('harga_termurah_kategori', 0):,}".replace(",", ".")
@@ -123,8 +111,8 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
             return f"Saat ini belum ada produk dalam budget tersebut yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Pilihan dalam budget yang paling mendekati adalah {nama} ({kek_str})."
 
         p_close = fakta.get("produk_terdekat", {})
-        nama = p_close.get("nama", "perangkat terdekat")
-        raw_kekurangan = p_close.get("kekurangan", [])
+        nama = p_close.get("nama", "perangkat terdekat") if isinstance(p_close, dict) else "perangkat terdekat"
+        raw_kekurangan = p_close.get("kekurangan", []) if isinstance(p_close, dict) else []
         from services.catalog_search import format_natural_unmet_list
         if isinstance(raw_kekurangan, list):
             natural_k = format_natural_unmet_list([str(x) for x in raw_kekurangan])
@@ -154,49 +142,148 @@ def build_deterministic_fallback_text(aksi: str, fakta: dict) -> str:
     if status == "profil_tidak_ditemukan_berulang":
         return f"Kebutuhan tersebut belum teridentifikasi di sistem kami, Kak. Kakak bisa menyebutkan kategori dan anggaran langsung, atau berkonsultasi dengan {KONTAK_STAF}."
 
-    if status == "info_toko":
-        return f"Untuk informasi operasional toko, silakan langsung menghubungi {KONTAK_STAF}, Kak."
-
     if status == "rujukan_tidak_ada":
         return "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil, Kak. Silakan sebutkan kebutuhan atau perangkat yang dicari."
 
-    if status == "produk_tidak_di_katalog":
-        prod_diminta = fakta.get("produk_diminta", [])
-        nama_diminta = ", ".join([str(p) for p in prod_diminta]) if prod_diminta else "tersebut"
-        padanan = fakta.get("padanan_terdekat", {})
-        nama_padanan = padanan.get("nama")
-        if nama_padanan:
-            return f"Produk {nama_diminta} belum tersedia di katalog ReIn Komputer, Kak. Sebagai alternatif terdekat yang tersedia, kami merekomendasikan {nama_padanan}."
     if status == "tidak_ditemukan":
         merek_alt = fakta.get("merek_tersedia", [])
         merek_text = f" Namun kami memiliki opsi merek {', '.join(merek_alt[:3])}." if merek_alt else ""
         return f"Maaf Kak, produk yang sesuai kriteria tersebut saat ini belum ditemukan di katalog kami.{merek_text} Boleh diceritakan kebutuhan perangkat yang dicari?"
 
-    prods = fakta.get("produk", [])
-    if prods:
-        nama_list = [p.get("nama") for p in prods[:3] if p.get("nama")]
-        if nama_list:
-            from core.db import format_daftar_kategori
-            kat = fakta.get("kategori") or format_daftar_kategori(konjungsi="atau")
-            if fakta.get("kebutuhan_teks"):
-                return f"Berikut rekomendasi {kat} yang sesuai kebutuhan di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
-            return f"Berikut rekomendasi {kat} di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+    # 3. Penanganan per-aksi ActionEnum
+    if aksi_clean in ("sapa", "sapaan") or status in ("sapa", "sapaan"):
+        cats = format_daftar_kategori(konjungsi="atau")
+        return f"Halo! Selamat datang di ReIn Komputer. Ada yang bisa kami bantu seputar kebutuhan {cats} hari ini?"
 
-    if status == "sistem_error" or fakta.get("alasan") == "sistem_error":
-        return EMERGENCY_FALLBACK_TEXT
+    if aksi_clean == "basa_basi" or status == "basa_basi":
+        cats = format_daftar_kategori(konjungsi="atau")
+        return f"Sama-sama Kak! Senang bisa membantu di ReIn Komputer. Jangan ragu bertanya kembali jika butuh informasi lain seputar {cats}."
 
-    if status == "tidak_jelas" or aksi_clean == "tidak_jelas":
-        alasan = fakta.get("alasan")
+    if aksi_clean == "tanya_info_toko" or status == "info_toko":
+        topik = str(fakta.get("topik", "")).lower()
+        if topik in ("produk", "katalog", "kategori", "merek", "jual_apa", "barang") or fakta.get("data_tersedia"):
+            cats = ", ".join(fakta.get("kategori_tersedia") or get_catalog_categories())
+            brands = ", ".join(fakta.get("merek_tersedia") or get_catalog_brands())
+            return f"Di ReIn Komputer kami menyediakan produk dengan kategori {cats} dari merek {brands}. Ada yang bisa kami bantu carikan, Kak?"
+        return f"Untuk informasi lebih lanjut mengenai toko kami, Kakak dapat menghubungi staf kami di {KONTAK_STAF}."
+
+    if aksi_clean == "tanya_spesifikasi" or status in ("atribut_tidak_tersedia", "spek_umum") or fakta.get("spesifikasi_produk"):
+        if status == "atribut_tidak_tersedia":
+            attr = fakta.get("atribut_ditanya") or "tersebut"
+            return f"Informasi mengenai spesifikasi {attr} belum tersedia dalam data kami, Kak."
+        if fakta.get("tipe_jawaban") == "kelebihan":
+            ringkasan = fakta.get("ringkasan_kelebihan") or fakta.get("pesan") or ""
+            return f"Kelebihan {fakta.get('nama', 'produk tersebut')}: {ringkasan}."
+        prods = fakta.get("spesifikasi_produk") or fakta.get("spesifikasi") or []
+        if prods:
+            item = prods[0]
+            if item.get("atribut") in ("spek_umum", "spesifikasi") or fakta.get("tipe_jawaban") == "ringkasan_spesifikasi":
+                return f"Berikut spesifikasi {item.get('nama', 'produk ini')}: {item.get('nilai') or item.get('ringkasan_spek', '')}."
+            return f"Spesifikasi {item.get('atribut', 'perangkat')} untuk {item.get('nama', 'produk ini')} adalah {item.get('nilai', '')}."
+        return "Informasi spesifikasi untuk produk tersebut belum tersedia dalam data kami, Kak."
+
+    if aksi_clean == "evaluasi_kecocokan":
+        eval_list = fakta.get("evaluasi_produk") or fakta.get("evaluasi") or []
+        if isinstance(eval_list, list) and eval_list:
+            item = eval_list[0]
+            if isinstance(item, dict):
+                nama = item.get("nama") or "Produk tersebut"
+                cocok = item.get("cocok")
+                catatan = item.get("catatan_minimum") or item.get("alasan")
+                if cocok:
+                    keb = fakta.get("kebutuhan_teks")
+                    keb_str = f" untuk kebutuhan {keb}" if keb else ""
+                    return f"{nama} sudah memenuhi spesifikasi minimum{keb_str}, Kak."
+                else:
+                    cat_str = f": {catatan}" if catatan else " masih berada di bawah kebutuhan spesifikasi minimum"
+                    return f"{nama}{cat_str}, Kak."
+        prods = fakta.get("produk", [])
+        if prods and isinstance(prods, list) and isinstance(prods[0], dict):
+            nama = prods[0].get("nama", "produk ini")
+            return f"Untuk produk {nama}, spesifikasinya dapat disesuaikan dengan kebutuhan penggunaan Kakak."
+        return "Produk yang Kakak tanyakan dapat disesuaikan dengan kebutuhan penggunaan yang diinginkan, Kak."
+
+    if aksi_clean == "bandingkan":
+        prods = fakta.get("perbandingan") or fakta.get("produk") or []
+        if isinstance(prods, list) and len(prods) >= 2:
+            n1 = prods[0].get("nama", "pilihan pertama") if isinstance(prods[0], dict) else str(prods[0])
+            n2 = prods[1].get("nama", "pilihan kedua") if isinstance(prods[1], dict) else str(prods[1])
+            return f"Berikut perbandingan antara {n1} dan {n2} di katalog kami. Keduanya memiliki perbedaan spesifikasi dan harga yang dapat disesuaikan dengan kebutuhan Kakak."
+        elif isinstance(prods, list) and len(prods) == 1:
+            n = prods[0].get("nama", "produk") if isinstance(prods[0], dict) else str(prods[0])
+            return f"Di katalog kami tersedia {n}. Untuk membandingkan, boleh sebutkan produk pembanding lainnya, Kak?"
+        return "Data perbandingan untuk produk yang dimaksud belum tersedia di katalog kami, Kak."
+
+    if aksi_clean == "jawab_pertanyaan_bot":
+        prods = fakta.get("produk", [])
+        if prods and isinstance(prods, list):
+            nama_list = [p.get("nama") for p in prods[:3] if isinstance(p, dict) and p.get("nama")]
+            if nama_list:
+                kat = fakta.get("kategori") or extract_kategori_from_products(prods) or format_daftar_kategori(konjungsi="atau")
+                if fakta.get("kebutuhan_teks"):
+                    return f"Berikut rekomendasi {kat} yang sesuai kebutuhan di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+                return f"Berikut rekomendasi {kat} di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+        kat = fakta.get("kategori") or format_daftar_kategori(konjungsi="atau")
+        slot = str(fakta.get("slot") or "").lower()
+        if "budget" in slot or fakta.get("budget"):
+            return f"Baik Kak, anggaran sudah dicatat. Ada kriteria khusus untuk {kat} yang dicari?"
+        elif any(s in slot for s in ("kebutuhan", "aktivitas")) or fakta.get("kebutuhan"):
+            return f"Baik Kak, kebutuhan tersebut sudah dicatat. Sedang mencari {kat} dengan anggaran berapa kira-kira?"
+        return f"Terima kasih atas informasinya, Kak. Ada kriteria atau anggaran tertentu untuk {kat} yang ingin dicari?"
+
+    if aksi_clean == "perbaiki_percakapan":
+        keluhan_beruntun = fakta.get("keluhan_beruntun", 0)
+        if fakta.get("tawarkan_staf") or (isinstance(keluhan_beruntun, int) and keluhan_beruntun >= 2):
+            return f"Mohon maaf atas ketidaknyamanannya ya Kak. Kami siap membantu mencarikan opsi yang tepat, atau Kakak dapat langsung berkonsultasi dengan staf kami di {KONTAK_STAF}."
+        prods = fakta.get("produk") or fakta.get("produk_tampil") or []
+        kat = fakta.get("kategori") or extract_kategori_from_products(prods) or format_daftar_kategori(konjungsi="atau")
+        if prods and isinstance(prods, list):
+            nama_list = [p.get("nama") for p in prods[:3] if isinstance(p, dict) and p.get("nama")]
+            if nama_list:
+                return f"Mohon maaf atas salah paham sebelumnya, Kak. Di katalog kami tersedia pilihan {kat}: {', '.join(nama_list)}. Boleh ceritakan penggunaan atau kriteria yang sedang dicari?"
+        return f"Mohon maaf atas salah paham sebelumnya, Kak. Boleh diceritakan kembali kebutuhan atau spesifikasi {kat} yang sedang Kakak cari?"
+
+    if aksi_clean == "lanjutan_hasil":
+        prods = fakta.get("produk", [])
+        if prods and isinstance(prods, list):
+            nama_list = [p.get("nama") for p in prods[:3] if isinstance(p, dict) and p.get("nama")]
+            if nama_list:
+                kat = fakta.get("kategori") or extract_kategori_from_products(prods) or "perangkat"
+                return f"Berikut opsi {kat} pilihan lainnya di katalog kami: {', '.join(nama_list)}. Ada model yang ingin Kakak ketahui lebih detail?"
+        return "Belum ada opsi pilihan lain dengan harga lebih terjangkau yang tersedia di katalog kami, Kak."
+
+    if aksi_clean in ("cari_produk", "minta_rekomendasi"):
+        prods = fakta.get("produk", [])
+        if prods and isinstance(prods, list):
+            nama_list = [p.get("nama") for p in prods[:3] if isinstance(p, dict) and p.get("nama")]
+            if nama_list:
+                kat = fakta.get("kategori") or extract_kategori_from_products(prods) or format_daftar_kategori(konjungsi="atau")
+                if fakta.get("kebutuhan_teks"):
+                    return f"Berikut rekomendasi {kat} yang sesuai kebutuhan di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+                return f"Berikut rekomendasi {kat} di katalog kami: {', '.join(nama_list)}. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+        merek_alt = fakta.get("merek_tersedia", [])
+        merek_text = f" Namun kami memiliki opsi merek {', '.join(merek_alt[:3])}." if merek_alt else ""
+        return f"Maaf Kak, produk yang sesuai kriteria tersebut saat ini belum ditemukan di katalog kami.{merek_text} Boleh diceritakan kebutuhan perangkat yang dicari?"
+
+    if aksi_clean == "tidak_jelas" or status == "tidak_jelas":
         if alasan == "rujukan_tidak_ada":
             return "Produk yang dirujuk tidak ditemukan di daftar yang sedang tampil, Kak. Boleh sebutkan perangkat yang Kakak cari?"
         elif alasan == "bertentangan":
             return "Informasinya agak membingungkan nih, Kak. Boleh diperjelas kembali kebutuhan atau spesifikasi yang diinginkan?"
-        else:
-            from core.db import format_daftar_kategori
-            cats = format_daftar_kategori(konjungsi="atau")
-            return f"Boleh diceritakan lebih detail kebutuhan {cats} yang sedang Kakak cari?"
+        cats = format_daftar_kategori(konjungsi="atau")
+        return f"Boleh diceritakan lebih detail kebutuhan {cats} yang sedang Kakak cari?"
 
-    return EMERGENCY_FALLBACK_TEXT
+    # 4. Fallback jika membawa produk
+    prods = fakta.get("produk", [])
+    if prods and isinstance(prods, list):
+        nama_list = [p.get("nama") for p in prods[:3] if isinstance(p, dict) and p.get("nama")]
+        if nama_list:
+            kat = fakta.get("kategori") or extract_kategori_from_products(prods) or format_daftar_kategori(konjungsi="atau")
+            return f"Berikut rekomendasi {kat} di katalog kami: {', '.join(nama_list)}. Ada yang ingin Kakak ketahui lebih detail?"
+
+    # 5. Fallback ramah jika aksi tidak dikenal tapi BUKAN sistem_error
+    cats = format_daftar_kategori(konjungsi="atau")
+    return f"Baik Kak, kami siap membantu menemukan pilihan {cats} di ReIn Komputer. Boleh ceritakan lebih detail kebutuhan atau anggaran yang Kakak rencanakan?"
 
 
 class GeneratorOutput(BaseModel):
@@ -411,7 +498,7 @@ def generate_response(
         "keep_alive": "30m",
         "options": {
             "temperature": 0.4,
-            "num_predict": 256,
+            "num_predict": 384,
             "num_ctx": 4096
         }
     }
@@ -467,10 +554,12 @@ def generate_response(
             out.teks = truncated.rstrip()
 
     dt_ms = (time.perf_counter() - t0) * 1000.0
+    sumber_balasan = "llm" if not error_msg else ("emergency_fallback" if out.teks == EMERGENCY_FALLBACK_TEXT else "fallback_deterministik")
     metrics = {
         "latency_ms": round(dt_ms, 2),
         "json_valid": json_valid,
         "error": error_msg,
+        "sumber_balasan": sumber_balasan,
         "raw_content": raw_content,
         "prompt_eval_count": prompt_eval_count,
         "eval_count": eval_count,

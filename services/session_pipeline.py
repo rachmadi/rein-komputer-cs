@@ -81,6 +81,8 @@ class TurnExecutionResult:
     argumen_ditolak: Optional[List[Dict[str, Any]]] = None
     konteks_toko: Optional[Dict[str, Any]] = None
     fakta_lengkap: Optional[Dict[str, Any]] = None
+    generator_error: Optional[str] = None
+    sumber_balasan: Optional[str] = None
 
 
 def match_rule_greeting(pesan_pelanggan: str, history: list[dict] | None = None) -> Optional[Tuple[str, str, str]]:
@@ -334,6 +336,8 @@ class SessionPipeline:
                 produk_dibahas=state.get("produk_dibahas"),
                 produk_dibahas_sebelumnya=state.get("produk_dibahas_sebelumnya", []),
                 catatan_minimum=None,
+                generator_error=None,
+                sumber_balasan="aturan_deterministik",
             )
             return turn_result, state
 
@@ -641,6 +645,14 @@ class SessionPipeline:
         if action_res.profil_id:
             state["profil_aktif"] = action_res.profil_id
 
+        if action_res.fakta.get("koreksi_kebutuhan"):
+            state["kebutuhan_teks"] = None
+            state["kebutuhan_diketahui"] = None
+            state["profil_aktif"] = None
+            if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                state["kriteria_pelanggan"].pop("kebutuhan_teks", None)
+                state["kriteria_pelanggan"].pop("profil_id", None)
+
         # Putaran 13b Butir 2: Budget sebagai filter keras pada produk_tampil & kartu
         cur_budget = state.get("budget")
         if cur_budget and isinstance(cur_budget, (int, float)) and cur_budget > 0:
@@ -811,6 +823,9 @@ class SessionPipeline:
         history_8 = current_history[-8:]
 
         retried_count = 0
+        gen_error: Optional[str] = None
+        sumber_balasan: str = "llm"
+
         # B10 & Butir 8: Teks darurat B13 HANYA untuk sistem_error (Ollama gagal)
         if action_res.fakta.get("status") == "sistem_error" or action_res.fakta.get("alasan") == "sistem_error":
             t_gen_0 = time.perf_counter()
@@ -818,49 +833,84 @@ class SessionPipeline:
             gen_metrics = {}
             is_valid, violations = True, []
             is_fallback = True
+            sumber_balasan = "emergency_fallback"
         else:
             t_gen_0 = time.perf_counter()
-            gen_out, gen_metrics = generate_response(
-                aksi=parsed.aksi.value,
-                fakta=action_res.fakta,
-                state=state,
-                history=history_8,
-                pesan_pelanggan=pesan_pelanggan
-            )
+            try:
+                gen_out, gen_metrics = generate_response(
+                    aksi=parsed.aksi.value,
+                    fakta=action_res.fakta,
+                    state=state,
+                    history=history_8,
+                    pesan_pelanggan=pesan_pelanggan
+                )
+                gen_error = gen_metrics.get("error")
+            except Exception as e:
+                logger.error(f"Kegagalan eksekusi generate_response: {e}")
+                gen_error = str(e)
+                fallback_teks = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
+                gen_out = GeneratorOutput(teks=fallback_teks, pertanyaan_diajukan=None)
+                gen_metrics = {"error": gen_error}
 
-            is_valid, violations = self.grounding_checker.check(
-                gen_out.teks, action_res.fakta, state=state, penilaian=gen_out.penilaian
-            )
-            is_fallback = False
+            if gen_error:
+                is_valid = True
+                violations = []
+                is_fallback = True
+                sumber_balasan = "emergency_fallback" if gen_out.teks == EMERGENCY_FALLBACK_TEXT else "fallback_deterministik"
+            else:
+                is_valid, violations = self.grounding_checker.check(
+                    gen_out.teks, action_res.fakta, state=state, penilaian=gen_out.penilaian
+                )
+                is_fallback = False
+                sumber_balasan = "llm"
 
-        if not is_valid:
+        if not is_valid and not gen_error:
             retried_count = 1
             logger.warning(f"Pelanggaran pemeriksa: {violations}. Meminta generator menulis ulang...")
             feedback_note = f"Perbaiki kalimatmu: {'; '.join(violations)}. Jangan sebut hal tersebut."
             # Retry 1 kali
-            gen_out_retry, retry_metrics = generate_response(
-                aksi=parsed.aksi.value,
-                fakta=action_res.fakta,
-                state=state,
-                history=history_8,
-                pesan_pelanggan=pesan_pelanggan,
-                feedback_note=feedback_note
-            )
-            is_valid_retry, violations_retry = self.grounding_checker.check(
-                gen_out_retry.teks, action_res.fakta, state=state, penilaian=gen_out_retry.penilaian
-            )
-            if is_valid_retry:
-                gen_out = gen_out_retry
-                violations = []
-            else:
-                logger.error(f"Pemeriksa gagal setelah retry: {violations_retry}. Menggunakan kalimat darurat berbasis fakta.")
+            try:
+                gen_out_retry, retry_metrics = generate_response(
+                    aksi=parsed.aksi.value,
+                    fakta=action_res.fakta,
+                    state=state,
+                    history=history_8,
+                    pesan_pelanggan=pesan_pelanggan,
+                    feedback_note=feedback_note
+                )
+                retry_error = retry_metrics.get("error")
+            except Exception as e:
+                logger.error(f"Kegagalan eksekusi generate_response saat retry: {e}")
+                retry_error = str(e)
+                retry_metrics = {"error": retry_error}
+            if retry_error:
+                gen_error = retry_error
                 fallback_teks = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
                 gen_out = GeneratorOutput(
                     teks=fallback_teks,
                     pertanyaan_diajukan=None
                 )
-                violations = violations_retry
                 is_fallback = True
+                sumber_balasan = "emergency_fallback" if fallback_teks == EMERGENCY_FALLBACK_TEXT else "fallback_deterministik"
+            else:
+                is_valid_retry, violations_retry = self.grounding_checker.check(
+                    gen_out_retry.teks, action_res.fakta, state=state, penilaian=gen_out_retry.penilaian
+                )
+                if is_valid_retry:
+                    gen_out = gen_out_retry
+                    violations = []
+                    sumber_balasan = "retry"
+                else:
+                    logger.error(f"Pemeriksa gagal setelah retry: {violations_retry}. Menggunakan kalimat darurat berbasis fakta.")
+                    fallback_teks = build_deterministic_fallback_text(parsed.aksi.value, action_res.fakta)
+                    gen_out = GeneratorOutput(
+                        teks=fallback_teks,
+                        pertanyaan_diajukan=None
+                    )
+                    violations = violations_retry
+                    is_fallback = True
+                    sumber_balasan = "emergency_fallback" if fallback_teks == EMERGENCY_FALLBACK_TEXT else "fallback_deterministik"
+                    gen_error = f"Grounding violation after retry: {'; '.join(violations_retry)}"
 
         lat_gen = (time.perf_counter() - t_gen_0) * 1000.0
         lat_total = (time.perf_counter() - t_start) * 1000.0
@@ -878,6 +928,7 @@ class SessionPipeline:
             if any(p in clean_fallback for p in LEAK_PATTERNS):
                 clean_fallback = "Saat ini belum ada produk yang memenuhi seluruh spesifikasi minimum yang dibutuhkan, Kak. Silakan konsultasikan kebutuhan Kakak dengan staf kami di kontak berikut."
             gen_out.teks = clean_fallback
+            sumber_balasan = "emergency_fallback" if gen_out.teks == EMERGENCY_FALLBACK_TEXT else "fallback_deterministik"
 
         # Update pending_question di state sesuai keluaran generator
         state["pending_question"] = gen_out.pertanyaan_diajukan
@@ -1059,7 +1110,9 @@ class SessionPipeline:
             permintaan_asli=kontrak.get("permintaan_asli", {}),
             argumen_ditolak=kontrak.get("argumen_ditolak", []),
             konteks_toko={"kategori_dijual": sorted(list(catalog_cats)), "merek_dijual": sorted(list(catalog_brands))},
-            fakta_lengkap=action_res.fakta
+            fakta_lengkap=action_res.fakta,
+            generator_error=gen_error,
+            sumber_balasan=sumber_balasan
         )
 
         return turn_result, state

@@ -170,3 +170,108 @@ def test_butir2_kebutuhan_ada_peruntukan_sesuai_vs_tidak_sesuai():
     assert not is_valid, f"Peruntukan yang bertentangan harus ditolak: {violations}"
     assert any("gaming" in v.lower() for v in violations)
 
+
+# =========================================================================
+# BUTIR 3 — Kegagalan LLM Tidak Boleh Diam-Diam; Bot Harus Bisa Pulih
+# =========================================================================
+
+def test_butir3_properti_semua_aksi_tidak_fallback_darurat():
+    """Butir 3d Putaran 16: Untuk SEMUA aksi di ActionEnum,
+    teks fallback deterministik TIDAK mengembalikan EMERGENCY_FALLBACK_TEXT
+    kecuali jika status eksekusi benar-benar sistem_error.
+    """
+    from services.schema_actions import ActionEnum
+    from services.llm_generator import build_deterministic_fallback_text, EMERGENCY_FALLBACK_TEXT
+
+    sample_produk = [{"kode": "KB-L01", "nama": "Advan Workplus", "kategori": "laptop", "harga": 7000000}]
+
+    for act in ActionEnum:
+        fakta_normal = {
+            "status": "sukses",
+            "kategori": "laptop",
+            "produk": sample_produk,
+            "produk_tampil": sample_produk,
+            "rujukan": "laptop",
+            "slot": "budget"
+        }
+        res_text = build_deterministic_fallback_text(act.value, fakta_normal)
+        assert res_text != EMERGENCY_FALLBACK_TEXT, (
+            f"Aksi {act.value} pada status sukses TIDAK boleh menghasilkan EMERGENCY_FALLBACK_TEXT, tapi dapat: {res_text}"
+        )
+        assert len(res_text.strip()) > 10, f"Fallback teks aksi {act.value} terlalu pendek: {res_text}"
+
+        # Status sistem_error WAJIB mengembalikan EMERGENCY_FALLBACK_TEXT
+        fakta_error = {
+            "status": "sistem_error",
+            "alasan": "sistem_error"
+        }
+        res_error_text = build_deterministic_fallback_text(act.value, fakta_error)
+        assert res_error_text == EMERGENCY_FALLBACK_TEXT, (
+            f"Aksi {act.value} pada sistem_error WAJIB menghasilkan EMERGENCY_FALLBACK_TEXT"
+        )
+
+
+def test_butir3_simulasi_kegagalan_llm_pipeline(monkeypatch):
+    """Butir 3c & 3d Putaran 16: Simulasi kegagalan LLM (timeout / error) pada pipeline
+    mencatat generator_error dan sumber_balasan='fallback_deterministik', bukan kegagalan diam-diam.
+    """
+    from services.session_pipeline import SessionPipeline
+    from services.llm_generator import EMERGENCY_FALLBACK_TEXT
+
+    pipeline = SessionPipeline()
+
+    def mock_generate_fail(*args, **kwargs):
+        raise TimeoutError("Ollama timed out after 25.0s")
+
+    monkeypatch.setattr("services.session_pipeline.generate_response", mock_generate_fail)
+
+    # Uji turn cari_produk saat generator gagal
+    turn_res, new_state = pipeline.process_turn("Kalo laptop ada?", session_state={}, history=[])
+    assert turn_res.teks_jawaban != EMERGENCY_FALLBACK_TEXT
+    assert "laptop" in turn_res.teks_jawaban.lower()
+    assert turn_res.generator_error is not None
+    assert "timed out" in turn_res.generator_error.lower()
+    assert turn_res.sumber_balasan == "fallback_deterministik"
+
+
+def test_butir3_pemulihan_koreksi_asumsi_kebutuhan():
+    """Butir 3e Putaran 16: State berisi kebutuhan palsu -> giliran keluhan/koreksi
+    -> state kebutuhan terhapus dan balasan tidak mengulangi asumsi itu.
+    """
+    from services.session_pipeline import SessionPipeline
+
+    pipeline = SessionPipeline()
+
+    initial_state = {
+        "kategori": "laptop",
+        "kebutuhan_teks": "kantor dan kuliah",
+        "kriteria_pelanggan": {"kebutuhan_teks": "kantor dan kuliah"},
+        "produk_tampil": [
+            {"kode": "KB-L01", "nama": "Advan Workplus", "kategori": "laptop", "harga": 7000000}
+        ],
+        "history": [
+            {"role": "user", "content": "Kalo laptop ada?"},
+            {"role": "assistant", "content": "Berdasarkan kebutuhan kerja kantor dan kuliah, ada Advan Workplus."}
+        ]
+    }
+
+    # Pelanggan mengoreksi asumsi bot
+    pesan_koreksi = "Aku belum bilang untuk apa, kok tau-tau simpulkan buat kantor dan kuliah?"
+    turn_res, new_state = pipeline.process_turn(pesan_koreksi, session_state=initial_state)
+
+    # 1. State kebutuhan_teks wajib terhapus (None)
+    assert new_state.get("kebutuhan_teks") is None, (
+        f"Kebutuhan teks harus None setelah koreksi, tapi didapat: {new_state.get('kebutuhan_teks')}"
+    )
+    assert (new_state.get("kriteria_pelanggan") or {}).get("kebutuhan_teks") is None
+
+    # 2. Balasan tidak mengulangi asumsi kebutuhan itu
+    reply_lower = turn_res.teks_jawaban.lower()
+    assert "kantor dan kuliah" not in reply_lower
+    assert "kuliah" not in reply_lower
+
+    # 3. Kategori laptop dan produk tampil tetap terjaga
+    assert new_state.get("kategori") == "laptop"
+    assert turn_res.fakta_eksekusi.get("kategori") == "laptop"
+    assert turn_res.fakta_eksekusi.get("koreksi_kebutuhan") is True
+

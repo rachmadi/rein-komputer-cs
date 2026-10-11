@@ -2338,6 +2338,28 @@ class ActionEngine:
             else:
                 logger.warning(f"E: Kebutuhan '{args.kebutuhan_teks}' hanya berisi kategori/merek katalog, diabaikan.")
 
+        # Putaran 16 Butir 3b: Jika pelanggan mengoreksi asumsi bot (misal "aku belum bilang untuk apa"),
+        # bot HARUS membuang asumsi itu dari state (kebutuhan_teks=None, dll), mengakui singkat, dan
+        # menawarkan produk yang sedang tampil atau menanyakan kebutuhan secara terbuka.
+        pesan_user = str(state.get("_pesan_pelanggan") or "")
+        is_koreksi_kebutuhan = bool(
+            jenis in ("koreksi", "salah_paham", "keluhan")
+            and (
+                (args.rujukan and any(w in str(args.rujukan).lower() for w in ("kebutuhan", "peruntukan", "tujuan", "aktivitas", "asumsi", "tahu", "tau")))
+                or bool(re.search(r"\b(belum\s+bilang|belum\s+sebut|belum\s+ngomong|bukan\s+untuk|ga\s+bilang|gak\s+bilang|tidak\s+bilang|kok\s+tau|kok\s+tahu|asumsi)\b", pesan_user, re.IGNORECASE))
+            )
+        )
+        if is_koreksi_kebutuhan:
+            state["kebutuhan_teks"] = None
+            state["kebutuhan_diketahui"] = None
+            state["profil_aktif"] = None
+            if "kriteria_pelanggan" in state and isinstance(state["kriteria_pelanggan"], dict):
+                state["kriteria_pelanggan"].pop("kebutuhan_teks", None)
+                state["kriteria_pelanggan"].pop("profil_id", None)
+            if state_up:
+                state_up.kebutuhan_teks = None
+            args.kebutuhan_teks = None
+
         has_criteria = bool(
             args.kategori or args.merek or (args.max_harga is not None) or args.kebutuhan_teks or args.persona or args.gpu or args.ram_gb_min or
             state.get("_cabut_budget") or
@@ -2346,7 +2368,7 @@ class ActionEngine:
 
         # C1: Jika ada kriteria produk di perbaiki_percakapan (koreksi, keluhan, salah_paham), jalankan pencarian;
         # keluhan hanya mengubah nada (flag ke generator), bukan membuang permintaan.
-        if has_criteria:
+        if has_criteria and not is_koreksi_kebutuhan:
             if state.get("kebutuhan_teks"):
                 search_res = self._handle_minta_rekomendasi(args, state)
             else:
@@ -2357,6 +2379,7 @@ class ActionEngine:
                 "jenis": jenis,
                 "rujukan": args.rujukan,
                 "kebutuhan": state.get("kebutuhan_teks") or state.get("kebutuhan_diketahui"),
+                "kebutuhan_teks": state.get("kebutuhan_teks"),
                 "merek": state.get("merek"),
                 "kategori": state.get("kategori"),
                 "pemakai": state.get("persona") or state.get("pemakai"),
@@ -2374,18 +2397,33 @@ class ActionEngine:
                 profil_id=search_res.profil_id
             )
 
+        prods_tampil = state.get("produk_tampil", [])
+        kat = state.get("kategori")
+        if not kat and prods_tampil:
+            from core.db import extract_kategori_from_products
+            kat = extract_kategori_from_products(prods_tampil)
+
         fakta = {
             "status": "sukses",
             "jenis": jenis,
             "rujukan": args.rujukan,
             "kebutuhan": state.get("kebutuhan_teks") or state.get("kebutuhan_diketahui"),
+            "kebutuhan_teks": state.get("kebutuhan_teks"),
             "merek": state.get("merek"),
-            "kategori": state.get("kategori"),
+            "kategori": kat,
             "pemakai": state.get("persona") or state.get("pemakai"),
-            "produk_tampil": state.get("produk_tampil", []),
+            "produk": prods_tampil,
+            "produk_tampil": prods_tampil,
             "pending_question": state.get("pending_question"),
-            "belum_dicari": True
+            "koreksi_kebutuhan": is_koreksi_kebutuhan,
+            "belum_dicari": True if not prods_tampil else False
         }
+        if is_koreksi_kebutuhan:
+            fakta["asumsi_dibersihkan"] = True
+        if jenis in ("keluhan", "salah_paham") or state.get("_ada_keluhan_pesan"):
+            fakta["ada_keluhan"] = True
+            fakta["nada"] = "keluhan"
+
         return ActionResult(aksi=ActionEnum.PERBAIKI_PERCAKAPAN, fakta=fakta, produk_list=[])
 
     # -------------------------------------------------------------------------

@@ -187,6 +187,8 @@ def process_chat_message(
                 argumen_ditolak=getattr(turn_res, "argumen_ditolak", None),
                 konteks_toko=getattr(turn_res, "konteks_toko", None),
                 fakta_lengkap=getattr(turn_res, "fakta_eksekusi", None),
+                generator_error=getattr(turn_res, "generator_error", None),
+                sumber_balasan=getattr(turn_res, "sumber_balasan", None),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
