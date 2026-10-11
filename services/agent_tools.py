@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Agent Tools Module untuk ReIn Komputer Customer Care.
-Menyediakan 4 alat modular yang dipanggil langsung oleh LLM:
-1. cari_produk: pencarian katalog berbasis kata kunci fleksibel, kategori, merek, dan budget.
-2. detail_produk: lembar spesifikasi lengkap dan raw_data untuk satu atau beberapa produk.
-3. pengetahuan_kebutuhan: panduan kebutuhan dan spesifikasi minimum/rekomendasi dari KB.
-4. info_toko: kebijakan toko, paket penjualan, dan informasi umum dari KB.
+Dua alat modular sesuai Putaran 18b:
+1. katalog: pencarian produk (kata_kunci, kategori, merek, budget) atau lembar spesifikasi lengkap (kode_atau_nama).
+2. pengetahuan: panduan kebutuhan pengguna, penjelasan teknis, panduan kategori, dan kebijakan toko dari RAG Qdrant.
 """
 from __future__ import annotations
 
@@ -14,6 +12,7 @@ import logging
 import os
 import re
 from typing import Any
+import requests
 
 from core.db import get_catalog_inventory
 from services.catalog_search import clean_specs
@@ -30,7 +29,7 @@ def _format_rupiah(angka: int | float | None) -> str:
 
 
 def _format_ringkas(p: dict) -> dict[str, Any]:
-    """Format ringkas produk untuk keluaran alat cari_produk."""
+    """Format ringkas produk untuk keluaran alat katalog."""
     p_price = p.get("harga") or p.get("harga_idr") or 0
     return {
         "kode": p.get("kode"),
@@ -44,8 +43,8 @@ def _format_ringkas(p: dict) -> dict[str, Any]:
     }
 
 
-def _search_kb_markdown(query: str) -> list[dict[str, Any]]:
-    """Pencarian fallback langsung pada berkas markdown panduan_kebutuhan_v2.md."""
+def _search_kb_markdown_all(query: str) -> list[dict[str, Any]]:
+    """Pencarian fallback langsung pada berkas markdown panduan_kebutuhan_v2.md di semua tipe chunk."""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     kb_path = os.path.join(base_dir, "data", "knowledge", "panduan_kebutuhan_v2.md")
     if not os.path.exists(kb_path):
@@ -62,122 +61,238 @@ def _search_kb_markdown(query: str) -> list[dict[str, Any]]:
     q_tokens = [w for w in re.findall(r"\w+", query.lower()) if len(w) >= 2]
     matched = []
 
-    for sec in sections:
-        if not sec.strip() or not sec.startswith("P"):
+    for i, sec in enumerate(sections):
+        sec_clean = sec.strip()
+        if not sec_clean:
             continue
-        sec_low = sec.lower()
+        sec_low = sec_clean.lower()
         score = 0
         for tok in q_tokens:
             if tok in sec_low:
                 score += 1
         if score > 0:
-            lines = sec.strip().split("\n")
-            header = lines[0]
-            pid_m = re.match(r"^(P\d{2})", header)
-            pid = pid_m.group(1) if pid_m else header[:3]
-            body_text = "\n".join(lines[1:15])
+            lines = sec_clean.split("\n")
+            header = lines[0].replace("## ", "").strip()
+            # Tentukan ID dan tipe
+            cid = ""
+            m_id = re.search(r"-\s*\*\*ID:\*\*\s*([A-Za-z0-9_-]+)", sec_clean)
+            if m_id:
+                cid = m_id.group(1).strip()
+            elif "kebijakan" in header.lower():
+                cid = "K01"
+            else:
+                cid = f"CH_{i}"
+
+            tipe = "panduan"
+            if cid.startswith("P"):
+                tipe = "profil"
+            elif cid.startswith("G"):
+                tipe = "panduan_umum"
+            elif cid.startswith("M"):
+                tipe = "panduan_kategori"
+            elif cid.startswith("K") or "kebijakan" in header.lower():
+                tipe = "kebijakan_toko"
+
+            clean_title = re.sub(r"^[PGMK]\d+\s*[-—]\s*", "", header).strip()
+            body_text = "\n".join(lines[1:])
+            trimmed = body_text.strip()
+            if len(trimmed) > 800:
+                trimmed = trimmed[:800] + "..."
+
             matched.append((score, {
-                "profil_id": pid,
-                "judul": header,
-                "panduan_spek": body_text[:600]
+                "id": cid,
+                "judul": clean_title,
+                "tipe": tipe,
+                "teks": trimmed
             }))
 
     matched.sort(key=lambda x: -x[0])
-    return [item for _, item in matched[:2]]
-
-
-def _get_kb_policy_insight(topik: str) -> str:
-    """Mengambil kutipan ringkas kebijakan/panduan umum toko dari KB."""
-    topik_low = str(topik or "").lower()
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    kb_path = os.path.join(base_dir, "data", "knowledge", "panduan_kebutuhan_v2.md")
-    if not os.path.exists(kb_path):
-        return ""
-
-    try:
-        with open(kb_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception:
-        return ""
-
-    sections = content.split("\n## ")
-    for sec in sections:
-        sec_clean = sec.strip()
-        if not sec_clean:
-            continue
-        sec_header = sec_clean.split("\n")[0].lower()
-        if any(k in topik_low for k in ["desktop", "monitor", "paket"]) and "m01" in sec_header:
-            return sec_clean[:500]
-        elif any(k in topik_low for k in ["printer", "cetak", "struk"]) and "m02" in sec_header:
-            return sec_clean[:500]
-        elif any(k in topik_low for k in ["cpu", "prosesor"]) and "g01" in sec_header:
-            return sec_clean[:500]
-        elif any(k in topik_low for k in ["gpu", "vga", "grafis"]) and "g02" in sec_header:
-            return sec_clean[:500]
-        elif any(k in topik_low for k in ["ram", "storage", "ssd"]) and "g03" in sec_header:
-            return sec_clean[:500]
-
-    return ""
+    return [item for _, item in matched[:3]]
 
 
 # =============================================================================
-# 1. CARI PRODUK
+# 1. ALAT KATALOG (Pencarian & Lembar Spesifikasi)
 # =============================================================================
 
-def cari_produk(
+def katalog(
     kata_kunci: str | None = None,
     kategori: str | None = None,
     merek: str | None = None,
-    budget_max: int | float | None = None,
     budget_min: int | float | None = None,
+    budget_max: int | float | None = None,
+    kode_atau_nama: str | list[str] | None = None,
     catalog=None
 ) -> dict[str, Any]:
     """
-    Mencari produk di katalog toko ReIn Komputer:
-    - kata_kunci dicari longgar (per kata, case-insensitive) di nama, kategori, merek, raw_data, usage_text.
-    - budget_max adalah filter keras. Jika tidak ada yang masuk budget, sertakan harga termurah.
-    - Kembalikan ringkas: kode, nama, kategori, harga, spek ringkas, usage_text. Maks 5 produk.
-    - Kategori & merek diambil dinamis dari get_catalog_inventory() tanpa enum hardcode.
+    Alat katalog toko ReIn Komputer:
+    a. Jika kode_atau_nama diisi:
+       Kembalikan lembar spesifikasi lengkap (build_lembar_spesifikasi + raw_data).
+       Boleh satu atau beberapa produk (dipisahkan koma atau list).
+    b. Selain itu: pencarian katalog.
+       - Kata dalam kata_kunci yang sama dengan nilai filter kategori/merek (termasuk sinonimnya)
+         tidak ikut dinilai.
+       - Jika tidak ada kata tersisa, kembalikan semua produk yang lolos filter, urut harga.
+       - budget_max tetap filter keras (jika kosong, sertakan harga termurah yang ada).
+       - Selalu kembalikan total_cocok (jumlah SEMUA produk yang cocok) dan maksimal 10 produk ringkas:
+         kode, nama, kategori, harga, spek ringkas, usage_text.
     """
     cat_inst = catalog or get_active_catalog()
     all_products = list(cat_inst.by_code.values())
 
+    # -------------------------------------------------------------------------
+    # Cabang A: Lembar Spesifikasi Lengkap jika kode_atau_nama diisi
+    # -------------------------------------------------------------------------
+    if kode_atau_nama:
+        queries = []
+        if isinstance(kode_atau_nama, list):
+            queries = [str(x).strip() for x in kode_atau_nama if str(x).strip()]
+        elif isinstance(kode_atau_nama, str):
+            queries = [x.strip() for x in kode_atau_nama.split(",") if x.strip()]
+
+        matched_results = []
+        found_codes = set()
+        for q in queries:
+            q_upper = q.upper()
+            if q_upper in cat_inst.by_code:
+                p = cat_inst.by_code[q_upper]
+                if p["kode"] not in found_codes:
+                    found_codes.add(p["kode"])
+                    matched_results.append(p)
+                continue
+
+            q_low = q.lower()
+            matched = False
+            for p in all_products:
+                if p["kode"].upper() == q_upper or q_low == str(p.get("nama", "")).lower():
+                    if p["kode"] not in found_codes:
+                        found_codes.add(p["kode"])
+                        matched_results.append(p)
+                    matched = True
+                    break
+            if not matched:
+                for p in all_products:
+                    if q_low in str(p.get("nama", "")).lower():
+                        if p["kode"] not in found_codes:
+                            found_codes.add(p["kode"])
+                            matched_results.append(p)
+                        matched = True
+                        break
+
+        if not matched_results:
+            return {
+                "status": "tidak_ditemukan",
+                "pesan": f"Produk '{kode_atau_nama}' tidak ditemukan di katalog.",
+                "total_cocok": 0,
+                "detail": []
+            }
+
+        output_details = []
+        for p in matched_results:
+            lembar = build_lembar_spesifikasi(p)
+            raw_dict = {}
+            raw_val = p.get("raw_data")
+            if isinstance(raw_val, dict):
+                raw_dict = raw_val
+            elif isinstance(raw_val, str) and raw_val.strip():
+                try:
+                    raw_dict = json.loads(raw_val)
+                except Exception:
+                    raw_dict = {}
+            output_details.append({
+                "kode": p.get("kode"),
+                "nama": p.get("nama"),
+                "harga": _format_rupiah(p.get("harga") or p.get("harga_idr")),
+                "lembar_spesifikasi": lembar,
+                "raw_data": raw_dict
+            })
+
+        return {
+            "status": "sukses",
+            "total_cocok": len(output_details),
+            "detail": output_details
+        }
+
+    # -------------------------------------------------------------------------
+    # Cabang B: Pencarian Katalog
+    # -------------------------------------------------------------------------
     inv = get_catalog_inventory()
     valid_cats = {c.lower() for c in inv.get("kategori", [])}
+    valid_brands = {b.lower() for b in inv.get("merek", [])}
 
-    # Normalisasi filter kategori
-    pool = list(all_products)
+    cat_synonyms_map = {
+        "pc": "desktop", "komputer": "desktop", "all-in-one": "desktop", "aio": "desktop", "desktop": "desktop",
+        "notebook": "laptop", "laptop": "laptop",
+        "printer": "printer", "print": "printer", "cetak": "printer",
+        "monitor": "monitor", "layar": "monitor"
+    }
+
+    target_cat = None
     if kategori:
         k_str = str(kategori).strip().lower()
-        cat_synonyms = {
-            "pc": "desktop", "komputer": "desktop", "all-in-one": "desktop", "aio": "desktop",
-            "notebook": "laptop", "laptop": "laptop",
-            "printer": "printer", "print": "printer", "cetak": "printer",
-            "monitor": "monitor", "layar": "monitor"
-        }
-        target_cat = cat_synonyms.get(k_str, k_str)
+        target_cat = cat_synonyms_map.get(k_str, k_str)
+
+    target_merek = None
+    if merek:
+        target_merek = str(merek).strip().lower()
+
+    kw_raw = str(kata_kunci).strip().lower() if kata_kunci else ""
+    tokens = [w for w in re.findall(r"\w+", kw_raw) if len(w) >= 2]
+
+    # Ekstraksi otomatis filter kategori jika belum diisi eksplisit
+    if not target_cat:
+        for tok in tokens:
+            if tok in cat_synonyms_map:
+                target_cat = cat_synonyms_map[tok]
+                break
+
+    # Ekstraksi otomatis filter merek jika belum diisi eksplisit
+    if not target_merek:
+        for tok in tokens:
+            if tok in valid_brands:
+                target_merek = tok
+                break
+
+    # Himpunan kata filter kategori dan merek yang TIDAK ikut dinilai
+    filter_words_to_exclude = set()
+    if target_cat:
+        for syn, main_cat in cat_synonyms_map.items():
+            if main_cat == target_cat:
+                filter_words_to_exclude.add(syn)
+    if target_merek:
+        filter_words_to_exclude.update([w for w in re.findall(r"\w+", target_merek) if len(w) >= 2])
+
+    pool = list(all_products)
+
+    # Filter Kategori
+    if target_cat:
         if target_cat in valid_cats:
             pool = [p for p in pool if str(p.get("kategori", "")).lower() == target_cat]
         else:
             pool = [p for p in pool if target_cat in str(p.get("kategori", "")).lower()]
 
-    # Filter merek
-    if merek:
-        m_str = str(merek).strip().lower()
+    # Filter Merek
+    if target_merek:
         pool = [
             p for p in pool
-            if m_str in str(p.get("brand", "")).lower() or m_str in str(p.get("nama", "")).lower()
+            if target_merek in str(p.get("brand", "")).lower() or target_merek in str(p.get("nama", "")).lower()
         ]
 
-    # Filter budget_min
+    # Filter Budget Min
     if budget_min is not None and float(budget_min) > 0:
         pool = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) >= float(budget_min)]
 
-    # Pencarian longgar kata_kunci
-    if kata_kunci and str(kata_kunci).strip():
-        kw_clean = str(kata_kunci).strip().lower()
-        tokens = [w for w in re.findall(r"\w+", kw_clean) if len(w) >= 2]
+    # Kata yang tersisa untuk dinilai
+    scoring_tokens = [w for w in tokens if w not in filter_words_to_exclude]
 
+    # Sinonim dan varian bentuk khusus (misal: mini <-> nuc, aio <-> all-in-one)
+    alias_map = {
+        "mini": ["mini", "nuc"],
+        "nuc": ["nuc", "mini"],
+        "aio": ["aio", "all-in-one"],
+        "all-in-one": ["aio", "all-in-one"]
+    }
+
+    if scoring_tokens:
         scored_pool = []
         for p in pool:
             name_text = str(p.get("nama", "")).lower()
@@ -200,30 +315,30 @@ def cari_produk(
             specs_text = f"{p.get('cpu', '')} {p.get('gpu', '')} {p.get('ram', '')} {p.get('storage', '')} {p.get('display', '')}".lower()
 
             score = 0
-            if kw_clean in name_text:
-                score += 60
-            if kw_clean in raw_text:
-                score += 45
-            if kw_clean in usage_text:
-                score += 35
+            # Cek kecocokan frasa gabungan sisa
+            scoring_phrase = " ".join(scoring_tokens)
+            if len(scoring_tokens) > 1 and scoring_phrase in name_text:
+                score += 50
 
-            for tok in tokens:
-                if tok in name_text:
-                    score += 20
-                    if re.search(rf"\b{re.escape(tok)}\b", name_text):
-                        score += 10
-                if tok in brand_text:
-                    score += 15
-                if tok in cat_text:
-                    score += 10
-                if tok in raw_text:
-                    score += 15
-                if tok in usage_text:
-                    score += 10
-                if tok in tags_text:
-                    score += 10
-                if tok in specs_text:
-                    score += 8
+            for tok in scoring_tokens:
+                search_variants = alias_map.get(tok, [tok])
+                tok_score = 0
+                for v in search_variants:
+                    if v in name_text:
+                        tok_score = max(tok_score, 25)
+                        if re.search(rf"\b{re.escape(v)}\b", name_text):
+                            tok_score = max(tok_score, 35)
+                    if v in brand_text:
+                        tok_score = max(tok_score, 15)
+                    if v in raw_text:
+                        tok_score = max(tok_score, 20)
+                    if v in usage_text:
+                        tok_score = max(tok_score, 15)
+                    if v in tags_text:
+                        tok_score = max(tok_score, 15)
+                    if v in specs_text:
+                        tok_score = max(tok_score, 10)
+                score += tok_score
 
             if score > 0:
                 scored_pool.append((score, p))
@@ -231,22 +346,21 @@ def cari_produk(
         scored_pool.sort(key=lambda item: (-item[0], item[1].get("harga") or item[1].get("harga_idr") or 0))
         pool = [item[1] for item in scored_pool]
     else:
-        # Urutkan harga termurah jika tanpa kata kunci
+        # Jika tidak ada kata tersisa, urutkan berdasarkan harga
         pool.sort(key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
 
-    # Filter keras budget_max
+    # Filter Keras budget_max
     if budget_max is not None and float(budget_max) > 0:
         b_max = float(budget_max)
         under_budget = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) <= b_max]
         if under_budget:
             return {
                 "status": "sukses",
-                "total_ditemukan": len(under_budget),
-                "produk": [_format_ringkas(p) for p in under_budget[:5]]
+                "total_cocok": len(under_budget),
+                "produk": [_format_ringkas(p) for p in under_budget[:10]]
             }
         else:
-            # Tidak ada produk yang masuk budget: cari produk termurah dari kandidat yang cocok atau katalog
-            cheapest_source = pool if pool else all_products
+            cheapest_source = pool if pool else (all_products if not target_cat else [p for p in all_products if p.get('kategori') == target_cat])
             cheapest_sorted = sorted(cheapest_source, key=lambda p: (p.get("harga") or p.get("harga_idr") or float("inf")))
             cheapest_p = cheapest_sorted[0] if cheapest_sorted else None
             p_termurah_info = [_format_ringkas(cheapest_p)] if cheapest_p else []
@@ -257,6 +371,7 @@ def cari_produk(
             )
             return {
                 "status": "melebihi_budget",
+                "total_cocok": 0,
                 "pesan": msg,
                 "produk_termurah": p_termurah_info,
                 "produk": []
@@ -264,176 +379,139 @@ def cari_produk(
 
     return {
         "status": "sukses",
-        "total_ditemukan": len(pool),
-        "produk": [_format_ringkas(p) for p in pool[:5]]
+        "total_cocok": len(pool),
+        "produk": [_format_ringkas(p) for p in pool[:10]]
     }
 
 
 # =============================================================================
-# 2. DETAIL PRODUK
+# 2. ALAT PENGETAHUAN (RAG Qdrant untuk Semua Tipe Chunk)
 # =============================================================================
 
-def detail_produk(kode_atau_nama: str | list[str], catalog=None) -> dict[str, Any]:
+def pengetahuan(pertanyaan: str) -> dict[str, Any]:
     """
-    Mengambil lembar spesifikasi lengkap dan raw_data untuk satu atau beberapa produk.
-    Bisa menerima kode (KB-xxx) atau nama produk (bisa dipisahkan koma atau dalam bentuk list).
+    Mencari panduan kebutuhan pengguna, penjelasan dan pertimbangan teknis komponen,
+    panduan memilih kategori, atau kebijakan resmi toko ReIn Komputer.
+    Cari ke SEMUA tipe chunk (G, P, M, kebijakan toko) di Qdrant.
+    Kembalikan 3 chunk teratas beserta ID dan judul bersih (tanpa kode internal P01/G01 di judul).
     """
-    cat_inst = catalog or get_active_catalog()
-    all_products = list(cat_inst.by_code.values())
-
-    queries = []
-    if isinstance(kode_atau_nama, list):
-        queries = [str(x).strip() for x in kode_atau_nama if str(x).strip()]
-    elif isinstance(kode_atau_nama, str):
-        queries = [x.strip() for x in kode_atau_nama.split(",") if x.strip()]
-
-    matched_results = []
-    found_codes = set()
-
-    for q in queries:
-        q_upper = q.upper()
-        # 1. Cek kode langsung
-        if q_upper in cat_inst.by_code:
-            p = cat_inst.by_code[q_upper]
-            if p["kode"] not in found_codes:
-                found_codes.add(p["kode"])
-                matched_results.append(p)
-            continue
-
-        # 2. Cek nama persis atau substring
-        q_low = q.lower()
-        matched = False
-        for p in all_products:
-            if p["kode"].upper() == q_upper or q_low == str(p.get("nama", "")).lower():
-                if p["kode"] not in found_codes:
-                    found_codes.add(p["kode"])
-                    matched_results.append(p)
-                matched = True
-                break
-        if not matched:
-            for p in all_products:
-                if q_low in str(p.get("nama", "")).lower():
-                    if p["kode"] not in found_codes:
-                        found_codes.add(p["kode"])
-                        matched_results.append(p)
-                    matched = True
-                    break
-
-    if not matched_results:
+    q_str = str(pertanyaan or "").strip()
+    if not q_str:
         return {
-            "status": "tidak_ditemukan",
-            "pesan": f"Produk '{kode_atau_nama}' tidak ditemukan di katalog.",
-            "detail": []
+            "status": "tidak_ada_input",
+            "pesan": "Pertanyaan belum diisi.",
+            "total_cocok": 0,
+            "pengetahuan": []
         }
 
-    output_details = []
-    for p in matched_results:
-        lembar = build_lembar_spesifikasi(p)
-        raw_dict = {}
-        raw_val = p.get("raw_data")
-        if isinstance(raw_val, dict):
-            raw_dict = raw_val
-        elif isinstance(raw_val, str) and raw_val.strip():
-            try:
-                raw_dict = json.loads(raw_val)
-            except Exception:
-                raw_dict = {}
-        output_details.append({
-            "kode": p.get("kode"),
-            "nama": p.get("nama"),
-            "lembar_spesifikasi": lembar,
-            "raw_data": raw_dict
-        })
+    hasil_chunks = []
+
+    # 1. Cari via Qdrant (semua tipe chunk)
+    try:
+        from services.catalog_service import QDRANT_URL, get_embedding
+        vec = get_embedding(q_str.lower())
+        if vec:
+            col_name = os.getenv("QDRANT_KNOWLEDGE_COLLECTION", "computer_knowledge")
+            url = f"{QDRANT_URL}/collections/{col_name}/points/search"
+            payload = {
+                "vector": vec,
+                "limit": 3,
+                "with_payload": True
+            }
+            resp = requests.post(url, json=payload, timeout=10)
+            if resp.status_code == 200:
+                pts = resp.json().get("result", [])
+                for pt in pts:
+                    pld = pt.get("payload", {})
+                    cid = pld.get("id") or ""
+                    raw_title = pld.get("judul") or ""
+                    clean_title = re.sub(r"^[PGMK]\d+\s*[-—]\s*", "", raw_title).strip()
+                    raw_text = pld.get("text") or ""
+                    trimmed_text = raw_text.replace("## ", "").strip()
+                    if len(trimmed_text) > 800:
+                        trimmed_text = trimmed_text[:800] + "..."
+                    hasil_chunks.append({
+                        "id": cid,
+                        "judul": clean_title,
+                        "tipe": pld.get("tipe"),
+                        "teks": trimmed_text
+                    })
+    except Exception as e:
+        logger.warning(f"Qdrant lookup failed in pengetahuan: {e}")
+
+    # 2. Fallback jika Qdrant gagal atau tidak menemukan hasil
+    if not hasil_chunks:
+        hasil_chunks = _search_kb_markdown_all(q_str)
 
     return {
         "status": "sukses",
-        "total": len(output_details),
-        "detail": output_details
+        "pertanyaan": q_str,
+        "total_cocok": len(hasil_chunks),
+        "pengetahuan": hasil_chunks[:3]
     }
 
 
 # =============================================================================
-# 3. PENGETAHUAN KEBUTUHAN
+# KOMPATIBILITAS MUNDUR UNTUK ALAT LAMA
 # =============================================================================
+
+def cari_produk(
+    kata_kunci: str | None = None,
+    kategori: str | None = None,
+    merek: str | None = None,
+    budget_max: int | float | None = None,
+    budget_min: int | float | None = None,
+    catalog=None
+) -> dict[str, Any]:
+    """Kompatibilitas mundur: memetakan ke fungsi katalog."""
+    return katalog(
+        kata_kunci=kata_kunci,
+        kategori=kategori,
+        merek=merek,
+        budget_min=budget_min,
+        budget_max=budget_max,
+        catalog=catalog
+    )
+
+
+def detail_produk(kode_atau_nama: str | list[str], catalog=None) -> dict[str, Any]:
+    """Kompatibilitas mundur: memetakan ke fungsi katalog dengan kode_atau_nama."""
+    return katalog(kode_atau_nama=kode_atau_nama, catalog=catalog)
+
 
 def pengetahuan_kebutuhan(kebutuhan: str) -> dict[str, Any]:
-    """
-    Panduan spesifikasi minimum dan rekomendasi dari basis pengetahuan (panduan_kebutuhan_v2.md)
-    lewat knowledge_service / RAG Qdrant, dengan fallback langsung ke pembacaan berkas KB.
-    """
-    if not kebutuhan or not str(kebutuhan).strip():
-        return {
-            "status": "tidak_ada_input",
-            "pesan": "Kebutuhan belum disebutkan."
-        }
-
-    k_query = str(kebutuhan).strip()
-    profiles_data = []
-
-    # Coba via Qdrant knowledge_service
-    try:
-        from services.knowledge_service import get_usage_requirements, get_profile_by_id
-        reqs = get_usage_requirements(k_query, limit=2)
-        pls = reqs.get("profil", [])
-        for pl in pls:
-            pid = pl.get("profil_id")
-            full_p = get_profile_by_id(pid) or {}
-            profiles_data.append({
-                "profil_id": pid,
-                "judul": pl.get("nama") or full_p.get("judul"),
-                "panduan_spek": full_p.get("text") or pl.get("ringkasan"),
-                "minimum_spek": full_p.get("minimum_spek"),
-                "rekomendasi_spek": full_p.get("rekomendasi_spek")
-            })
-    except Exception as e:
-        logger.warning(f"Qdrant lookup skipped / error: {e}")
-
-    # Fallback ke pencarian teks pada panduan_kebutuhan_v2.md
-    if not profiles_data:
-        profiles_data = _search_kb_markdown(k_query)
-
-    if profiles_data:
-        return {
-            "status": "sukses",
-            "kebutuhan_ditanyakan": k_query,
-            "profil_rekomendasi": profiles_data
-        }
-
+    """Kompatibilitas mundur: memetakan ke fungsi pengetahuan."""
+    res = pengetahuan(pertanyaan=kebutuhan)
     return {
-        "status": "belum_teridentifikasi",
-        "pesan": f"Panduan spesifik untuk '{k_query}' belum teridentifikasi di basis pengetahuan. Tanyakan detail software atau perangkat yang diinginkan."
+        "status": res.get("status", "sukses"),
+        "kebutuhan_ditanyakan": kebutuhan,
+        "profil_rekomendasi": [
+            {
+                "profil_id": p.get("id"),
+                "judul": p.get("judul"),
+                "panduan_spek": p.get("teks")
+            }
+            for p in res.get("pengetahuan", [])
+        ]
     }
 
-
-# =============================================================================
-# 4. INFO TOKO
-# =============================================================================
 
 def info_toko(topik: str | None = None) -> dict[str, Any]:
-    """
-    Mengambil kebijakan dan info resmi toko ReIn Komputer dari basis pengetahuan.
-    Termasuk kebijakan paket desktop tidak termasuk monitor, kategori/merek resmi, kontak staf.
-    """
-    topik_low = str(topik or "").lower().strip()
+    """Kompatibilitas mundur: memetakan ke fungsi pengetahuan dan info toko."""
     inv = get_catalog_inventory()
     kontak = os.getenv("KONTAK_STAF", "@cs_reinkomputer")
-
-    info: dict[str, Any] = {
-        "nama_toko": "ReIn Komputer",
-        "kontak_staf": kontak,
-        "kategori_produk": inv.get("kategori", ["desktop", "laptop", "monitor", "printer"]),
-        "merek_resmi": inv.get("merek", []),
-        "kebijakan_desktop": "Paket desktop tidak termasuk monitor, kecuali disebutkan di nama atau spesifikasi produk.",
-    }
-
-    kb_insight = _get_kb_policy_insight(topik_low)
-    if kb_insight:
-        info["panduan_kb_terkait"] = kb_insight
-
+    res = pengetahuan(pertanyaan=topik or "kebijakan toko")
     return {
         "status": "sukses",
         "topik_ditanya": topik or "umum",
-        "info": info
+        "info": {
+            "nama_toko": "ReIn Komputer",
+            "kontak_staf": kontak,
+            "kategori_produk": inv.get("kategori", ["desktop", "laptop", "monitor", "printer"]),
+            "merek_resmi": inv.get("merek", []),
+            "kebijakan_desktop": "Paket desktop tidak termasuk monitor, kecuali disebutkan di nama atau spesifikasi produk.",
+            "pengetahuan_terkait": res.get("pengetahuan", [])
+        }
     }
 
 
@@ -445,30 +523,34 @@ AGENT_TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
-            "name": "cari_produk",
-            "description": "Mencari produk di katalog toko ReIn Komputer berdasarkan kata kunci tipe/model/kegunaan, kategori, merek, dan batasan budget.",
+            "name": "katalog",
+            "description": "Mencari produk, harga, ketersediaan, jumlah produk, atau melihat lembar spesifikasi lengkap di toko ReIn Komputer.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "kata_kunci": {
                         "type": "string",
-                        "description": "Kata kunci pencarian, nama seri, model, atau karakteristik (misal: 'ecotank', 'printer struk', 'tangki tinta', 'rtx 4050', 'oled', 'gaming')"
+                        "description": "Kata kunci pencarian spesifik, model, prosesor, GPU, atau fitur (misal: 'oled', 'ecotank', 'rtx 4060', 'mini', 'struk', 'intel nuc')"
                     },
                     "kategori": {
                         "type": "string",
-                        "description": "Kategori produk: laptop, desktop, printer, atau monitor"
+                        "description": "Kategori produk: laptop, desktop, monitor, atau printer"
                     },
                     "merek": {
                         "type": "string",
-                        "description": "Merek produk (misal: Asus, Acer, Lenovo, HP, MSI, Epson, Canon, Brother)"
+                        "description": "Merek produk (misal: Asus, Acer, Lenovo, HP, Apple, MSI, Epson, Canon, Brother)"
+                    },
+                    "budget_min": {
+                        "type": "integer",
+                        "description": "Batas anggaran minimal dalam angka rupiah"
                     },
                     "budget_max": {
                         "type": "integer",
                         "description": "Batas anggaran maksimal dalam angka rupiah (misal: 10000000 untuk 10 juta)"
                     },
-                    "budget_min": {
-                        "type": "integer",
-                        "description": "Batas anggaran minimal dalam angka rupiah"
+                    "kode_atau_nama": {
+                        "type": "string",
+                        "description": "Kode produk (misal 'KB-L14', 'KB-D11') atau nama produk spesifik untuk melihat lembar spesifikasi lengkap dan raw_data"
                     }
                 }
             }
@@ -477,51 +559,17 @@ AGENT_TOOLS_SCHEMA = [
     {
         "type": "function",
         "function": {
-            "name": "detail_produk",
-            "description": "Melihat lembar spesifikasi lengkap dan data teknis mendalam dari satu atau beberapa produk berdasarkan kode produk (misal 'KB-L01') atau nama produk.",
+            "name": "pengetahuan",
+            "description": "Mencari panduan kebutuhan pengguna, penjelasan dan pertimbangan teknis komponen, panduan memilih kategori, atau kebijakan resmi toko ReIn Komputer.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "kode_atau_nama": {
+                    "pertanyaan": {
                         "type": "string",
-                        "description": "Kode produk (misal 'KB-L14', 'KB-P06') atau nama produk (bisa beberapa produk dipisahkan koma)"
+                        "description": "Pertanyaan atau kebutuhan yang ingin dicari panduan/kebijakannya (misal: 'apakah paket desktop dapat monitor', 'panduan memilih prosesor', 'kebutuhan render 3d', 'printer kantor volume tinggi')"
                     }
                 },
-                "required": ["kode_atau_nama"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "pengetahuan_kebutuhan",
-            "description": "Mencari panduan spesifikasi dan kriteria minimum/rekomendasi komputer berdasarkan kebutuhan atau aktivitas pengguna dari basis pengetahuan toko.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "kebutuhan": {
-                        "type": "string",
-                        "description": "Aktivitas atau kebutuhan penggunaan (misal: 'desain grafis 2d', 'kuliah informatika', 'kasir toko', 'render 3d', 'ai lokal', 'editing video 4k')"
-                    }
-                },
-                "required": ["kebutuhan"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "info_toko",
-            "description": "Mencari informasi kebijakan toko, paket penjualan (seperti apakah desktop termasuk monitor), panduan komponen umum (CPU/GPU/RAM), merek/kategori yang tersedia, atau kontak staf.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "topik": {
-                        "type": "string",
-                        "description": "Topik kebijakan atau info toko yang ditanyakan (misal: 'paket desktop', 'monitor desktop', 'kebijakan', 'kontak staf', 'kategori tersedia')"
-                    }
-                },
-                "required": ["topik"]
+                "required": ["pertanyaan"]
             }
         }
     }
@@ -533,27 +581,41 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
     t_name = str(tool_name or "").strip()
     args = dict(tool_args or {})
 
-    if t_name == "cari_produk":
-        return cari_produk(
+    if t_name == "katalog":
+        return katalog(
             kata_kunci=args.get("kata_kunci"),
             kategori=args.get("kategori"),
             merek=args.get("merek"),
-            budget_max=args.get("budget_max"),
             budget_min=args.get("budget_min"),
+            budget_max=args.get("budget_max"),
+            kode_atau_nama=args.get("kode_atau_nama") or args.get("kode") or args.get("nama"),
+            catalog=catalog
+        )
+    elif t_name == "pengetahuan":
+        return pengetahuan(
+            pertanyaan=args.get("pertanyaan") or args.get("query") or args.get("kebutuhan") or args.get("topik") or ""
+        )
+    elif t_name == "cari_produk":
+        return katalog(
+            kata_kunci=args.get("kata_kunci"),
+            kategori=args.get("kategori"),
+            merek=args.get("merek"),
+            budget_min=args.get("budget_min"),
+            budget_max=args.get("budget_max"),
             catalog=catalog
         )
     elif t_name == "detail_produk":
-        return detail_produk(
+        return katalog(
             kode_atau_nama=args.get("kode_atau_nama") or args.get("kode") or args.get("nama") or "",
             catalog=catalog
         )
     elif t_name == "pengetahuan_kebutuhan":
-        return pengetahuan_kebutuhan(
-            kebutuhan=args.get("kebutuhan") or args.get("query") or ""
+        return pengetahuan(
+            pertanyaan=args.get("kebutuhan") or args.get("query") or ""
         )
     elif t_name == "info_toko":
-        return info_toko(
-            topik=args.get("topik") or args.get("query")
+        return pengetahuan(
+            pertanyaan=args.get("topik") or args.get("query") or "kebijakan toko"
         )
     else:
         return {

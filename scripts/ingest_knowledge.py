@@ -79,10 +79,14 @@ def parse_kb(filepath: str):
                 f_str = line_str.replace("- **Filter minimum:**", "").strip()
                 filter_data = parse_filter_line(f_str)
                 
+        if not chunk_id and "kebijakan" in judul.lower():
+            chunk_id = "K01"
+            tipe = "kebijakan_toko"
         if not tipe:
             if chunk_id.startswith('P'): tipe = "profil"
             elif chunk_id.startswith('G'): tipe = "panduan_umum"
             elif chunk_id.startswith('M'): tipe = "panduan_kategori"
+            elif chunk_id.startswith('K') or "kebijakan" in judul.lower(): tipe = "kebijakan_toko"
             
         chunk_data = {
             "id": chunk_id, "judul": judul, "tipe": tipe, "tag_katalog": tag_katalog,
@@ -100,9 +104,12 @@ def ingest():
     points = []
     import uuid
     for i, c in enumerate(chunks):
-        # NEW COMPACT EMBEDDING TEXT: Judul + Kata Kunci + Perangkat
+        # COMPACT EMBEDDING TEXT: Judul + Kata Kunci + Perangkat, atau Judul + Text
         keys = ", ".join(c["kata_kunci"])
-        compact_text = f"Judul: {c['judul']}. Kata Kunci: {keys}. Perangkat: {c['perangkat']}."
+        if keys:
+            compact_text = f"Judul: {c['judul']}. Kata Kunci: {keys}. Perangkat: {c['perangkat']}."
+        else:
+            compact_text = f"Judul: {c['judul']}. {c['text'].replace('## ', '')}."
         
         vec = get_embedding(compact_text)
         if not vec: continue
