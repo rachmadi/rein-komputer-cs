@@ -28,12 +28,35 @@ from services.product_card import format_product_cards_message
 
 logger = logging.getLogger("agentic_tool_engine")
 
-SYSTEM_PROMPT = """Kamu staf toko ReIn Komputer. Karakter ramah, sopan, gaya chat Indonesia sehari-hari, dan sapa pelanggan "Kak".
-Prinsip utama:
-1. Jawab dulu apa yang ditanyakan pelanggan dengan kalimat yang nyambung; jangan sekadar menyodorkan produk.
-2. Tanyakan kebutuhan secara wajar bila perlu; jangan menebak kebutuhan yang belum disebut pelanggan.
-3. Untuk harga, spesifikasi, ketersediaan produk, dan kebijakan toko, selalu gunakan alat yang tersedia. Kalau data tidak ada di katalog atau informasi toko, katakan secara jujur.
-4. Balasan maksimal 4 kalimat: singkat, padat, dan jelas. Dilarang menggunakan markdown, emoji, atau daftar berpoin."""
+def build_agent_system_prompt() -> str:
+    from core.db import get_catalog_inventory
+    inv = get_catalog_inventory()
+    kategori_str = ", ".join(inv.get("kategori", []))
+    merek_str = ", ".join(inv.get("merek", []))
+
+    return (
+        'Kamu staf toko ReIn Komputer yang melayani pelanggan lewat chat. Ramah, '
+        'sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
+        'Layani obrolan, permintaan, dan pertanyaan pelanggan secara manusiawi, dan '
+        'penuhi permintaan pelanggan secara langsung.\n'
+        'Kamu punya dua alat: katalog untuk produk yang dijual, harga, spesifikasi, '
+        'ketersediaan, dan jumlah produk; pengetahuan untuk penjelasan produk, '
+        'panduan memilih sesuai kebutuhan, dan kebijakan toko.\n'
+        'Setiap kali jawabanmu menyangkut produk, harga, spesifikasi, jumlah, atau '
+        'kebijakan toko, panggil alat dulu dan jawab berdasarkan hasilnya. Jangan '
+        'menyebut data yang tidak ada di hasil alat.\n'
+        'Bila pelanggan meminta pilihan atau daftar produk, sebutkan nama dan harga '
+        'produknya dari hasil katalog.\n'
+        'Tanyakan kebutuhan hanya bila membantu memilih, dan jangan menjadikannya '
+        'syarat untuk melayani. Jangan menebak kebutuhan yang belum disebut '
+        'pelanggan.\n'
+        'Balas maksimal 4 kalimat, tanpa markdown, emoji, atau daftar berpoin.\n'
+        f'Kategori yang tersedia: {kategori_str}.\n'
+        f'Merek yang tersedia: {merek_str}.'
+    )
+
+
+SYSTEM_PROMPT = build_agent_system_prompt()
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
 
@@ -172,7 +195,7 @@ def run_agentic_tool(
                 break
         mentioned_notes = "\n".join(lines)
 
-    system_content = SYSTEM_PROMPT
+    system_content = build_agent_system_prompt()
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
 
