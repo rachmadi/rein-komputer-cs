@@ -500,5 +500,85 @@ class GroundingChecker:
             if tokens_kriteria and not any(tok in all_cust_joined for tok in tokens_kriteria):
                 violations.append(f"Mengatribusikan kriteria '{frasa_kriteria}' ke pelanggan padahal pelanggan tidak pernah menyebutnya.")
 
+        # 19. Putaran 16 Butir 2: Dilarang mengatribusikan kebutuhan yang tidak dinyatakan
+        kebutuhan_teks = (state.get("kebutuhan_teks") if state else None) or fakta.get("kebutuhan_teks") or ""
+        kebutuhan_clean = str(kebutuhan_teks).strip().lower()
+
+        AKTIVITAS_KW = [
+            "kerja kantor", "kerja", "kantor", "office", "kuliah", "sekolah",
+            "gaming", "game", "desain grafis", "desain", "editing video", "editing",
+            "render 3d", "render", "3d", "arsitek", "koding", "coding", "pemrograman",
+            "kasir", "toko", "harian", "daily", "ai", "machine learning", "deep learning"
+        ]
+
+        pesan_pelanggan_all = []
+        if state and state.get("_pesan_pelanggan"):
+            pesan_pelanggan_all.append(str(state["_pesan_pelanggan"]).lower())
+        if state and state.get("riwayat"):
+            for r in state["riwayat"]:
+                if isinstance(r, dict) and r.get("role") in ("user", "pelanggan"):
+                    pesan_pelanggan_all.append(str(r.get("content") or r.get("text") or "").lower())
+        if state and state.get("kebutuhan_teks"):
+            pesan_pelanggan_all.append(str(state["kebutuhan_teks"]).lower())
+        all_pelanggan_text = " ".join(pesan_pelanggan_all)
+
+        kalimat_list = [k.strip() for k in re.split(r"[\.\!\n]+", teks) if k.strip()]
+
+        for k in kalimat_list:
+            is_pertanyaan = "?" in k or any(k.lower().startswith(q) for q in ["apakah", "bagaimana", "mau cari", "boleh tahu", "bisa diceritakan"])
+            k_lower = k.lower()
+
+            if not kebutuhan_clean:
+                # Kebutuhan teks kosong: dilarang mengklaim kebutuhan/peruntukan/kriteria pelanggan
+                # (a) Pola klaim kebutuhan eksplisit
+                m_keb = re.search(
+                    r"\b(?:berdasarkan|sesuai(?:\s+dengan)?)\s+kebutuhan\s+(?:kakak|anda|kamu)\b|"
+                    r"\bkebutuhan\s+(?:kakak|anda|kamu)\s+untuk\s+([a-zA-Z0-9\s]+)|"
+                    r"\buntuk\s+kebutuhan\s+(?:kakak|anda|kamu)\s+(?:akan|terkait|dalam)\s+([a-zA-Z0-9\s]+)",
+                    k_lower
+                )
+                if m_keb and not is_pertanyaan:
+                    violations.append(f"Mengatribusikan kebutuhan pelanggan ('{m_keb.group(0)}') padahal kebutuhan_teks kosong.")
+                    break
+
+                # (b) Pola klaim peruntukan / penggunaan spesifik
+                m_peruntukan = re.search(
+                    r"\b(?:untuk|cocok\s+untuk|pas\s+untuk|ideal\s+untuk)\s+(?:penggunaan|keperluan|aktivitas|pemakaian)\s+([a-zA-Z0-9\s/]+)|"
+                    r"\b(?:cocok\s+untuk|pas\s+untuk|ideal\s+untuk)\s+(kerja\s+kantor|kuliah|sekolah|gaming|desain|editing|render|koding|coding|office|harian)\b|"
+                    r"\buntuk\s+(?:kerja\s+kantor|kuliah|sekolah|gaming|desain\s+grafis|editing\s+video|office\s+dan\s+harian|harian\s+dan\s+office)\b",
+                    k_lower
+                )
+                if m_peruntukan and not is_pertanyaan:
+                    violations.append(f"Mengklaim peruntukan perangkat ('{m_peruntukan.group(0)}') padahal pelanggan belum menyebutkan kebutuhan.")
+                    break
+
+                # (c) Pola klaim kriteria yang dicari
+                m_kriteria = re.search(
+                    r"\b(?:kriteria|spesifikasi)\s+(?:minimum\s+)?(?:yang\s+)?(?:kakak|anda|kamu)\s+(?:cari|butuhkan|minta)\b|"
+                    r"\byang\s+(?:kakak|anda|kamu)\s+(?:cari|butuhkan|inginkan)\s*\([^)]*\)|"
+                    r"\byang\s+(?:kakak|anda|kamu)\s+(?:cari|butuhkan|inginkan)\s*:\s*[^\.\,\n]+",
+                    k_lower
+                )
+                if m_kriteria and not is_pertanyaan:
+                    violations.append(f"Mengklaim kriteria pelanggan ('{m_kriteria.group(0)}') padahal pelanggan belum menyebutkan kebutuhan.")
+                    break
+            else:
+                # Kebutuhan teks ADA: peruntukan yang disebut harus sesuai isinya
+                if not is_pertanyaan:
+                    m_per = re.search(
+                        r"\b(?:kebutuhan\s+(?:kakak|anda|kamu)\s+untuk|untuk\s+(?:penggunaan|keperluan|aktivitas|pemakaian))\s+([a-zA-Z0-9\s/]+?)(?:[,\.\!\?]|\s+kami|\s+dengan|$)|"
+                        r"\b(?:cocok|pas|ideal)\s+untuk\s+([a-zA-Z0-9\s/]+?)(?:[,\.\!\?]|\s+kami|\s+dengan|$)",
+                        k_lower
+                    )
+                    if m_per:
+                        per_str = m_per.group(1) or m_per.group(2) or ""
+                        for act in AKTIVITAS_KW:
+                            if re.search(rf"\b{act}\b", per_str):
+                                if act not in all_pelanggan_text and act not in kebutuhan_clean:
+                                    violations.append(
+                                        f"Menyebutkan peruntukan '{act}' yang tidak sesuai dengan kebutuhan_teks pelanggan ('{kebutuhan_teks}')."
+                                    )
+                                    break
+
         is_valid = len(violations) == 0
         return is_valid, violations

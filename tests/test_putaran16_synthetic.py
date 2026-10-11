@@ -69,3 +69,104 @@ def test_butir1_sapaan_tanpa_hardcode():
     # Harus memuat kategori dari inventaris
     for cat in get_catalog_inventory()["kategori"]:
         assert cat in reply.lower()
+
+
+# =========================================================================
+# BUTIR 2 — Dilarang Mengatribusikan Kebutuhan Yang Tidak Dinyatakan
+# =========================================================================
+
+def test_butir2_fakta_tanpa_kebutuhan_teks_klaim_peruntukan_ditolak():
+    """Butir 2c Putaran 16: Fakta tanpa kebutuhan_teks + teks yang menyebut peruntukan -> ditandai pelanggaran."""
+    from services.grounding_checker import GroundingChecker
+
+    checker = GroundingChecker()
+    fakta = {
+        "status": "sukses",
+        "produk": [{"nama": "Acer Swift Go 14", "harga": 14000000, "kategori": "laptop"}]
+    }
+    state = {
+        "kategori": "laptop",
+        "kebutuhan_teks": "",  # kosong!
+        "_pesan_pelanggan": "Aku tanya laptop",
+        "produk_tampil": [{"nama": "Acer Swift Go 14", "harga": 14000000, "kategori": "laptop"}]
+    }
+
+    # Kasus 1: Klaim kebutuhan eksplisit
+    teks_klaim_1 = "Berdasarkan kebutuhan Anda untuk kerja kantor dan kuliah, kami sarankan unit ini."
+    is_valid, violations = checker.check(teks_klaim_1, fakta, state)
+    assert not is_valid, f"Harus ditolak: {violations}"
+    assert any("kebutuhan" in v.lower() or "peruntukan" in v.lower() for v in violations)
+
+    # Kasus 2: Klaim peruntukan / penggunaan spesifik
+    teks_klaim_2 = "Unit ini sangat pas untuk penggunaan harian dan office."
+    is_valid, violations = checker.check(teks_klaim_2, fakta, state)
+    assert not is_valid, f"Harus ditolak: {violations}"
+    assert any("peruntukan" in v.lower() for v in violations)
+
+    # Kasus 3: Klaim kriteria minimum yang dicari
+    teks_klaim_3 = "Berikut kriteria minimum yang Anda cari (RAM 16GB, SSD 512GB) di katalog kami."
+    is_valid, violations = checker.check(teks_klaim_3, fakta, state)
+    assert not is_valid, f"Harus ditolak: {violations}"
+    assert any("kriteria" in v.lower() for v in violations)
+
+
+def test_butir2_fakta_tanpa_kebutuhan_teks_teks_netral_lolos():
+    """Butir 2c Putaran 16: Fakta tanpa kebutuhan_teks + teks netral -> lolos."""
+    from services.grounding_checker import GroundingChecker
+
+    checker = GroundingChecker()
+    fakta = {
+        "status": "sukses",
+        "produk": [{"nama": "LG 24MP400-B", "harga": 1250000, "kategori": "monitor"}]
+    }
+    state = {
+        "kategori": "monitor",
+        "kebutuhan_teks": "",
+        "_pesan_pelanggan": "Jual monitor?",
+        "produk_tampil": [{"nama": "LG 24MP400-B", "harga": 1250000, "kategori": "monitor"}]
+    }
+
+    # Teks rekomendasi objektif netral
+    teks_netral = "Berikut rekomendasi monitor di katalog kami: LG 24MP400-B seharga Rp1.250.000. Apakah ada model yang ingin Kakak ketahui lebih detail?"
+    is_valid, violations = checker.check(teks_netral, fakta, state)
+    assert is_valid, f"Teks netral harus lolos, tapi dapat violations: {violations}"
+
+    # Teks spesifikasi netral
+    teks_spek = "Monitor LG 24MP400-B memiliki bentang layar 23.8 inci IPS dengan resolusi Full HD."
+    is_valid, violations = checker.check(teks_spek, fakta, state)
+    assert is_valid, f"Teks spesifikasi netral harus lolos: {violations}"
+
+    # Teks bertanya kebutuhan balik (bukan mengklaim)
+    teks_tanya = "Ada yang bisa kami bantu carikan hari ini? Boleh diceritakan kebutuhan perangkat yang sedang dicari?"
+    is_valid, violations = checker.check(teks_tanya, fakta, state)
+    assert is_valid, f"Teks bertanya kebutuhan harus lolos: {violations}"
+
+
+def test_butir2_kebutuhan_ada_peruntukan_sesuai_vs_tidak_sesuai():
+    """Butir 2a Putaran 16: Jika kebutuhan_teks ada, peruntukan yang disebut harus sesuai isinya."""
+    from services.grounding_checker import GroundingChecker
+
+    checker = GroundingChecker()
+    fakta = {
+        "status": "sukses",
+        "kebutuhan_teks": "desain grafis",
+        "produk": [{"nama": "Creator 15", "harga": 15000000, "kategori": "laptop"}]
+    }
+    state = {
+        "kategori": "laptop",
+        "kebutuhan_teks": "desain grafis",
+        "_pesan_pelanggan": "butuh buat desain grafis",
+        "produk_tampil": [{"nama": "Creator 15", "harga": 15000000, "kategori": "laptop"}]
+    }
+
+    # Sesuai kebutuhan_teks -> lolos
+    teks_cocok = "Laptop ini cocok untuk aktivitas desain grafis Kakak dengan layar warna akurat."
+    is_valid, violations = checker.check(teks_cocok, fakta, state)
+    assert is_valid, f"Peruntukan yang sesuai harus lolos: {violations}"
+
+    # Tidak sesuai kebutuhan_teks -> ditolak
+    teks_beda = "Laptop ini sangat cocok untuk aktivitas gaming berat Kakak."
+    is_valid, violations = checker.check(teks_beda, fakta, state)
+    assert not is_valid, f"Peruntukan yang bertentangan harus ditolak: {violations}"
+    assert any("gaming" in v.lower() for v in violations)
+
