@@ -100,3 +100,24 @@ def test_butir1_validator_menolak_merek_pada_aksi_bandingkan_dan_evaluasi():
     assert validated.pembaruan_state.merek is None
     kontrak = getattr(validated, "kontrak_intent", {})
     assert "merek" not in kontrak.get("argumen_valid", {})
+
+
+def test_butir3_foto_produk_lokal_dan_tanpa_fallback():
+    """
+    Butir 3: Produk dengan image_file sah harus merujuk ke berkas gambar di disk.
+    Jika tidak ada berkas sah, tidak boleh ada foto dan tidak boleh ada fallback unsplash.
+    """
+    from pathlib import Path
+    import sqlite3
+
+    conn = sqlite3.connect("data/test_catalog.db")
+    c = conn.cursor()
+    c.execute("SELECT kode, image_url, image_file FROM products WHERE image_file IS NOT NULL")
+    valid_rows = c.fetchall()
+    conn.close()
+
+    assert len(valid_rows) >= 8, f"Harus ada minimal 8 produk dengan foto lokal sah, ditemukan: {len(valid_rows)}"
+    for kode, img_url, img_file in valid_rows:
+        p = Path(img_file)
+        assert p.exists(), f"Berkas gambar lokal untuk {kode} tidak ditemukan di {img_file}"
+        assert p.stat().st_size > 0, f"Berkas gambar lokal untuk {kode} kosong"

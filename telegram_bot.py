@@ -20,6 +20,7 @@ import os
 import sys
 import asyncio
 from datetime import datetime
+from pathlib import Path
 
 import hashlib
 import json
@@ -248,9 +249,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         if prods_to_send:
             for p in prods_to_send:
-                img_url = (p.get("image_url") or "").strip()
-                # Foto hanya dikirim jika image_url produk terisi asli, jangan memakai gambar pengganti
-                if not img_url or "unsplash" in img_url or not img_url.startswith("http"):
+                # Putaran 15b Butir 3: telegram_bot.py hanya mengirim foto dari image_file yang ada.
+                # Hapus filter teks "unsplash". Tanpa berkas yang sah, tidak ada foto, dan tidak ada gambar pengganti.
+                img_file = (p.get("image_file") or "").strip()
+                if not img_file:
+                    continue
+                img_path = Path(img_file)
+                if not img_path.is_file():
                     continue
 
                 nama = p.get("nama", "Produk")
@@ -267,10 +272,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 caption = f"{nama}\nHarga: {harga}\n{cpu}{gpu_part}{ram_part}"
 
                 try:
-                    await update.message.reply_photo(
-                        photo=img_url,
-                        caption=caption
-                    )
+                    with open(img_path, "rb") as photo_f:
+                        await update.message.reply_photo(
+                            photo=photo_f,
+                            caption=caption
+                        )
                     # Tandai bahwa foto produk ini sudah dikirimkan
                     if p.get("kode"):
                         sent_photos.add(p["kode"])
