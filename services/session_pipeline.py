@@ -359,35 +359,56 @@ class SessionPipeline:
         detected_kategori = None
         is_sys_err = (parsed.aksi == ActionEnum.TIDAK_JELAS and getattr(parsed.argumen, "alasan", None) == AlasanTidakJelasEnum.SISTEM_ERROR)
         if not is_sys_err and not has_rejected_kat:
-            if parsed.argumen.kategori and parsed.argumen.kategori.lower() in catalog_cats:
-                detected_kategori = parsed.argumen.kategori.lower()
+            # 1. Cek apakah ada kategori eksplisit yang disebut pelanggan di pesan
+            explicit_kat = None
+            for c in catalog_cats:
+                if re.search(r"\b" + re.escape(c) + r"\b", pesan_pelanggan, re.IGNORECASE):
+                    explicit_kat = c
+                    break
+
+            if explicit_kat:
+                detected_kategori = explicit_kat
+            elif parsed.argumen.kategori and parsed.argumen.kategori.lower() in catalog_cats:
+                # Kategori dari parser hanya diterima jika pelanggan menyebutnya eksplisit atau state kategori masih kosong
+                if not state.get("kategori") or re.search(r"\b" + re.escape(parsed.argumen.kategori.lower()) + r"\b", pesan_pelanggan, re.IGNORECASE):
+                    detected_kategori = parsed.argumen.kategori.lower()
             elif parsed.pembaruan_state.kategori and parsed.pembaruan_state.kategori.lower() in catalog_cats:
-                detected_kategori = parsed.pembaruan_state.kategori.lower()
-            else:
+                if not state.get("kategori") or re.search(r"\b" + re.escape(parsed.pembaruan_state.kategori.lower()) + r"\b", pesan_pelanggan, re.IGNORECASE):
+                    detected_kategori = parsed.pembaruan_state.kategori.lower()
+
+            # 2. Putaran 15b Butir 1: Hasil tebakan kategori HANYA mengisi kategori yang masih kosong
+            if not detected_kategori and not state.get("kategori"):
                 inferred = infer_category_from_data(pesan_pelanggan, self.catalog)
                 if inferred and inferred.lower() in catalog_cats:
                     detected_kategori = inferred.lower()
 
         if detected_kategori:
-            parsed.argumen.kategori = detected_kategori
             old_kat_str = str(state.get("kategori", "")).strip().lower() if state.get("kategori") else None
 
             # Saat kategori berganti, reset merek, kebutuhan_teks, produk_tampil, filter spesifikasi, dan budget
             # (kecuali disebut lagi di pesan yang sama). Merek yang disebut eksplisit menggantikan yang lama.
+            # Putaran 15b Butir 1: Kategori HANYA berganti jika pelanggan menyebut kategori secara eksplisit di pesan.
             if old_kat_str and detected_kategori != old_kat_str:
-                state["kategori"] = detected_kategori
-
-                # Merek eksplisit di pesan yang sama
-                merek_eksplisit = None
-                if parsed.argumen.merek and parsed.argumen.merek.lower() in catalog_brands:
-                    merek_eksplisit = parsed.argumen.merek.lower()
-                elif parsed.pembaruan_state.merek and parsed.pembaruan_state.merek.lower() in catalog_brands:
-                    merek_eksplisit = parsed.pembaruan_state.merek.lower()
+                is_explicit = any(re.search(r"\b" + re.escape(c) + r"\b", pesan_pelanggan, re.IGNORECASE) for c in [detected_kategori])
+                if not is_explicit:
+                    detected_kategori = old_kat_str
+                    parsed.argumen.kategori = old_kat_str
+                    if parsed.pembaruan_state.kategori:
+                        parsed.pembaruan_state.kategori = old_kat_str
                 else:
-                    for b in catalog_brands:
-                        if re.search(r"\b" + re.escape(b) + r"\b", pesan_pelanggan, re.IGNORECASE):
-                            merek_eksplisit = b
-                            break
+                    state["kategori"] = detected_kategori
+
+                    # Merek eksplisit di pesan yang sama
+                    merek_eksplisit = None
+                    if parsed.argumen.merek and parsed.argumen.merek.lower() in catalog_brands:
+                        merek_eksplisit = parsed.argumen.merek.lower()
+                    elif parsed.pembaruan_state.merek and parsed.pembaruan_state.merek.lower() in catalog_brands:
+                        merek_eksplisit = parsed.pembaruan_state.merek.lower()
+                    else:
+                        for b in catalog_brands:
+                            if re.search(r"\b" + re.escape(b) + r"\b", pesan_pelanggan, re.IGNORECASE):
+                                merek_eksplisit = b
+                                break
 
                 if merek_eksplisit:
                     state["merek"] = merek_eksplisit
@@ -521,20 +542,23 @@ class SessionPipeline:
                 state["kriteria_pelanggan"]["max_harga"] = parsed.pembaruan_state.budget
                 state["budget"] = parsed.pembaruan_state.budget
 
-        if parsed.argumen.merek:
-            m_clean = str(parsed.argumen.merek).lower().strip()
-            if m_clean in catalog_brands:
-                state["kriteria_pelanggan"]["merek"] = m_clean
-                state["merek"] = m_clean
-            else:
-                logger.warning(f"B1: Merek tak dikenal diabaikan dari argumen: '{parsed.argumen.merek}'")
-        elif parsed.pembaruan_state.merek:
-            m_clean = str(parsed.pembaruan_state.merek).lower().strip()
-            if m_clean in catalog_brands:
-                state["kriteria_pelanggan"]["merek"] = m_clean
-                state["merek"] = m_clean
-            else:
-                logger.warning(f"B1: Merek tak dikenal diabaikan dari pembaruan_state: '{parsed.pembaruan_state.merek}'")
+        # Putaran 15b Butir 1: Nama produk yang dirujuk saat membandingkan atau mengevaluasi tidak boleh mengubah merek di state
+        is_comparing_or_evaluating = parsed.aksi in (ActionEnum.BANDINGKAN, ActionEnum.EVALUASI_KECOCOKAN)
+        if not is_comparing_or_evaluating:
+            if parsed.argumen.merek:
+                m_clean = str(parsed.argumen.merek).lower().strip()
+                if m_clean in catalog_brands:
+                    state["kriteria_pelanggan"]["merek"] = m_clean
+                    state["merek"] = m_clean
+                else:
+                    logger.warning(f"B1: Merek tak dikenal diabaikan dari argumen: '{parsed.argumen.merek}'")
+            elif parsed.pembaruan_state.merek:
+                m_clean = str(parsed.pembaruan_state.merek).lower().strip()
+                if m_clean in catalog_brands:
+                    state["kriteria_pelanggan"]["merek"] = m_clean
+                    state["merek"] = m_clean
+                else:
+                    logger.warning(f"B1: Merek tak dikenal diabaikan dari pembaruan_state: '{parsed.pembaruan_state.merek}'")
         if parsed.argumen.kategori:
             state["kriteria_pelanggan"]["kategori"] = parsed.argumen.kategori
         if parsed.argumen.kebutuhan_teks:
@@ -569,7 +593,7 @@ class SessionPipeline:
             if parsed.argumen.max_harga is not None:
                 state["budget"] = parse_int_safe(parsed.argumen.max_harga)
 
-        if parsed.argumen.merek:
+        if parsed.argumen.merek and not is_comparing_or_evaluating:
             state["merek"] = parsed.argumen.merek
         if parsed.argumen.kategori:
             state["kategori"] = parsed.argumen.kategori
@@ -597,7 +621,7 @@ class SessionPipeline:
             state["budget"] = state_up.budget
         if state_up.kategori:
             state["kategori"] = state_up.kategori
-        if state_up.merek:
+        if state_up.merek and not is_comparing_or_evaluating:
             state["merek"] = state_up.merek
         if action_res.profil_id:
             state["profil_aktif"] = action_res.profil_id

@@ -308,11 +308,11 @@ def _match_legacy_query(p: dict, q: str) -> bool:
     if matched_brands:
         return any(b in p["nama"].lower() for b in matched_brands)
 
-    common_words = [
-        "laptop", "notebook", "pc", "desktop", "komputer", "printer", "monitor", "layar",
+    cat_words = set(get_catalog_inventory().get("kategori", []))
+    common_words = {
         "ram", "ssd", "gb", "tb", "jt", "juta", "murah", "di", "bawah", "dibawah", "buat", "untuk",
         "ada", "yang", "aja", "saja", "kalo", "kalau", "mau", "cari"
-    ]
+    } | cat_words
     tokens = [w for w in re.findall(r"\w+", q) if not w.isdigit()]
     specific_tokens = [w for w in tokens if w not in common_words]
     if not specific_tokens:
@@ -508,21 +508,6 @@ def execute_tool(
         # 3. Budget generik
         if not max_harga:
             max_harga = parse_budget_from_text(check_text)
-
-        if not explicit_cat:
-            cat_keywords = {
-                "laptop": ("laptop", "notebook"),
-                "desktop": ("desktop", "pc meja", "komputer meja", "tower", "all-in-one", "aio", "pc", "komputer"),
-                "printer": ("printer", "cetak", "print", "tinta", "ink tank"),
-                "monitor": ("monitor", "layar eksternal", "display eksternal"),
-            }
-            earliest_idx = 9999
-            for cname, kwords in cat_keywords.items():
-                for kw in kwords:
-                    idx = check_text.find(kw)
-                    if idx != -1 and idx < earliest_idx:
-                        earliest_idx = idx
-                        explicit_cat = cname
 
         brand_filter = args.get("brand")
         if not brand_filter and query:

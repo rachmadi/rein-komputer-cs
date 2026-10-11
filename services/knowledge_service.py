@@ -154,14 +154,13 @@ def load_kb_category_rules() -> list[dict[str, Any]]:
             perangkat = re.search(r"\*\*(?:Perangkat|Kategori katalog):\*\*\s*([^\n\r|]+)", sec)
             dev = perangkat.group(1).lower().strip() if perangkat else ""
             kat = None
-            if "monitor" in dev:
-                kat = "monitor"
-            elif "printer" in dev:
-                kat = "printer"
-            elif "desktop (utama)" in dev or "desktop atau" in dev or "desktop (ideal)" in dev or dev.startswith("desktop"):
-                kat = "desktop"
-            elif "laptop" in dev:
-                kat = "laptop"
+            from core.db import get_catalog_inventory
+            earliest_pos = 9999
+            for c in get_catalog_inventory().get("kategori", []):
+                pos = dev.find(c)
+                if pos != -1 and pos < earliest_pos:
+                    earliest_pos = pos
+                    kat = c
 
             kw_m = re.search(r"\*\*Kata kunci pelanggan:\*\*\s*([^\n\r]+)", sec)
             kws = [k.strip().lower() for k in kw_m.group(1).split(",")] if kw_m else []
@@ -183,7 +182,7 @@ def infer_category_from_data(text: str, catalog=None) -> str | None:
     valid_cats = inv.get("kategori", [])
 
     # 1. Direct match nama kategori dari KB atau katalog
-    known_all_cats = set(valid_cats) | {"laptop", "desktop", "monitor", "printer"}
+    known_all_cats = set(valid_cats)
     for c in known_all_cats:
         if re.search(r"\b" + re.escape(c) + r"\b", t_low):
             return c

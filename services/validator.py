@@ -513,6 +513,15 @@ def validate_parser_output(
                 })
             state_up.merek = None
 
+    # Putaran 15b Butir 1: Nama produk yang dirujuk saat membandingkan atau mengevaluasi tidak boleh mengubah merek di state
+    if parsed.aksi in (ActionEnum.BANDINGKAN, ActionEnum.EVALUASI_KECOCOKAN):
+        if args.merek:
+            args.merek = None
+        if state_up.merek:
+            state_up.merek = None
+        if "merek" in argumen_valid:
+            argumen_valid.pop("merek")
+
     # 3a. Normalisasi merek_kecuali jika terisi nama GPU/chipmaker
     if args.merek_kecuali:
         mk_val = str(args.merek_kecuali).lower()
