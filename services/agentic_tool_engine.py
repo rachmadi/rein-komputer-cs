@@ -344,7 +344,7 @@ def run_agentic_tool(
     history: list[dict],
     catalog: Optional[Catalog] = None,
     model: str = "gemma4:e4b",
-    url: str = "http://localhost:11434",
+    url: str = "http://127.0.0.1:11434",
     session_state: Optional[dict] = None,
     varian: Optional[str] = None,
     **kwargs
