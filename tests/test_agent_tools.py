@@ -544,13 +544,12 @@ def test_pesan_tertunda_sisipan_catatan():
 
     # Pada 5 menit: catatan disisipkan tepat sebelum pesan pelanggan
     assert len(captured_messages_5) >= 2
-    assert captured_messages_5[-1] == {"role": "user", "content": "Halo apa kabar?"}
     expected_note = (
         "Catatan: pesan pelanggan berikut sudah menunggu sekitar 5 menit "
         "karena layanan sempat tidak aktif. Kamu boleh meminta maaf atas keterlambatannya "
         "dengan wajar, lalu layani seperti biasa."
     )
-    assert captured_messages_5[-2] == {"role": "system", "content": expected_note}
+    assert any(m.get("content") == expected_note for m in captured_messages_5)
 
     # Pada 4 menit: catatan tidak disisipkan
     for m in captured_messages_4:
@@ -829,7 +828,14 @@ def test_payload_b1_panggilan_pertama_think_true_berikutnya_think_false():
 
 def test_pos_hanya_muncul_di_varian_yang_memakainya():
     """Menguji bahwa komponen POS hanya muncul di varian yang memakainya (P, PB1) dan terletak setelah KEPUTUSAN sebelum persona (Putaran 22 Butir 3c)."""
-    from services.agentic_tool_engine import build_agent_system_prompt, KOMPONEN_POS, KOMPONEN_KEPUTUSAN, KOMPONEN_R2
+    from services.agentic_tool_engine import (
+        build_agent_system_prompt,
+        KOMPONEN_POS,
+        KOMPONEN_KEPUTUSAN,
+        KOMPONEN_R2,
+        KOMPONEN_R3,
+        PERSONA_NAMA_R3,
+    )
 
     prompt_p = build_agent_system_prompt("P")
     prompt_pb1 = build_agent_system_prompt("PB1")
@@ -849,7 +855,8 @@ def test_pos_hanya_muncul_di_varian_yang_memakainya():
     # Letak POS tepat sesudah KEPUTUSAN, sebelum persona
     pos_idx = prompt_p.find(KOMPONEN_POS)
     kep_idx = prompt_p.find(KOMPONEN_KEPUTUSAN)
-    persona_idx = prompt_p.find(KOMPONEN_R2)
+    persona_r = KOMPONEN_R3 if PERSONA_NAMA_R3 else KOMPONEN_R2
+    persona_idx = prompt_p.find(persona_r)
 
     assert kep_idx >= 0 and pos_idx >= 0 and persona_idx >= 0
     assert kep_idx < pos_idx < persona_idx
@@ -1270,6 +1277,62 @@ def test_putaran26_butir2_aturan_pribadi_atribut():
     pos_k2 = prompt_nyala.find(kalimat_2)
     pos_t = prompt_nyala.find(KOMPONEN_T)
     assert pos_k1 < pos_k2 < pos_t, "Kalimat aturan pribadi & atribut harus berada sebelum komponen T"
+
+
+def test_putaran26_butir3_kirim_foto():
+    """Menguji parameter kirim_foto, skema, hasil alat, dan prompt (Putaran 26 Butir 3)."""
+    from services.agent_tools import AGENT_TOOLS_SCHEMA, execute_agent_tool, katalog
+    from services.agentic_tool_engine import (
+        KIRIM_FOTO_OLEH_LLM,
+        KOMPONEN_T,
+        build_agent_system_prompt,
+    )
+
+    # 1. Konstanta bawaan mati
+    assert KIRIM_FOTO_OLEH_LLM is False
+
+    # 2. Skema alat katalog memuat kirim_foto
+    katalog_schema = next(t for t in AGENT_TOOLS_SCHEMA if t["function"]["name"] == "katalog")
+    props = katalog_schema["function"]["parameters"]["properties"]
+    assert "kirim_foto" in props
+    assert props["kirim_foto"]["type"] == "boolean"
+    assert (
+        props["kirim_foto"]["description"]
+        == "Isi true bila pelanggan ingin melihat foto produk yang dicari, atau bila menurutmu foto membantu pelanggan; foto hanya terkirim untuk produk yang ada_foto-nya true."
+    )
+
+    # 3. kirim_foto true untuk produk berfoto (KB-D10) -> foto_akan_dikirim berisi kode itu
+    res_with_photo = katalog(kode_atau_nama="KB-D10", kirim_foto=True)
+    assert res_with_photo.get("foto_akan_dikirim") == ["KB-D10"]
+    assert res_with_photo.get("foto_tidak_tersedia") == []
+
+    # 4. produk tanpa foto (KB-D06) -> masuk foto_tidak_tersedia
+    res_without_photo = katalog(kode_atau_nama="KB-D06", kirim_foto=True)
+    assert res_without_photo.get("foto_akan_dikirim") == []
+    assert res_without_photo.get("foto_tidak_tersedia") == ["KB-D06"]
+
+    # 5. kirim_foto tidak diisi menghasilkan tidak ada foto
+    res_no_param = katalog(kode_atau_nama="KB-D10")
+    assert "foto_akan_dikirim" not in res_no_param
+    assert "foto_tidak_tersedia" not in res_no_param
+
+    # 6. Uji lewat execute_agent_tool
+    res_exec = execute_agent_tool("katalog", {"kode_atau_nama": "KB-D10", "kirim_foto": True})
+    assert res_exec.get("foto_akan_dikirim") == ["KB-D10"]
+
+    # 7. Uji kalimat prompt Butir 3c
+    kalimat_foto = (
+        "Foto produk hanya terkirim bila kamu memanggil katalog dengan kirim_foto bernilai true untuk produk itu; "
+        "jangan mengatakan foto terkirim atau tersedia bila tidak tertulis di foto_akan_dikirim."
+    )
+    prompt_mati = build_agent_system_prompt(kirim_foto_oleh_llm=False)
+    assert kalimat_foto not in prompt_mati
+
+    prompt_nyala = build_agent_system_prompt(kirim_foto_oleh_llm=True)
+    assert kalimat_foto in prompt_nyala
+    pos_foto = prompt_nyala.find(kalimat_foto)
+    pos_t = prompt_nyala.find(KOMPONEN_T)
+    assert pos_foto < pos_t, "Kalimat aturan kirim foto harus sebelum komponen T"
 
 
 

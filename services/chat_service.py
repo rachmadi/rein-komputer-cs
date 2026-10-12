@@ -121,6 +121,8 @@ def process_chat_message(
     model: str | None = None,
     menunggu_menit: int | None = None,
     persona_nama_r3: bool | None = None,
+    aturan_pribadi_atribut: bool | None = None,
+    kirim_foto_oleh_llm: bool | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     sess = _session_manager.get_session(session_id)
@@ -334,6 +336,8 @@ def process_chat_message(
             session_state=state,
             menunggu_menit=menunggu_menit,
             persona_nama_r3=persona_nama_r3,
+            aturan_pribadi_atribut=aturan_pribadi_atribut,
+            kirim_foto_oleh_llm=kirim_foto_oleh_llm,
             **kwargs,
         )
         reply = tool_res["reply"]
@@ -420,6 +424,7 @@ def process_chat_message(
             "hasil_alat_giliran": tool_res.get("hasil_alat_giliran", []),
             "error_darurat": tool_res.get("error_darurat"),
             "alat_mentah_events": tool_res.get("alat_mentah_events", []),
+            "foto_akan_dikirim": tool_res.get("foto_akan_dikirim", []),
             "metrics": {
                 "latency_ms": latency_ms,
                 "tool_calls": tool_res.get("tool_calls", []),

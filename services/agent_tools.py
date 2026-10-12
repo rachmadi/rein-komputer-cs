@@ -128,6 +128,7 @@ def katalog(
     budget_min: int | float | None = None,
     budget_max: int | float | None = None,
     kode_atau_nama: str | list[str] | None = None,
+    kirim_foto: bool | None = None,
     catalog=None
 ) -> dict[str, Any]:
     """
@@ -145,6 +146,7 @@ def katalog(
     """
     cat_inst = catalog or get_active_catalog()
     all_products = list(cat_inst.by_code.values())
+    is_kirim_foto = (kirim_foto is True) or (isinstance(kirim_foto, str) and str(kirim_foto).lower() == "true")
 
     # -------------------------------------------------------------------------
     # Cabang A: Lembar Spesifikasi Lengkap jika kode_atau_nama diisi
@@ -186,12 +188,16 @@ def katalog(
                         break
 
         if not matched_results:
-            return {
+            res_dict = {
                 "status": "tidak_ditemukan",
                 "pesan": f"Produk '{kode_atau_nama}' tidak ditemukan di katalog.",
                 "total_cocok": 0,
                 "detail": []
             }
+            if is_kirim_foto:
+                res_dict["foto_akan_dikirim"] = []
+                res_dict["foto_tidak_tersedia"] = []
+            return res_dict
 
         output_details = []
         for p in matched_results:
@@ -217,11 +223,27 @@ def katalog(
                 "ada_foto": has_photo
             })
 
-        return {
+        res_dict = {
             "status": "sukses",
             "total_cocok": len(output_details),
             "detail": output_details
         }
+        if is_kirim_foto:
+            akan_kirim = []
+            tidak_ada = []
+            for p in matched_results:
+                c = p.get("kode")
+                if not c:
+                    continue
+                img_f = (p.get("image_file") or "").strip()
+                has_photo = bool(img_f and Path(img_f).is_file())
+                if has_photo:
+                    akan_kirim.append(c)
+                else:
+                    tidak_ada.append(c)
+            res_dict["foto_akan_dikirim"] = akan_kirim
+            res_dict["foto_tidak_tersedia"] = tidak_ada
+        return res_dict
 
     # -------------------------------------------------------------------------
     # Cabang B: Pencarian Katalog
@@ -376,7 +398,7 @@ def katalog(
                 scope_parts.append(target_merek)
             scope_str = " ".join(scope_parts) if scope_parts else "kategori/merek"
             kw_str = kata_kunci if kata_kunci is not None else " ".join(scoring_tokens)
-            return {
+            res_dict = {
                 "status": "sukses",
                 "total_cocok": 0,
                 "catatan": (
@@ -386,6 +408,10 @@ def katalog(
                 ),
                 "produk": []
             }
+            if is_kirim_foto:
+                res_dict["foto_akan_dikirim"] = []
+                res_dict["foto_tidak_tersedia"] = []
+            return res_dict
 
         scored_pool.sort(key=lambda item: (-item[0], item[1].get("harga") or item[1].get("harga_idr") or 0))
         pool = [item[1] for item in scored_pool]
@@ -393,11 +419,27 @@ def katalog(
         # Jika tidak ada kata tersisa, urutkan berdasarkan harga
         pool.sort(key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
 
-    return {
+    res_dict = {
         "status": "sukses",
         "total_cocok": len(pool),
         "produk": [_format_ringkas(p) for p in pool[:10]]
     }
+    if is_kirim_foto:
+        akan_kirim = []
+        tidak_ada = []
+        for p in pool[:10]:
+            c = p.get("kode")
+            if not c:
+                continue
+            img_f = (p.get("image_file") or "").strip()
+            has_photo = bool(img_f and Path(img_f).is_file())
+            if has_photo:
+                akan_kirim.append(c)
+            else:
+                tidak_ada.append(c)
+        res_dict["foto_akan_dikirim"] = akan_kirim
+        res_dict["foto_tidak_tersedia"] = tidak_ada
+    return res_dict
 
 
 # =============================================================================
@@ -616,6 +658,10 @@ AGENT_TOOLS_SCHEMA = [
                     "kode_atau_nama": {
                         "type": "string",
                         "description": "Kode produk (misal 'KB-L14', 'KB-D11') atau nama produk spesifik untuk melihat lembar spesifikasi lengkap dan raw_data"
+                    },
+                    "kirim_foto": {
+                        "type": "boolean",
+                        "description": "Isi true bila pelanggan ingin melihat foto produk yang dicari, atau bila menurutmu foto membantu pelanggan; foto hanya terkirim untuk produk yang ada_foto-nya true."
                     }
                 }
             }
@@ -654,6 +700,7 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
             budget_min=args.get("budget_min"),
             budget_max=args.get("budget_max"),
             kode_atau_nama=args.get("kode_atau_nama") or args.get("kode") or args.get("nama"),
+            kirim_foto=args.get("kirim_foto"),
             catalog=catalog
         )
     elif t_name == "pengetahuan":
@@ -668,11 +715,13 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
             merek=args.get("merek"),
             budget_min=args.get("budget_min"),
             budget_max=args.get("budget_max"),
+            kirim_foto=args.get("kirim_foto"),
             catalog=catalog
         )
     elif t_name == "detail_produk":
         return katalog(
             kode_atau_nama=args.get("kode_atau_nama") or args.get("kode") or args.get("nama") or "",
+            kirim_foto=args.get("kirim_foto"),
             catalog=catalog
         )
     elif t_name == "pengetahuan_kebutuhan":

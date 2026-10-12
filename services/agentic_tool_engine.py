@@ -179,6 +179,14 @@ def build_agent_system_prompt(
             "kecuali tertulis di hasil alat untuk produk itu; bila belum ada, panggil katalog untuk produk itu."
         )
 
+    # Putaran 26 Butir 3c: Aturan foto diputuskan Reni di akhir SISA sebelum T
+    active_foto_llm = kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None else KIRIM_FOTO_OLEH_LLM
+    if active_foto_llm:
+        sisa_text += (
+            "\nFoto produk hanya terkirim bila kamu memanggil katalog dengan kirim_foto bernilai true untuk produk itu; "
+            "jangan mengatakan foto terkirim atau tersedia bila tidak tertulis di foto_akan_dikirim."
+        )
+
     v = (varian or PROMPT_VARIAN).upper()
     active_r3 = persona_nama_r3 if persona_nama_r3 is not None else (PERSONA_NAMA_R3 or v in ("R3", "V4_R3"))
     with_j = (v == "V5")
@@ -234,6 +242,7 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
 
 PERSONA_NAMA_R3: bool = True
 ATURAN_PRIBADI_ATRIBUT: bool = False
+KIRIM_FOTO_OLEH_LLM: bool = False
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
@@ -533,6 +542,7 @@ def run_agentic_tool(
     pengurai_alat_mentah: Optional[bool] = None,
     persona_nama_r3: Optional[bool] = None,
     aturan_pribadi_atribut: Optional[bool] = None,
+    kirim_foto_oleh_llm: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -574,10 +584,15 @@ def run_agentic_tool(
         aturan_pribadi_atribut if aturan_pribadi_atribut is not None
         else kwargs.get("aturan_pribadi_atribut", ATURAN_PRIBADI_ATRIBUT)
     )
+    active_foto_llm = (
+        kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None
+        else kwargs.get("kirim_foto_oleh_llm", KIRIM_FOTO_OLEH_LLM)
+    )
     system_content = build_agent_system_prompt(
         varian=active_var,
         persona_nama_r3=active_r3,
         aturan_pribadi_atribut=active_pribadi,
+        kirim_foto_oleh_llm=active_foto_llm,
     )
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
@@ -634,6 +649,8 @@ def run_agentic_tool(
     all_llm_calls_logged: list[dict[str, Any]] = []
     all_tools_products_returned: list[dict[str, Any]] = []
     this_turn_tool_summaries: list[dict[str, Any]] = []
+    foto_akan_dikirim_turn: list[str] = []
+    seen_foto_turn: set[str] = set()
     is_emergency_fallback = False
     emergency_error = None
 
@@ -887,6 +904,14 @@ def run_agentic_tool(
                         tool_sum["alasan_cadangan"] = tool_res["alasan_cadangan"]
                 this_turn_tool_summaries.append(tool_sum)
 
+                if active_foto_llm and isinstance(tool_res, dict):
+                    for fc in tool_res.get("foto_akan_dikirim", []):
+                        if fc and fc not in seen_foto_turn:
+                            seen_foto_turn.add(fc)
+                            foto_akan_dikirim_turn.append(fc)
+                            if len(foto_akan_dikirim_turn) >= 5:
+                                break
+
                 ringkasan = summarize_tool_result(fn_name, tool_res)
                 tool_call_log = {
                     "nama": fn_name,
@@ -1087,4 +1112,5 @@ def run_agentic_tool(
         "pemeriksaan_ulang": pemeriksaan_ulang_terpicu,
         "balasan_sebelum_periksa": balasan_sebelum_periksa,
         "alat_mentah_events": raw_tool_events,
+        "foto_akan_dikirim": foto_akan_dikirim_turn[:5],
     }

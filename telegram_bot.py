@@ -303,40 +303,55 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         typing_task.cancel()
 
-        # Inisialisasi himpunan kode produk yang sudah pernah dikirimkan fotonya
-        if "sent_photo_codes" not in context.user_data or not isinstance(context.user_data["sent_photo_codes"], set):
-            context.user_data["sent_photo_codes"] = set()
-        sent_photos: set = context.user_data["sent_photo_codes"]
+        # Inisialisasi himpunan kode produk yang sudah pernah dikirimkan fotonya (state sesi dan context)
+        from services.chat_service import get_session_manager
+        sess = get_session_manager().get_session(session_id)
+        sess_state = sess.setdefault("state", {})
+        if "sent_photo_codes" not in sess_state or not isinstance(sess_state["sent_photo_codes"], (list, set)):
+            sess_state["sent_photo_codes"] = list(context.user_data.get("sent_photo_codes", set()))
+        sent_photos = set(sess_state["sent_photo_codes"])
+        context.user_data["sent_photo_codes"] = sent_photos
 
-        # Deteksi apakah user meminta foto/gambar secara eksplisit (phrase-based matching)
-        user_text_lower = user_text.lower()
-        photo_phrases = (
-            "kirim foto", "minta foto", "tampilkan foto", "lihat foto", "mana foto", "coba foto", "ada foto",
-            "kirim gambar", "minta gambar", "tampilkan gambar", "lihat gambar", "mana gambar", "coba gambar", "ada gambar",
-            "lihat bentuk", "tampilkan fisik", "kirim pic", "minta pic", "lihat penampakan"
-        )
-        is_photo_requested = any(phrase in user_text_lower for phrase in photo_phrases) and "malah" not in user_text_lower and "jangan" not in user_text_lower
-
+        from services.agentic_tool_engine import KIRIM_FOTO_OLEH_LLM
         prods_to_send = []
+        is_photo_requested = False
 
-        if is_photo_requested:
-            # Aturan 3 pengecualian: Pelanggan memang minta dikirim/dikirim ulang foto
-            if products:
-                prods_to_send = products[:2]
-            else:
-                last_codes = context.user_data.get("last_mentioned_products", [])
-                if last_codes:
-                    from services.catalog_service import get_active_catalog
-                    cat = get_active_catalog()
-                    prods_to_send = [cat.by_code[c] for c in last_codes if c in cat.by_code][:2]
+        if KIRIM_FOTO_OLEH_LLM:
+            # Putaran 26 Butir 3b: Foto diputuskan Reni lewat foto_akan_dikirim di hasil alat
+            foto_akan_dikirim_codes = res.get("foto_akan_dikirim", [])
+            is_photo_requested = bool(foto_akan_dikirim_codes)
+            if foto_akan_dikirim_codes:
+                from services.catalog_service import get_active_catalog
+                cat = get_active_catalog()
+                prods_to_send = [cat.by_code[c] for c in foto_akan_dikirim_codes if c in cat.by_code]
         else:
-            # Aturan 1 & 2 & 3:
-            # Hanya kirim foto jika ada tawaran produk baru yang BELUM pernah dikirim fotonya
-            if products:
-                new_products = [p for p in products if p.get("kode") and p.get("kode") not in sent_photos]
-                if new_products:
-                    # Ambil maksimal 2 produk baru untuk dikirimkan fotonya
-                    prods_to_send = new_products[:2]
+            # Aturan lama: Deteksi apakah user meminta foto/gambar secara eksplisit (phrase-based matching)
+            user_text_lower = user_text.lower()
+            photo_phrases = (
+                "kirim foto", "minta foto", "tampilkan foto", "lihat foto", "mana foto", "coba foto", "ada foto",
+                "kirim gambar", "minta gambar", "tampilkan gambar", "lihat gambar", "mana gambar", "coba gambar", "ada gambar",
+                "lihat bentuk", "tampilkan fisik", "kirim pic", "minta pic", "lihat penampakan"
+            )
+            is_photo_requested = any(phrase in user_text_lower for phrase in photo_phrases) and "malah" not in user_text_lower and "jangan" not in user_text_lower
+
+            if is_photo_requested:
+                # Aturan 3 pengecualian: Pelanggan memang minta dikirim/dikirim ulang foto
+                if products:
+                    prods_to_send = products[:2]
+                else:
+                    last_codes = context.user_data.get("last_mentioned_products", [])
+                    if last_codes:
+                        from services.catalog_service import get_active_catalog
+                        cat = get_active_catalog()
+                        prods_to_send = [cat.by_code[c] for c in last_codes if c in cat.by_code][:2]
+            else:
+                # Aturan 1 & 2 & 3:
+                # Hanya kirim foto jika ada tawaran produk baru yang BELUM pernah dikirim fotonya
+                if products:
+                    new_products = [p for p in products if p.get("kode") and p.get("kode") not in sent_photos]
+                    if new_products:
+                        # Ambil maksimal 2 produk baru untuk dikirimkan fotonya
+                        prods_to_send = new_products[:2]
 
         sent_codes_this_turn = []
         if prods_to_send and sukses_teks:
@@ -378,10 +393,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     if p.get("kode"):
                         sent_photos.add(p["kode"])
                         sent_codes_this_turn.append(p["kode"])
+                        sess_state["sent_photo_codes"] = list(sent_photos)
+                        context.user_data["sent_photo_codes"] = sent_photos
                 else:
                     logger.warning(f"Gagal mengirim foto {nama}: {img_err}")
 
-        # Putaran 18e Butir 5: Catat foto yang terkirim / alasan gagal bila diminta
+        # Putaran 18e Butir 5 / Putaran 26 Butir 3e: Catat foto yang terkirim / alasan gagal bila diminta
         if sent_codes_this_turn:
             try:
                 log_foto_terkirim(
@@ -392,7 +409,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 )
             except Exception as log_err:
                 logger.warning(f"Gagal mencatat foto terkirim: {log_err}")
-        elif is_photo_requested:
+        elif not KIRIM_FOTO_OLEH_LLM and is_photo_requested:
             alasan = "tidak ada berkas" if prods_to_send else "tidak ada produk aktif"
             try:
                 log_foto_terkirim(
