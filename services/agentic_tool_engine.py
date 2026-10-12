@@ -112,8 +112,14 @@ KOMPONEN_V6_TAMBAHAN = (
     "true terkirim otomatis bersama kartunya, sedangkan untuk yang false katakan fotonya belum tersedia."
 )
 
+KOMPONEN_POS = (
+    "Reni selalu menjawab dalam balasan yang sama: setiap balasanmu langsung terkirim ke pelanggan "
+    "dan giliranmu selesai, jadi tidak ada kesempatan kembali nanti. Karena itu, bila perlu mengecek, "
+    "Reni mengecek saat itu juga dengan memanggil alat, lalu menjawab. Bila ragu apakah perlu alat, panggil alat."
+)
 
-def build_agent_system_prompt(varian: Optional[str] = None) -> str:
+
+def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[bool] = None) -> str:
     from core.db import get_catalog_inventory
     inv = get_catalog_inventory()
     kategori_str = ", ".join(inv.get("kategori", []))
@@ -147,6 +153,8 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
     v = (varian or PROMPT_VARIAN).upper()
     with_j = (v == "V5")
     with_v6 = (v == "V6")
+    use_pos = with_pos if with_pos is not None else (v in ("P", "PB1", "V4_POS", "POS"))
+
     if v == "V0":
         persona = KOMPONEN_PERSONA_18E
         with_k = False
@@ -163,7 +171,7 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
         persona = KOMPONEN_R
         with_k = True
         with_t = True
-    elif v in ("V4", "V5", "V6"):
+    elif v in ("V4", "V5", "V6", "P", "PB1", "B", "B1"):
         persona = KOMPONEN_R2
         with_k = True
         with_t = True
@@ -173,7 +181,11 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
         with_t = True
 
     keputusan = KOMPONEN_KEPUTUSAN + (KOMPONEN_J if with_j else "")
-    prompt = f"{keputusan}\n\n{persona}{KOMPONEN_LAYANI_DAN_ALAT}"
+    if use_pos:
+        prompt = f"{keputusan}\n\n{KOMPONEN_POS}\n\n{persona}{KOMPONEN_LAYANI_DAN_ALAT}"
+    else:
+        prompt = f"{keputusan}\n\n{persona}{KOMPONEN_LAYANI_DAN_ALAT}"
+
     if with_k:
         prompt += KOMPONEN_K
     prompt += sisa_text
@@ -187,13 +199,15 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
 def variant_has_reminder(varian: Optional[str] = None) -> bool:
     """Apakah varian memakai pesan pengingat sistem P sebelum pesan user terbaru."""
     v = (varian or PROMPT_VARIAN).upper()
-    return v in ("V3", "V4", "V5", "V6", "C")
+    return v in ("V3", "V4", "V5", "V6", "C", "P", "PB1", "B", "B1")
 
 
 SYSTEM_PROMPT = build_agent_system_prompt()
 
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = True
+MODE_BERPIKIR_SEBAGIAN: bool = False
+
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
 
@@ -450,6 +464,7 @@ def run_agentic_tool(
     menunggu_menit: Optional[int] = None,
     pemeriksaan_ulang_janji: Optional[bool] = None,
     mode_berpikir: Optional[bool] = None,
+    mode_berpikir_sebagian: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -525,9 +540,11 @@ def run_agentic_tool(
 
     active_pemeriksaan = PEMERIKSAAN_ULANG_JANJI if pemeriksaan_ulang_janji is None else bool(pemeriksaan_ulang_janji)
     active_berpikir = MODE_BERPIKIR if mode_berpikir is None else bool(mode_berpikir)
+    active_sebagian = MODE_BERPIKIR_SEBAGIAN if mode_berpikir_sebagian is None else bool(mode_berpikir_sebagian)
 
-    think_flag = bool(active_berpikir)
-    num_predict_val = 2048 if think_flag else 1024
+    # Bila B dan B1 sama-sama nyala, B yang berlaku
+    if active_berpikir:
+        active_sebagian = False
 
     JANJI_POLA = re.compile(r"\b(cek|periksa|carikan|cari dulu|lihat dulu|saya cari|saya carikan)\b", re.IGNORECASE)
 
@@ -538,17 +555,34 @@ def run_agentic_tool(
 
         while round_idx < max_rounds:
             call_num = len(all_llm_calls_logged) + 1
+            is_first_call_of_turn = (len(all_llm_calls_logged) == 0)
+
+            if active_berpikir:
+                call_think = True
+                call_num_predict = 2048
+            elif active_sebagian:
+                if is_first_call_of_turn:
+                    call_think = True
+                    call_num_predict = 2048
+                else:
+                    call_think = False
+                    call_num_predict = 1024
+            else:
+                call_think = False
+                call_num_predict = 1024
+
             try:
                 llm_resp = call_ollama_chat_raw(
                     messages=current_msgs,
                     tools=AGENT_TOOLS_SCHEMA,
                     model=model,
                     url=url,
-                    num_predict=num_predict_val,
+                    num_predict=call_num_predict,
                     num_ctx=8192,
                     timeout=120,
-                    think=think_flag
+                    think=call_think
                 )
+
             except Exception as e:
                 logger.error(f"Ollama chat error pada putaran {round_idx + 1}: {e}", exc_info=True)
                 emergency_error = str(e)
@@ -701,16 +735,23 @@ def run_agentic_tool(
         # Jika setelah loop belum ada final_reply dan tidak ada error, minta balasan akhir sintetis tanpa alat
         if not current_reply and not is_emergency_fallback:
             call_num = len(all_llm_calls_logged) + 1
+            if active_berpikir:
+                synth_think = True
+                synth_num_predict = 2048
+            else:
+                synth_think = False
+                synth_num_predict = 1024
+
             try:
                 llm_resp_final = call_ollama_chat_raw(
                     messages=current_msgs,
                     tools=None,
                     model=model,
                     url=url,
-                    num_predict=num_predict_val,
+                    num_predict=synth_num_predict,
                     num_ctx=8192,
                     timeout=120,
-                    think=think_flag
+                    think=synth_think
                 )
                 msg_final = llm_resp_final.get("message", {})
                 final_content = msg_final.get("content", "") or ""

@@ -757,3 +757,98 @@ def test_parse_kb_k01_k05_dan_tanpa_id_kosong():
 
     # Memastikan G05 juga ada
     assert "G05" in chunk_ids
+
+
+def test_payload_b1_panggilan_pertama_think_true_berikutnya_think_false():
+    """Menguji mekanisme B1: panggilan pertama think true num_predict 2048, berikutnya think false num_predict 1024 (Putaran 22 Butir 3c)."""
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    captured_calls = []
+
+    def mock_ollama(*args, **kwargs):
+        captured_calls.append(dict(kwargs))
+        if len(captured_calls) == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "thinking": "Sedang berpikir pada panggilan pertama...",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "katalog",
+                                "arguments": {"kata_kunci": "ideapad"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Ini laptop Lenovo Ideapad yang tersedia Kak."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res = run_agentic_tool(
+            user_text="Cari lenovo ideapad",
+            history=[],
+            mode_berpikir=False,
+            mode_berpikir_sebagian=True
+        )
+
+    assert len(captured_calls) == 2
+    # Panggilan pertama: think True, num_predict 2048
+    assert captured_calls[0]["think"] is True
+    assert captured_calls[0]["num_predict"] == 2048
+
+    # Panggilan berikutnya (sesudah hasil alat): think False, num_predict 1024
+    assert captured_calls[1]["think"] is False
+    assert captured_calls[1]["num_predict"] == 1024
+
+    # Bila B dan B1 sama-sama aktif, B yang berlaku (semua think True, 2048)
+    captured_calls.clear()
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res_both = run_agentic_tool(
+            user_text="Cari lenovo ideapad",
+            history=[],
+            mode_berpikir=True,
+            mode_berpikir_sebagian=True
+        )
+
+    assert len(captured_calls) == 2
+    assert captured_calls[0]["think"] is True
+    assert captured_calls[0]["num_predict"] == 2048
+    assert captured_calls[1]["think"] is True
+    assert captured_calls[1]["num_predict"] == 2048
+
+
+def test_pos_hanya_muncul_di_varian_yang_memakainya():
+    """Menguji bahwa komponen POS hanya muncul di varian yang memakainya (P, PB1) dan terletak setelah KEPUTUSAN sebelum persona (Putaran 22 Butir 3c)."""
+    from services.agentic_tool_engine import build_agent_system_prompt, KOMPONEN_POS, KOMPONEN_KEPUTUSAN, KOMPONEN_R2
+
+    prompt_p = build_agent_system_prompt("P")
+    prompt_pb1 = build_agent_system_prompt("PB1")
+    prompt_v4 = build_agent_system_prompt("V4")
+    prompt_b = build_agent_system_prompt("B")
+    prompt_b1 = build_agent_system_prompt("B1")
+
+    # POS muncul di P dan PB1
+    assert KOMPONEN_POS in prompt_p
+    assert KOMPONEN_POS in prompt_pb1
+
+    # POS TIDAK muncul di V4, B, B1
+    assert KOMPONEN_POS not in prompt_v4
+    assert KOMPONEN_POS not in prompt_b
+    assert KOMPONEN_POS not in prompt_b1
+
+    # Letak POS tepat sesudah KEPUTUSAN, sebelum persona
+    pos_idx = prompt_p.find(KOMPONEN_POS)
+    kep_idx = prompt_p.find(KOMPONEN_KEPUTUSAN)
+    persona_idx = prompt_p.find(KOMPONEN_R2)
+
+    assert kep_idx >= 0 and pos_idx >= 0 and persona_idx >= 0
+    assert kep_idx < pos_idx < persona_idx
