@@ -733,3 +733,27 @@ def test_payload_mode_berpikir_berisi_think_true_dan_num_predict_2048():
     assert len(captured_kwargs) == 1
     assert captured_kwargs[0]["think"] is False
     assert captured_kwargs[0]["num_predict"] == 1024
+
+
+def test_parse_kb_k01_k05_dan_tanpa_id_kosong():
+    """Menguji parser KB: K01–K05 punya payload ID yang benar, dan tidak ada potongan tanpa ID (Putaran 22 Butir 2b)."""
+    from scripts.ingest_knowledge import parse_kb
+
+    chunks = parse_kb("data/knowledge/panduan_kebutuhan_v2.md")
+    assert len(chunks) == 28, f"Harus tepat 28 potongan, didapat {len(chunks)}"
+
+    chunk_ids = [c.get("id") for c in chunks]
+    # Memastikan tidak ada potongan tanpa ID
+    assert all(bool(cid) for cid in chunk_ids), f"Ditemukan potongan tanpa ID: {chunks}"
+
+    # Memastikan K01–K05 ada dan memiliki payload yang benar
+    for k_id in ["K01", "K02", "K03", "K04", "K05"]:
+        assert k_id in chunk_ids, f"ID {k_id} tidak ditemukan di hasil parsing"
+        matching = next(c for c in chunks if c.get("id") == k_id)
+        assert matching.get("tipe") in ("kebijakan toko", "kebijakan_toko")
+        assert "kebijakan toko" in matching.get("judul", "").lower()
+        assert len(matching.get("kata_kunci", [])) > 0
+        assert len(matching.get("text", "")) > 50
+
+    # Memastikan G05 juga ada
+    assert "G05" in chunk_ids
