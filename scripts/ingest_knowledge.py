@@ -95,13 +95,14 @@ def parse_kb(filepath: str):
         chunks.append(chunk_data)
     return chunks
 
-def ingest(collection_name: str | None = None, mode: str = "ringkas", recreate: bool = False):
+def ingest(collection_name: str | None = None, mode: str = "ringkas", recreate: bool = False, kb_path: str | None = None):
     target_coll = collection_name or COLLECTION_NAME
     if recreate:
         requests.delete(f"{QDRANT_URL}/collections/{target_coll}")
         requests.put(f"{QDRANT_URL}/collections/{target_coll}", json={"vectors": {"size": 1024, "distance": "Cosine"}})
 
-    chunks = parse_kb(KNOWLEDGE_FILE)
+    target_kb = kb_path or KNOWLEDGE_FILE
+    chunks = parse_kb(target_kb)
     points = []
     import uuid
     for i, c in enumerate(chunks):
@@ -139,6 +140,7 @@ if __name__ == "__main__":
     parser.add_argument("--collection", default=COLLECTION_NAME, help="Nama koleksi Qdrant")
     parser.add_argument("--mode", choices=["ringkas", "penuh"], default="ringkas", help="Mode embedding (ringkas atau penuh)")
     parser.add_argument("--recreate", action="store_true", help="Hapus dan buat ulang koleksi")
+    parser.add_argument("--kb-path", default=None, help="Path ke berkas panduan markdown (opsional)")
     args = parser.parse_args()
 
-    ingest(collection_name=args.collection, mode=args.mode, recreate=args.recreate)
+    ingest(collection_name=args.collection, mode=args.mode, recreate=args.recreate, kb_path=args.kb_path)
