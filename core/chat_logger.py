@@ -700,3 +700,50 @@ def log_foto_terkirim(
             raise
 
     return record
+
+
+def log_status_kirim(
+    session_id: str | int,
+    status: str,
+    jumlah_percobaan: int,
+    error_teks: str | None = None,
+    penguji: str | None = None,
+) -> dict[str, Any]:
+    """Mencatat status pengiriman balasan ke pelanggan (Putaran 25 Butir 3a).
+    Tipe: 'status_kirim'.
+    - session_id anonim dengan HMAC
+    - timestamp
+    - status: 'terkirim' atau 'gagal'
+    - jumlah_percobaan: int (1..3)
+    - error_teks: str | None bila gagal
+    """
+    effective_penguji = penguji or ("otomatis" if is_test_mode() else "manusia")
+    anon_session = anonymize_id(session_id, penguji=effective_penguji)
+    now_iso = datetime.now().isoformat()
+    log_id = f"kirim_{uuid.uuid4().hex[:12]}"
+
+    record = {
+        "log_id": log_id,
+        "type": "status_kirim",
+        "session_id": anon_session,
+        "timestamp": now_iso,
+        "status": status,
+        "jumlah_percobaan": jumlah_percobaan,
+        "error_teks": error_teks,
+        "penguji": effective_penguji
+    }
+
+    jsonl_path, _ = get_log_paths(penguji=effective_penguji)
+
+    with _lock:
+        try:
+            os.makedirs(os.path.dirname(jsonl_path) or ".", exist_ok=True)
+            with open(jsonl_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.error("Gagal mencatat status_kirim ke %s: %s", jsonl_path, e)
+            record_log_failure()
+            raise
+
+    return record
+

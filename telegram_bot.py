@@ -53,7 +53,7 @@ load_dotenv()
 from services.chat_service import process_chat_message, reset_chat_session, CHAT_ENGINE_MODE
 
 from core.config import KONTAK_STAF
-from core.chat_logger import anonymize_id, log_session_boundary, log_foto_terkirim
+from core.chat_logger import anonymize_id, log_session_boundary, log_foto_terkirim, log_status_kirim
 
 FEEDBACK_LOG_PATH = "logs/feedback.jsonl"
 
@@ -97,6 +97,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger("reinkomputer_telegram_bot")
+# Putaran 25 Butir 3b: Sembunyikan logger httpx agar URL berisi token bot tidak tercetak di terminal
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -277,6 +279,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             send_fn=lambda: update.message.reply_text(html_text, parse_mode=p_mode, reply_markup=fb_kb),
             fallback_fn=lambda: update.message.reply_text(plain_clean, reply_markup=fb_kb),
         )
+
+        # Putaran 25 Butir 3a: Catat peristiwa status_kirim per giliran
+        try:
+            log_status_kirim(
+                session_id=session_id,
+                status="terkirim" if sukses_teks else "gagal",
+                jumlah_percobaan=attempts_teks,
+                error_teks=err_teks if not sukses_teks else None,
+            )
+        except Exception as log_err:
+            logger.warning("Gagal mencatat status_kirim: %s", log_err)
 
         if not sukses_teks:
             from services.chat_service import tandai_pesan_terakhir_tidak_terkirim

@@ -1150,4 +1150,30 @@ def test_putaran25_butir2_riwayat_jujur():
     assert bot_in_llm[0]["content"].startswith(expected_prefix)
 
 
+def test_putaran25_butir3_status_kirim_log_httpx():
+    """Menguji pencatatan peristiwa status_kirim dan level logger httpx (Putaran 25 Butir 3)."""
+    import logging
+    from core.chat_logger import log_status_kirim
+    import telegram_bot  # noqa: F401
+
+    # 1. Pastikan logger httpx berada pada tingkat WARNING
+    httpx_logger = logging.getLogger("httpx")
+    assert httpx_logger.level == logging.WARNING
+
+    # 2. Catat peristiwa sukses
+    rec_sukses = log_status_kirim("test_session_kirim_1", "terkirim", 1)
+    assert rec_sukses["type"] == "status_kirim"
+    assert rec_sukses["status"] == "terkirim"
+    assert rec_sukses["jumlah_percobaan"] == 1
+    assert rec_sukses["error_teks"] is None
+
+    # 3. Catat peristiwa gagal
+    rec_gagal = log_status_kirim("test_session_kirim_2", "gagal", 3, error_teks="TimedOut error simulated")
+    assert rec_gagal["type"] == "status_kirim"
+    assert rec_gagal["status"] == "gagal"
+    assert rec_gagal["jumlah_percobaan"] == 3
+    assert rec_gagal["error_teks"] == "TimedOut error simulated"
+
+
+
 
