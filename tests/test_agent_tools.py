@@ -1483,6 +1483,110 @@ def test_putaran27_butir1_katalog_sql():
     conn.close()
 
 
+def test_putaran27_butir4a_unit_sql():
+    """Unit test SQL lengkap sesuai spesifikasi Butir 4a (Putaran 27)."""
+    import sqlite3
+    from services.agent_tools import _get_catalog_db_path, katalog
+
+    db_path = _get_catalog_db_path()
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    # 1. Urutan termurah/termahal untuk 4 kategori (laptop, desktop, monitor, printer)
+    categories = ["laptop", "desktop", "monitor", "printer"]
+    for cat in categories:
+        cur.execute("SELECT kode, CAST(harga_idr AS INTEGER) FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1", (cat,))
+        exp_min_code, exp_min_price = cur.fetchone()
+        cur.execute("SELECT kode, CAST(harga_idr AS INTEGER) FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) DESC LIMIT 1", (cat,))
+        exp_max_code, exp_max_price = cur.fetchone()
+
+        res_min = katalog(kategori=cat, urutan="termurah")
+        assert res_min["status"] == "sukses"
+        assert res_min["urutan"] == "termurah"
+        assert res_min["produk"][0]["kode"] == exp_min_code
+        assert res_min["produk"][0]["harga_idr"] == exp_min_price
+
+        res_max = katalog(kategori=cat, urutan="termahal")
+        assert res_max["status"] == "sukses"
+        assert res_max["urutan"] == "termahal"
+        assert res_max["produk"][0]["kode"] == exp_max_code
+        assert res_max["produk"][0]["harga_idr"] == exp_max_price
+
+    # 2. Filter gabungan: laptop ram>=16 + gpu_dedicated=true + ssd>=512 + urutan termurah
+    cur.execute("""
+        SELECT kode, CAST(harga_idr AS INTEGER) FROM products 
+        WHERE LOWER(kategori) = 'laptop' 
+          AND CAST(ram_gb AS INTEGER) >= 16 
+          AND gpu_dedicated = 1 
+          AND CAST(storage_ssd_gb AS INTEGER) >= 512 
+        ORDER BY CAST(harga_idr AS INTEGER) ASC
+    """)
+    rows_combo = cur.fetchall()
+    exp_combo_codes = [r[0] for r in rows_combo]
+    assert len(exp_combo_codes) >= 6
+    assert exp_combo_codes[0] == "KB-L26"
+
+    res_combo = katalog(
+        kategori="laptop",
+        ram_min_gb=16,
+        gpu_dedicated=True,
+        ssd_min_gb=512,
+        urutan="termurah"
+    )
+    assert res_combo["status"] == "sukses"
+    assert res_combo["urutan"] == "termurah"
+    assert res_combo["total_cocok"] == len(exp_combo_codes)
+    assert [p["kode"] for p in res_combo["produk"]] == exp_combo_codes[:10]
+
+    # 3. Filter layar: monitor layar_min 27 + refresh_min 144
+    cur.execute("""
+        SELECT kode, CAST(harga_idr AS INTEGER) FROM products 
+        WHERE LOWER(kategori) = 'monitor' 
+          AND CAST(screen_inch AS REAL) >= 27 
+          AND CAST(refresh_hz AS INTEGER) >= 144 
+        ORDER BY CAST(harga_idr AS INTEGER) ASC
+    """)
+    rows_monitor = cur.fetchall()
+    exp_mon_codes = [r[0] for r in rows_monitor]
+    assert len(exp_mon_codes) >= 2
+    assert "KB-M02" in exp_mon_codes
+
+    res_monitor = katalog(
+        kategori="monitor",
+        layar_min_inci=27.0,
+        refresh_min_hz=144,
+        urutan="termurah"
+    )
+    assert res_monitor["status"] == "sukses"
+    assert res_monitor["total_cocok"] == len(exp_mon_codes)
+    assert [p["kode"] for p in res_monitor["produk"]] == exp_mon_codes[:10]
+
+    # 4. budget_max tetap menghasilkan "melebihi_budget" bila tidak ada yang cocok
+    res_over = katalog(kategori="laptop", budget_max=2000000)
+    assert res_over["status"] == "melebihi_budget"
+    assert res_over["total_cocok"] == 0
+    assert len(res_over["produk_termurah"]) > 0
+    assert res_over["produk_termurah"][0]["harga_idr"] > 2000000
+
+
+    # 5. Verifikasi hasil urutan SQL sama dengan ground truth manual dari database aktif
+    for cat in ["laptop", "desktop", "monitor", "printer"]:
+        cur.execute("SELECT kode FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1", (cat,))
+        expected_min_code = cur.fetchone()[0]
+        cur.execute("SELECT kode FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) DESC LIMIT 1", (cat,))
+        expected_max_code = cur.fetchone()[0]
+
+        res_min = katalog(kategori=cat, urutan="termurah")
+        assert res_min["produk"][0]["kode"] == expected_min_code
+
+        res_max = katalog(kategori=cat, urutan="termahal")
+        assert res_max["produk"][0]["kode"] == expected_max_code
+
+    conn.close()
+
+
+
+
 
 
 
