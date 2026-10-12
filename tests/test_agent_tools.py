@@ -1335,6 +1335,126 @@ def test_putaran26_butir3_kirim_foto():
     assert pos_foto < pos_t, "Kalimat aturan kirim foto harus sebelum komponen T"
 
 
+def test_putaran27_butir1_katalog_sql():
+    """Unit test SQL langsung untuk pencarian katalog berbasis query SQL (Putaran 27 Butir 1)."""
+    import sqlite3
+    from services.agent_tools import KATALOG_SQL, _get_catalog_db_path, katalog, execute_agent_tool
+
+    # 1. Flag KATALOG_SQL bernilai True secara bawaan
+    assert KATALOG_SQL is True
+
+    # 2. Path database aktif sama dengan yang dipakai db/catalog_service
+    db_path = _get_catalog_db_path()
+    assert "catalog.db" in db_path
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    # 3. Termurah & Termahal per Kategori
+    for cat in ["laptop", "desktop", "monitor", "printer"]:
+        cur.execute("SELECT kode, CAST(harga_idr AS INTEGER) FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1", (cat,))
+        expected_min = cur.fetchone()[0]
+        cur.execute("SELECT kode, CAST(harga_idr AS INTEGER) FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) DESC LIMIT 1", (cat,))
+        expected_max = cur.fetchone()[0]
+
+        res_min = katalog(kategori=cat, urutan="termurah")
+        assert res_min["status"] == "sukses"
+        assert res_min["urutan"] == "termurah"
+        assert res_min["produk"][0]["kode"] == expected_min
+
+        res_max = katalog(kategori=cat, urutan="termahal")
+        assert res_max["status"] == "sukses"
+        assert res_max["urutan"] == "termahal"
+        assert res_max["produk"][0]["kode"] == expected_max
+
+    # 4. Termurah & Termahal per Merek
+    test_brands = ["ASUS", "Acer", "Apple", "Lenovo", "HP", "MSI", "Epson"]
+    for b in test_brands:
+        cur.execute("SELECT kode FROM products WHERE LOWER(brand) = ? ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1", (b.lower(),))
+        expected_min = cur.fetchone()[0]
+        cur.execute("SELECT kode FROM products WHERE LOWER(brand) = ? ORDER BY CAST(harga_idr AS INTEGER) DESC LIMIT 1", (b.lower(),))
+        expected_max = cur.fetchone()[0]
+
+        res_min = katalog(merek=b, urutan="termurah")
+        assert res_min["produk"][0]["kode"] == expected_min
+
+        res_max = katalog(merek=b, urutan="termahal")
+        assert res_max["produk"][0]["kode"] == expected_max
+
+    # 5. Laptop gpu_dedicated termurah -> KB-L26 (HP Victus 15-fb0009AX, Rp10.299.000)
+    cur.execute("""
+        SELECT kode FROM products 
+        WHERE LOWER(kategori) = 'laptop' AND gpu_dedicated = 1 
+        ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1
+    """)
+    expected_gpu_min = cur.fetchone()[0]
+    assert expected_gpu_min == "KB-L26"
+
+    res_gpu = katalog(kategori="laptop", gpu_dedicated=True, urutan="termurah")
+    assert res_gpu["status"] == "sukses"
+    assert res_gpu["produk"][0]["kode"] == "KB-L26"
+    assert res_gpu["produk"][0]["harga_idr"] == 10299000
+
+    # 6. Laptop ram_min_gb=16 termurah -> KB-L21 (MSI Modern 14 C12M, Rp8.499.000)
+    cur.execute("""
+        SELECT kode FROM products 
+        WHERE LOWER(kategori) = 'laptop' AND CAST(ram_gb AS INTEGER) >= 16 
+        ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1
+    """)
+    expected_ram_min = cur.fetchone()[0]
+    assert expected_ram_min == "KB-L21"
+
+    res_ram = katalog(kategori="laptop", ram_min_gb=16, urutan="termurah")
+    assert res_ram["status"] == "sukses"
+    assert res_ram["produk"][0]["kode"] == "KB-L21"
+    assert res_ram["produk"][0]["harga_idr"] == 8499000
+
+    # 7. Gabungan Merek + Urutan
+    cur.execute("SELECT kode FROM products WHERE LOWER(brand) = 'acer' ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1")
+    exp_acer_min = cur.fetchone()[0]
+    res_acer_min = katalog(merek="Acer", urutan="termurah")
+    assert res_acer_min["produk"][0]["kode"] == exp_acer_min
+
+    cur.execute("SELECT kode FROM products WHERE LOWER(brand) = 'acer' ORDER BY CAST(harga_idr AS INTEGER) DESC LIMIT 1")
+    exp_acer_max = cur.fetchone()[0]
+    res_acer_max = katalog(merek="Acer", urutan="termahal")
+    assert res_acer_max["produk"][0]["kode"] == exp_acer_max
+
+    cur.execute("SELECT kode FROM products WHERE LOWER(kategori) = 'laptop' AND (LOWER(brand) LIKE '%asus%' OR LOWER(nama) LIKE '%asus%') ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1")
+    exp_asus_lap = cur.fetchone()[0]
+    res_asus_lap = katalog(kategori="laptop", merek="Asus", urutan="termurah")
+    assert res_asus_lap["produk"][0]["kode"] == exp_asus_lap
+
+    # 8. Urutan kosong = keluaran sama persis dengan jalur lama
+    for cat in ["laptop", "desktop", "monitor", "printer"]:
+        res_sql = katalog(kategori=cat, katalog_sql=True)
+        res_old = katalog(kategori=cat, katalog_sql=False)
+        assert res_sql["total_cocok"] == res_old["total_cocok"]
+        assert [p["kode"] for p in res_sql["produk"]] == [p["kode"] for p in res_old["produk"]]
+
+    # Periksa kasus pencarian kata kunci dengan urutan kosong
+    res_kw_sql = katalog(kata_kunci="oled", katalog_sql=True)
+    res_kw_old = katalog(kata_kunci="oled", katalog_sql=False)
+    assert res_kw_sql["total_cocok"] == res_kw_old["total_cocok"]
+    assert [p["kode"] for p in res_kw_sql["produk"]] == [p["kode"] for p in res_kw_old["produk"]]
+
+    # Periksa kasus budget_max dengan urutan kosong
+    res_b_sql = katalog(kategori="laptop", budget_max=7000000, katalog_sql=True)
+    res_b_old = katalog(kategori="laptop", budget_max=7000000, katalog_sql=False)
+    assert res_b_sql["total_cocok"] == res_b_old["total_cocok"]
+    assert [p["kode"] for p in res_b_sql["produk"]] == [p["kode"] for p in res_b_old["produk"]]
+
+    # 9. Uji lewat execute_agent_tool
+    res_exec = execute_agent_tool("katalog", {
+        "kategori": "laptop",
+        "gpu_dedicated": True,
+        "urutan": "termurah"
+    })
+    assert res_exec["produk"][0]["kode"] == "KB-L26"
+
+    conn.close()
+
+
+
 
 
 

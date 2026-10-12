@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import re
+import sqlite3
 from pathlib import Path
 from typing import Any
 import requests
@@ -21,6 +22,46 @@ from services.action_engine import build_lembar_spesifikasi
 from services.catalog_service import get_active_catalog
 
 logger = logging.getLogger("agent_tools")
+
+KATALOG_SQL: bool = True
+
+
+def _get_catalog_db_path() -> str:
+    path = os.getenv("DB_PATH", "data/catalog.db")
+    if not os.path.isabs(path):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        candidate = os.path.join(base_dir, path)
+        if os.path.exists(candidate):
+            return candidate
+    return path
+
+
+def _parse_numeric(val: Any) -> float | None:
+    if val is None or val == "":
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    m = re.search(r"[-+]?\d*\.?\d+", str(val))
+    if m:
+        try:
+            return float(m.group(0))
+        except ValueError:
+            return None
+    return None
+
+
+def _parse_bool(val: Any) -> bool | None:
+    if val is None or val == "":
+        return None
+    if isinstance(val, bool):
+        return val
+    s = str(val).strip().lower()
+    if s in ("true", "1", "yes", "ya"):
+        return True
+    if s in ("false", "0", "no", "tidak"):
+        return False
+    return None
+
 
 
 def _format_rupiah(angka: int | float | None) -> str:
@@ -129,7 +170,17 @@ def katalog(
     budget_max: int | float | None = None,
     kode_atau_nama: str | list[str] | None = None,
     kirim_foto: bool | None = None,
-    catalog=None
+    urutan: str | None = None,
+    ram_min_gb: int | float | None = None,
+    ssd_min_gb: int | float | None = None,
+    gpu_dedicated: bool | None = None,
+    vram_min_gb: int | float | None = None,
+    layar_min_inci: int | float | None = None,
+    layar_maks_inci: int | float | None = None,
+    refresh_min_hz: int | float | None = None,
+    catalog=None,
+    katalog_sql: bool | None = None,
+    kirim_foto_oleh_llm: bool | None = None
 ) -> dict[str, Any]:
     """
     Alat katalog toko ReIn Komputer:
@@ -137,12 +188,14 @@ def katalog(
        Kembalikan lembar spesifikasi lengkap (build_lembar_spesifikasi + raw_data).
        Boleh satu atau beberapa produk (dipisahkan koma atau list).
     b. Selain itu: pencarian katalog.
+       - Bila KATALOG_SQL aktif: jalankan query SQL berparameter ke tabel products.
        - Kata dalam kata_kunci yang sama dengan nilai filter kategori/merek (termasuk sinonimnya)
          tidak ikut dinilai.
        - Jika tidak ada kata tersisa, kembalikan semua produk yang lolos filter, urut harga.
        - budget_max tetap filter keras (jika kosong, sertakan harga termurah yang ada).
        - Selalu kembalikan total_cocok (jumlah SEMUA produk yang cocok) dan maksimal 10 produk ringkas:
          kode, nama, kategori, harga, spek ringkas, usage_text.
+       - Bila urutan diisi ("termurah"|"termahal"): produk diurutkan harga naik/turun sebelum dipotong 10.
     """
     cat_inst = catalog or get_active_catalog()
     all_products = list(cat_inst.by_code.values())
@@ -294,48 +347,197 @@ def katalog(
     if target_merek:
         filter_words_to_exclude.update([w for w in re.findall(r"\w+", target_merek) if len(w) >= 2])
 
-    pool = list(all_products)
+    urutan_norm: str | None = None
+    if urutan:
+        u_clean = str(urutan).strip().lower()
+        if u_clean in ("termurah", "murah", "paling murah", "paling_murah"):
+            urutan_norm = "termurah"
+        elif u_clean in ("termahal", "mahal", "paling mahal", "paling_mahal"):
+            urutan_norm = "termahal"
 
-    # Filter Kategori
-    if target_cat:
-        if target_cat in valid_cats:
-            pool = [p for p in pool if str(p.get("kategori", "")).lower() == target_cat]
-        else:
-            pool = [p for p in pool if target_cat in str(p.get("kategori", "")).lower()]
+    b_min = _parse_numeric(budget_min)
+    b_max = _parse_numeric(budget_max)
+    r_min = _parse_numeric(ram_min_gb)
+    s_min = _parse_numeric(ssd_min_gb)
+    g_ded = _parse_bool(gpu_dedicated)
+    v_min = _parse_numeric(vram_min_gb)
+    l_min = _parse_numeric(layar_min_inci)
+    l_max = _parse_numeric(layar_maks_inci)
+    ref_min = _parse_numeric(refresh_min_hz)
 
-    # Filter Merek
-    if target_merek:
-        pool = [
-            p for p in pool
-            if target_merek in str(p.get("brand", "")).lower() or target_merek in str(p.get("nama", "")).lower()
-        ]
+    use_sql = KATALOG_SQL if katalog_sql is None else bool(katalog_sql)
 
-    # Filter Budget Min
-    if budget_min is not None and float(budget_min) > 0:
-        pool = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) >= float(budget_min)]
+    if use_sql:
+        db_path = _get_catalog_db_path()
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
 
-    # Filter Budget Max
-    if budget_max is not None and float(budget_max) > 0:
-        b_max = float(budget_max)
-        under_budget = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) <= b_max]
-        if not under_budget:
-            cheapest_source = pool if pool else (all_products if not target_cat else [p for p in all_products if p.get('kategori') == target_cat])
-            cheapest_sorted = sorted(cheapest_source, key=lambda p: (p.get("harga") or p.get("harga_idr") or float("inf")))
-            cheapest_p = cheapest_sorted[0] if cheapest_sorted else None
-            p_termurah_info = [_format_ringkas(cheapest_p)] if cheapest_p else []
-            msg = (
-                f"Tidak ada produk yang memenuhi kriteria di bawah budget {_format_rupiah(b_max)}. "
-                f"Produk termurah yang tersedia adalah {cheapest_p.get('nama') if cheapest_p else '-'} "
-                f"dengan harga {_format_rupiah(cheapest_p.get('harga') or cheapest_p.get('harga_idr')) if cheapest_p else '-' }."
-            )
-            return {
-                "status": "melebihi_budget",
-                "total_cocok": 0,
-                "pesan": msg,
-                "produk_termurah": p_termurah_info,
-                "produk": []
-            }
-        pool = under_budget
+        where_clauses: list[str] = []
+        params: list[Any] = []
+
+        if target_cat:
+            if target_cat in valid_cats:
+                where_clauses.append("LOWER(kategori) = ?")
+                params.append(target_cat)
+            else:
+                where_clauses.append("LOWER(kategori) LIKE ?")
+                params.append(f"%{target_cat}%")
+
+        if target_merek:
+            where_clauses.append("(LOWER(brand) LIKE ? OR LOWER(nama) LIKE ?)")
+            params.append(f"%{target_merek}%")
+            params.append(f"%{target_merek}%")
+
+        if b_min is not None and b_min > 0:
+            where_clauses.append("CAST(harga_idr AS INTEGER) >= ?")
+            params.append(int(b_min))
+
+        if r_min is not None and r_min > 0:
+            where_clauses.append("CAST(ram_gb AS INTEGER) >= ?")
+            params.append(int(r_min))
+
+        if s_min is not None and s_min > 0:
+            where_clauses.append("storage_ssd_gb >= ?")
+            params.append(int(s_min))
+
+        if g_ded is not None:
+            if g_ded:
+                where_clauses.append("CAST(gpu_dedicated AS INTEGER) = 1")
+            else:
+                where_clauses.append("(gpu_dedicated = 0 OR gpu_dedicated IS NULL)")
+
+        if v_min is not None and v_min > 0:
+            where_clauses.append("CAST(vram_gb AS INTEGER) >= ?")
+            params.append(int(v_min))
+
+        if l_min is not None and l_min > 0:
+            where_clauses.append("CAST(screen_inch AS REAL) >= ?")
+            params.append(float(l_min))
+
+        if l_max is not None and l_max > 0:
+            where_clauses.append("CAST(screen_inch AS REAL) <= ?")
+            params.append(float(l_max))
+
+        if ref_min is not None and ref_min > 0:
+            where_clauses.append("CAST(refresh_hz AS INTEGER) >= ?")
+            params.append(int(ref_min))
+
+        if b_max is not None and b_max > 0:
+            where_with_bmax = list(where_clauses) + ["CAST(harga_idr AS INTEGER) <= ?"]
+            params_with_bmax = list(params) + [int(b_max)]
+            sql_check = "SELECT kode FROM products"
+            if where_with_bmax:
+                sql_check += " WHERE " + " AND ".join(where_with_bmax)
+            cur.execute(sql_check, params_with_bmax)
+            rows_check = cur.fetchall()
+            if not rows_check:
+                # melebihi_budget
+                cheapest_sql = "SELECT kode FROM products"
+                cheapest_params = list(params)
+                if where_clauses:
+                    cheapest_sql += " WHERE " + " AND ".join(where_clauses)
+                cheapest_sql += " ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1"
+                cur.execute(cheapest_sql, cheapest_params)
+                ch_row = cur.fetchone()
+                if not ch_row:
+                    if target_cat:
+                        cur.execute("SELECT kode FROM products WHERE LOWER(kategori) = ? ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1", [target_cat])
+                        ch_row = cur.fetchone()
+                    if not ch_row:
+                        cur.execute("SELECT kode FROM products ORDER BY CAST(harga_idr AS INTEGER) ASC LIMIT 1")
+                        ch_row = cur.fetchone()
+                conn.close()
+
+                cheapest_p = None
+                if ch_row:
+                    c_code = ch_row[0]
+                    cheapest_p = cat_inst.by_code.get(c_code) or cat_inst.by_code.get(c_code.upper())
+                p_termurah_info = [_format_ringkas(cheapest_p)] if cheapest_p else []
+                msg = (
+                    f"Tidak ada produk yang memenuhi kriteria di bawah budget {_format_rupiah(b_max)}. "
+                    f"Produk termurah yang tersedia adalah {cheapest_p.get('nama') if cheapest_p else '-'} "
+                    f"dengan harga {_format_rupiah(cheapest_p.get('harga') or cheapest_p.get('harga_idr')) if cheapest_p else '-' }."
+                )
+                res_dict = {
+                    "status": "melebihi_budget",
+                    "total_cocok": 0,
+                    "pesan": msg,
+                    "produk_termurah": p_termurah_info,
+                    "produk": [],
+                    "urutan": urutan_norm
+                }
+                if is_kirim_foto:
+                    res_dict["foto_akan_dikirim"] = []
+                    res_dict["foto_tidak_tersedia"] = []
+                return res_dict
+
+            where_clauses = where_with_bmax
+            params = params_with_bmax
+
+        order_sql = "ORDER BY CAST(harga_idr AS INTEGER) DESC" if urutan_norm == "termahal" else "ORDER BY CAST(harga_idr AS INTEGER) ASC"
+        query_sql = "SELECT kode FROM products"
+        if where_clauses:
+            query_sql += " WHERE " + " AND ".join(where_clauses)
+        query_sql += " " + order_sql
+
+        cur.execute(query_sql, params)
+        rows = cur.fetchall()
+        conn.close()
+
+        pool = []
+        for r in rows:
+            c_code = r[0]
+            p_obj = cat_inst.by_code.get(c_code) or cat_inst.by_code.get(c_code.upper())
+            if p_obj:
+                pool.append(p_obj)
+    else:
+        # Jalur legacy Python filtering
+        pool = list(all_products)
+
+        # Filter Kategori
+        if target_cat:
+            if target_cat in valid_cats:
+                pool = [p for p in pool if str(p.get("kategori", "")).lower() == target_cat]
+            else:
+                pool = [p for p in pool if target_cat in str(p.get("kategori", "")).lower()]
+
+        # Filter Merek
+        if target_merek:
+            pool = [
+                p for p in pool
+                if target_merek in str(p.get("brand", "")).lower() or target_merek in str(p.get("nama", "")).lower()
+            ]
+
+        # Filter Budget Min
+        if b_min is not None and b_min > 0:
+            pool = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) >= b_min]
+
+        # Filter Budget Max
+        if b_max is not None and b_max > 0:
+            under_budget = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) <= b_max]
+            if not under_budget:
+                cheapest_source = pool if pool else (all_products if not target_cat else [p for p in all_products if p.get('kategori') == target_cat])
+                cheapest_sorted = sorted(cheapest_source, key=lambda p: (p.get("harga") or p.get("harga_idr") or float("inf")))
+                cheapest_p = cheapest_sorted[0] if cheapest_sorted else None
+                p_termurah_info = [_format_ringkas(cheapest_p)] if cheapest_p else []
+                msg = (
+                    f"Tidak ada produk yang memenuhi kriteria di bawah budget {_format_rupiah(b_max)}. "
+                    f"Produk termurah yang tersedia adalah {cheapest_p.get('nama') if cheapest_p else '-'} "
+                    f"dengan harga {_format_rupiah(cheapest_p.get('harga') or cheapest_p.get('harga_idr')) if cheapest_p else '-' }."
+                )
+                res_dict = {
+                    "status": "melebihi_budget",
+                    "total_cocok": 0,
+                    "pesan": msg,
+                    "produk_termurah": p_termurah_info,
+                    "produk": [],
+                    "urutan": urutan_norm
+                }
+                if is_kirim_foto:
+                    res_dict["foto_akan_dikirim"] = []
+                    res_dict["foto_tidak_tersedia"] = []
+                return res_dict
+            pool = under_budget
 
     # Kata yang tersisa untuk dinilai
     scoring_tokens = [w for w in tokens if w not in filter_words_to_exclude]
@@ -406,23 +608,35 @@ def katalog(
                     f"Ada {len(pool)} produk di {scope_str} ini; "
                     "panggil katalog tanpa kata kunci untuk melihatnya."
                 ),
-                "produk": []
+                "produk": [],
+                "urutan": urutan_norm
             }
             if is_kirim_foto:
                 res_dict["foto_akan_dikirim"] = []
                 res_dict["foto_tidak_tersedia"] = []
             return res_dict
 
-        scored_pool.sort(key=lambda item: (-item[0], item[1].get("harga") or item[1].get("harga_idr") or 0))
+        if urutan_norm == "termurah":
+            scored_pool.sort(key=lambda item: (item[1].get("harga") or item[1].get("harga_idr") or 0))
+        elif urutan_norm == "termahal":
+            scored_pool.sort(key=lambda item: -(item[1].get("harga") or item[1].get("harga_idr") or 0))
+        else:
+            scored_pool.sort(key=lambda item: (-item[0], item[1].get("harga") or item[1].get("harga_idr") or 0))
         pool = [item[1] for item in scored_pool]
     else:
         # Jika tidak ada kata tersisa, urutkan berdasarkan harga
-        pool.sort(key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
+        if urutan_norm == "termurah":
+            pool.sort(key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
+        elif urutan_norm == "termahal":
+            pool.sort(key=lambda p: -(p.get("harga") or p.get("harga_idr") or 0))
+        else:
+            pool.sort(key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
 
     res_dict = {
         "status": "sukses",
         "total_cocok": len(pool),
-        "produk": [_format_ringkas(p) for p in pool[:10]]
+        "produk": [_format_ringkas(p) for p in pool[:10]],
+        "urutan": urutan_norm
     }
     if is_kirim_foto:
         akan_kirim = []
@@ -568,7 +782,18 @@ def cari_produk(
     merek: str | None = None,
     budget_max: int | float | None = None,
     budget_min: int | float | None = None,
-    catalog=None
+    urutan: str | None = None,
+    ram_min_gb: int | float | None = None,
+    ssd_min_gb: int | float | None = None,
+    gpu_dedicated: bool | None = None,
+    vram_min_gb: int | float | None = None,
+    layar_min_inci: int | float | None = None,
+    layar_maks_inci: int | float | None = None,
+    refresh_min_hz: int | float | None = None,
+    kirim_foto: bool | None = None,
+    catalog=None,
+    katalog_sql: bool | None = None,
+    kirim_foto_oleh_llm: bool | None = None
 ) -> dict[str, Any]:
     """Kompatibilitas mundur: memetakan ke fungsi katalog."""
     return katalog(
@@ -577,7 +802,18 @@ def cari_produk(
         merek=merek,
         budget_min=budget_min,
         budget_max=budget_max,
-        catalog=catalog
+        urutan=urutan,
+        ram_min_gb=ram_min_gb,
+        ssd_min_gb=ssd_min_gb,
+        gpu_dedicated=gpu_dedicated,
+        vram_min_gb=vram_min_gb,
+        layar_min_inci=layar_min_inci,
+        layar_maks_inci=layar_maks_inci,
+        refresh_min_hz=refresh_min_hz,
+        kirim_foto=kirim_foto,
+        catalog=catalog,
+        katalog_sql=katalog_sql,
+        kirim_foto_oleh_llm=kirim_foto_oleh_llm
     )
 
 
@@ -655,6 +891,39 @@ AGENT_TOOLS_SCHEMA = [
                         "type": "integer",
                         "description": "Batas anggaran maksimal dalam angka rupiah (misal: 10000000 untuk 10 juta)"
                     },
+                    "urutan": {
+                        "type": "string",
+                        "enum": ["termurah", "termahal"],
+                        "description": "Isi termurah/termahal bila pelanggan minta yang paling murah/mahal; produk pertama di hasil adalah jawabannya."
+                    },
+                    "ram_min_gb": {
+                        "type": "integer",
+                        "description": "Kapasitas RAM minimal dalam GB (misal: 8, 16, 32)"
+                    },
+                    "ssd_min_gb": {
+                        "type": "integer",
+                        "description": "Kapasitas SSD minimal dalam GB (misal: 256, 512, 1000)"
+                    },
+                    "gpu_dedicated": {
+                        "type": "boolean",
+                        "description": "Isi true bila butuh GPU diskrit/dedicated (misal gaming/render), false untuk grafis terintegrasi"
+                    },
+                    "vram_min_gb": {
+                        "type": "integer",
+                        "description": "Kapasitas VRAM grafis minimal dalam GB (misal: 4, 6, 8)"
+                    },
+                    "layar_min_inci": {
+                        "type": "number",
+                        "description": "Ukuran layar minimal dalam inci (misal: 14.0, 15.6, 24.0)"
+                    },
+                    "layar_maks_inci": {
+                        "type": "number",
+                        "description": "Ukuran layar maksimal dalam inci (misal: 14.0, 15.6, 27.0)"
+                    },
+                    "refresh_min_hz": {
+                        "type": "integer",
+                        "description": "Refresh rate layar minimal dalam Hz (misal: 100, 144, 165)"
+                    },
                     "kode_atau_nama": {
                         "type": "string",
                         "description": "Kode produk (misal 'KB-L14', 'KB-D11') atau nama produk spesifik untuk melihat lembar spesifikasi lengkap dan raw_data"
@@ -701,7 +970,17 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
             budget_max=args.get("budget_max"),
             kode_atau_nama=args.get("kode_atau_nama") or args.get("kode") or args.get("nama"),
             kirim_foto=args.get("kirim_foto"),
-            catalog=catalog
+            urutan=args.get("urutan"),
+            ram_min_gb=args.get("ram_min_gb"),
+            ssd_min_gb=args.get("ssd_min_gb"),
+            gpu_dedicated=args.get("gpu_dedicated"),
+            vram_min_gb=args.get("vram_min_gb"),
+            layar_min_inci=args.get("layar_min_inci"),
+            layar_maks_inci=args.get("layar_maks_inci"),
+            refresh_min_hz=args.get("refresh_min_hz"),
+            catalog=catalog,
+            katalog_sql=args.get("katalog_sql"),
+            kirim_foto_oleh_llm=args.get("kirim_foto_oleh_llm")
         )
     elif t_name == "pengetahuan":
         return pengetahuan(
@@ -715,14 +994,26 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
             merek=args.get("merek"),
             budget_min=args.get("budget_min"),
             budget_max=args.get("budget_max"),
+            urutan=args.get("urutan"),
+            ram_min_gb=args.get("ram_min_gb"),
+            ssd_min_gb=args.get("ssd_min_gb"),
+            gpu_dedicated=args.get("gpu_dedicated"),
+            vram_min_gb=args.get("vram_min_gb"),
+            layar_min_inci=args.get("layar_min_inci"),
+            layar_maks_inci=args.get("layar_maks_inci"),
+            refresh_min_hz=args.get("refresh_min_hz"),
             kirim_foto=args.get("kirim_foto"),
-            catalog=catalog
+            catalog=catalog,
+            katalog_sql=args.get("katalog_sql"),
+            kirim_foto_oleh_llm=args.get("kirim_foto_oleh_llm")
         )
     elif t_name == "detail_produk":
         return katalog(
             kode_atau_nama=args.get("kode_atau_nama") or args.get("kode") or args.get("nama") or "",
             kirim_foto=args.get("kirim_foto"),
-            catalog=catalog
+            catalog=catalog,
+            katalog_sql=args.get("katalog_sql"),
+            kirim_foto_oleh_llm=args.get("kirim_foto_oleh_llm")
         )
     elif t_name == "pengetahuan_kebutuhan":
         return pengetahuan(
