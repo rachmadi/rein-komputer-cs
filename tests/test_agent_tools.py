@@ -853,3 +853,27 @@ def test_pos_hanya_muncul_di_varian_yang_memakainya():
 
     assert kep_idx >= 0 and pos_idx >= 0 and persona_idx >= 0
     assert kep_idx < pos_idx < persona_idx
+
+
+def test_build_agent_system_prompt_bawaan_sama_v4_tanpa_pos():
+    """Menguji bahwa prompt bawaan produksi sama dengan V4 dan tidak memuat POS (Putaran 23 Butir 1)."""
+    from services.agentic_tool_engine import (
+        build_agent_system_prompt,
+        KOMPONEN_POS,
+        PROMPT_VARIAN,
+        MODE_BERPIKIR,
+        MODE_BERPIKIR_SEBAGIAN,
+        PEMERIKSAAN_ULANG_JANJI,
+    )
+
+    assert PROMPT_VARIAN == "V4"
+    assert MODE_BERPIKIR is False
+    assert MODE_BERPIKIR_SEBAGIAN is True
+    assert PEMERIKSAAN_ULANG_JANJI is False
+
+    prompt_default = build_agent_system_prompt()
+    prompt_v4 = build_agent_system_prompt("V4")
+
+    assert prompt_default == prompt_v4
+    assert KOMPONEN_POS not in prompt_default
+
