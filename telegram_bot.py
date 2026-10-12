@@ -110,15 +110,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     context.user_data["last_mentioned_products"] = []
 
     welcome_text = (
-        "Halo, Kak! Selamat datang di *ReIn Komputer Customer Care* 💻🤖\n\n"
-        "Saya asisten resmi ReIn Komputer yang siap membantu Kakak mencari laptop, desktop, printer, atau monitor terbaik sesuai kebutuhan & anggaran.\n\n"
-        "Silakan langsung ketik apa yang sedang Kakak cari, misalnya:\n"
-        "• _Perlu perangkat komputasi harian portabel merek Acer_\n"
-        "• _Rekomendasi perangkat olah grafis studio budget 15 jutaan_\n"
-        "• _Tersedia unit komputasi meja atau desktop Lenovo_\n\n"
-        "Gunakan perintah /reset jika ingin memulai percakapan baru dari awal."
+        "Halo Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu? "
+        "Kakak bisa tanya soal laptop, desktop, monitor, atau printer. "
+        "Ketik /reset untuk memulai percakapan baru."
     )
-    await update.message.reply_text(welcome_text, parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(welcome_text)
 
 
 async def reset_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
