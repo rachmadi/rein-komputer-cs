@@ -135,6 +135,8 @@ def build_agent_system_prompt(
     varian: Optional[str] = None,
     with_pos: Optional[bool] = None,
     persona_nama_r3: Optional[bool] = None,
+    aturan_pribadi_atribut: Optional[bool] = None,
+    kirim_foto_oleh_llm: Optional[bool] = None,
 ) -> str:
     from core.db import get_catalog_inventory
     inv = get_catalog_inventory()
@@ -165,6 +167,17 @@ def build_agent_system_prompt(
         'ada di hasil alat yang sudah kamu terima, panggil alat lagi; jangan menjawab '
         'dari ingatan.'
     )
+
+    # Putaran 26 Butir 2: Aturan data pribadi dan atribut produk di akhir SISA sebelum T
+    active_pribadi = aturan_pribadi_atribut if aturan_pribadi_atribut is not None else ATURAN_PRIBADI_ATRIBUT
+    if active_pribadi:
+        sisa_text += (
+            "\nKamu tidak punya data pribadi seperti alamat rumah, umur, atau kehidupan di luar pekerjaan, "
+            "jadi jangan mengarangnya; bila pelanggan menanyakan hal pribadi, tolak dengan sopan dan ramah lalu kembali membantu. "
+            "Jangan menyebut website, alamat, atau kontak toko yang tidak tertulis di hasil alat.\n"
+            "Atribut satu produk, misalnya barebone, tangki tinta, ukuran, atau port, tidak berlaku untuk produk lain "
+            "kecuali tertulis di hasil alat untuk produk itu; bila belum ada, panggil katalog untuk produk itu."
+        )
 
     v = (varian or PROMPT_VARIAN).upper()
     active_r3 = persona_nama_r3 if persona_nama_r3 is not None else (PERSONA_NAMA_R3 or v in ("R3", "V4_R3"))
@@ -220,6 +233,7 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
 
 
 PERSONA_NAMA_R3: bool = True
+ATURAN_PRIBADI_ATRIBUT: bool = False
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
@@ -518,6 +532,7 @@ def run_agentic_tool(
     mode_berpikir_sebagian: Optional[bool] = None,
     pengurai_alat_mentah: Optional[bool] = None,
     persona_nama_r3: Optional[bool] = None,
+    aturan_pribadi_atribut: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -555,7 +570,15 @@ def run_agentic_tool(
         persona_nama_r3 if persona_nama_r3 is not None
         else kwargs.get("persona_nama_r3", PERSONA_NAMA_R3 or active_var in ("R3", "V4_R3"))
     )
-    system_content = build_agent_system_prompt(varian=active_var, persona_nama_r3=active_r3)
+    active_pribadi = (
+        aturan_pribadi_atribut if aturan_pribadi_atribut is not None
+        else kwargs.get("aturan_pribadi_atribut", ATURAN_PRIBADI_ATRIBUT)
+    )
+    system_content = build_agent_system_prompt(
+        varian=active_var,
+        persona_nama_r3=active_r3,
+        aturan_pribadi_atribut=active_pribadi,
+    )
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
 

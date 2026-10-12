@@ -1242,6 +1242,37 @@ def test_putaran26_butir1_persona_nama_r3_bawaan_true():
     assert "Bila pesan pertama pelanggan hanya salam" not in prompt
 
 
+def test_putaran26_butir2_aturan_pribadi_atribut():
+    """Menguji kalimat aturan data pribadi dan atribut produk (Putaran 26 Butir 2)."""
+    from services.agentic_tool_engine import (
+        ATURAN_PRIBADI_ATRIBUT,
+        KOMPONEN_T,
+        build_agent_system_prompt,
+    )
+
+    # 1. Nilai bawaan mati
+    assert ATURAN_PRIBADI_ATRIBUT is False
+
+    kalimat_1 = "Kamu tidak punya data pribadi seperti alamat rumah, umur, atau kehidupan di luar pekerjaan, jadi jangan mengarangnya; bila pelanggan menanyakan hal pribadi, tolak dengan sopan dan ramah lalu kembali membantu. Jangan menyebut website, alamat, atau kontak toko yang tidak tertulis di hasil alat."
+    kalimat_2 = "Atribut satu produk, misalnya barebone, tangki tinta, ukuran, atau port, tidak berlaku untuk produk lain kecuali tertulis di hasil alat untuk produk itu; bila belum ada, panggil katalog untuk produk itu."
+
+    # 2. Saat mati, kalimat tidak ada di prompt
+    prompt_mati = build_agent_system_prompt(aturan_pribadi_atribut=False)
+    assert kalimat_1 not in prompt_mati
+    assert kalimat_2 not in prompt_mati
+
+    # 3. Saat nyala, kedua kalimat ada di prompt dan berada sebelum KOMPONEN_T
+    prompt_nyala = build_agent_system_prompt(aturan_pribadi_atribut=True)
+    assert kalimat_1 in prompt_nyala
+    assert kalimat_2 in prompt_nyala
+
+    pos_k1 = prompt_nyala.find(kalimat_1)
+    pos_k2 = prompt_nyala.find(kalimat_2)
+    pos_t = prompt_nyala.find(KOMPONEN_T)
+    assert pos_k1 < pos_k2 < pos_t, "Kalimat aturan pribadi & atribut harus berada sebelum komponen T"
+
+
+
 
 
 
