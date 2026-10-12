@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from core.catalog import Catalog
 from services.catalog_service import get_active_catalog
-from services.agent_tools import AGENT_TOOLS_SCHEMA, execute_agent_tool
+from services.agent_tools import AGENT_TOOLS_SCHEMA, execute_agent_tool, get_agent_tools_schema
 from services.product_card import format_product_cards_message
 from services.catalog_search import clean_specs
 
@@ -670,6 +670,7 @@ def run_agentic_tool(
         nonlocal is_emergency_fallback, emergency_error
         round_idx = 0
         current_reply = ""
+        active_tools_schema = get_agent_tools_schema(active_foto_llm)
 
         while round_idx < max_rounds:
             call_num = len(all_llm_calls_logged) + 1
@@ -692,7 +693,7 @@ def run_agentic_tool(
             try:
                 llm_resp = call_ollama_chat_raw(
                     messages=current_msgs,
-                    tools=AGENT_TOOLS_SCHEMA,
+                    tools=active_tools_schema,
                     model=model,
                     url=url,
                     num_predict=call_num_predict,
@@ -767,14 +768,14 @@ def run_agentic_tool(
                         try:
                             call_num_retry = len(all_llm_calls_logged) + 1
                             llm_resp_retry = call_ollama_chat_raw(
-                                messages=current_msgs,
-                                tools=AGENT_TOOLS_SCHEMA,
-                                model=model,
-                                url=url,
-                                num_predict=call_num_predict,
-                                num_ctx=8192,
-                                timeout=120,
-                                think=call_think
+                                 messages=current_msgs,
+                                 tools=active_tools_schema,
+                                 model=model,
+                                 url=url,
+                                 num_predict=call_num_predict,
+                                 num_ctx=8192,
+                                 timeout=120,
+                                 think=call_think
                             )
                             msg_retry = llm_resp_retry.get("message", {})
                             retry_tools = msg_retry.get("tool_calls")
@@ -838,7 +839,7 @@ def run_agentic_tool(
                         fn_args = {}
 
                 t0_tool = time.perf_counter()
-                tool_res = execute_agent_tool(fn_name, fn_args)
+                tool_res = execute_agent_tool(fn_name, fn_args, catalog=catalog, kirim_foto_oleh_llm=active_foto_llm)
                 t_tool = (time.perf_counter() - t0_tool) * 1000
 
                 prod_summary_list = []

@@ -24,6 +24,7 @@ from services.catalog_service import get_active_catalog
 logger = logging.getLogger("agent_tools")
 
 KATALOG_SQL: bool = True
+KIRIM_FOTO_OLEH_LLM: bool = False
 
 
 def _get_catalog_db_path() -> str:
@@ -199,7 +200,13 @@ def katalog(
     """
     cat_inst = catalog or get_active_catalog()
     all_products = list(cat_inst.by_code.values())
-    is_kirim_foto = (kirim_foto is True) or (isinstance(kirim_foto, str) and str(kirim_foto).lower() == "true")
+    active_foto_flag = (
+        kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None
+        else KIRIM_FOTO_OLEH_LLM
+    )
+    is_kirim_foto = bool(active_foto_flag) and (
+        (kirim_foto is True) or (isinstance(kirim_foto, str) and str(kirim_foto).lower() == "true")
+    )
 
     # -------------------------------------------------------------------------
     # Cabang A: Lembar Spesifikasi Lengkap jika kode_atau_nama diisi
@@ -956,10 +963,28 @@ AGENT_TOOLS_SCHEMA = [
 ]
 
 
-def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) -> dict[str, Any]:
+def get_agent_tools_schema(kirim_foto_oleh_llm: bool = False) -> list[dict[str, Any]]:
+    """Mengembalikan skema alat agen; bila kirim_foto_oleh_llm False, parameter kirim_foto dihilangkan."""
+    import copy
+    tools = copy.deepcopy(AGENT_TOOLS_SCHEMA)
+    if not kirim_foto_oleh_llm:
+        for t in tools:
+            if t.get("function", {}).get("name") == "katalog":
+                props = t.get("function", {}).get("parameters", {}).get("properties", {})
+                props.pop("kirim_foto", None)
+    return tools
+
+
+def execute_agent_tool(
+    tool_name: str,
+    tool_args: dict[str, Any],
+    catalog=None,
+    kirim_foto_oleh_llm: bool | None = None
+) -> dict[str, Any]:
     """Menjalankan alat agent berdasarkan nama dan argumen."""
     t_name = str(tool_name or "").strip()
     args = dict(tool_args or {})
+    active_foto_flag = kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None else args.get("kirim_foto_oleh_llm")
 
     if t_name == "katalog":
         return katalog(
@@ -980,7 +1005,7 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
             refresh_min_hz=args.get("refresh_min_hz"),
             catalog=catalog,
             katalog_sql=args.get("katalog_sql"),
-            kirim_foto_oleh_llm=args.get("kirim_foto_oleh_llm")
+            kirim_foto_oleh_llm=active_foto_flag
         )
     elif t_name == "pengetahuan":
         return pengetahuan(

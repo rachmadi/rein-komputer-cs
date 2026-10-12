@@ -1301,23 +1301,23 @@ def test_putaran26_butir3_kirim_foto():
         == "Isi true bila pelanggan ingin melihat foto produk yang dicari, atau bila menurutmu foto membantu pelanggan; foto hanya terkirim untuk produk yang ada_foto-nya true."
     )
 
-    # 3. kirim_foto true untuk produk berfoto (KB-D10) -> foto_akan_dikirim berisi kode itu
-    res_with_photo = katalog(kode_atau_nama="KB-D10", kirim_foto=True)
+    # 3. Saat kirim_foto_oleh_llm True: kirim_foto true untuk produk berfoto (KB-D10) -> foto_akan_dikirim berisi kode itu
+    res_with_photo = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=True)
     assert res_with_photo.get("foto_akan_dikirim") == ["KB-D10"]
     assert res_with_photo.get("foto_tidak_tersedia") == []
 
     # 4. produk tanpa foto (KB-D06) -> masuk foto_tidak_tersedia
-    res_without_photo = katalog(kode_atau_nama="KB-D06", kirim_foto=True)
+    res_without_photo = katalog(kode_atau_nama="KB-D06", kirim_foto=True, kirim_foto_oleh_llm=True)
     assert res_without_photo.get("foto_akan_dikirim") == []
     assert res_without_photo.get("foto_tidak_tersedia") == ["KB-D06"]
 
     # 5. kirim_foto tidak diisi menghasilkan tidak ada foto
-    res_no_param = katalog(kode_atau_nama="KB-D10")
+    res_no_param = katalog(kode_atau_nama="KB-D10", kirim_foto_oleh_llm=True)
     assert "foto_akan_dikirim" not in res_no_param
     assert "foto_tidak_tersedia" not in res_no_param
 
     # 6. Uji lewat execute_agent_tool
-    res_exec = execute_agent_tool("katalog", {"kode_atau_nama": "KB-D10", "kirim_foto": True})
+    res_exec = execute_agent_tool("katalog", {"kode_atau_nama": "KB-D10", "kirim_foto": True}, kirim_foto_oleh_llm=True)
     assert res_exec.get("foto_akan_dikirim") == ["KB-D10"]
 
     # 7. Uji kalimat prompt Butir 3c
@@ -1333,6 +1333,35 @@ def test_putaran26_butir3_kirim_foto():
     pos_foto = prompt_nyala.find(kalimat_foto)
     pos_t = prompt_nyala.find(KOMPONEN_T)
     assert pos_foto < pos_t, "Kalimat aturan kirim foto harus sebelum komponen T"
+
+
+def test_putaran27_butir2_sembunyikan_kirim_foto():
+    """Menguji penyembunyian kirim_foto saat KIRIM_FOTO_OLEH_LLM False (Putaran 27 Butir 2)."""
+    from services.agent_tools import get_agent_tools_schema, katalog, execute_agent_tool
+
+    # 1. Saat False (bawaan): parameter kirim_foto tidak ada di skema yang dikirim ke model
+    schema_false = get_agent_tools_schema(kirim_foto_oleh_llm=False)
+    katalog_schema_false = next(t for t in schema_false if t["function"]["name"] == "katalog")
+    assert "kirim_foto" not in katalog_schema_false["function"]["parameters"]["properties"]
+
+    # 2. Saat False: hasil katalog tidak memuat foto_akan_dikirim / foto_tidak_tersedia meski kirim_foto=True
+    res_false = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=False)
+    assert "foto_akan_dikirim" not in res_false
+    assert "foto_tidak_tersedia" not in res_false
+
+    res_search_false = katalog(kategori="laptop", kirim_foto=True, kirim_foto_oleh_llm=False)
+    assert "foto_akan_dikirim" not in res_search_false
+    assert "foto_tidak_tersedia" not in res_search_false
+
+    # 3. Saat True: skema memuat kirim_foto dan hasil memuat foto_akan_dikirim (perilaku P26 tetap)
+    schema_true = get_agent_tools_schema(kirim_foto_oleh_llm=True)
+    katalog_schema_true = next(t for t in schema_true if t["function"]["name"] == "katalog")
+    assert "kirim_foto" in katalog_schema_true["function"]["parameters"]["properties"]
+
+    res_true = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=True)
+    assert res_true.get("foto_akan_dikirim") == ["KB-D10"]
+    assert res_true.get("foto_tidak_tersedia") == []
+
 
 
 def test_putaran27_butir1_katalog_sql():
