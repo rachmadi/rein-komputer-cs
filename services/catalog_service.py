@@ -19,17 +19,89 @@ import os
 COLLECTION_NAME = os.getenv("QDRANT_PRODUCTS_COLLECTION", "computer_products")
 EMBED_MODEL = "bge-m3"
 
-_cached_catalog: Catalog | None = None
+import hashlib
+import sqlite3
+import threading
+import time
 
-def get_active_catalog() -> Catalog:
-    global _cached_catalog
-    if _cached_catalog is None:
-        _cached_catalog = reload_catalog()
-    return _cached_catalog
+_catalog_lock = threading.Lock()
+_cached_catalog: Catalog | None = None
+_cached_fingerprint: str | None = None
+_last_checked_turn_id: str | None = None
+_active_turn_id: str | None = None
+_last_check_duration_ms: float = 0.0
+_last_reload_duration_ms: float = 0.0
+
+def _get_catalog_db_path() -> str:
+    from core.db import DB_PATH
+    return os.getenv("DB_PATH", DB_PATH)
+
+def set_catalog_turn_id(turn_id: str | None) -> None:
+    """Set ID giliran aktif untuk membatasi cek sidik jari tabel products paling banyak 1x per giliran."""
+    global _active_turn_id
+    _active_turn_id = turn_id
+
+def get_last_check_duration_ms() -> float:
+    return _last_check_duration_ms
+
+def get_last_reload_duration_ms() -> float:
+    return _last_reload_duration_ms
+
+def get_catalog_fingerprint() -> str | None:
+    return _cached_fingerprint
+
+def compute_products_fingerprint(db_path: str | None = None) -> str:
+    """Menghitung sidik jari hash SHA256 dari seluruh baris tabel products."""
+    effective_db = db_path or _get_catalog_db_path()
+    conn = sqlite3.connect(effective_db)
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM products ORDER BY kode")
+        rows = cur.fetchall()
+        hasher = hashlib.sha256()
+        for r in rows:
+            hasher.update(str(r).encode("utf-8"))
+        return hasher.hexdigest()
+    finally:
+        conn.close()
+
+def get_active_catalog(force_check: bool = False) -> Catalog:
+    global _cached_catalog, _cached_fingerprint, _last_checked_turn_id
+    global _last_check_duration_ms, _last_reload_duration_ms
+
+    with _catalog_lock:
+        need_check = False
+        if _cached_catalog is None or _cached_fingerprint is None:
+            need_check = True
+        elif force_check:
+            need_check = True
+        elif _active_turn_id is None:
+            # Di luar konteks giliran obrolan (misal unit test / script terpisah), cek langsung
+            need_check = True
+        elif _active_turn_id != _last_checked_turn_id:
+            # Giliran baru: lakukan cek paling banyak 1x per giliran
+            need_check = True
+
+        if need_check:
+            t0 = time.perf_counter()
+            current_fp = compute_products_fingerprint()
+            _last_check_duration_ms = (time.perf_counter() - t0) * 1000.0
+            if _active_turn_id is not None:
+                _last_checked_turn_id = _active_turn_id
+
+            if _cached_catalog is None or current_fp != _cached_fingerprint:
+                t_rel0 = time.perf_counter()
+                _cached_catalog = reload_catalog()
+                _cached_fingerprint = current_fp
+                _last_reload_duration_ms = (time.perf_counter() - t_rel0) * 1000.0
+
+        return _cached_catalog
 
 def reload_catalog() -> Catalog:
-    global _cached_catalog
-    _cached_catalog = Catalog.from_db()
+    global _cached_catalog, _cached_fingerprint
+    db_p = _get_catalog_db_path()
+    _cached_catalog = Catalog.from_db(db_path=db_p)
+    _cached_fingerprint = compute_products_fingerprint(db_path=db_p)
     return _cached_catalog
 
 def format_product_text(p: dict) -> str:

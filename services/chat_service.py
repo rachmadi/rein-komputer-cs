@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any
 from core.state import new_state, reset_state
 from core.engine import step
-from services.catalog_service import get_active_catalog
+from services.catalog_service import get_active_catalog, set_catalog_turn_id
 from core.chat_logger import log_turn, log_session_boundary, record_log_failure, is_test_mode
 
 logger = logging.getLogger("chat_service")
@@ -128,6 +128,8 @@ def process_chat_message(
 ) -> dict[str, Any]:
     sess = _session_manager.get_session(session_id)
     state = sess["state"]
+    turn_index = len(sess.get("messages", []))
+    set_catalog_turn_id(f"{session_id}:{turn_index}")
     catalog = get_active_catalog()
 
     # Tentukan model LLM aktif
