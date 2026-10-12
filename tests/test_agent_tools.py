@@ -864,12 +864,14 @@ def test_build_agent_system_prompt_bawaan_sama_v4_tanpa_pos():
         MODE_BERPIKIR,
         MODE_BERPIKIR_SEBAGIAN,
         PEMERIKSAAN_ULANG_JANJI,
+        PENGURAI_ALAT_MENTAH,
     )
 
     assert PROMPT_VARIAN == "V4"
     assert MODE_BERPIKIR is False
     assert MODE_BERPIKIR_SEBAGIAN is True
     assert PEMERIKSAAN_ULANG_JANJI is False
+    assert PENGURAI_ALAT_MENTAH is True
 
     prompt_default = build_agent_system_prompt()
     prompt_v4 = build_agent_system_prompt("V4")

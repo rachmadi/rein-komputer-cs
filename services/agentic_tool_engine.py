@@ -207,7 +207,7 @@ SYSTEM_PROMPT = build_agent_system_prompt()
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
-PENGURAI_ALAT_MENTAH: bool = False
+PENGURAI_ALAT_MENTAH: bool = True
 
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
