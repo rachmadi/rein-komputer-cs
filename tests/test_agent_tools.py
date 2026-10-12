@@ -1003,3 +1003,58 @@ def test_pengetahuan_topk_configurable():
     assert res5["status"] == "sukses"
     assert len(res5["pengetahuan"]) <= 5
     # Jika Qdrant aktif dan memiliki cukup titik, len(res5["pengetahuan"]) > len(res3["pengetahuan"])
+
+
+def test_putaran25_butir0_tidak_ada_pesan_ganda_dan_riwayat_kosong():
+    """
+    Menguji Putaran 25 Butir 0:
+    - Pesan yang dikirim ke LLM memuat teks pelanggan terbaru tepat satu kali.
+    - Untuk salam pertama di sesi baru, riwayat yang dikirim ke run_agentic_tool kosong.
+    """
+    from services.chat_service import process_chat_message, get_session_manager
+    from unittest.mock import patch
+
+    sm = get_session_manager()
+    session_id = "test_p25_b0_sess"
+    if session_id in sm._sessions:
+        del sm._sessions[session_id]
+
+    captured_calls = []
+
+    def mock_ollama_raw(messages, **kwargs):
+        captured_calls.append(list(messages))
+        return {
+            "message": {"role": "assistant", "content": "Halo Kak, ada yang bisa dibantu?"},
+            "prompt_eval_count": 10,
+            "eval_count": 10,
+            "done_reason": "stop"
+        }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_raw):
+        # Giliran 1: Salam pertama di sesi baru
+        res1 = process_chat_message(session_id, "halo")
+        assert len(captured_calls) == 1
+        msgs_turn1 = captured_calls[0]
+
+        # 1. Pastikan teks pelanggan "halo" muncul tepat 1 kali di seluruh pesan yang dikirim ke LLM
+        user_msgs = [m for m in msgs_turn1 if m.get("role") == "user" and m.get("content") == "halo"]
+        assert len(user_msgs) == 1, f"Teks pelanggan terbaru harus muncul tepat satu kali, ditemukan: {len(user_msgs)}"
+
+        # 2. Untuk salam pertama di sesi baru, riwayat pesan sebelum prompt/pengingat tidak boleh memuat pesan masa lalu
+        # Di msgs_turn1, satu-satunya pesan role user adalah "halo", dan tidak ada pesan role assistant sebelumnya
+        assistant_msgs = [m for m in msgs_turn1 if m.get("role") == "assistant"]
+        assert len(assistant_msgs) == 0, f"Salam pertama di sesi baru tidak boleh memiliki riwayat assistant, ditemukan: {assistant_msgs}"
+
+        # Giliran 2: Pesan kedua
+        captured_calls.clear()
+        res2 = process_chat_message(session_id, "Tanya mini pc")
+        assert len(captured_calls) == 1
+        msgs_turn2 = captured_calls[0]
+
+        # 3. Teks "Tanya mini pc" muncul tepat 1 kali
+        user_msgs_t2 = [m for m in msgs_turn2 if m.get("role") == "user" and m.get("content") == "Tanya mini pc"]
+        assert len(user_msgs_t2) == 1
+        # Riwayat giliran 1 (halo dan jawaban bot) ada di riwayat
+        assert any(m.get("content") == "halo" for m in msgs_turn2)
+        assert any("Halo Kak, ada yang bisa dibantu?" in m.get("content", "") for m in msgs_turn2)
+

@@ -37,15 +37,7 @@ class SessionManager:
                 "state": new_state(),
                 "created_at": datetime.now().isoformat(),
                 "last_active": now,
-                "messages": [
-                    {
-                        "sender": "bot",
-                        "role": "assistant",
-                        "text": "Halo, Kak! Selamat datang di Customer Care ReIn Komputer. Ada yang bisa saya bantu cari hari ini? 😊",
-                        "time": datetime.now().strftime("%H:%M"),
-                        "route": "DIRECT"
-                    }
-                ]
+                "messages": []
             }
             self._sessions[session_id] = sess
         else:
@@ -126,7 +118,8 @@ def process_chat_message(
     if active_model in ("none", "disabled", "false", ""):
         active_model = None
 
-    # Catat pesan user
+    # Catat riwayat sebelum pesan baru disimpan (Putaran 25 Butir 0)
+    prior_history = list(sess["messages"])
     _session_manager.add_message(session_id, "user", user_text)
 
     t0 = time.time()
@@ -321,7 +314,7 @@ def process_chat_message(
 
         tool_res = run_agentic_tool(
             user_text=user_text,
-            history=sess["messages"],
+            history=prior_history,
             catalog=catalog,
             model=active_model,
             session_state=state,
