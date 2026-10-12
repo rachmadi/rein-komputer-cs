@@ -289,6 +289,29 @@ def katalog(
     if budget_min is not None and float(budget_min) > 0:
         pool = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) >= float(budget_min)]
 
+    # Filter Budget Max
+    if budget_max is not None and float(budget_max) > 0:
+        b_max = float(budget_max)
+        under_budget = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) <= b_max]
+        if not under_budget:
+            cheapest_source = pool if pool else (all_products if not target_cat else [p for p in all_products if p.get('kategori') == target_cat])
+            cheapest_sorted = sorted(cheapest_source, key=lambda p: (p.get("harga") or p.get("harga_idr") or float("inf")))
+            cheapest_p = cheapest_sorted[0] if cheapest_sorted else None
+            p_termurah_info = [_format_ringkas(cheapest_p)] if cheapest_p else []
+            msg = (
+                f"Tidak ada produk yang memenuhi kriteria di bawah budget {_format_rupiah(b_max)}. "
+                f"Produk termurah yang tersedia adalah {cheapest_p.get('nama') if cheapest_p else '-'} "
+                f"dengan harga {_format_rupiah(cheapest_p.get('harga') or cheapest_p.get('harga_idr')) if cheapest_p else '-' }."
+            )
+            return {
+                "status": "melebihi_budget",
+                "total_cocok": 0,
+                "pesan": msg,
+                "produk_termurah": p_termurah_info,
+                "produk": []
+            }
+        pool = under_budget
+
     # Kata yang tersisa untuk dinilai
     scoring_tokens = [w for w in tokens if w not in filter_words_to_exclude]
 
@@ -341,39 +364,31 @@ def katalog(
             if score > 0:
                 scored_pool.append((score, p))
 
+        # Putaran 20 Butir 4: jika sesudah filter masih ada produk tetapi tidak ada yang cocok kata kunci
+        if pool and not scored_pool:
+            scope_parts = []
+            if target_cat:
+                scope_parts.append(target_cat)
+            if target_merek:
+                scope_parts.append(target_merek)
+            scope_str = " ".join(scope_parts) if scope_parts else "kategori/merek"
+            kw_str = kata_kunci if kata_kunci is not None else " ".join(scoring_tokens)
+            return {
+                "status": "sukses",
+                "total_cocok": 0,
+                "catatan": (
+                    f"Kata kunci '{kw_str}' tidak cocok dengan produk mana pun. "
+                    f"Ada {len(pool)} produk di {scope_str} ini; "
+                    "panggil katalog tanpa kata kunci untuk melihatnya."
+                ),
+                "produk": []
+            }
+
         scored_pool.sort(key=lambda item: (-item[0], item[1].get("harga") or item[1].get("harga_idr") or 0))
         pool = [item[1] for item in scored_pool]
     else:
         # Jika tidak ada kata tersisa, urutkan berdasarkan harga
         pool.sort(key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
-
-    # Filter Keras budget_max
-    if budget_max is not None and float(budget_max) > 0:
-        b_max = float(budget_max)
-        under_budget = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) <= b_max]
-        if under_budget:
-            return {
-                "status": "sukses",
-                "total_cocok": len(under_budget),
-                "produk": [_format_ringkas(p) for p in under_budget[:10]]
-            }
-        else:
-            cheapest_source = pool if pool else (all_products if not target_cat else [p for p in all_products if p.get('kategori') == target_cat])
-            cheapest_sorted = sorted(cheapest_source, key=lambda p: (p.get("harga") or p.get("harga_idr") or float("inf")))
-            cheapest_p = cheapest_sorted[0] if cheapest_sorted else None
-            p_termurah_info = [_format_ringkas(cheapest_p)] if cheapest_p else []
-            msg = (
-                f"Tidak ada produk yang memenuhi kriteria di bawah budget {_format_rupiah(b_max)}. "
-                f"Produk termurah yang tersedia adalah {cheapest_p.get('nama') if cheapest_p else '-'} "
-                f"dengan harga {_format_rupiah(cheapest_p.get('harga') or cheapest_p.get('harga_idr')) if cheapest_p else '-' }."
-            )
-            return {
-                "status": "melebihi_budget",
-                "total_cocok": 0,
-                "pesan": msg,
-                "produk_termurah": p_termurah_info,
-                "produk": []
-            }
 
     return {
         "status": "sukses",

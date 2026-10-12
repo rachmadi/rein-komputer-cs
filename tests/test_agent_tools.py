@@ -487,3 +487,14 @@ def test_prompt_variants_v0_v3_match_baselines():
     assert v3_prompt == baseline_19b, "V3 tidak sama persis dengan prompt sebelum-putaran19b"
 
 
+def test_katalog_kata_kunci_tidak_cocok_kembalikan_catatan():
+    """Menguji monitor + 'perbandingan' -> total 0, catatan menyebut 5 produk (Putaran 20 Butir 4)."""
+    res = katalog(kategori="monitor", kata_kunci="perbandingan")
+    assert res["total_cocok"] == 0
+    assert "catatan" in res
+    assert "perbandingan" in res["catatan"]
+    assert "Ada 5 produk di monitor ini" in res["catatan"]
+    assert res.get("produk") == []
+
+
+
