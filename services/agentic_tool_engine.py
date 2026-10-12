@@ -579,7 +579,8 @@ def run_agentic_tool(
                                 "kode": p.get("kode"),
                                 "nama": p.get("nama"),
                                 "harga": p.get("harga") or p.get("harga_idr"),
-                                "spek": spek_val
+                                "spek": spek_val,
+                                "ada_foto": bool(p.get("ada_foto"))
                             })
                 elif "detail" in tool_res:
                     details = tool_res.get("detail", [])
@@ -594,7 +595,8 @@ def run_agentic_tool(
                                 "kode": d.get("kode"),
                                 "nama": d.get("nama"),
                                 "harga": d.get("harga"),
-                                "spek": spek_val
+                                "spek": spek_val,
+                                "ada_foto": bool(d.get("ada_foto"))
                             })
                 elif "pengetahuan" in tool_res:
                     k_items = tool_res.get("pengetahuan", [])
@@ -736,6 +738,8 @@ def run_agentic_tool(
         "latency_ms": round(total_latency_ms, 2),
         "is_emergency_fallback": is_emergency_fallback,
         "emergency_error": emergency_error,
+        "error_darurat": emergency_error if is_emergency_fallback else None,
+        "hasil_alat_giliran": this_turn_tool_summaries,
         "mentioned_products": new_mentioned,
         "pemeriksa_catatan": pemeriksa_catatan,
     }

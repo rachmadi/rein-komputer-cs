@@ -384,6 +384,7 @@ def process_chat_message(
                 produk_tampil=[p["kode"] for p in active_products],
                 kartu_ditampilkan=bool(kartu_html),
                 is_emergency_fallback=tool_res.get("is_emergency_fallback", False),
+                error_darurat=tool_res.get("error_darurat"),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
