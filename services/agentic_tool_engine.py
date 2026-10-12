@@ -547,6 +547,10 @@ def run_agentic_tool(
     for m in history[-8:]:
         role = m.get("role") or ("assistant" if m.get("sender") in ("bot", "assistant") else "user")
         content = m.get("content") or m.get("text") or ""
+        if m.get("terkirim") is False:
+            prefix = "(Balasan ini TIDAK sampai ke pelanggan karena gangguan koneksi.) "
+            if not content.startswith(prefix):
+                content = prefix + content
         if content:
             messages.append({"role": role, "content": content})
 

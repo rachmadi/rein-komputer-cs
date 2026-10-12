@@ -278,6 +278,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             fallback_fn=lambda: update.message.reply_text(plain_clean, reply_markup=fb_kb),
         )
 
+        if not sukses_teks:
+            from services.chat_service import tandai_pesan_terakhir_tidak_terkirim
+            tandai_pesan_terakhir_tidak_terkirim(session_id)
+
         typing_task.cancel()
 
         # Inisialisasi himpunan kode produk yang sudah pernah dikirimkan fotonya

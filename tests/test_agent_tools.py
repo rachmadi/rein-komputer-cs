@@ -1109,3 +1109,45 @@ def test_putaran25_butir1_kirim_ke_pelanggan_retry():
     asyncio.run(_async_test())
 
 
+def test_putaran25_butir2_riwayat_jujur():
+    """Menguji penandaan pesan tidak terkirim dan awalan catatan koneksi pada riwayat LLM (Putaran 25 Butir 2)."""
+    from services.chat_service import get_session_manager, tandai_pesan_terakhir_tidak_terkirim
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    mgr = get_session_manager()
+    sid = "test_p25_b2_session"
+    mgr._sessions.pop(sid, None)
+
+    # Tambahkan pesan user dan bot
+    mgr.add_message(sid, "user", "Ada mini pc?")
+    mgr.add_message(sid, "bot", "Ada Kak, kami punya Intel NUC.")
+
+    # Tandai tidak terkirim
+    marked = tandai_pesan_terakhir_tidak_terkirim(sid)
+    assert marked is True
+
+    sess = mgr.get_session(sid)
+    assert sess["messages"][-1]["terkirim"] is False
+
+    # Verifikasi riwayat yang disusun untuk LLM memuat awalan khusus
+    captured_messages = []
+    def mock_ollama(messages, **kwargs):
+        captured_messages.extend(messages)
+        return {
+            "message": {"role": "assistant", "content": "Iya Kak, tadi ada gangguan koneksi."}
+        }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        run_agentic_tool(
+            user_text="Kok gak jawab?",
+            history=sess["messages"],
+        )
+
+    expected_prefix = "(Balasan ini TIDAK sampai ke pelanggan karena gangguan koneksi.) "
+    bot_in_llm = [m for m in captured_messages if m.get("role") == "assistant" and expected_prefix in m.get("content", "")]
+    assert len(bot_in_llm) >= 1, "Pesan tidak terkirim harus diawali penanda gangguan koneksi"
+    assert bot_in_llm[0]["content"].startswith(expected_prefix)
+
+
+

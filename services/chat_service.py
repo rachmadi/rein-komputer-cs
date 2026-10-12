@@ -77,6 +77,14 @@ class SessionManager:
         sess["messages"].append(msg)
         return msg
 
+    def mark_last_bot_message_undelivered(self, session_id: str) -> bool:
+        sess = self.get_session(session_id)
+        for msg in reversed(sess.get("messages", [])):
+            if msg.get("sender") in ("bot", "assistant") or msg.get("role") == "assistant":
+                msg["terkirim"] = False
+                return True
+        return False
+
 import os
 from dotenv import load_dotenv
 
@@ -92,6 +100,10 @@ logger.info(
 
 _session_manager = SessionManager()
 _session_pipeline = None
+
+def tandai_pesan_terakhir_tidak_terkirim(session_id: str) -> bool:
+    """Tandai pesan bot terakhir di sesi sebagai tidak terkirim (field terkirim = False)."""
+    return _session_manager.mark_last_bot_message_undelivered(session_id)
 
 def get_session_manager() -> SessionManager:
     return _session_manager
