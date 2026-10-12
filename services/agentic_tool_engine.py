@@ -29,7 +29,7 @@ from services.catalog_search import clean_specs
 
 logger = logging.getLogger("agentic_tool_engine")
 
-PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "V3")
+PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "V4")
 
 # =============================================================================
 # KOMPONEN-KOMPONEN PROMPT (Putaran 19b Butir 2)
