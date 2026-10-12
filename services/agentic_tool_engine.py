@@ -192,6 +192,9 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
 
 SYSTEM_PROMPT = build_agent_system_prompt()
 
+PEMERIKSAAN_ULANG_JANJI: bool = False
+MODE_BERPIKIR: bool = False
+
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
 
 
@@ -352,10 +355,11 @@ def call_ollama_chat_raw(
     messages: list[dict],
     tools: list[dict] | None = None,
     model: str = "gemma4:e4b",
-    url: str = "http://localhost:11434",
+    url: str = "http://127.0.0.1:11434",
     num_predict: int = 1024,
     num_ctx: int = 8192,
-    timeout: int = 120
+    timeout: int = 120,
+    think: bool = False
 ) -> dict:
     """Memanggil endpoint /api/chat Ollama secara langsung dan mengembalikan respons mentah & metrik."""
     t0 = time.perf_counter()
@@ -363,7 +367,7 @@ def call_ollama_chat_raw(
         "model": model,
         "messages": messages,
         "stream": False,
-        "think": False,
+        "think": think,
         "options": {
             "num_predict": num_predict,
             "num_ctx": num_ctx,
@@ -444,6 +448,8 @@ def run_agentic_tool(
     session_state: Optional[dict] = None,
     varian: Optional[str] = None,
     menunggu_menit: Optional[int] = None,
+    pemeriksaan_ulang_janji: Optional[bool] = None,
+    mode_berpikir: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -510,189 +516,267 @@ def run_agentic_tool(
     messages.append({"role": "user", "content": user_text})
 
     MAX_TOOL_ROUNDS = 3
-    round_idx = 0
-    final_reply = ""
     all_tool_calls_logged: list[dict[str, Any]] = []
     all_llm_calls_logged: list[dict[str, Any]] = []
     all_tools_products_returned: list[dict[str, Any]] = []
+    this_turn_tool_summaries: list[dict[str, Any]] = []
     is_emergency_fallback = False
     emergency_error = None
 
-    this_turn_tool_summaries: list[dict[str, Any]] = []
+    active_pemeriksaan = PEMERIKSAAN_ULANG_JANJI if pemeriksaan_ulang_janji is None else bool(pemeriksaan_ulang_janji)
+    active_berpikir = MODE_BERPIKIR if mode_berpikir is None else bool(mode_berpikir)
 
-    while round_idx < MAX_TOOL_ROUNDS:
-        try:
-            llm_resp = call_ollama_chat_raw(
-                messages=messages,
-                tools=AGENT_TOOLS_SCHEMA,
-                model=model,
-                url=url,
-                num_predict=1024,
-                num_ctx=8192,
-                timeout=120
-            )
-        except Exception as e:
-            logger.error(f"Ollama chat error pada putaran {round_idx + 1}: {e}", exc_info=True)
-            emergency_error = str(e)
-            is_emergency_fallback = True
+    think_flag = bool(active_berpikir)
+    num_predict_val = 2048 if think_flag else 1024
+
+    JANJI_POLA = re.compile(r"\b(cek|periksa|carikan|cari dulu|lihat dulu|saya cari|saya carikan)\b", re.IGNORECASE)
+
+    def _execute_tool_rounds(current_msgs: list[dict], max_rounds: int = 3) -> tuple[str, bool, Optional[str]]:
+        nonlocal is_emergency_fallback, emergency_error
+        round_idx = 0
+        current_reply = ""
+
+        while round_idx < max_rounds:
+            call_num = len(all_llm_calls_logged) + 1
+            try:
+                llm_resp = call_ollama_chat_raw(
+                    messages=current_msgs,
+                    tools=AGENT_TOOLS_SCHEMA,
+                    model=model,
+                    url=url,
+                    num_predict=num_predict_val,
+                    num_ctx=8192,
+                    timeout=120,
+                    think=think_flag
+                )
+            except Exception as e:
+                logger.error(f"Ollama chat error pada putaran {round_idx + 1}: {e}", exc_info=True)
+                emergency_error = str(e)
+                is_emergency_fallback = True
+                all_llm_calls_logged.append({
+                    "urutan": call_num,
+                    "prompt_eval_count": None,
+                    "eval_count": None,
+                    "done_reason": "error",
+                    "latensi_ms": 0.0,
+                    "latensi": 0.0,
+                    "raw_output": str(e),
+                    "error": str(e),
+                    "thinking_chars": 0
+                })
+                return "", True, str(e)
+
+            msg = llm_resp.get("message", {})
+            tool_calls = msg.get("tool_calls")
+            latency_call = llm_resp.get("_latency_ms", 0.0)
+
+            msg_content = msg.get("content", "") or ""
+            thinking_str = msg.get("thinking") or ""
+            if not thinking_str and "<think>" in msg_content and "</think>" in msg_content:
+                m = re.search(r"<think>(.*?)</think>", msg_content, flags=re.DOTALL)
+                if m:
+                    thinking_str = m.group(1)
+            if "<think>" in msg_content:
+                msg_content = re.sub(r"<think>.*?</think>", "", msg_content, flags=re.DOTALL).strip()
+
+            thinking_chars = len(thinking_str)
+
             all_llm_calls_logged.append({
-                "urutan": round_idx + 1,
-                "prompt_eval_count": None,
-                "eval_count": None,
-                "done_reason": "error",
-                "latensi_ms": 0.0,
-                "latensi": 0.0,
-                "raw_output": str(e),
-                "error": str(e)
+                "urutan": call_num,
+                "prompt_eval_count": llm_resp.get("prompt_eval_count"),
+                "eval_count": llm_resp.get("eval_count"),
+                "done_reason": llm_resp.get("done_reason"),
+                "latensi_ms": round(latency_call, 2),
+                "latensi": round(latency_call, 2),
+                "raw_output": llm_resp.get("_raw_output", ""),
+                "thinking_chars": thinking_chars
             })
-            break
 
-        msg = llm_resp.get("message", {})
-        tool_calls = msg.get("tool_calls")
-        latency_call = llm_resp.get("_latency_ms", 0.0)
+            if not tool_calls:
+                # LLM langsung memberikan jawaban akhir
+                current_reply = msg_content.strip()
+                return current_reply, False, None
 
-        all_llm_calls_logged.append({
-            "urutan": round_idx + 1,
-            "prompt_eval_count": llm_resp.get("prompt_eval_count"),
-            "eval_count": llm_resp.get("eval_count"),
-            "done_reason": llm_resp.get("done_reason"),
-            "latensi_ms": round(latency_call, 2),
-            "latensi": round(latency_call, 2),
-            "raw_output": llm_resp.get("_raw_output", "")
+            # LLM memanggil alat
+            current_msgs.append(msg)
+            for tc in tool_calls:
+                fn = tc.get("function", {})
+                fn_name = fn.get("name", "")
+                fn_args = fn.get("arguments", {})
+                if isinstance(fn_args, str):
+                    try:
+                        fn_args = json.loads(fn_args)
+                    except Exception:
+                        fn_args = {}
+
+                t0_tool = time.perf_counter()
+                tool_res = execute_agent_tool(fn_name, fn_args)
+                t_tool = (time.perf_counter() - t0_tool) * 1000
+
+                prod_summary_list = []
+                pengetahuan_summary_list = []
+                total_cocok = 0
+                if isinstance(tool_res, dict):
+                    total_cocok = tool_res.get("total_cocok", 0)
+                    if "produk" in tool_res:
+                        prods = tool_res.get("produk", [])
+                        if isinstance(prods, list):
+                            all_tools_products_returned.extend(prods)
+                            for p in prods:
+                                spek_val = p.get("spek_ringkas")
+                                if not spek_val:
+                                    cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
+                                    spek_val = clean_specs(cat_p or p)
+                                prod_summary_list.append({
+                                    "kode": p.get("kode"),
+                                    "nama": p.get("nama"),
+                                    "harga": p.get("harga") or p.get("harga_idr"),
+                                    "spek": spek_val,
+                                    "ada_foto": bool(p.get("ada_foto"))
+                                })
+                    elif "detail" in tool_res:
+                        details = tool_res.get("detail", [])
+                        if isinstance(details, list):
+                            all_tools_products_returned.extend(details)
+                            for d in details:
+                                spek_val = d.get("spek_ringkas")
+                                if not spek_val:
+                                    cat_d = cat.by_code.get(d.get("kode")) if d.get("kode") else None
+                                    spek_val = clean_specs(cat_d or d)
+                                prod_summary_list.append({
+                                    "kode": d.get("kode"),
+                                    "nama": d.get("nama"),
+                                    "harga": d.get("harga"),
+                                    "spek": spek_val,
+                                    "ada_foto": bool(d.get("ada_foto"))
+                                })
+                    elif "pengetahuan" in tool_res:
+                        k_items = tool_res.get("pengetahuan", [])
+                        if isinstance(k_items, list):
+                            for it in k_items:
+                                chunk_teks = str(it.get("teks") or it.get("konten") or it.get("isi") or "").strip()
+                                cuplikan = chunk_teks[:200]
+                                pengetahuan_summary_list.append({
+                                    "id": it.get("id"),
+                                    "judul": it.get("judul"),
+                                    "cuplikan": cuplikan
+                                })
+
+                tool_sum = {
+                    "nama": fn_name,
+                    "argumen": fn_args,
+                    "total_cocok": total_cocok,
+                    "produk": prod_summary_list,
+                    "pengetahuan": pengetahuan_summary_list
+                }
+                if isinstance(tool_res, dict):
+                    if "sumber" in tool_res:
+                        tool_sum["sumber"] = tool_res["sumber"]
+                    if "alasan_cadangan" in tool_res:
+                        tool_sum["alasan_cadangan"] = tool_res["alasan_cadangan"]
+                this_turn_tool_summaries.append(tool_sum)
+
+                ringkasan = summarize_tool_result(fn_name, tool_res)
+                tool_call_log = {
+                    "nama": fn_name,
+                    "argumen": fn_args,
+                    "ringkasan_hasil": ringkasan,
+                    "latensi_ms": round(t_tool, 2),
+                    "latensi": round(t_tool, 2),
+                }
+                if isinstance(tool_res, dict):
+                    if "sumber" in tool_res:
+                        tool_call_log["sumber"] = tool_res["sumber"]
+                    if "alasan_cadangan" in tool_res:
+                        tool_call_log["alasan_cadangan"] = tool_res["alasan_cadangan"]
+                all_tool_calls_logged.append(tool_call_log)
+
+                current_msgs.append({
+                    "role": "tool",
+                    "content": json.dumps(tool_res, ensure_ascii=False)
+                })
+
+            round_idx += 1
+
+        # Jika setelah loop belum ada final_reply dan tidak ada error, minta balasan akhir sintetis tanpa alat
+        if not current_reply and not is_emergency_fallback:
+            call_num = len(all_llm_calls_logged) + 1
+            try:
+                llm_resp_final = call_ollama_chat_raw(
+                    messages=current_msgs,
+                    tools=None,
+                    model=model,
+                    url=url,
+                    num_predict=num_predict_val,
+                    num_ctx=8192,
+                    timeout=120,
+                    think=think_flag
+                )
+                msg_final = llm_resp_final.get("message", {})
+                final_content = msg_final.get("content", "") or ""
+                final_thinking = msg_final.get("thinking") or ""
+                if not final_thinking and "<think>" in final_content and "</think>" in final_content:
+                    m = re.search(r"<think>(.*?)</think>", final_content, flags=re.DOTALL)
+                    if m:
+                        final_thinking = m.group(1)
+                if "<think>" in final_content:
+                    final_content = re.sub(r"<think>.*?</think>", "", final_content, flags=re.DOTALL).strip()
+
+                current_reply = final_content.strip()
+                all_llm_calls_logged.append({
+                    "urutan": call_num,
+                    "prompt_eval_count": llm_resp_final.get("prompt_eval_count"),
+                    "eval_count": llm_resp_final.get("eval_count"),
+                    "done_reason": llm_resp_final.get("done_reason"),
+                    "latensi_ms": round(llm_resp_final.get("_latency_ms", 0.0), 2),
+                    "latensi": round(llm_resp_final.get("_latency_ms", 0.0), 2),
+                    "raw_output": llm_resp_final.get("_raw_output", ""),
+                    "thinking_chars": len(final_thinking)
+                })
+            except Exception as e:
+                logger.error(f"Ollama final synthesis error: {e}", exc_info=True)
+                is_emergency_fallback = True
+                emergency_error = str(e)
+                all_llm_calls_logged.append({
+                    "urutan": call_num,
+                    "prompt_eval_count": None,
+                    "eval_count": None,
+                    "done_reason": "error",
+                    "latensi_ms": 0.0,
+                    "latensi": 0.0,
+                    "raw_output": str(e),
+                    "error": str(e),
+                    "thinking_chars": 0
+                })
+
+        return current_reply, is_emergency_fallback, emergency_error
+
+    final_reply, is_emergency_fallback, emergency_error = _execute_tool_rounds(messages, max_rounds=MAX_TOOL_ROUNDS)
+
+    pemeriksaan_ulang_terpicu = False
+    balasan_sebelum_periksa = None
+
+    if (
+        active_pemeriksaan
+        and not is_emergency_fallback
+        and len(this_turn_tool_summaries) == 0
+        and final_reply
+        and bool(JANJI_POLA.search(final_reply.lower()))
+    ):
+        pemeriksaan_ulang_terpicu = True
+        balasan_sebelum_periksa = final_reply
+        messages.append({"role": "assistant", "content": final_reply})
+        messages.append({
+            "role": "system",
+            "content": (
+                "Balasanmu menyatakan akan mengecek, tetapi di giliran ini kamu belum memanggil alat. "
+                "Panggil alat yang dibutuhkan sekarang, atau tulis ulang balasanmu tanpa janji mengecek "
+                "dan tanpa menyuruh pelanggan mengecek sendiri."
+            )
         })
-
-        if not tool_calls:
-            # LLM langsung memberikan jawaban akhir
-            final_reply = msg.get("content", "").strip()
-            break
-
-        # LLM memanggil alat
-        messages.append(msg)
-        for tc in tool_calls:
-            fn = tc.get("function", {})
-            fn_name = fn.get("name", "")
-            fn_args = fn.get("arguments", {})
-            if isinstance(fn_args, str):
-                try:
-                    fn_args = json.loads(fn_args)
-                except Exception:
-                    fn_args = {}
-
-            t0_tool = time.perf_counter()
-            tool_res = execute_agent_tool(fn_name, fn_args)
-            t_tool = (time.perf_counter() - t0_tool) * 1000
-
-            prod_summary_list = []
-            pengetahuan_summary_list = []
-            total_cocok = 0
-            if isinstance(tool_res, dict):
-                total_cocok = tool_res.get("total_cocok", 0)
-                if "produk" in tool_res:
-                    prods = tool_res.get("produk", [])
-                    if isinstance(prods, list):
-                        all_tools_products_returned.extend(prods)
-                        for p in prods:
-                            spek_val = p.get("spek_ringkas")
-                            if not spek_val:
-                                cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
-                                spek_val = clean_specs(cat_p or p)
-                            prod_summary_list.append({
-                                "kode": p.get("kode"),
-                                "nama": p.get("nama"),
-                                "harga": p.get("harga") or p.get("harga_idr"),
-                                "spek": spek_val,
-                                "ada_foto": bool(p.get("ada_foto"))
-                            })
-                elif "detail" in tool_res:
-                    details = tool_res.get("detail", [])
-                    if isinstance(details, list):
-                        all_tools_products_returned.extend(details)
-                        for d in details:
-                            spek_val = d.get("spek_ringkas")
-                            if not spek_val:
-                                cat_d = cat.by_code.get(d.get("kode")) if d.get("kode") else None
-                                spek_val = clean_specs(cat_d or d)
-                            prod_summary_list.append({
-                                "kode": d.get("kode"),
-                                "nama": d.get("nama"),
-                                "harga": d.get("harga"),
-                                "spek": spek_val,
-                                "ada_foto": bool(d.get("ada_foto"))
-                            })
-                elif "pengetahuan" in tool_res:
-                    k_items = tool_res.get("pengetahuan", [])
-                    if isinstance(k_items, list):
-                        for it in k_items:
-                            chunk_teks = str(it.get("teks") or it.get("konten") or it.get("isi") or "").strip()
-                            cuplikan = chunk_teks[:200]
-                            pengetahuan_summary_list.append({
-                                "id": it.get("id"),
-                                "judul": it.get("judul"),
-                                "cuplikan": cuplikan
-                            })
-
-            tool_sum = {
-                "nama": fn_name,
-                "argumen": fn_args,
-                "total_cocok": total_cocok,
-                "produk": prod_summary_list,
-                "pengetahuan": pengetahuan_summary_list
-            }
-            if isinstance(tool_res, dict):
-                if "sumber" in tool_res:
-                    tool_sum["sumber"] = tool_res["sumber"]
-                if "alasan_cadangan" in tool_res:
-                    tool_sum["alasan_cadangan"] = tool_res["alasan_cadangan"]
-            this_turn_tool_summaries.append(tool_sum)
-
-            ringkasan = summarize_tool_result(fn_name, tool_res)
-            tool_call_log = {
-                "nama": fn_name,
-                "argumen": fn_args,
-                "ringkasan_hasil": ringkasan,
-                "latensi_ms": round(t_tool, 2),
-                "latensi": round(t_tool, 2),
-            }
-            if isinstance(tool_res, dict):
-                if "sumber" in tool_res:
-                    tool_call_log["sumber"] = tool_res["sumber"]
-                if "alasan_cadangan" in tool_res:
-                    tool_call_log["alasan_cadangan"] = tool_res["alasan_cadangan"]
-            all_tool_calls_logged.append(tool_call_log)
-
-            messages.append({
-                "role": "tool",
-                "content": json.dumps(tool_res, ensure_ascii=False)
-            })
-
-        round_idx += 1
-
-    # Jika setelah loop belum ada final_reply dan tidak ada error, minta balasan akhir sintetis tanpa alat
-    if not final_reply and not is_emergency_fallback:
-        try:
-            llm_resp_final = call_ollama_chat_raw(
-                messages=messages,
-                tools=None,
-                model=model,
-                url=url,
-                num_predict=1024,
-                num_ctx=8192,
-                timeout=120
-            )
-            final_reply = llm_resp_final.get("message", {}).get("content", "").strip()
-            all_llm_calls_logged.append({
-                "urutan": round_idx + 1,
-                "prompt_eval_count": llm_resp_final.get("prompt_eval_count"),
-                "eval_count": llm_resp_final.get("eval_count"),
-                "done_reason": llm_resp_final.get("done_reason"),
-                "latensi_ms": round(llm_resp_final.get("_latency_ms", 0.0), 2),
-                "latensi": round(llm_resp_final.get("_latency_ms", 0.0), 2),
-                "raw_output": llm_resp_final.get("_raw_output", "")
-            })
-        except Exception as e:
-            logger.error(f"Ollama final synthesis error: {e}", exc_info=True)
-            is_emergency_fallback = True
-            emergency_error = str(e)
+        new_reply, is_emergency_fallback, emergency_error = _execute_tool_rounds(messages, max_rounds=MAX_TOOL_ROUNDS)
+        if new_reply:
+            final_reply = new_reply
 
     if is_emergency_fallback or not final_reply:
         final_reply = FALLBACK_EMERGENCY_REPLY
@@ -775,4 +859,6 @@ def run_agentic_tool(
         "hasil_alat_giliran": this_turn_tool_summaries,
         "mentioned_products": new_mentioned,
         "pemeriksa_catatan": pemeriksa_catatan,
+        "pemeriksaan_ulang": pemeriksaan_ulang_terpicu,
+        "balasan_sebelum_periksa": balasan_sebelum_periksa,
     }

@@ -388,6 +388,8 @@ def process_chat_message(
                 is_emergency_fallback=tool_res.get("is_emergency_fallback", False),
                 error_darurat=tool_res.get("error_darurat"),
                 menunggu_menit=menunggu_menit,
+                pemeriksaan_ulang=tool_res.get("pemeriksaan_ulang"),
+                balasan_sebelum_periksa=tool_res.get("balasan_sebelum_periksa"),
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)

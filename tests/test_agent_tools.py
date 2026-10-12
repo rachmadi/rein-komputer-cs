@@ -582,7 +582,154 @@ def test_search_kb_markdown_all_tidak_pernah_berjudul_komentar():
             for it in res_kw.get("pengetahuan", []):
                 assert "<!--" not in it.get("judul", "")
 
+def test_pemeriksaan_ulang_terpicu_pada_janji_tanpa_alat():
+    """Menguji mekanisme A: terpicu pada 'Saya cek dulu ya Kak' tanpa alat (Putaran 21 Butir 2c)."""
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    calls = []
+
+    def mock_ollama(messages, **kwargs):
+        calls.append(list(messages))
+        if len(calls) == 1:
+            return {
+                "message": {"role": "assistant", "content": "Saya cek dulu ya Kak"}
+            }
+        else:
+            return {
+                "message": {"role": "assistant", "content": "Stok produk kami saat ini tersedia lengkap Kak."}
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res = run_agentic_tool(
+            user_text="Laptop ready kak?",
+            history=[],
+            pemeriksaan_ulang_janji=True
+        )
+
+    assert res["pemeriksaan_ulang"] is True
+    assert res["balasan_sebelum_periksa"] == "Saya cek dulu ya Kak"
+    assert res["reply"] == "Stok produk kami saat ini tersedia lengkap Kak."
+    assert len(calls) == 2
+
+    # Verifikasi pesan teguran sistem dikirim ke panggilan kedua
+    pesan_kedua = calls[1]
+    expected_teguran = (
+        "Balasanmu menyatakan akan mengecek, tetapi di giliran ini kamu belum memanggil alat. "
+        "Panggil alat yang dibutuhkan sekarang, atau tulis ulang balasanmu tanpa janji mengecek "
+        "dan tanpa menyuruh pelanggan mengecek sendiri."
+    )
+    assert any(m.get("role") == "system" and m.get("content") == expected_teguran for m in pesan_kedua)
+    assert any(m.get("role") == "assistant" and m.get("content") == "Saya cek dulu ya Kak" for m in pesan_kedua)
 
 
+def test_pemeriksaan_ulang_tidak_terpicu_bila_alat_sudah_dipanggil():
+    """Menguji mekanisme A: tidak terpicu bila alat sudah dipanggil di giliran ini (Putaran 21 Butir 2c)."""
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    calls = []
+
+    def mock_ollama(messages, **kwargs):
+        calls.append(list(messages))
+        if len(calls) == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "katalog",
+                                "arguments": {"kata_kunci": "ideapad"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {"role": "assistant", "content": "Saya sudah cek, berikut pilihannya..."}
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res = run_agentic_tool(
+            user_text="Cari Lenovo Ideapad",
+            history=[],
+            pemeriksaan_ulang_janji=True
+        )
+
+    assert res["pemeriksaan_ulang"] is False
+    assert res["balasan_sebelum_periksa"] is None
+    assert len(res["tools_called"]) > 0
 
 
+def test_pemeriksaan_ulang_tidak_terpicu_pada_balasan_tanpa_pola():
+    """Menguji mekanisme A: tidak terpicu pada balasan tanpa kata-kata janji periksa (Putaran 21 Butir 2c)."""
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    calls = []
+
+    def mock_ollama(messages, **kwargs):
+        calls.append(list(messages))
+        return {
+            "message": {"role": "assistant", "content": "Halo Kak, selamat datang di ReIn Komputer! Ada yang bisa saya bantu?"}
+        }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res = run_agentic_tool(
+            user_text="Halo kak",
+            history=[],
+            pemeriksaan_ulang_janji=True
+        )
+
+    assert res["pemeriksaan_ulang"] is False
+    assert res["balasan_sebelum_periksa"] is None
+    assert len(calls) == 1
+
+
+def test_payload_mode_berpikir_berisi_think_true_dan_num_predict_2048():
+    """Menguji mekanisme B: payload berisi think true dan num_predict 2048 (Putaran 21 Butir 2c)."""
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    captured_kwargs = []
+
+    def mock_ollama(*args, **kwargs):
+        captured_kwargs.append(dict(kwargs))
+        return {
+            "message": {
+                "role": "assistant",
+                "content": "Halo Kak!",
+                "thinking": "Sedang berpikir mendalam..."
+            }
+        }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res_b = run_agentic_tool(
+            user_text="Halo kak",
+            history=[],
+            mode_berpikir=True
+        )
+
+    assert len(captured_kwargs) == 1
+    assert captured_kwargs[0]["think"] is True
+    assert captured_kwargs[0]["num_predict"] == 2048
+    # Verifikasi isi thinking tidak dikirim ke pelanggan
+    assert res_b["reply"] == "Halo Kak!"
+    # Verifikasi panjang thinking dicatat di llm_calls
+    assert res_b["llm_calls"][0]["thinking_chars"] == len("Sedang berpikir mendalam...")
+
+    # Verifikasi mode berpikir mati (bawaan)
+    captured_kwargs.clear()
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama):
+        res_default = run_agentic_tool(
+            user_text="Halo kak",
+            history=[],
+            mode_berpikir=False
+        )
+
+    assert len(captured_kwargs) == 1
+    assert captured_kwargs[0]["think"] is False
+    assert captured_kwargs[0]["num_predict"] == 1024

@@ -233,3 +233,30 @@ def test_log_foto_terkirim_records_entries():
         assert last_rec["type"] == "foto_terkirim"
         assert last_rec["alasan"] == "tidak ada berkas"
 
+
+def test_log_turn_pemeriksaan_ulang():
+    """Memverifikasi pencatatan pemeriksaan_ulang dan balasan_sebelum_periksa di log."""
+    res = log_turn(
+        session_id="test_session_pemeriksaan_01",
+        user_text="Laptop ready?",
+        bot_reply="Stok ready.",
+        pemeriksaan_ulang=True,
+        balasan_sebelum_periksa="Saya cek dulu ya Kak",
+        penguji="otomatis"
+    )
+
+    assert res["pemeriksaan_ulang"] is True
+    assert res["balasan_sebelum_periksa"] == "Saya cek dulu ya Kak"
+
+    # Periksa di SQLite
+    test_db = os.getenv("DB_PATH", "data/test_catalog.db")
+    conn = sqlite3.connect(test_db)
+    cur = conn.cursor()
+    cur.execute("SELECT pemeriksaan_ulang, balasan_sebelum_periksa FROM chat_logs WHERE log_id = ?", (res["log_id"],))
+    row = cur.fetchone()
+    conn.close()
+
+    assert row is not None
+    assert row[0] == 1
+    assert row[1] == "Saya cek dulu ya Kak"
+
