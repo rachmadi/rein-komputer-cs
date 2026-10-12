@@ -443,6 +443,7 @@ def run_agentic_tool(
     url: str = "http://127.0.0.1:11434",
     session_state: Optional[dict] = None,
     varian: Optional[str] = None,
+    menunggu_menit: Optional[int] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -496,6 +497,15 @@ def run_agentic_tool(
 
     if variant_has_reminder(active_var):
         messages.append({"role": "system", "content": KOMPONEN_P})
+
+    menunggu_val = menunggu_menit if menunggu_menit is not None else kwargs.get("menunggu_menit")
+    if menunggu_val is not None and menunggu_val >= 5:
+        pesan_tertunda = (
+            f"Catatan: pesan pelanggan berikut sudah menunggu sekitar {menunggu_val} menit "
+            "karena layanan sempat tidak aktif. Kamu boleh meminta maaf atas keterlambatannya "
+            "dengan wajar, lalu layani seperti biasa."
+        )
+        messages.append({"role": "system", "content": pesan_tertunda})
 
     messages.append({"role": "user", "content": user_text})
 

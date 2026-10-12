@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import hashlib
@@ -175,10 +175,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     typing_task = asyncio.create_task(keep_typing())
 
+    # Hitung waktu tunggu pesan (Putaran 20 Butir 7)
+    msg_date = update.message.date
+    menunggu_menit = 0
+    if msg_date:
+        now_dt = datetime.now(timezone.utc) if msg_date.tzinfo else datetime.now()
+        diff_sec = (now_dt - msg_date).total_seconds()
+        menunggu_menit = max(0, int(diff_sec / 60))
+
     try:
-        res = await asyncio.to_thread(process_chat_message, 
+        res = await asyncio.to_thread(
+            process_chat_message, 
             session_id,
-            user_text)
+            user_text,
+            menunggu_menit=menunggu_menit
+        )
         cards_html = res.get("kartu_produk_html")
         reply_text = (res.get("reply") or "").strip()
         if not reply_text:

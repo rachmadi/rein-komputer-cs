@@ -512,4 +512,51 @@ def test_katalog_kata_kunci_tidak_cocok_kembalikan_catatan():
     assert res.get("produk") == []
 
 
+def test_pesan_tertunda_sisipan_catatan():
+    """Menguji penyisipan catatan pesan tertunda pada 5 menit dan tidak pada 4 menit (Putaran 20 Butir 7)."""
+    from unittest.mock import patch
+    from services.agentic_tool_engine import run_agentic_tool
+
+    captured_messages_5 = []
+    captured_messages_4 = []
+
+    def mock_ollama_5(messages, **kwargs):
+        captured_messages_5.extend(messages)
+        return {"message": {"role": "assistant", "content": "Halo Kak!"}}
+
+    def mock_ollama_4(messages, **kwargs):
+        captured_messages_4.extend(messages)
+        return {"message": {"role": "assistant", "content": "Halo Kak!"}}
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_5):
+        run_agentic_tool(
+            user_text="Halo apa kabar?",
+            history=[],
+            menunggu_menit=5
+        )
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_4):
+        run_agentic_tool(
+            user_text="Halo apa kabar?",
+            history=[],
+            menunggu_menit=4
+        )
+
+    # Pada 5 menit: catatan disisipkan tepat sebelum pesan pelanggan
+    assert len(captured_messages_5) >= 2
+    assert captured_messages_5[-1] == {"role": "user", "content": "Halo apa kabar?"}
+    expected_note = (
+        "Catatan: pesan pelanggan berikut sudah menunggu sekitar 5 menit "
+        "karena layanan sempat tidak aktif. Kamu boleh meminta maaf atas keterlambatannya "
+        "dengan wajar, lalu layani seperti biasa."
+    )
+    assert captured_messages_5[-2] == {"role": "system", "content": expected_note}
+
+    # Pada 4 menit: catatan tidak disisipkan
+    for m in captured_messages_4:
+        assert "layanan sempat tidak aktif" not in m.get("content", "")
+        assert "sudah menunggu sekitar" not in m.get("content", "")
+
+
+
 

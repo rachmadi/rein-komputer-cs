@@ -114,7 +114,8 @@ def get_session_pipeline():
 def process_chat_message(
     session_id: str,
     user_text: str,
-    model: str | None = None
+    model: str | None = None,
+    menunggu_menit: int | None = None,
 ) -> dict[str, Any]:
     sess = _session_manager.get_session(session_id)
     state = sess["state"]
@@ -324,6 +325,7 @@ def process_chat_message(
             catalog=catalog,
             model=active_model,
             session_state=state,
+            menunggu_menit=menunggu_menit,
         )
         reply = tool_res["reply"]
         route = tool_res.get("route", "AGENTIC_TOOL")
@@ -385,6 +387,7 @@ def process_chat_message(
                 kartu_ditampilkan=bool(kartu_html),
                 is_emergency_fallback=tool_res.get("is_emergency_fallback", False),
                 error_darurat=tool_res.get("error_darurat"),
+                menunggu_menit=menunggu_menit,
             )
         except Exception as err:
             logger.error("Gagal menulis log chat turn: %s", err, exc_info=True)
