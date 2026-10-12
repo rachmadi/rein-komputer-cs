@@ -727,7 +727,8 @@ def test_payload_mode_berpikir_berisi_think_true_dan_num_predict_2048():
         res_default = run_agentic_tool(
             user_text="Halo kak",
             history=[],
-            mode_berpikir=False
+            mode_berpikir=False,
+            mode_berpikir_sebagian=False
         )
 
     assert len(captured_kwargs) == 1

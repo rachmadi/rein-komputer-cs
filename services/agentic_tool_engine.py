@@ -29,7 +29,7 @@ from services.catalog_search import clean_specs
 
 logger = logging.getLogger("agentic_tool_engine")
 
-PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "V4")
+PROMPT_VARIAN = os.getenv("PROMPT_VARIAN", "PB1")
 
 # =============================================================================
 # KOMPONEN-KOMPONEN PROMPT (Putaran 19b Butir 2)
@@ -205,8 +205,8 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
 SYSTEM_PROMPT = build_agent_system_prompt()
 
 PEMERIKSAAN_ULANG_JANJI: bool = False
-MODE_BERPIKIR: bool = True
-MODE_BERPIKIR_SEBAGIAN: bool = False
+MODE_BERPIKIR: bool = False
+MODE_BERPIKIR_SEBAGIAN: bool = True
 
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
