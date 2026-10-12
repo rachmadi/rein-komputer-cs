@@ -1058,3 +1058,54 @@ def test_putaran25_butir0_tidak_ada_pesan_ganda_dan_riwayat_kosong():
         assert any(m.get("content") == "halo" for m in msgs_turn2)
         assert any("Halo Kak, ada yang bisa dibantu?" in m.get("content", "") for m in msgs_turn2)
 
+
+def test_putaran25_butir1_kirim_ke_pelanggan_retry():
+    """
+    Menguji Putaran 25 Butir 1c:
+    - Gagal 2 kali lalu berhasil menghasilkan 1 pesan terkirim (sukses=True, attempts=3).
+    - Gagal 3 kali menghasilkan status gagal tanpa crash (sukses=False, attempts=3).
+    """
+    import asyncio
+    from telegram_bot import kirim_ke_pelanggan
+    from telegram.error import TimedOut, NetworkError
+
+    async def _async_test():
+        # Skenario 1: gagal 2 kali lalu berhasil
+        call_count_1 = 0
+        async def mock_sender_gagal_2_lalu_berhasil():
+            nonlocal call_count_1
+            call_count_1 += 1
+            if call_count_1 == 1:
+                raise TimedOut("Simulated timeout 1")
+            elif call_count_1 == 2:
+                raise NetworkError("Simulated network error 2")
+            return "Pesan terkirim"
+
+        sukses, err, attempts = await kirim_ke_pelanggan(
+            send_fn=mock_sender_gagal_2_lalu_berhasil,
+            delays=(0.001, 0.001)
+        )
+        assert sukses is True
+        assert err is None
+        assert attempts == 3
+        assert call_count_1 == 3
+
+        # Skenario 2: gagal 3 kali menghasilkan status gagal tanpa crash
+        call_count_2 = 0
+        async def mock_sender_gagal_3_kali():
+            nonlocal call_count_2
+            call_count_2 += 1
+            raise NetworkError(f"Simulated error {call_count_2}")
+
+        sukses_fail, err_fail, attempts_fail = await kirim_ke_pelanggan(
+            send_fn=mock_sender_gagal_3_kali,
+            delays=(0.001, 0.001)
+        )
+        assert sukses_fail is False
+        assert "Simulated error 3" in str(err_fail)
+        assert attempts_fail == 3
+        assert call_count_2 == 3
+
+    asyncio.run(_async_test())
+
+

@@ -27,6 +27,7 @@ import json
 import uuid
 import urllib.request
 import urllib.error
+from typing import Callable, Coroutine, Optional, Any, Set
 import time
 
 from telegram import (
@@ -35,6 +36,7 @@ from telegram import (
     Update,
 )
 from telegram.constants import ParseMode
+from telegram.error import TimedOut, NetworkError
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -155,6 +157,64 @@ def format_telegram_text(text: str) -> tuple[str, str | None]:
     return formatted, ParseMode.HTML
 
 
+async def kirim_ke_pelanggan(
+    send_fn: Callable[[], Coroutine[Any, Any, Any]],
+    fallback_fn: Optional[Callable[[], Coroutine[Any, Any, Any]]] = None,
+    delays: tuple[float, float] = (2.0, 5.0),
+) -> tuple[bool, Optional[str], int]:
+    """
+    Mengirim pesan ke pelanggan dengan percobaan hingga 3 kali bila terjadi TimedOut atau NetworkError
+    (Putaran 25 Butir 1b).
+    Jeda: delays[0] detik (default 2s) lalu delays[1] detik (default 5s).
+    Fallback teks polos tetap ada untuk kesalahan format HTML.
+    Mengembalikan tuple: (sukses: bool, error_teks: str | None, jumlah_percobaan: int)
+    """
+    active_fn = send_fn
+    switched_to_fallback = False
+    last_err: Optional[Exception] = None
+
+    for attempt in range(1, 4):
+        try:
+            await active_fn()
+            return True, None, attempt
+        except (TimedOut, NetworkError) as net_err:
+            last_err = net_err
+            logger.warning(
+                "Pengiriman ke pelanggan gagal pada percobaan %d/3 karena gangguan koneksi: %s",
+                attempt, net_err
+            )
+            if attempt < 3:
+                delay = delays[attempt - 1] if attempt - 1 < len(delays) else delays[-1]
+                await asyncio.sleep(delay)
+        except Exception as other_err:
+            last_err = other_err
+            # Kesalahan format HTML: beralih ke fallback teks polos bila tersedia
+            if fallback_fn is not None and not switched_to_fallback:
+                logger.warning(
+                    "Format HTML gagal (%s), beralih ke fallback teks polos pada percobaan %d/3",
+                    other_err, attempt
+                )
+                active_fn = fallback_fn
+                switched_to_fallback = True
+                try:
+                    await active_fn()
+                    return True, None, attempt
+                except (TimedOut, NetworkError) as net_err2:
+                    last_err = net_err2
+                    if attempt < 3:
+                        delay = delays[attempt - 1] if attempt - 1 < len(delays) else delays[-1]
+                        await asyncio.sleep(delay)
+                except Exception as fatal_err:
+                    last_err = fatal_err
+                    logger.error("Fallback teks polos juga gagal: %s", fatal_err)
+                    return False, str(fatal_err), attempt
+            else:
+                logger.error("Pengiriman gagal (non-network): %s", other_err)
+                return False, str(other_err), attempt
+
+    return False, str(last_err) if last_err else "Gagal setelah 3 percobaan", 3
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Memproses pesan teks dari pelanggan Telegram."""
     if not update.message or not update.message.text:
@@ -199,25 +259,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         products = res.get("products", [])
         route = res.get("route", "")
 
-        # 1. Antigravity v2: Kirim kartu produk terlebih dahulu (jika ada) sesuai R1 & Bagian 3
+        # 1. Antigravity v2 / Agentic: Kirim kartu produk terlebih dahulu (jika ada) sesuai R1 & Bagian 3
         if cards_html:
-            try:
-                await update.message.reply_text(cards_html, parse_mode=ParseMode.HTML)
-            except Exception as card_err:
-                logger.warning(f"Kirim kartu HTML gagal ({card_err}), fallback teks polos")
-                await update.message.reply_text(cards_html)
+            await kirim_ke_pelanggan(
+                send_fn=lambda: update.message.reply_text(cards_html, parse_mode=ParseMode.HTML),
+                fallback_fn=lambda: update.message.reply_text(cards_html),
+            )
             await asyncio.sleep(0.4)
 
         # 2. Kirim balasan teks percakapan dari Generator LLM dengan tombol umpan balik
         turn_id = str(uuid.uuid4())[:8]
         fb_kb = get_feedback_keyboard(turn_id)
         html_text, p_mode = format_telegram_text(reply_text)
-        try:
-            await update.message.reply_text(html_text, parse_mode=p_mode, reply_markup=fb_kb)
-        except Exception as tg_err:
-            logger.warning(f"ParseMode HTML gagal ({tg_err}), fallback ke teks polos")
-            plain_clean = re.sub(r"\*\*", "", reply_text)
-            await update.message.reply_text(plain_clean, reply_markup=fb_kb)
+        plain_clean = re.sub(r"\*\*", "", reply_text)
+
+        sukses_teks, err_teks, attempts_teks = await kirim_ke_pelanggan(
+            send_fn=lambda: update.message.reply_text(html_text, parse_mode=p_mode, reply_markup=fb_kb),
+            fallback_fn=lambda: update.message.reply_text(plain_clean, reply_markup=fb_kb),
+        )
 
         typing_task.cancel()
 
@@ -257,7 +316,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     prods_to_send = new_products[:2]
 
         sent_codes_this_turn = []
-        if prods_to_send:
+        if prods_to_send and sukses_teks:
             for p in prods_to_send:
                 # Putaran 15b Butir 3: telegram_bot.py hanya mengirim foto dari image_file yang ada.
                 # Hapus filter teks "unsplash". Tanpa berkas yang sah, tidak ada foto, dan tidak ada gambar pengganti.
@@ -281,17 +340,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 ram_part = f" | RAM {ram_val}" if ram_val else ""
                 caption = f"{nama}\nHarga: {harga}\n{cpu}{gpu_part}{ram_part}"
 
-                try:
-                    with open(img_path, "rb") as photo_f:
-                        await update.message.reply_photo(
+                async def _kirim_satu_foto(path=img_path, cap=caption):
+                    with open(path, "rb") as photo_f:
+                        return await update.message.reply_photo(
                             photo=photo_f,
-                            caption=caption
+                            caption=cap
                         )
+
+                sukses_foto, img_err, attempts_foto = await kirim_ke_pelanggan(
+                    send_fn=_kirim_satu_foto
+                )
+                if sukses_foto:
                     # Tandai bahwa foto produk ini sudah dikirimkan
                     if p.get("kode"):
                         sent_photos.add(p["kode"])
                         sent_codes_this_turn.append(p["kode"])
-                except Exception as img_err:
+                else:
                     logger.warning(f"Gagal mengirim foto {nama}: {img_err}")
 
         # Putaran 18e Butir 5: Catat foto yang terkirim / alasan gagal bila diminta
@@ -462,7 +526,15 @@ def main() -> None:
     # Butir 5: Pemanasan model (timeout maks 60 detik)
     warmup_models(timeout=60.0)
 
-    app = ApplicationBuilder().token(token).build()
+    app = (
+        ApplicationBuilder()
+        .token(token)
+        .connect_timeout(10)
+        .read_timeout(20)
+        .write_timeout(20)
+        .pool_timeout(10)
+        .build()
+    )
 
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("reset", reset_command))
