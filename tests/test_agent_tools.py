@@ -956,3 +956,35 @@ def test_pengurai_alat_mentah_terintegrasi_dan_fallback():
     assert res_rusak["error_darurat"] == "alat_mentah_gagal"
 
 
+def test_b1f_memuat_tambahan_pengingat_format():
+    """Menguji bahwa varian B1F menyisipkan kalimat format di akhir pengingat P (Putaran 23 Butir 4b)."""
+    from services.agentic_tool_engine import run_agentic_tool
+    from unittest.mock import patch
+
+    captured_b1f = []
+    captured_b1 = []
+
+    def mock_ollama_b1f(messages, **kwargs):
+        captured_b1f.append(list(messages))
+        return {"message": {"role": "assistant", "content": "Halo Kak!"}}
+
+    def mock_ollama_b1(messages, **kwargs):
+        captured_b1.append(list(messages))
+        return {"message": {"role": "assistant", "content": "Halo Kak!"}}
+
+    kalimat_tambahan = "Tulis balasan dalam satu paragraf, maksimal 4 kalimat, tanpa daftar dan tanpa baris baru."
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_b1f):
+        run_agentic_tool(user_text="Halo", history=[], varian="B1F")
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_b1):
+        run_agentic_tool(user_text="Halo", history=[], varian="B1")
+
+    # B1F harus memuat kalimat_tambahan di pesan sistem pengingat P
+    assert any(kalimat_tambahan in m.get("content", "") for m in captured_b1f[0])
+
+    # B1 TIDAK boleh memuat kalimat_tambahan
+    assert not any(kalimat_tambahan in m.get("content", "") for m in captured_b1[0])
+
+
+

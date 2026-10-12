@@ -171,7 +171,7 @@ def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[b
         persona = KOMPONEN_R
         with_k = True
         with_t = True
-    elif v in ("V4", "V5", "V6", "P", "PB1", "B", "B1"):
+    elif v in ("V4", "V5", "V6", "P", "PB1", "B", "B1", "B1F"):
         persona = KOMPONEN_R2
         with_k = True
         with_t = True
@@ -199,7 +199,7 @@ def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[b
 def variant_has_reminder(varian: Optional[str] = None) -> bool:
     """Apakah varian memakai pesan pengingat sistem P sebelum pesan user terbaru."""
     v = (varian or PROMPT_VARIAN).upper()
-    return v in ("V3", "V4", "V5", "V6", "C", "P", "PB1", "B", "B1")
+    return v in ("V3", "V4", "V5", "V6", "C", "P", "PB1", "B", "B1", "B1F")
 
 
 SYSTEM_PROMPT = build_agent_system_prompt()
@@ -551,7 +551,10 @@ def run_agentic_tool(
             messages.append({"role": role, "content": content})
 
     if variant_has_reminder(active_var):
-        messages.append({"role": "system", "content": KOMPONEN_P})
+        rem_content = KOMPONEN_P
+        if active_var == "B1F":
+            rem_content += " Tulis balasan dalam satu paragraf, maksimal 4 kalimat, tanpa daftar dan tanpa baris baru."
+        messages.append({"role": "system", "content": rem_content})
 
     menunggu_val = menunggu_menit if menunggu_menit is not None else kwargs.get("menunggu_menit")
     if menunggu_val is not None and menunggu_val >= 5:
