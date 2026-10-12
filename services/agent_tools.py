@@ -405,9 +405,10 @@ def katalog(
 # =============================================================================
 
 PENGETAHUAN_GABUNGAN: bool = False
+PENGETAHUAN_TOPK: int = int(os.getenv("PENGETAHUAN_TOPK", "3"))
 
 
-def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict]) -> list[dict]:
+def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict], limit: int = 3) -> list[dict]:
     """Menggabungkan hasil Qdrant dan pencarian kata kunci sesuai urutan Putaran 20 Butir 3b."""
     q_dict = {it["id"]: it for it in qdrant_items if it.get("id")}
     kw_dict = {it["id"]: it for it in kw_items if it.get("id")}
@@ -429,15 +430,15 @@ def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict]) 
             it = q_dict.get(cid) or kw_dict.get(cid)
             if it:
                 final_items.append(it)
-    return final_items[:3]
+    return final_items[:limit]
 
 
-def pengetahuan(pertanyaan: str) -> dict[str, Any]:
+def pengetahuan(pertanyaan: str, top_k: Optional[int] = None) -> dict[str, Any]:
     """
     Mencari panduan kebutuhan pengguna, penjelasan dan pertimbangan teknis komponen,
     panduan memilih kategori, atau kebijakan resmi toko ReIn Komputer.
     Cari ke SEMUA tipe chunk (G, P, M, kebijakan toko) di Qdrant.
-    Kembalikan 3 chunk teratas beserta ID dan judul bersih (tanpa kode internal P01/G01 di judul).
+    Kembalikan PENGETAHUAN_TOPK chunk teratas beserta ID dan judul bersih.
     """
     q_str = str(pertanyaan or "").strip()
     if not q_str:
@@ -448,6 +449,7 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
             "pengetahuan": []
         }
 
+    limit_k = top_k if top_k is not None else PENGETAHUAN_TOPK
     hasil_chunks = []
     sumber = "qdrant"
     alasan_cadangan = None
@@ -464,7 +466,7 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
             url = f"{QDRANT_URL}/collections/{col_name}/points/search"
             payload = {
                 "vector": vec,
-                "limit": 3,
+                "limit": limit_k,
                 "with_payload": True
             }
             resp = requests.post(url, json=payload, timeout=10)
@@ -494,7 +496,7 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
     # 2. Penggabungan atau fallback
     if PENGETAHUAN_GABUNGAN:
         kw_items = _search_kb_markdown_all(q_str)
-        hasil_chunks = _combine_qdrant_and_keyword(hasil_chunks, kw_items)
+        hasil_chunks = _combine_qdrant_and_keyword(hasil_chunks, kw_items, limit=limit_k)
         sumber = "gabungan"
     elif not hasil_chunks:
         # Fallback jika Qdrant gagal atau tidak menemukan hasil
@@ -506,7 +508,7 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
         "status": "sukses",
         "pertanyaan": q_str,
         "total_cocok": len(hasil_chunks),
-        "pengetahuan": hasil_chunks[:3],
+        "pengetahuan": hasil_chunks[:limit_k],
         "sumber": sumber
     }
     if sumber == "kata_kunci":
@@ -656,7 +658,8 @@ def execute_agent_tool(tool_name: str, tool_args: dict[str, Any], catalog=None) 
         )
     elif t_name == "pengetahuan":
         return pengetahuan(
-            pertanyaan=args.get("pertanyaan") or args.get("query") or args.get("kebutuhan") or args.get("topik") or ""
+            pertanyaan=args.get("pertanyaan") or args.get("query") or args.get("kebutuhan") or args.get("topik") or "",
+            top_k=args.get("top_k")
         )
     elif t_name == "cari_produk":
         return katalog(

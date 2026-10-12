@@ -989,4 +989,17 @@ def test_b1f_memuat_tambahan_pengingat_format():
     assert not any(kalimat_tambahan in m.get("content", "") for m in captured_b1[0])
 
 
+def test_pengetahuan_topk_configurable():
+    """Menguji bahwa PENGETAHUAN_TOPK bawaan adalah 3 dan pengetahuan() mendukung top_k configurable (Putaran 24 Butir 2)."""
+    from services.agent_tools import PENGETAHUAN_TOPK, pengetahuan
+    assert PENGETAHUAN_TOPK == 3
 
+    # Tes pencarian dengan top_k default (3) vs top_k=5
+    res3 = pengetahuan("apakah mini pc bisa dijual paket dengan monitor", top_k=3)
+    assert res3["status"] == "sukses"
+    assert len(res3["pengetahuan"]) <= 3
+
+    res5 = pengetahuan("apakah mini pc bisa dijual paket dengan monitor", top_k=5)
+    assert res5["status"] == "sukses"
+    assert len(res5["pengetahuan"]) <= 5
+    # Jika Qdrant aktif dan memiliki cukup titik, len(res5["pengetahuan"]) > len(res3["pengetahuan"])
