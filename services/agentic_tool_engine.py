@@ -219,7 +219,7 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
     return v in ("V3", "V4", "V5", "V6", "C", "P", "PB1", "B", "B1", "B1F", "R3", "V4_R3")
 
 
-PERSONA_NAMA_R3: bool = False
+PERSONA_NAMA_R3: bool = True
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True

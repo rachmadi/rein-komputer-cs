@@ -1186,15 +1186,12 @@ def test_putaran25_butir4_persona_nama_r3():
     )
     from unittest.mock import patch
 
-    # 1. Bawaan mati
-    assert PERSONA_NAMA_R3 is False
+    # 1. Prompt dengan R2 eksplisit memuat R2, bukan R3
+    prompt_r2 = build_agent_system_prompt(persona_nama_r3=False)
+    assert "Bila pesan pertama pelanggan hanya salam, balas salamnya dan perkenalkan dirimu sebagai Reni." in prompt_r2
+    assert "Perkenalkan dirimu sebagai Reni hanya di awal percakapan" not in prompt_r2
 
-    # 2. Prompt bawaan memuat R2, bukan R3
-    prompt_bawaan = build_agent_system_prompt()
-    assert "Bila pesan pertama pelanggan hanya salam, balas salamnya dan perkenalkan dirimu sebagai Reni." in prompt_bawaan
-    assert "Perkenalkan dirimu sebagai Reni hanya di awal percakapan" not in prompt_bawaan
-
-    # 3. Prompt dengan R3 aktif memuat R3, bukan R2
+    # 2. Prompt dengan R3 aktif memuat R3, bukan R2
     prompt_r3 = build_agent_system_prompt(persona_nama_r3=True)
     assert "Perkenalkan dirimu sebagai Reni hanya di awal percakapan" in prompt_r3
     assert "Bila pesan pertama pelanggan hanya salam" not in prompt_r3
@@ -1234,6 +1231,16 @@ def test_putaran25_butir4_persona_nama_r3():
 
     expected_fakta_b = "Kamu sudah memperkenalkan diri di percakapan ini."
     assert any(m.get("role") == "system" and m.get("content") == expected_fakta_b for m in captured_messages_b)
+
+
+def test_putaran26_butir1_persona_nama_r3_bawaan_true():
+    """Menguji nilai bawaan PERSONA_NAMA_R3 adalah True (Putaran 26 Butir 1)."""
+    from services.agentic_tool_engine import PERSONA_NAMA_R3, build_agent_system_prompt
+    assert PERSONA_NAMA_R3 is True
+    prompt = build_agent_system_prompt()
+    assert "Perkenalkan dirimu sebagai Reni hanya di awal percakapan" in prompt
+    assert "Bila pesan pertama pelanggan hanya salam" not in prompt
+
 
 
 
