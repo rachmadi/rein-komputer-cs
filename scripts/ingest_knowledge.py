@@ -95,36 +95,50 @@ def parse_kb(filepath: str):
         chunks.append(chunk_data)
     return chunks
 
-def ingest():
-    if "--recreate" in sys.argv:
-        requests.delete(f"{QDRANT_URL}/collections/{COLLECTION_NAME}")
-        requests.put(f"{QDRANT_URL}/collections/{COLLECTION_NAME}", json={"vectors": {"size": 1024, "distance": "Cosine"}})
-        
+def ingest(collection_name: str | None = None, mode: str = "ringkas", recreate: bool = False):
+    target_coll = collection_name or COLLECTION_NAME
+    if recreate:
+        requests.delete(f"{QDRANT_URL}/collections/{target_coll}")
+        requests.put(f"{QDRANT_URL}/collections/{target_coll}", json={"vectors": {"size": 1024, "distance": "Cosine"}})
+
     chunks = parse_kb(KNOWLEDGE_FILE)
     points = []
     import uuid
     for i, c in enumerate(chunks):
-        # COMPACT EMBEDDING TEXT: Judul + Kata Kunci + Perangkat, atau Judul + Text
-        keys = ", ".join(c["kata_kunci"])
-        if keys:
-            compact_text = f"Judul: {c['judul']}. Kata Kunci: {keys}. Perangkat: {c['perangkat']}."
+        if mode == "penuh":
+            clean_body = c["text"].replace("## ", "").strip()
+            embed_text = f"Judul: {c['judul']}. {clean_body}"
         else:
-            compact_text = f"Judul: {c['judul']}. {c['text'].replace('## ', '')}."
-        
-        vec = get_embedding(compact_text)
-        if not vec: continue
-        
+            # COMPACT EMBEDDING TEXT: Judul + Kata Kunci + Perangkat, atau Judul + Text
+            keys = ", ".join(c["kata_kunci"])
+            if keys:
+                embed_text = f"Judul: {c['judul']}. Kata Kunci: {keys}. Perangkat: {c['perangkat']}."
+            else:
+                embed_text = f"Judul: {c['judul']}. {c['text'].replace('## ', '')}."
+
+        vec = get_embedding(embed_text)
+        if not vec:
+            continue
+
         payload = {
             "id": c["id"], "judul": c["judul"], "tipe": c["tipe"], "tag_katalog": c["tag_katalog"],
             "perangkat": c["perangkat"], "kata_kunci": c["kata_kunci"], "text": c["text"], "filter": c["filter"]
         }
         point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, c["id"] or str(i)))
         points.append({"id": point_id, "vector": vec, "payload": payload})
-        
+
     if points:
-        url = f"{QDRANT_URL}/collections/{COLLECTION_NAME}/points?wait=true"
+        url = f"{QDRANT_URL}/collections/{target_coll}/points?wait=true"
         resp = requests.put(url, json={"points": points})
-        print("Ingest Compact Text Status:", resp.status_code)
+        print(f"Ingest [{target_coll}] Mode [{mode}] Status:", resp.status_code)
+
 
 if __name__ == "__main__":
-    ingest()
+    import argparse
+    parser = argparse.ArgumentParser(description="Ingest Knowledge Base ke Qdrant")
+    parser.add_argument("--collection", default=COLLECTION_NAME, help="Nama koleksi Qdrant")
+    parser.add_argument("--mode", choices=["ringkas", "penuh"], default="ringkas", help="Mode embedding (ringkas atau penuh)")
+    parser.add_argument("--recreate", action="store_true", help="Hapus dan buat ulang koleksi")
+    args = parser.parse_args()
+
+    ingest(collection_name=args.collection, mode=args.mode, recreate=args.recreate)

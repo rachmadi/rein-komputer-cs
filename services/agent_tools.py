@@ -386,6 +386,34 @@ def katalog(
 # 2. ALAT PENGETAHUAN (RAG Qdrant untuk Semua Tipe Chunk)
 # =============================================================================
 
+PENGETAHUAN_GABUNGAN: bool = False
+
+
+def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict]) -> list[dict]:
+    """Menggabungkan hasil Qdrant dan pencarian kata kunci sesuai urutan Putaran 20 Butir 3b."""
+    q_dict = {it["id"]: it for it in qdrant_items if it.get("id")}
+    kw_dict = {it["id"]: it for it in kw_items if it.get("id")}
+
+    q_ids = [it["id"] for it in qdrant_items if it.get("id")]
+    kw_ids = [it["id"] for it in kw_items if it.get("id")]
+
+    both_ids = [qid for qid in q_ids if qid in kw_dict]
+    rest_q_ids = [qid for qid in q_ids if qid not in both_ids]
+    rest_kw_ids = [kid for kid in kw_ids if kid not in both_ids and kid not in rest_q_ids]
+
+    ordered_ids = both_ids + rest_q_ids + rest_kw_ids
+
+    final_items = []
+    seen = set()
+    for cid in ordered_ids:
+        if cid not in seen:
+            seen.add(cid)
+            it = q_dict.get(cid) or kw_dict.get(cid)
+            if it:
+                final_items.append(it)
+    return final_items[:3]
+
+
 def pengetahuan(pertanyaan: str) -> dict[str, Any]:
     """
     Mencari panduan kebutuhan pengguna, penjelasan dan pertimbangan teknis komponen,
@@ -437,8 +465,12 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
     except Exception as e:
         logger.warning(f"Qdrant lookup failed in pengetahuan: {e}")
 
-    # 2. Fallback jika Qdrant gagal atau tidak menemukan hasil
-    if not hasil_chunks:
+    # 2. Penggabungan atau fallback
+    if PENGETAHUAN_GABUNGAN:
+        kw_items = _search_kb_markdown_all(q_str)
+        hasil_chunks = _combine_qdrant_and_keyword(hasil_chunks, kw_items)
+    elif not hasil_chunks:
+        # Fallback jika Qdrant gagal atau tidak menemukan hasil
         hasil_chunks = _search_kb_markdown_all(q_str)
 
     return {
