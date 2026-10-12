@@ -558,5 +558,31 @@ def test_pesan_tertunda_sisipan_catatan():
         assert "sudah menunggu sekitar" not in m.get("content", "")
 
 
+def test_search_kb_markdown_all_tidak_pernah_berjudul_komentar():
+    """Menguji bahwa hasil pencarian kata kunci KB tidak pernah memuat komentar HTML <!-- (Putaran 21 Butir 1)."""
+    from services.agent_tools import _search_kb_markdown_all, pengetahuan
+    from unittest.mock import patch
+
+    for q in ["panduan", "komputer", "laptop", "kebijakan", "monitor", "intel", "garansi"]:
+        res = _search_kb_markdown_all(q)
+        for item in res:
+            assert "<!--" not in item.get("judul", ""), f"Judul memuat <!-- pada query '{q}': {item.get('judul')}"
+            assert "<!--" not in item.get("id", ""), f"ID memuat <!-- pada query '{q}': {item.get('id')}"
+
+    # Uji field sumber pada pengetahuan() normal (qdrant)
+    res_q = pengetahuan("kebijakan garansi")
+    assert res_q["sumber"] == "qdrant"
+
+    # Uji field sumber dan alasan_cadangan pada fallback kata_kunci
+    with patch("services.catalog_service.get_embedding", return_value=[0.1] * 1024):
+        with patch("requests.post", side_effect=Exception("Qdrant down")):
+            res_kw = pengetahuan("kebijakan garansi")
+            assert res_kw["sumber"] == "kata_kunci"
+            assert "Qdrant down" in res_kw.get("alasan_cadangan", "")
+            for it in res_kw.get("pengetahuan", []):
+                assert "<!--" not in it.get("judul", "")
+
+
+
 
 

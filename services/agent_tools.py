@@ -61,14 +61,17 @@ def _search_kb_markdown_all(query: str) -> list[dict[str, Any]]:
         logger.warning(f"Gagal membaca KB file: {e}")
         return []
 
+    # Buang blok komentar HTML dan lewati bagian sebelum ## pertama
+    content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
     sections = content.split("\n## ")
     q_tokens = [w for w in re.findall(r"\w+", query.lower()) if len(w) >= 2]
     matched = []
 
     for i, sec in enumerate(sections):
-        sec_clean = sec.strip()
-        if not sec_clean:
+        if not sec.strip() or (i == 0 and not sec.startswith("## ")):
             continue
+        sec_clean = sec.strip()
+        sec_clean = "## " + sec_clean if not sec_clean.startswith("## ") else sec_clean
         sec_low = sec_clean.lower()
         score = 0
         for tok in q_tokens:
@@ -446,12 +449,17 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
         }
 
     hasil_chunks = []
+    sumber = "qdrant"
+    alasan_cadangan = None
+    qdrant_exception = None
 
     # 1. Cari via Qdrant (semua tipe chunk)
     try:
         from services.catalog_service import QDRANT_URL, get_embedding
         vec = get_embedding(q_str.lower())
-        if vec:
+        if not vec:
+            qdrant_exception = "embedding_gagal"
+        else:
             col_name = os.getenv("QDRANT_KNOWLEDGE_COLLECTION", "computer_knowledge")
             url = f"{QDRANT_URL}/collections/{col_name}/points/search"
             payload = {
@@ -477,23 +485,33 @@ def pengetahuan(pertanyaan: str) -> dict[str, Any]:
                         "tipe": pld.get("tipe"),
                         "teks": trimmed_text
                     })
+            else:
+                qdrant_exception = f"http_{resp.status_code}"
     except Exception as e:
         logger.warning(f"Qdrant lookup failed in pengetahuan: {e}")
+        qdrant_exception = str(e)
 
     # 2. Penggabungan atau fallback
     if PENGETAHUAN_GABUNGAN:
         kw_items = _search_kb_markdown_all(q_str)
         hasil_chunks = _combine_qdrant_and_keyword(hasil_chunks, kw_items)
+        sumber = "gabungan"
     elif not hasil_chunks:
         # Fallback jika Qdrant gagal atau tidak menemukan hasil
+        sumber = "kata_kunci"
+        alasan_cadangan = qdrant_exception if qdrant_exception else "qdrant_kosong"
         hasil_chunks = _search_kb_markdown_all(q_str)
 
-    return {
+    res = {
         "status": "sukses",
         "pertanyaan": q_str,
         "total_cocok": len(hasil_chunks),
-        "pengetahuan": hasil_chunks[:3]
+        "pengetahuan": hasil_chunks[:3],
+        "sumber": sumber
     }
+    if sumber == "kata_kunci":
+        res["alasan_cadangan"] = alasan_cadangan or "qdrant_kosong"
+    return res
 
 
 # =============================================================================

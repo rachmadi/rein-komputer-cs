@@ -631,22 +631,34 @@ def run_agentic_tool(
                                 "cuplikan": cuplikan
                             })
 
-            this_turn_tool_summaries.append({
+            tool_sum = {
                 "nama": fn_name,
                 "argumen": fn_args,
                 "total_cocok": total_cocok,
                 "produk": prod_summary_list,
                 "pengetahuan": pengetahuan_summary_list
-            })
+            }
+            if isinstance(tool_res, dict):
+                if "sumber" in tool_res:
+                    tool_sum["sumber"] = tool_res["sumber"]
+                if "alasan_cadangan" in tool_res:
+                    tool_sum["alasan_cadangan"] = tool_res["alasan_cadangan"]
+            this_turn_tool_summaries.append(tool_sum)
 
             ringkasan = summarize_tool_result(fn_name, tool_res)
-            all_tool_calls_logged.append({
+            tool_call_log = {
                 "nama": fn_name,
                 "argumen": fn_args,
                 "ringkasan_hasil": ringkasan,
                 "latensi_ms": round(t_tool, 2),
                 "latensi": round(t_tool, 2),
-            })
+            }
+            if isinstance(tool_res, dict):
+                if "sumber" in tool_res:
+                    tool_call_log["sumber"] = tool_res["sumber"]
+                if "alasan_cadangan" in tool_res:
+                    tool_call_log["alasan_cadangan"] = tool_res["alasan_cadangan"]
+            all_tool_calls_logged.append(tool_call_log)
 
             messages.append({
                 "role": "tool",
