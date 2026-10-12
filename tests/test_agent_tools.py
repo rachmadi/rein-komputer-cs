@@ -1175,5 +1175,67 @@ def test_putaran25_butir3_status_kirim_log_httpx():
     assert rec_gagal["error_teks"] == "TimedOut error simulated"
 
 
+def test_putaran25_butir4_persona_nama_r3():
+    """Menguji aturan nama Reni dan fakta awal percakapan (Putaran 25 Butir 4)."""
+    from services.agentic_tool_engine import (
+        PERSONA_NAMA_R3,
+        KOMPONEN_R2,
+        KOMPONEN_R3,
+        build_agent_system_prompt,
+        run_agentic_tool,
+    )
+    from unittest.mock import patch
+
+    # 1. Bawaan mati
+    assert PERSONA_NAMA_R3 is False
+
+    # 2. Prompt bawaan memuat R2, bukan R3
+    prompt_bawaan = build_agent_system_prompt()
+    assert "Bila pesan pertama pelanggan hanya salam, balas salamnya dan perkenalkan dirimu sebagai Reni." in prompt_bawaan
+    assert "Perkenalkan dirimu sebagai Reni hanya di awal percakapan" not in prompt_bawaan
+
+    # 3. Prompt dengan R3 aktif memuat R3, bukan R2
+    prompt_r3 = build_agent_system_prompt(persona_nama_r3=True)
+    assert "Perkenalkan dirimu sebagai Reni hanya di awal percakapan" in prompt_r3
+    assert "Bila pesan pertama pelanggan hanya salam" not in prompt_r3
+
+    # 4. Pengujian fakta awal percakapan:
+    # Kasus a: riwayat belum berisi pesan bot -> sisipkan 'Ini awal percakapan; kamu belum memperkenalkan diri.'
+    captured_messages_a = []
+    def mock_ollama_a(messages, **kwargs):
+        captured_messages_a.extend(messages)
+        return {"message": {"role": "assistant", "content": "Halo Kak, saya Reni."}}
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_a):
+        run_agentic_tool(
+            user_text="Halo",
+            history=[],
+            persona_nama_r3=True,
+        )
+
+    expected_fakta_a = "Ini awal percakapan; kamu belum memperkenalkan diri."
+    assert any(m.get("role") == "system" and m.get("content") == expected_fakta_a for m in captured_messages_a)
+
+    # Kasus b: riwayat sudah berisi pesan bot -> sisipkan 'Kamu sudah memperkenalkan diri di percakapan ini.'
+    captured_messages_b = []
+    def mock_ollama_b(messages, **kwargs):
+        captured_messages_b.extend(messages)
+        return {"message": {"role": "assistant", "content": "Ada Kak, kami punya Intel NUC."}}
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_b):
+        run_agentic_tool(
+            user_text="Ada mini pc?",
+            history=[
+                {"role": "user", "content": "Halo"},
+                {"role": "assistant", "content": "Halo Kak, saya Reni dari ReIn Komputer."}
+            ],
+            persona_nama_r3=True,
+        )
+
+    expected_fakta_b = "Kamu sudah memperkenalkan diri di percakapan ini."
+    assert any(m.get("role") == "system" and m.get("content") == expected_fakta_b for m in captured_messages_b)
+
+
+
 
 

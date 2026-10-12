@@ -118,6 +118,12 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         "Kakak bisa tanya soal laptop, desktop, monitor, atau printer. "
         "Ketik /reset untuk memulai percakapan baru."
     )
+    # Putaran 25 Butir 4b: pesan sambutan /start dimasukkan ke riwayat sesi sebagai pesan bot bila PERSONA_NAMA_R3 nyala
+    from services.agentic_tool_engine import PERSONA_NAMA_R3
+    if PERSONA_NAMA_R3:
+        from services.chat_service import get_session_manager
+        get_session_manager().add_message(session_id, "bot", welcome_text)
+
     await update.message.reply_text(welcome_text)
 
 

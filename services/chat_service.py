@@ -120,6 +120,8 @@ def process_chat_message(
     user_text: str,
     model: str | None = None,
     menunggu_menit: int | None = None,
+    persona_nama_r3: bool | None = None,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     sess = _session_manager.get_session(session_id)
     state = sess["state"]
@@ -331,6 +333,8 @@ def process_chat_message(
             model=active_model,
             session_state=state,
             menunggu_menit=menunggu_menit,
+            persona_nama_r3=persona_nama_r3,
+            **kwargs,
         )
         reply = tool_res["reply"]
         route = tool_res.get("route", "AGENTIC_TOOL")
@@ -413,6 +417,9 @@ def process_chat_message(
             "offered_products": new_s.get("offered_products", []),
             "active_profile_id": new_s.get("active_profile"),
             "tools_called": tool_res.get("tools_called", []),
+            "hasil_alat_giliran": tool_res.get("hasil_alat_giliran", []),
+            "error_darurat": tool_res.get("error_darurat"),
+            "alat_mentah_events": tool_res.get("alat_mentah_events", []),
             "metrics": {
                 "latency_ms": latency_ms,
                 "tool_calls": tool_res.get("tool_calls", []),

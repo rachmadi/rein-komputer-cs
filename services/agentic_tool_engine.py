@@ -71,6 +71,18 @@ KOMPONEN_R2 = (
     'sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
 )
 
+# Putaran 25 Butir 4a: Komponen persona R3
+KOMPONEN_R3 = (
+    'Namamu Reni, staf customer service ReIn Komputer yang melayani pelanggan lewat chat. '
+    'Perkenalkan dirimu sebagai Reni hanya di awal percakapan; bila pesan pertama pelanggan '
+    'sudah berisi pertanyaan atau permintaan, tetap panggil alat yang dibutuhkan lebih dulu, '
+    'lalu perkenalkan diri singkat di balasan itu. Sesudah itu, sebut namamu hanya bila pelanggan '
+    'menanyakan namamu, dan jangan memperkenalkan diri ulang. Jangan menyebut dirimu chatbot, '
+    'bot, AI, atau asisten virtual. Namun bila pelanggan bertanya apakah sedang berbicara dengan '
+    'manusia atau bot, jawab jujur, misalnya: Saya Reni, chatbot CS dari ReIn Komputer. Ramah, '
+    'sopan, gaya chat Indonesia sehari-hari, sapa pelanggan "Kak".\n'
+)
+
 KOMPONEN_LAYANI_DAN_ALAT = (
     'Layani obrolan, permintaan, dan pertanyaan pelanggan secara manusiawi, dan '
     'penuhi permintaan pelanggan secara langsung.\n'
@@ -119,7 +131,11 @@ KOMPONEN_POS = (
 )
 
 
-def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[bool] = None) -> str:
+def build_agent_system_prompt(
+    varian: Optional[str] = None,
+    with_pos: Optional[bool] = None,
+    persona_nama_r3: Optional[bool] = None,
+) -> str:
     from core.db import get_catalog_inventory
     inv = get_catalog_inventory()
     kategori_str = ", ".join(inv.get("kategori", []))
@@ -151,6 +167,7 @@ def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[b
     )
 
     v = (varian or PROMPT_VARIAN).upper()
+    active_r3 = persona_nama_r3 if persona_nama_r3 is not None else (PERSONA_NAMA_R3 or v in ("R3", "V4_R3"))
     with_j = (v == "V5")
     with_v6 = (v == "V6")
     use_pos = with_pos if with_pos is not None else (v in ("P", "PB1", "V4_POS", "POS"))
@@ -171,12 +188,12 @@ def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[b
         persona = KOMPONEN_R
         with_k = True
         with_t = True
-    elif v in ("V4", "V5", "V6", "P", "PB1", "B", "B1", "B1F"):
-        persona = KOMPONEN_R2
+    elif v in ("V4", "V5", "V6", "P", "PB1", "B", "B1", "B1F", "R3", "V4_R3"):
+        persona = KOMPONEN_R3 if active_r3 else KOMPONEN_R2
         with_k = True
         with_t = True
     else:
-        persona = KOMPONEN_R
+        persona = KOMPONEN_R3 if active_r3 else KOMPONEN_R
         with_k = True
         with_t = True
 
@@ -199,15 +216,16 @@ def build_agent_system_prompt(varian: Optional[str] = None, with_pos: Optional[b
 def variant_has_reminder(varian: Optional[str] = None) -> bool:
     """Apakah varian memakai pesan pengingat sistem P sebelum pesan user terbaru."""
     v = (varian or PROMPT_VARIAN).upper()
-    return v in ("V3", "V4", "V5", "V6", "C", "P", "PB1", "B", "B1", "B1F")
+    return v in ("V3", "V4", "V5", "V6", "C", "P", "PB1", "B", "B1", "B1F", "R3", "V4_R3")
 
 
-SYSTEM_PROMPT = build_agent_system_prompt()
-
+PERSONA_NAMA_R3: bool = False
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
 PENGURAI_ALAT_MENTAH: bool = True
+
+SYSTEM_PROMPT = build_agent_system_prompt()
 
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
@@ -499,6 +517,7 @@ def run_agentic_tool(
     mode_berpikir: Optional[bool] = None,
     mode_berpikir_sebagian: Optional[bool] = None,
     pengurai_alat_mentah: Optional[bool] = None,
+    persona_nama_r3: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -532,7 +551,11 @@ def run_agentic_tool(
         mentioned_notes = "\n".join(lines)
 
     active_var = (varian or kwargs.get("varian") or PROMPT_VARIAN).upper()
-    system_content = build_agent_system_prompt(varian=active_var)
+    active_r3 = (
+        persona_nama_r3 if persona_nama_r3 is not None
+        else kwargs.get("persona_nama_r3", PERSONA_NAMA_R3 or active_var in ("R3", "V4_R3"))
+    )
+    system_content = build_agent_system_prompt(varian=active_var, persona_nama_r3=active_r3)
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
 
@@ -568,6 +591,18 @@ def run_agentic_tool(
             "dengan wajar, lalu layani seperti biasa."
         )
         messages.append({"role": "system", "content": pesan_tertunda})
+
+    # Putaran 25 Butir 4b: Fakta awal percakapan bila PERSONA_NAMA_R3 aktif
+    if active_r3:
+        ada_pesan_bot = any(
+            m.get("sender") in ("bot", "assistant") or m.get("role") == "assistant"
+            for m in history
+        )
+        if not ada_pesan_bot:
+            fakta_awal = "Ini awal percakapan; kamu belum memperkenalkan diri."
+        else:
+            fakta_awal = "Kamu sudah memperkenalkan diri di percakapan ini."
+        messages.append({"role": "system", "content": fakta_awal})
 
     messages.append({"role": "user", "content": user_text})
 
