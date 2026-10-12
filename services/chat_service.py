@@ -12,7 +12,7 @@ from typing import Any
 from core.state import new_state, reset_state
 from core.engine import step
 from services.catalog_service import get_active_catalog
-from core.chat_logger import log_turn, log_session_boundary, record_log_failure
+from core.chat_logger import log_turn, log_session_boundary, record_log_failure, is_test_mode
 
 logger = logging.getLogger("chat_service")
 
@@ -123,6 +123,7 @@ def process_chat_message(
     persona_nama_r3: bool | None = None,
     aturan_pribadi_atribut: bool | None = None,
     kirim_foto_oleh_llm: bool | None = None,
+    penguji: str | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     sess = _session_manager.get_session(session_id)
@@ -133,6 +134,22 @@ def process_chat_message(
     active_model = model or DEFAULT_CHAT_MODEL
     if active_model in ("none", "disabled", "false", ""):
         active_model = None
+
+    # Tentukan penguji aktif (Putaran 27 Butir 3)
+    eff_penguji = penguji or kwargs.get("penguji")
+    if not eff_penguji:
+        s_low = str(session_id).lower()
+        if (
+            s_low.startswith(("p24_", "p25_", "p26_", "p27_", "test_", "uji_", "replay_", "multi_", "eval_"))
+            or "test" in s_low
+            or "uji" in s_low
+            or "replay" in s_low
+        ):
+            eff_penguji = "uji_otomatis"
+        elif is_test_mode():
+            eff_penguji = "otomatis"
+        else:
+            eff_penguji = "manusia"
 
     # Catat riwayat sebelum pesan baru disimpan (Putaran 25 Butir 0)
     prior_history = list(sess["messages"])
@@ -175,6 +192,7 @@ def process_chat_message(
                 route=route,
                 state_snapshot=new_state_dict,
                 latency_ms=latency_ms,
+                penguji=eff_penguji,
                 engine_mode=CHAT_ENGINE_MODE,
                 jalur=turn_res.jalur,
                 aksi_parser=turn_res.aksi_parser,
@@ -286,6 +304,7 @@ def process_chat_message(
                 route=route,
                 state_snapshot=new_s,
                 latency_ms=latency_ms,
+                penguji=eff_penguji,
                 engine_mode=CHAT_ENGINE_MODE,
             )
         except Exception as err:
@@ -391,6 +410,7 @@ def process_chat_message(
                 route=route,
                 state_snapshot=new_s,
                 latency_ms=latency_ms,
+                penguji=eff_penguji,
                 engine_mode=CHAT_ENGINE_MODE,
                 generator_calls=tool_res.get("generator_calls", tool_res.get("llm_calls", [])),
                 tool_calls=tool_res.get("tool_calls", []),
@@ -449,6 +469,7 @@ def process_chat_message(
             route=route,
             state_snapshot=new_s,
             latency_ms=latency_ms,
+            penguji=eff_penguji,
             engine_mode=CHAT_ENGINE_MODE,
         )
     except Exception as err:

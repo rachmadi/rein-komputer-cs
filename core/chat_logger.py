@@ -64,7 +64,7 @@ def get_hmac_secret(penguji: str = "manusia") -> bytes:
         return key.strip().encode("utf-8")
 
     # Jika sedang dalam test/eval mode, sediakan dummy test key aman
-    if is_test_mode() or penguji == "otomatis":
+    if is_test_mode() or penguji in ("otomatis", "uji_otomatis"):
         return b"test_hmac_secret_for_test_suite_2026"
 
     raise RuntimeError(
@@ -85,9 +85,17 @@ def anonymize_id(raw_id: str | int, length: int = 12, penguji: str = "manusia") 
 def get_log_paths(penguji: str = "manusia") -> tuple[str, str]:
     """
     Mengembalikan (jsonl_path, db_path) sesuai isolasi mode pengujian.
-    Semua tes dan skrip evaluasi menulis ke logs/eval/eval_chat_history.jsonl
-    dan database uji, tidak pernah ke logs/chat_history.jsonl.
+    - penguji='uji_otomatis' -> logs/uji_history.jsonl (Putaran 27 Butir 3)
+    - penguji='otomatis' atau is_test_mode() -> logs/eval/eval_chat_history.jsonl
+    - penguji='manusia' -> logs/chat_history.jsonl
     """
+    if penguji == "uji_otomatis":
+        jsonl_dir = "logs"
+        os.makedirs(jsonl_dir, exist_ok=True)
+        jsonl_path = os.path.join(jsonl_dir, "uji_history.jsonl")
+        db_path = os.getenv("DB_PATH", os.path.join("data", "catalog.db"))
+        return jsonl_path, db_path
+
     if is_test_mode() or penguji == "otomatis":
         jsonl_dir = os.path.join("logs", "eval")
         os.makedirs(jsonl_dir, exist_ok=True)
@@ -100,6 +108,7 @@ def get_log_paths(penguji: str = "manusia") -> tuple[str, str]:
     jsonl_path = os.path.join(jsonl_dir, "chat_history.jsonl")
     db_path = os.getenv("DB_PATH", os.path.join("data", "catalog.db"))
     return jsonl_path, db_path
+
 
 
 def init_chat_log_storage(db_path: str | None = None) -> None:

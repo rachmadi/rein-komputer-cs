@@ -260,3 +260,46 @@ def test_log_turn_pemeriksaan_ulang():
     assert row[0] == 1
     assert row[1] == "Saya cek dulu ya Kak"
 
+
+def test_putaran27_butir3_uji_otomatis_logs():
+    """Memverifikasi bahwa penguji='uji_otomatis' menulis ke logs/uji_history.jsonl dan bukan ke logs/chat_history.jsonl."""
+    from core.chat_logger import get_log_paths, log_turn
+
+    # 1. get_log_paths untuk uji_otomatis mengembalikan logs/uji_history.jsonl
+    jsonl_path, _ = get_log_paths(penguji="uji_otomatis")
+    assert jsonl_path == os.path.join("logs", "uji_history.jsonl")
+
+    # 2. Catat jumlah baris prod chat_history.jsonl
+    prod_path = os.path.join("logs", "chat_history.jsonl")
+    initial_prod_lines = 0
+    if os.path.exists(prod_path):
+        with open(prod_path, "r", encoding="utf-8") as f:
+            initial_prod_lines = sum(1 for line in f if line.strip())
+
+    # 3. Jalankan log_turn dengan penguji='uji_otomatis'
+    rec = log_turn(
+        session_id="p27_test_session_01",
+        user_text="Halo uji otomatis",
+        bot_reply="Halo Kak",
+        route="direct",
+        penguji="uji_otomatis"
+    )
+    assert rec["penguji"] == "uji_otomatis"
+
+    # Pastikan file produksi TIDAK bertambah
+    current_prod_lines = 0
+    if os.path.exists(prod_path):
+        with open(prod_path, "r", encoding="utf-8") as f:
+            current_prod_lines = sum(1 for line in f if line.strip())
+    assert current_prod_lines == initial_prod_lines
+
+    # Pastikan logs/uji_history.jsonl menerima record
+    uji_path = os.path.join("logs", "uji_history.jsonl")
+    assert os.path.exists(uji_path)
+    with open(uji_path, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f if line.strip()]
+        last_rec = json.loads(lines[-1])
+        assert last_rec["penguji"] == "uji_otomatis"
+        assert last_rec["user_text"] == "Halo uji otomatis"
+
+
