@@ -227,13 +227,15 @@ def test_format_tool_history_message():
                             "kode": "KB-D12",
                             "nama": "Intel NUC 11 Essential",
                             "harga": "Rp3.199.000",
-                            "spek": "Celeron N5105 | RAM 4GB"
+                            "spek": "Celeron N5105 | RAM 4GB",
+                            "ada_foto": True
                         },
                         {
                             "kode": "KB-D11",
                             "nama": "Apple Mac mini M2",
                             "harga": "Rp11.499.000",
-                            "spek": "Apple M2 | RAM 8GB"
+                            "spek": "Apple M2 | RAM 8GB",
+                            "ada_foto": False
                         }
                     ]
                 },
@@ -254,10 +256,23 @@ def test_format_tool_history_message():
     ]
     msg = format_tool_history_message(sample_turns)
     assert msg is not None
-    assert "KB-D12 Intel NUC 11 Essential (Rp3.199.000; Celeron N5105 | RAM 4GB)" in msg
+    assert "KB-D12 Intel NUC 11 Essential (Rp3.199.000; Celeron N5105 | RAM 4GB, ada foto)" in msg
     assert "Apple Mac mini M2 (Rp11.499.000; Apple M2 | RAM 8GB)" in msg
+    assert "ada foto" not in "Apple Mac mini M2 (Rp11.499.000; Apple M2 | RAM 8GB)"
     assert "(total 3 produk cocok)" in msg
     assert "Kebijakan Garansi Toko: Garansi toko berlaku 7 hari ganti baru untuk cacat pabrik." in msg
+
+
+def test_prompt_v6_components():
+    """Menguji penyusunan prompt varian V6 (Putaran 20 Butir 5)."""
+    from services.agentic_tool_engine import build_agent_system_prompt, KOMPONEN_V6_TAMBAHAN
+    prompt_v6 = build_agent_system_prompt("V6")
+    prompt_v4 = build_agent_system_prompt("V4")
+    assert KOMPONEN_V6_TAMBAHAN in prompt_v6
+    assert KOMPONEN_V6_TAMBAHAN not in prompt_v4
+    assert "Tulis hanya kalimat untuk pelanggan" in prompt_v6
+    assert "Bila pelanggan menanyakan foto, lihat ada_foto" in prompt_v6
+
 
 
 def test_property_product_card_spek_not_empty(catalog):

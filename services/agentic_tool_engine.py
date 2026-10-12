@@ -102,6 +102,16 @@ KOMPONEN_P = (
     "ada di hasil alat yang kamu terima, panggil alat sekarang."
 )
 
+KOMPONEN_V6_TAMBAHAN = (
+    "Tulis hanya kalimat untuk pelanggan: jangan menulis pertimbangan atau alasan internalmu, "
+    "dan jangan menyebut alat, katalog, pengetahuan, sistem, atau data kepada pelanggan. "
+    "Jangan menyarankan pelanggan mengecek bagian, halaman, atau kebijakan sendiri; "
+    "bila jawabannya belum ada di hasil alat, panggil alat, atau katakan terus terang "
+    "bahwa informasinya belum ada.\n"
+    "Bila pelanggan menanyakan foto, lihat ada_foto di hasil alat: foto produk yang bernilai "
+    "true terkirim otomatis bersama kartunya, sedangkan untuk yang false katakan fotonya belum tersedia."
+)
+
 
 def build_agent_system_prompt(varian: Optional[str] = None) -> str:
     from core.db import get_catalog_inventory
@@ -136,6 +146,7 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
 
     v = (varian or PROMPT_VARIAN).upper()
     with_j = (v == "V5")
+    with_v6 = (v == "V6")
     if v == "V0":
         persona = KOMPONEN_PERSONA_18E
         with_k = False
@@ -152,11 +163,7 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
         persona = KOMPONEN_R
         with_k = True
         with_t = True
-    elif v == "V4":
-        persona = KOMPONEN_R2
-        with_k = True
-        with_t = True
-    elif v == "V5":
+    elif v in ("V4", "V5", "V6"):
         persona = KOMPONEN_R2
         with_k = True
         with_t = True
@@ -170,6 +177,8 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
     if with_k:
         prompt += KOMPONEN_K
     prompt += sisa_text
+    if with_v6:
+        prompt += f"\n{KOMPONEN_V6_TAMBAHAN}"
     if with_t:
         prompt += f"\n\n{KOMPONEN_T}"
     return prompt
@@ -178,7 +187,7 @@ def build_agent_system_prompt(varian: Optional[str] = None) -> str:
 def variant_has_reminder(varian: Optional[str] = None) -> bool:
     """Apakah varian memakai pesan pengingat sistem P sebelum pesan user terbaru."""
     v = (varian or PROMPT_VARIAN).upper()
-    return v in ("V3", "V4", "V5", "C")
+    return v in ("V3", "V4", "V5", "V6", "C")
 
 
 SYSTEM_PROMPT = build_agent_system_prompt()
@@ -398,10 +407,12 @@ def format_tool_history_message(recent_tool_turns: list[dict]) -> str | None:
                     nama = p.get("nama", "")
                     harga = p.get("harga", "")
                     spek = p.get("spek", "")
+                    ada_foto = p.get("ada_foto", False)
+                    foto_suffix = ", ada foto" if ada_foto else ""
                     if spek:
-                        p_items.append(f"{kode} {nama} ({harga}; {spek})".strip())
+                        p_items.append(f"{kode} {nama} ({harga}; {spek}{foto_suffix})".strip())
                     else:
-                        p_items.append(f"{kode} {nama} ({harga})".strip())
+                        p_items.append(f"{kode} {nama} ({harga}{foto_suffix})".strip())
                 p_str = "; ".join(p_items)
                 if total > len(p_items):
                     p_str += f" (total {total} produk cocok)"
