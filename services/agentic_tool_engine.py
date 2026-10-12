@@ -207,6 +207,7 @@ SYSTEM_PROMPT = build_agent_system_prompt()
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
+PENGURAI_ALAT_MENTAH: bool = False
 
 
 FALLBACK_EMERGENCY_REPLY = "Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"
@@ -453,6 +454,38 @@ def format_tool_history_message(recent_tool_turns: list[dict]) -> str | None:
     return "\n".join(lines)
 
 
+def parse_raw_tool_call(text: str) -> Optional[tuple[str, dict[str, Any]]]:
+    """
+    Mengurai panggilan alat mentah dari token Ollama seperti:
+    katalog{kategori:<|"|>monitor<|"|>,kata_kunci:<|"|>24 inci<|"|>}<tool_call|><|tool_response>
+    (Putaran 23 Butir 2).
+    """
+    m = re.search(r"(katalog|pengetahuan)\s*\{(.*?)\}", text, re.DOTALL)
+    if not m:
+        return None
+    fn_name = m.group(1)
+    body = m.group(2).strip()
+    args: dict[str, Any] = {}
+    pair_pattern = re.compile(
+        r'([a-zA-Z0-9_]+)\s*:\s*(?:<\|"\|>(.*?)<\|"\|>|"([^"]*)"|\'([^\']*)\'|([^,}]+))'
+    )
+    for match in pair_pattern.finditer(body):
+        k = match.group(1)
+        v = match.group(2) if match.group(2) is not None else (
+            match.group(3) if match.group(3) is not None else (
+                match.group(4) if match.group(4) is not None else match.group(5)
+            )
+        )
+        if v is not None:
+            v = v.strip()
+            if v.isdigit():
+                v = int(v)
+            args[k] = v
+    if not args and body:
+        return None
+    return fn_name, args
+
+
 def run_agentic_tool(
     user_text: str,
     history: list[dict],
@@ -465,6 +498,7 @@ def run_agentic_tool(
     pemeriksaan_ulang_janji: Optional[bool] = None,
     mode_berpikir: Optional[bool] = None,
     mode_berpikir_sebagian: Optional[bool] = None,
+    pengurai_alat_mentah: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -541,6 +575,8 @@ def run_agentic_tool(
     active_pemeriksaan = PEMERIKSAAN_ULANG_JANJI if pemeriksaan_ulang_janji is None else bool(pemeriksaan_ulang_janji)
     active_berpikir = MODE_BERPIKIR if mode_berpikir is None else bool(mode_berpikir)
     active_sebagian = MODE_BERPIKIR_SEBAGIAN if mode_berpikir_sebagian is None else bool(mode_berpikir_sebagian)
+    active_pengurai = PENGURAI_ALAT_MENTAH if pengurai_alat_mentah is None else bool(pengurai_alat_mentah)
+    raw_tool_events: list[str] = []
 
     # Bila B dan B1 sama-sama nyala, B yang berlaku
     if active_berpikir:
@@ -625,6 +661,82 @@ def run_agentic_tool(
                 "raw_output": llm_resp.get("_raw_output", ""),
                 "thinking_chars": thinking_chars
             })
+
+            if not tool_calls:
+                # Bila pengurai alat mentah aktif dan teks memuat token alat mentah (Putaran 23 Butir 2)
+                if active_pengurai and ("<tool_call|>" in msg_content or "<|" in msg_content):
+                    parsed = parse_raw_tool_call(msg_content)
+                    if parsed:
+                        fn_name, fn_args = parsed
+                        logger.info(f"alat_mentah_diurai: {fn_name}({fn_args})")
+                        raw_tool_events.append("alat_mentah_diurai")
+                        tool_calls = [{
+                            "function": {
+                                "name": fn_name,
+                                "arguments": fn_args
+                            }
+                        }]
+                        # Teks mentah tidak pernah disimpan ke riwayat percakapan
+                        msg = {"role": "assistant", "content": "", "tool_calls": tool_calls}
+                    else:
+                        logger.warning("alat_mentah_gagal: pola panggilan alat mentah tidak dapat diurai")
+                        raw_tool_events.append("alat_mentah_gagal")
+                        # Ulangi panggilan model sekali; bila masih gagal, pakai balasan darurat
+                        try:
+                            call_num_retry = len(all_llm_calls_logged) + 1
+                            llm_resp_retry = call_ollama_chat_raw(
+                                messages=current_msgs,
+                                tools=AGENT_TOOLS_SCHEMA,
+                                model=model,
+                                url=url,
+                                num_predict=call_num_predict,
+                                num_ctx=8192,
+                                timeout=120,
+                                think=call_think
+                            )
+                            msg_retry = llm_resp_retry.get("message", {})
+                            retry_tools = msg_retry.get("tool_calls")
+                            retry_content = (msg_retry.get("content", "") or "").strip()
+                            all_llm_calls_logged.append({
+                                "urutan": call_num_retry,
+                                "prompt_eval_count": llm_resp_retry.get("prompt_eval_count"),
+                                "eval_count": llm_resp_retry.get("eval_count"),
+                                "done_reason": llm_resp_retry.get("done_reason"),
+                                "latensi_ms": round(llm_resp_retry.get("_latency_ms", 0.0), 2),
+                                "latensi": round(llm_resp_retry.get("_latency_ms", 0.0), 2),
+                                "raw_output": llm_resp_retry.get("_raw_output", ""),
+                                "thinking_chars": len(msg_retry.get("thinking") or "")
+                            })
+                            if retry_tools:
+                                tool_calls = retry_tools
+                                msg = msg_retry
+                            elif "<tool_call|>" in retry_content or "<|" in retry_content:
+                                parsed_retry = parse_raw_tool_call(retry_content)
+                                if parsed_retry:
+                                    fn_name, fn_args = parsed_retry
+                                    logger.info(f"alat_mentah_diurai: {fn_name}({fn_args})")
+                                    raw_tool_events.append("alat_mentah_diurai")
+                                    tool_calls = [{
+                                        "function": {
+                                            "name": fn_name,
+                                            "arguments": fn_args
+                                        }
+                                    }]
+                                    msg = {"role": "assistant", "content": "", "tool_calls": tool_calls}
+                                else:
+                                    logger.warning("alat_mentah_gagal: retry tetap gagal diurai")
+                                    raw_tool_events.append("alat_mentah_gagal")
+                                    is_emergency_fallback = True
+                                    emergency_error = "alat_mentah_gagal"
+                                    return FALLBACK_EMERGENCY_REPLY, True, emergency_error
+                            else:
+                                current_reply = retry_content
+                                return current_reply, False, None
+                        except Exception as e:
+                            logger.error(f"Ollama chat retry error: {e}", exc_info=True)
+                            is_emergency_fallback = True
+                            emergency_error = f"alat_mentah_gagal: {e}"
+                            return FALLBACK_EMERGENCY_REPLY, True, emergency_error
 
             if not tool_calls:
                 # LLM langsung memberikan jawaban akhir
@@ -762,6 +874,13 @@ def run_agentic_tool(
                         final_thinking = m.group(1)
                 if "<think>" in final_content:
                     final_content = re.sub(r"<think>.*?</think>", "", final_content, flags=re.DOTALL).strip()
+
+                if active_pengurai and ("<tool_call|>" in final_content or "<|" in final_content):
+                    logger.warning("alat_mentah_gagal: token mentah muncul pada sintesis akhir")
+                    raw_tool_events.append("alat_mentah_gagal")
+                    is_emergency_fallback = True
+                    emergency_error = "alat_mentah_gagal"
+                    final_content = FALLBACK_EMERGENCY_REPLY
 
                 current_reply = final_content.strip()
                 all_llm_calls_logged.append({
@@ -902,4 +1021,5 @@ def run_agentic_tool(
         "pemeriksa_catatan": pemeriksa_catatan,
         "pemeriksaan_ulang": pemeriksaan_ulang_terpicu,
         "balasan_sebelum_periksa": balasan_sebelum_periksa,
+        "alat_mentah_events": raw_tool_events,
     }

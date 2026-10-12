@@ -877,3 +877,82 @@ def test_build_agent_system_prompt_bawaan_sama_v4_tanpa_pos():
     assert prompt_default == prompt_v4
     assert KOMPONEN_POS not in prompt_default
 
+
+def test_pengurai_alat_mentah_dua_string_p_dan_string_rusak():
+    """Menguji pengurai alat mentah pada 2 string dari P22 Varian P dan string rusak (Putaran 23 Butir 2)."""
+    from services.agentic_tool_engine import parse_raw_tool_call
+
+    # String dari Giliran 14
+    s14 = 'katalog{kategori:<|"|>monitor<|"|>,kata_kunci:<|"|>24 inci<|"|>}<tool_call|><|tool_response>'
+    res14 = parse_raw_tool_call(s14)
+    assert res14 is not None
+    assert res14[0] == "katalog"
+    assert res14[1] == {"kategori": "monitor", "kata_kunci": "24 inci"}
+
+    # String dari Giliran 16
+    s16 = 'katalog{kategori:<|"|>monitor<|"|>}<tool_call|><|tool_response>'
+    res16 = parse_raw_tool_call(s16)
+    assert res16 is not None
+    assert res16[0] == "katalog"
+    assert res16[1] == {"kategori": "monitor"}
+
+    # String tak terurai
+    s_rusak = '<tool_call|> pesan rusak tanpa fungsi yang valid <|'
+    assert parse_raw_tool_call(s_rusak) is None
+
+
+def test_pengurai_alat_mentah_terintegrasi_dan_fallback():
+    """Menguji eksekusi pengurai alat mentah terintegrasi dan fallback darurat (Putaran 23 Butir 2)."""
+    from services.agentic_tool_engine import run_agentic_tool, FALLBACK_EMERGENCY_REPLY
+    from unittest.mock import patch
+
+    calls = []
+
+    # Kasus 1: String G14 terurai menjadi katalog dengan argumen yang benar
+    s14 = 'katalog{kategori:<|"|>monitor<|"|>,kata_kunci:<|"|>24 inci<|"|>}<tool_call|><|tool_response>'
+
+    def mock_ollama_s14(messages, **kwargs):
+        calls.append(list(messages))
+        if len(calls) == 1:
+            return {"message": {"role": "assistant", "content": s14}}
+        else:
+            return {"message": {"role": "assistant", "content": "Berikut monitor 24 inci yang tersedia Kak."}}
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_s14):
+        res14 = run_agentic_tool(
+            user_text="Ada monitor 24 inci?",
+            history=[],
+            pengurai_alat_mentah=True
+        )
+
+    assert "alat_mentah_diurai" in res14["alat_mentah_events"]
+    assert "katalog" in res14["tools_called"]
+    assert s14 not in res14["reply"]
+    # Pastikan teks mentah tidak masuk ke riwayat obrolan / pesan panggilan kedua
+    assert len(calls) == 2
+    for m in calls[1]:
+        assert s14 not in m.get("content", "")
+
+    # Kasus 2: String tak terurai tidak pernah menjadi balasan (pakai balasan darurat)
+    s_rusak = '<tool_call|> rusak <|'
+    calls.clear()
+
+    def mock_ollama_rusak(messages, **kwargs):
+        calls.append(list(messages))
+        # Mengembalikan string rusak baik pada panggilan awal maupun retry
+        return {"message": {"role": "assistant", "content": s_rusak}}
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_rusak):
+        res_rusak = run_agentic_tool(
+            user_text="Tanya sesuatu",
+            history=[],
+            pengurai_alat_mentah=True
+        )
+
+    assert "alat_mentah_gagal" in res_rusak["alat_mentah_events"]
+    assert s_rusak not in res_rusak["reply"]
+    assert res_rusak["reply"] == FALLBACK_EMERGENCY_REPLY
+    assert res_rusak["is_emergency_fallback"] is True
+    assert res_rusak["error_darurat"] == "alat_mentah_gagal"
+
+
