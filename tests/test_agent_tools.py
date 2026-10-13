@@ -1652,6 +1652,41 @@ def test_putaran27_butir4a_unit_sql():
     conn.close()
 
 
+def test_putaran28_butir6_aturan_layanan_p28():
+    """Menguji flag ATURAN_LAYANAN_P28 default False, dan injeksi 5 kalimat jika True (Putaran 28 Butir 6)."""
+    from services.agentic_tool_engine import (
+        ATURAN_LAYANAN_P28,
+        build_agent_system_prompt,
+        KOMPONEN_T
+    )
+
+    # 1. Bawaan harus False
+    assert ATURAN_LAYANAN_P28 is False
+
+    # 2. Bila False (default), 5 kalimat tidak ada di prompt
+    prompt_default = build_agent_system_prompt()
+    lima_kalimat = [
+        "Bila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, panggil katalog dan sebut produknya; panduan boleh ditambahkan singkat.",
+        "Bila hasil alat tidak memuat informasi yang ditanyakan, katakan terus terang bahwa datanya belum tersedia; jangan menyuruh pelanggan melihat dokumen, tautan, atau tampilan lain.",
+        "Bila pernyataan pelanggan benar, akui; bila kamu salah paham, minta maaf singkat lalu jawab pertanyaannya.",
+        "Jangan menyarankan menaikkan budget bila pelanggan tidak menyebut budget.",
+        "Sebut dirimu chatbot hanya bila pelanggan bertanya apakah sedang berbicara dengan manusia atau bot."
+    ]
+    for k in lima_kalimat:
+        assert k not in prompt_default
+
+    # 3. Bila True, seluruh 5 kalimat ada apa adanya dan terletak sebelum KOMPONEN_T
+    prompt_p28 = build_agent_system_prompt(aturan_layanan_p28=True)
+    for k in lima_kalimat:
+        assert k in prompt_p28
+
+    # Pastikan letaknya di akhir SISA sebelum KOMPONEN_T
+    idx_kalimat5 = prompt_p28.index(lima_kalimat[-1])
+    idx_t = prompt_p28.index(KOMPONEN_T)
+    assert idx_kalimat5 < idx_t
+
+
+
 
 
 

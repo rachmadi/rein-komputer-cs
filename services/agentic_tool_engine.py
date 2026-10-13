@@ -137,6 +137,7 @@ def build_agent_system_prompt(
     persona_nama_r3: Optional[bool] = None,
     aturan_pribadi_atribut: Optional[bool] = None,
     kirim_foto_oleh_llm: Optional[bool] = None,
+    aturan_layanan_p28: Optional[bool] = None,
 ) -> str:
     from core.db import get_catalog_inventory
     inv = get_catalog_inventory()
@@ -195,6 +196,20 @@ def build_agent_system_prompt(
             "jangan mengatakan foto terkirim atau tersedia bila tidak tertulis di foto_akan_dikirim."
         )
 
+    # Putaran 28 Butir 6: Varian prompt layanan (F + G), flag ATURAN_LAYANAN_P28 (hanya uji A/B)
+    active_layanan_p28 = (
+        aturan_layanan_p28 if aturan_layanan_p28 is not None
+        else (ATURAN_LAYANAN_P28 and v not in ("V0", "V1", "V2", "V3"))
+    )
+    if active_layanan_p28:
+        sisa_text += (
+            "\nBila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, panggil katalog dan sebut produknya; panduan boleh ditambahkan singkat. "
+            "Bila hasil alat tidak memuat informasi yang ditanyakan, katakan terus terang bahwa datanya belum tersedia; jangan menyuruh pelanggan melihat dokumen, tautan, atau tampilan lain. "
+            "Bila pernyataan pelanggan benar, akui; bila kamu salah paham, minta maaf singkat lalu jawab pertanyaannya. "
+            "Jangan menyarankan menaikkan budget bila pelanggan tidak menyebut budget. "
+            "Sebut dirimu chatbot hanya bila pelanggan bertanya apakah sedang berbicara dengan manusia atau bot."
+        )
+
     active_r3 = persona_nama_r3 if persona_nama_r3 is not None else (PERSONA_NAMA_R3 or v in ("R3", "V4_R3"))
     with_j = (v == "V5")
     with_v6 = (v == "V6")
@@ -250,6 +265,7 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
 PERSONA_NAMA_R3: bool = True
 ATURAN_PRIBADI_ATRIBUT: bool = False
 KIRIM_FOTO_OLEH_LLM: bool = True
+ATURAN_LAYANAN_P28: bool = False
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
@@ -602,6 +618,7 @@ def run_agentic_tool(
     persona_nama_r3: Optional[bool] = None,
     aturan_pribadi_atribut: Optional[bool] = None,
     kirim_foto_oleh_llm: Optional[bool] = None,
+    aturan_layanan_p28: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -647,11 +664,16 @@ def run_agentic_tool(
         kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None
         else kwargs.get("kirim_foto_oleh_llm", KIRIM_FOTO_OLEH_LLM)
     )
+    active_layanan_p28 = (
+        aturan_layanan_p28 if aturan_layanan_p28 is not None
+        else kwargs.get("aturan_layanan_p28", ATURAN_LAYANAN_P28)
+    )
     system_content = build_agent_system_prompt(
         varian=active_var,
         persona_nama_r3=active_r3,
         aturan_pribadi_atribut=active_pribadi,
         kirim_foto_oleh_llm=active_foto_llm,
+        aturan_layanan_p28=active_layanan_p28,
     )
     if mentioned_notes:
         system_content += "\n" + mentioned_notes
