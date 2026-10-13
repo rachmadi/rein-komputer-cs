@@ -1288,8 +1288,8 @@ def test_putaran26_butir3_kirim_foto():
         build_agent_system_prompt,
     )
 
-    # 1. Konstanta bawaan mati
-    assert KIRIM_FOTO_OLEH_LLM is False
+    # 1. Konstanta bawaan aktif (Putaran 28 Butir 3a: keputusan Rachmadi)
+    assert KIRIM_FOTO_OLEH_LLM is True
 
     # 2. Skema alat katalog memuat kirim_foto
     katalog_schema = next(t for t in AGENT_TOOLS_SCHEMA if t["function"]["name"] == "katalog")
@@ -1306,10 +1306,12 @@ def test_putaran26_butir3_kirim_foto():
     assert res_with_photo.get("foto_akan_dikirim") == ["KB-D10"]
     assert res_with_photo.get("foto_tidak_tersedia") == []
 
-    # 4. produk tanpa foto (KB-D06) -> masuk foto_tidak_tersedia
-    res_without_photo = katalog(kode_atau_nama="KB-D06", kirim_foto=True, kirim_foto_oleh_llm=True)
-    assert res_without_photo.get("foto_akan_dikirim") == []
-    assert res_without_photo.get("foto_tidak_tersedia") == ["KB-D06"]
+    # 4. produk tanpa foto -> masuk foto_tidak_tersedia (uji dengan mock is_file False)
+    from unittest.mock import patch
+    with patch("pathlib.Path.is_file", return_value=False):
+        res_without_photo = katalog(kode_atau_nama="KB-D06", kirim_foto=True, kirim_foto_oleh_llm=True)
+        assert res_without_photo.get("foto_akan_dikirim") == []
+        assert res_without_photo.get("foto_tidak_tersedia") == ["KB-D06"]
 
     # 5. kirim_foto tidak diisi menghasilkan tidak ada foto
     res_no_param = katalog(kode_atau_nama="KB-D10", kirim_foto_oleh_llm=True)
@@ -1333,6 +1335,47 @@ def test_putaran26_butir3_kirim_foto():
     pos_foto = prompt_nyala.find(kalimat_foto)
     pos_t = prompt_nyala.find(KOMPONEN_T)
     assert pos_foto < pos_t, "Kalimat aturan kirim foto harus sebelum komponen T"
+
+
+def test_putaran28_butir3_foto_diputuskan_reni():
+    """Menguji pemilihan foto sebagai irisan murni produk disebut dan foto_akan_dikirim (Putaran 28 Butir 3)."""
+    from services.agentic_tool_engine import (
+        KIRIM_FOTO_OLEH_LLM,
+        pilih_foto_yang_akan_dikirim,
+        get_active_catalog
+    )
+    assert KIRIM_FOTO_OLEH_LLM is True, "Bawaan KIRIM_FOTO_OLEH_LLM harus True"
+
+    cat = get_active_catalog()
+
+    # 1. Irisan: hasil pencarian ada 2 foto (KB-D10, KB-D11), tapi balasan hanya menyebut KB-D10
+    foto_raw = ["KB-D10", "KB-D11"]
+    prods_disebut = [{"kode": "KB-D10", "nama": "HP Slim Desktop S01"}]
+    hasil = pilih_foto_yang_akan_dikirim(foto_raw, produk_disebut=prods_disebut)
+    assert hasil == ["KB-D10"], "Produk yang tidak disebut di balasan akhir tidak boleh dikirim fotonya"
+
+    # 2. Irisan berbasis reply_text jika produk_disebut kosong
+    reply_teks = "Kami menyarankan Lenovo ThinkCentre Neo 50s (KB-D10) untuk kebutuhan Anda."
+    hasil_teks = pilih_foto_yang_akan_dikirim(
+        foto_raw,
+        produk_disebut=[],
+        reply_text=reply_teks,
+        catalog_by_code=cat.by_code
+    )
+    assert hasil_teks == ["KB-D10"]
+
+    # 3. Produk hasil pencarian tidak disebut sama sekali -> 0 foto dikirim
+    reply_kosong = "Maaf stok untuk spesifikasi tersebut saat ini sedang habis."
+    hasil_nol = pilih_foto_yang_akan_dikirim(
+        foto_raw,
+        produk_disebut=[],
+        reply_text=reply_kosong,
+        catalog_by_code=cat.by_code
+    )
+    assert hasil_nol == []
+
+    # 4. foto_akan_dikirim kosong -> 0 foto dikirim
+    assert pilih_foto_yang_akan_dikirim([], produk_disebut=prods_disebut) == []
 
 
 def test_putaran27_butir2_sembunyikan_kirim_foto():

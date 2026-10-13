@@ -312,18 +312,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         sent_photos = set(sess_state["sent_photo_codes"])
         context.user_data["sent_photo_codes"] = sent_photos
 
-        from services.agentic_tool_engine import KIRIM_FOTO_OLEH_LLM
+        from services.agentic_tool_engine import KIRIM_FOTO_OLEH_LLM, pilih_foto_yang_akan_dikirim
         prods_to_send = []
         is_photo_requested = False
 
         if KIRIM_FOTO_OLEH_LLM:
-            # Putaran 26 Butir 3b: Foto diputuskan Reni lewat foto_akan_dikirim di hasil alat
-            foto_akan_dikirim_codes = res.get("foto_akan_dikirim", [])
-            is_photo_requested = bool(foto_akan_dikirim_codes)
-            if foto_akan_dikirim_codes:
-                from services.catalog_service import get_active_catalog
-                cat = get_active_catalog()
-                prods_to_send = [cat.by_code[c] for c in foto_akan_dikirim_codes if c in cat.by_code]
+            # Putaran 28 Butir 3: Foto diputuskan Reni, dengan irisan produk yang disebut di balasan akhir
+            foto_akan_dikirim_raw = res.get("foto_akan_dikirim", [])
+            cat = get_active_catalog()
+            final_photo_codes = pilih_foto_yang_akan_dikirim(
+                foto_akan_dikirim=foto_akan_dikirim_raw,
+                produk_disebut=products,
+                reply_text=reply_text,
+                catalog_by_code=cat.by_code
+            )
+            is_photo_requested = bool(final_photo_codes)
+            if final_photo_codes:
+                prods_to_send = [cat.by_code[c] for c in final_photo_codes if c in cat.by_code]
         else:
             # Aturan lama: Deteksi apakah user meminta foto/gambar secara eksplisit (phrase-based matching)
             user_text_lower = user_text.lower()

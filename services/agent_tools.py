@@ -24,7 +24,7 @@ from services.catalog_service import get_active_catalog
 logger = logging.getLogger("agent_tools")
 
 KATALOG_SQL: bool = True
-KIRIM_FOTO_OLEH_LLM: bool = False
+KIRIM_FOTO_OLEH_LLM: bool = True
 
 
 def _get_catalog_db_path() -> str:

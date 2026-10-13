@@ -168,8 +168,13 @@ def build_agent_system_prompt(
         'dari ingatan.'
     )
 
+    v = (varian or PROMPT_VARIAN).upper()
+
     # Putaran 26 Butir 2: Aturan data pribadi dan atribut produk di akhir SISA sebelum T
-    active_pribadi = aturan_pribadi_atribut if aturan_pribadi_atribut is not None else ATURAN_PRIBADI_ATRIBUT
+    active_pribadi = (
+        aturan_pribadi_atribut if aturan_pribadi_atribut is not None
+        else (ATURAN_PRIBADI_ATRIBUT and v not in ("V0", "V1", "V2", "V3"))
+    )
     if active_pribadi:
         sisa_text += (
             "\nKamu tidak punya data pribadi seperti alamat rumah, umur, atau kehidupan di luar pekerjaan, "
@@ -180,14 +185,16 @@ def build_agent_system_prompt(
         )
 
     # Putaran 26 Butir 3c: Aturan foto diputuskan Reni di akhir SISA sebelum T
-    active_foto_llm = kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None else KIRIM_FOTO_OLEH_LLM
+    active_foto_llm = (
+        kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None
+        else (KIRIM_FOTO_OLEH_LLM and v not in ("V0", "V1", "V2", "V3"))
+    )
     if active_foto_llm:
         sisa_text += (
             "\nFoto produk hanya terkirim bila kamu memanggil katalog dengan kirim_foto bernilai true untuk produk itu; "
             "jangan mengatakan foto terkirim atau tersedia bila tidak tertulis di foto_akan_dikirim."
         )
 
-    v = (varian or PROMPT_VARIAN).upper()
     active_r3 = persona_nama_r3 if persona_nama_r3 is not None else (PERSONA_NAMA_R3 or v in ("R3", "V4_R3"))
     with_j = (v == "V5")
     with_v6 = (v == "V6")
@@ -242,7 +249,7 @@ def variant_has_reminder(varian: Optional[str] = None) -> bool:
 
 PERSONA_NAMA_R3: bool = True
 ATURAN_PRIBADI_ATRIBUT: bool = False
-KIRIM_FOTO_OLEH_LLM: bool = False
+KIRIM_FOTO_OLEH_LLM: bool = True
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
@@ -405,6 +412,58 @@ def get_product_mention_position(product: dict, reply_text: str, catalog: Option
 def is_product_mentioned_in_reply(product: dict, reply_text: str, catalog: Optional[Catalog] = None) -> bool:
     """Mengecek apakah produk secara spesifik disebut di balasan akhir LLM."""
     return get_product_mention_position(product, reply_text, catalog=catalog) >= 0
+
+
+def pilih_foto_yang_akan_dikirim(
+    foto_akan_dikirim: list[str],
+    produk_disebut: list[dict] | list[str] | None = None,
+    reply_text: str = "",
+    catalog_by_code: dict[str, dict] | None = None,
+    max_foto: int = 5
+) -> list[str]:
+    """
+    Fungsi murni untuk menentukan daftar kode produk yang fotonya akan dikirim (Putaran 28 Butir 3).
+    Foto yang dikirim = irisan foto_akan_dikirim dengan produk yang disebut di balasan akhir
+    (menggunakan pencocok yang sama dengan kartu produk).
+    Produk hasil pencarian yang tidak disebut tidak dikirim fotonya.
+    """
+    if not foto_akan_dikirim:
+        return []
+
+    foto_set = set(foto_akan_dikirim)
+    hasil: list[str] = []
+    seen: set[str] = set()
+
+    # Kasus 1: Bila produk_disebut diberikan langsung (misal res.get("products") dari giliran)
+    if produk_disebut is not None and len(produk_disebut) > 0:
+        for item in produk_disebut:
+            c = item.get("kode") if isinstance(item, dict) else str(item).strip()
+            if c and c in foto_set and c not in seen:
+                seen.add(c)
+                hasil.append(c)
+                if len(hasil) >= max_foto:
+                    break
+        return hasil
+
+    # Kasus 2: Bila produk_disebut kosong / tidak diberikan, gunakan reply_text + pencocok kartu
+    if reply_text:
+        cat_map = catalog_by_code
+        if not cat_map:
+            from services.catalog_service import get_active_catalog
+            cat_map = get_active_catalog().by_code
+
+        candidates = []
+        for c in foto_akan_dikirim:
+            if c not in seen and c in cat_map:
+                p = cat_map[c]
+                pos = get_product_mention_position(p, reply_text)
+                if pos >= 0:
+                    candidates.append((pos, c))
+                    seen.add(c)
+        candidates.sort(key=lambda x: x[0])
+        return [c for _, c in candidates[:max_foto]]
+
+    return []
 
 
 def call_ollama_chat_raw(
