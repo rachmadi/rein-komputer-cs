@@ -234,11 +234,17 @@ def _search_kb_markdown_all(query: str) -> list[dict[str, Any]]:
             if len(trimmed) > 800:
                 trimmed = trimmed[:800] + "..."
 
+            m_tag = re.search(r"-\s*\*\*Tag katalog:\*\*\s*([^|\n]+)", sec_clean) or re.search(r"\*\*Tag katalog:\*\*\s*([^|\n]+)", sec_clean)
+            tag_katalog_val = []
+            if m_tag:
+                tag_katalog_val = [x.strip() for x in m_tag.group(1).split(",") if x.strip() and x.strip() != "-"]
+
             matched.append((score, {
                 "id": cid,
                 "judul": clean_title,
                 "tipe": tipe,
-                "teks": trimmed
+                "teks": trimmed,
+                "tag_katalog": tag_katalog_val
             }))
 
     matched.sort(key=lambda x: -x[0])
@@ -891,7 +897,7 @@ def katalog(
 
 PENGETAHUAN_GABUNGAN: bool = False
 PENGETAHUAN_TOPK: int = int(os.getenv("PENGETAHUAN_TOPK", "3"))
-CATATAN_PENGETAHUAN_KATALOG: bool = False
+CATATAN_PENGETAHUAN_KATALOG: bool = True
 
 
 def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict], limit: int = 3) -> list[dict]:
@@ -978,11 +984,17 @@ def pengetahuan(
                     trimmed_text = raw_text.replace("## ", "").strip()
                     if len(trimmed_text) > 800:
                         trimmed_text = trimmed_text[:800] + "..."
+                    tag_katalog_val = pld.get("tag_katalog")
+                    if not tag_katalog_val or tag_katalog_val == []:
+                        m_t = re.search(r"\*\*Tag katalog:\*\*\s*([^|\n]+)", raw_text)
+                        if m_t:
+                            tag_katalog_val = [x.strip() for x in m_t.group(1).split(",") if x.strip() and x.strip() != "-"]
                     hasil_chunks.append({
                         "id": cid,
                         "judul": clean_title,
                         "tipe": pld.get("tipe"),
-                        "teks": trimmed_text
+                        "teks": trimmed_text,
+                        "tag_katalog": tag_katalog_val or []
                     })
             else:
                 qdrant_exception = f"http_{resp.status_code}"

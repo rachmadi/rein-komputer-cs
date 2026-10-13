@@ -198,6 +198,15 @@ def build_agent_system_prompt(
             "jangan menyebut kendala teknis."
         )
 
+    # Putaran 30 Butir 2: Aturan pemanggilan katalog saat menyebut kategori/profil kebutuhan
+    if v not in ("V0", "V1", "V2", "V3"):
+        sisa_text += (
+            "\nBila jawabanmu menyebut kategori atau profil kebutuhan produk, "
+            "kamu wajib memanggil katalog pada giliran yang sama sebelum menjawab, "
+            "memakai kata kunci atau tag kategori dari profil yang cocok. "
+            "Jangan menjawab rekomendasi produk hanya dari panduan tanpa memeriksa katalog."
+        )
+
     # Putaran 28 Butir 6: Varian prompt layanan (F + G), flag ATURAN_LAYANAN_P28 (hanya uji A/B)
     active_layanan_p28 = (
         aturan_layanan_p28 if aturan_layanan_p28 is not None
@@ -268,7 +277,7 @@ PERSONA_NAMA_R3: bool = True
 ATURAN_PRIBADI_ATRIBUT: bool = False
 KIRIM_FOTO_OLEH_LLM: bool = True
 ATURAN_LAYANAN_P28: bool = False
-CATATAN_PENGETAHUAN_KATALOG: bool = False
+CATATAN_PENGETAHUAN_KATALOG: bool = True
 PRODUK_TERDEKAT: bool = True
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
@@ -1170,6 +1179,164 @@ def run_agentic_tool(
         new_reply, is_emergency_fallback, emergency_error = _execute_tool_rounds(messages, max_rounds=MAX_TOOL_ROUNDS)
         if new_reply:
             final_reply = new_reply
+
+    # Putaran 30 Butir 2: Pengaman pemanggilan katalog otomatis bila alat pengetahuan dipanggil
+    # dan memuat catatan, tapi alat katalog sama sekali tidak dipanggil sampai balasan akhir giliran itu.
+    pengetahuan_calls_with_catatan = [
+        tc for tc in all_tool_calls_logged
+        if tc.get("nama") in ("pengetahuan", "pengetahuan_kebutuhan")
+        and isinstance(tc.get("hasil"), dict)
+        and "catatan" in tc.get("hasil", {})
+    ]
+    katalog_sudah_dipanggil = any(
+        tc.get("nama") in ("katalog", "cari_produk", "detail_produk")
+        for tc in all_tool_calls_logged
+    )
+
+    if (
+        pengetahuan_calls_with_catatan
+        and not katalog_sudah_dipanggil
+        and not is_emergency_fallback
+        and final_reply
+    ):
+        # Ekstrak Tag katalog dari profil yang paling cocok di hasil pengetahuan
+        tag_kata_kunci = None
+        for pt in pengetahuan_calls_with_catatan:
+            p_items = pt.get("hasil", {}).get("pengetahuan", [])
+            for chunk in p_items:
+                tk = chunk.get("tag_katalog")
+                if tk:
+                    if isinstance(tk, list) and tk:
+                        tag_kata_kunci = ", ".join(tk)
+                        break
+                    elif isinstance(tk, str) and tk.strip() and tk.strip() != "-":
+                        tag_kata_kunci = tk.strip()
+                        break
+                c_text = chunk.get("teks", "")
+                m_tag = re.search(r"\*\*Tag katalog:\*\*\s*([^|\n]+)", c_text)
+                if m_tag:
+                    raw_tags = m_tag.group(1).strip()
+                    if raw_tags and raw_tags != "-":
+                        tag_kata_kunci = raw_tags
+                        break
+            if tag_kata_kunci:
+                break
+
+        cat_synonyms_map = {
+            "pc": "desktop", "komputer": "desktop", "all-in-one": "desktop", "aio": "desktop", "desktop": "desktop",
+            "notebook": "laptop", "laptop": "laptop",
+            "printer": "printer", "print": "printer", "cetak": "printer",
+            "monitor": "monitor", "layar": "monitor"
+        }
+        detected_cat = None
+        u_tokens = [w for w in re.findall(r"\w+", user_text.lower())]
+        for tok in u_tokens:
+            if tok in cat_synonyms_map:
+                detected_cat = cat_synonyms_map[tok]
+                break
+
+        katalog_guard_args: dict[str, Any] = {}
+        if tag_kata_kunci:
+            katalog_guard_args["kata_kunci"] = tag_kata_kunci
+        if detected_cat:
+            katalog_guard_args["kategori"] = detected_cat
+        if not katalog_guard_args:
+            katalog_guard_args["kata_kunci"] = user_text
+
+        logger.info(f"Pengaman P30 Butir 2 terpicu: memanggil katalog otomatis {katalog_guard_args}")
+
+        t0_guard = time.perf_counter()
+        guard_catalog_res = execute_agent_tool(
+            "katalog",
+            katalog_guard_args,
+            catalog=cat,
+            kirim_foto_oleh_llm=active_foto_llm,
+            catatan_pengetahuan_katalog=active_catatan_pengetahuan,
+            produk_terdekat=active_produk_terdekat
+        )
+        t_guard = (time.perf_counter() - t0_guard) * 1000
+
+        ringkasan_guard = summarize_tool_result("katalog", guard_catalog_res)
+        tool_log_guard = {
+            "nama": "katalog",
+            "argumen": katalog_guard_args,
+            "ringkasan_hasil": ringkasan_guard,
+            "hasil": guard_catalog_res,
+            "latensi_ms": round(t_guard, 2),
+            "latensi": round(t_guard, 2),
+            "pengaman_otomatis": True
+        }
+        all_tool_calls_logged.append(tool_log_guard)
+
+        # Masukkan ke tool summaries dan pool produk turn
+        this_turn_tool_summaries.append({
+            "nama": "katalog",
+            "argumen": katalog_guard_args,
+            "total_cocok": guard_catalog_res.get("total_cocok", 0) if isinstance(guard_catalog_res, dict) else 0,
+            "produk": guard_catalog_res.get("produk", []) if isinstance(guard_catalog_res, dict) else []
+        })
+
+        if isinstance(guard_catalog_res, dict):
+            if "produk" in guard_catalog_res and guard_catalog_res.get("produk"):
+                all_tools_products_returned.extend(guard_catalog_res["produk"])
+            elif "produk_terdekat" in guard_catalog_res and guard_catalog_res.get("produk_terdekat"):
+                all_tools_products_returned.extend(guard_catalog_res["produk_terdekat"])
+            elif "produk_di_kategori" in guard_catalog_res and guard_catalog_res.get("produk_di_kategori"):
+                all_tools_products_returned.extend(guard_catalog_res["produk_di_kategori"])
+
+            if active_foto_llm:
+                raw_fc = guard_catalog_res.get("foto_tersedia") or guard_catalog_res.get("foto_akan_dikirim") or []
+                for fc in raw_fc:
+                    if fc and fc not in seen_foto_turn:
+                        seen_foto_turn.add(fc)
+                        foto_tersedia_turn.append(fc)
+                        if len(foto_tersedia_turn) >= 5:
+                            break
+
+        # Berikan hasil katalog ke model untuk merevisi balasan
+        messages.append({"role": "assistant", "content": final_reply})
+        messages.append({
+            "role": "system",
+            "content": (
+                f"Hasil pemeriksaan katalog toko untuk '{tag_kata_kunci or user_text}':\n"
+                f"{json.dumps(guard_catalog_res, ensure_ascii=False)}\n\n"
+                "Revisi balasanmu sebelumnya dengan menyertakan rekomendasi produk nyata dari hasil katalog di atas "
+                "(sebutkan nama produk, spesifikasi ringkas, dan harganya). "
+                "Jangan hanya menjawab dari panduan tanpa menyebut produk nyata dari katalog."
+            )
+        })
+
+        call_num_rev = len(all_llm_calls_logged) + 1
+        try:
+            llm_resp_rev = call_ollama_chat_raw(
+                messages=messages,
+                tools=None,
+                model=model,
+                url=url,
+                num_predict=1024,
+                num_ctx=8192,
+                timeout=120,
+                think=False
+            )
+            rev_msg = llm_resp_rev.get("message", {})
+            rev_content = rev_msg.get("content", "") or ""
+            if "<think>" in rev_content:
+                rev_content = re.sub(r"<think>.*?</think>", "", rev_content, flags=re.DOTALL).strip()
+            if rev_content.strip():
+                final_reply = rev_content.strip()
+
+            all_llm_calls_logged.append({
+                "urutan": call_num_rev,
+                "prompt_eval_count": llm_resp_rev.get("prompt_eval_count"),
+                "eval_count": llm_resp_rev.get("eval_count"),
+                "done_reason": llm_resp_rev.get("done_reason"),
+                "latensi_ms": round(llm_resp_rev.get("_latency_ms", 0.0), 2),
+                "latensi": round(llm_resp_rev.get("_latency_ms", 0.0), 2),
+                "raw_output": llm_resp_rev.get("_raw_output", ""),
+                "thinking_chars": len(rev_msg.get("thinking") or "")
+            })
+        except Exception as e:
+            logger.warning(f"Gagal revisi balasan dengan pengaman katalog P30: {e}")
 
     if is_emergency_fallback or not final_reply:
         final_reply = FALLBACK_EMERGENCY_REPLY
