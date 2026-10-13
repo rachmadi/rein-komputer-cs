@@ -1760,6 +1760,43 @@ def test_putaran29_butir3_catatan_pengetahuan():
     assert res_exec_true.get("catatan") == teks_catatan
 
 
+def test_putaran29_butir4_produk_terdekat():
+    """Menguji fallback produk_terdekat saat filter spek menghasilkan 0 hasil (Putaran 29 Butir 4)."""
+    from services.agent_tools import PRODUK_TERDEKAT, katalog, execute_agent_tool
+
+    # 1. Bawaan flag harus False
+    assert PRODUK_TERDEKAT is False
+
+    teks_catatan = (
+        "Tidak ada produk yang memenuhi filter ini. Sampaikan apa adanya; "
+        "bila relevan, tawarkan produk_terdekat dan sebut perbedaannya. "
+        "Jangan menyarankan menaikkan budget bila pelanggan tidak menyebut budget."
+    )
+
+    # 2. Saat False (bawaan): katalog(kategori="desktop", ram_min_gb=32) memberi 0 hasil tanpa produk_terdekat
+    res_false = katalog(kategori="desktop", ram_min_gb=32, produk_terdekat=False)
+    assert res_false.get("total_cocok") == 0
+    assert "produk_terdekat" not in res_false
+    assert "catatan" not in res_false
+
+    # 3. Saat True: katalog(kategori="desktop", ram_min_gb=32) memberi 0 hasil + produk_terdekat desktop RAM tertinggi
+    res_true = katalog(kategori="desktop", ram_min_gb=32, produk_terdekat=True)
+    assert res_true.get("total_cocok") == 0
+    assert "produk_terdekat" in res_true
+    assert len(res_true["produk_terdekat"]) <= 3
+    assert res_true.get("catatan") == teks_catatan
+
+    # Verifikasi produk terdekat adalah desktop dengan RAM tertinggi di katalog (16 GB)
+    codes_terdekat = [p["kode"] for p in res_true["produk_terdekat"]]
+    assert codes_terdekat == ["KB-D15", "KB-D13", "KB-D08"]
+
+    # 4. Uji via execute_agent_tool
+    res_exec = execute_agent_tool("katalog", {"kategori": "desktop", "ram_min_gb": 32}, produk_terdekat=True)
+    assert res_exec.get("total_cocok") == 0
+    assert "produk_terdekat" in res_exec
+    assert [p["kode"] for p in res_exec["produk_terdekat"]] == ["KB-D15", "KB-D13", "KB-D08"]
+
+
 
 
 

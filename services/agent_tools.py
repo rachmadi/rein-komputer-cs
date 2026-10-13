@@ -25,6 +25,7 @@ logger = logging.getLogger("agent_tools")
 
 KATALOG_SQL: bool = True
 KIRIM_FOTO_OLEH_LLM: bool = True
+PRODUK_TERDEKAT: bool = False
 
 
 def _get_catalog_db_path() -> str:
@@ -62,6 +63,91 @@ def _parse_bool(val: Any) -> bool | None:
     if s in ("false", "0", "no", "tidak"):
         return False
     return None
+
+
+def _extract_spec_value(p: dict, spec_key: str) -> float:
+    """Mengekstrak nilai numerik atau biner dari produk berdasarkan kunci filter spek (Putaran 29 Butir 4)."""
+    if spec_key == "ram_min_gb":
+        val = p.get("ram_gb")
+        if val is not None:
+            parsed = _parse_numeric(val)
+            if parsed is not None:
+                return float(parsed)
+        ram_s = str(p.get("ram", ""))
+        m = re.search(r"(\d+)\s*gb", ram_s, re.IGNORECASE)
+        if m:
+            return float(m.group(1))
+        return 0.0
+
+    elif spec_key == "ssd_min_gb":
+        val = p.get("storage_ssd_gb")
+        if val is not None:
+            parsed = _parse_numeric(val)
+            if parsed is not None:
+                return float(parsed)
+        st_s = str(p.get("storage", ""))
+        m = re.search(r"(\d+)\s*(?:gb|tb)\s*(?:nvme\s*)?ssd", st_s, re.IGNORECASE)
+        if m:
+            n = float(m.group(1))
+            if "tb" in st_s.lower():
+                n *= 1024
+            return n
+        return 0.0
+
+    elif spec_key == "vram_min_gb":
+        val = p.get("vram_gb")
+        if val is not None:
+            parsed = _parse_numeric(val)
+            if parsed is not None:
+                return float(parsed)
+        return 0.0
+
+    elif spec_key == "gpu_dedicated":
+        val = p.get("gpu_dedicated")
+        if val is not None:
+            return 1.0 if _parse_bool(val) else 0.0
+        return 0.0
+
+    elif spec_key in ("layar_min_inci", "layar_maks_inci"):
+        val = p.get("screen_inch")
+        if val is not None:
+            parsed = _parse_numeric(val)
+            if parsed is not None:
+                return float(parsed)
+        disp_s = str(p.get("display", ""))
+        m = re.search(r"(\d+(?:\.\d+)?)\s*(?:\"|inch|inci)", disp_s, re.IGNORECASE)
+        if m:
+            return float(m.group(1))
+        return 0.0
+
+    elif spec_key == "refresh_min_hz":
+        val = p.get("refresh_hz")
+        if val is not None:
+            parsed = _parse_numeric(val)
+            if parsed is not None:
+                return float(parsed)
+        disp_s = str(p.get("display", ""))
+        m = re.search(r"(\d+)\s*hz", disp_s, re.IGNORECASE)
+        if m:
+            return float(m.group(1))
+        return 0.0
+
+    return 0.0
+
+
+def _sort_produk_terdekat(products: list[dict], first_spec_key: str) -> list[dict]:
+    """Mengurutkan produk menurut atribut filter spek pertama (terbaik ke terburuk), lalu harga naik (Putaran 29 Butir 4b)."""
+    def sort_key(p: dict):
+        val = _extract_spec_value(p, first_spec_key)
+        price = _parse_numeric(p.get("harga") or p.get("harga_idr")) or 0.0
+        if first_spec_key == "layar_maks_inci":
+            # Untuk batas layar maksimal, semakin kecil semakin mendekati batas
+            return (val if val > 0 else 999.0, price)
+        else:
+            # Nilai terbesar/tertinggi lebih baik
+            return (-val, price)
+
+    return sorted(products, key=sort_key)
 
 
 
@@ -181,7 +267,8 @@ def katalog(
     refresh_min_hz: int | float | None = None,
     catalog=None,
     katalog_sql: bool | None = None,
-    kirim_foto_oleh_llm: bool | None = None
+    kirim_foto_oleh_llm: bool | None = None,
+    produk_terdekat: bool | None = None
 ) -> dict[str, Any]:
     """
     Alat katalog toko ReIn Komputer:
@@ -372,6 +459,26 @@ def katalog(
     l_max = _parse_numeric(layar_maks_inci)
     ref_min = _parse_numeric(refresh_min_hz)
 
+    active_produk_terdekat = (
+        produk_terdekat if produk_terdekat is not None
+        else PRODUK_TERDEKAT
+    )
+    active_spec_keys = []
+    if r_min is not None and r_min > 0:
+        active_spec_keys.append("ram_min_gb")
+    if s_min is not None and s_min > 0:
+        active_spec_keys.append("ssd_min_gb")
+    if v_min is not None and v_min > 0:
+        active_spec_keys.append("vram_min_gb")
+    if g_ded is not None:
+        active_spec_keys.append("gpu_dedicated")
+    if l_min is not None and l_min > 0:
+        active_spec_keys.append("layar_min_inci")
+    if l_max is not None and l_max > 0:
+        active_spec_keys.append("layar_maks_inci")
+    if ref_min is not None and ref_min > 0:
+        active_spec_keys.append("refresh_min_hz")
+
     use_sql = KATALOG_SQL if katalog_sql is None else bool(katalog_sql)
 
     if use_sql:
@@ -379,55 +486,61 @@ def katalog(
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
 
-        where_clauses: list[str] = []
-        params: list[Any] = []
+        where_base: list[str] = []
+        params_base: list[Any] = []
 
         if target_cat:
             if target_cat in valid_cats:
-                where_clauses.append("LOWER(kategori) = ?")
-                params.append(target_cat)
+                where_base.append("LOWER(kategori) = ?")
+                params_base.append(target_cat)
             else:
-                where_clauses.append("LOWER(kategori) LIKE ?")
-                params.append(f"%{target_cat}%")
+                where_base.append("LOWER(kategori) LIKE ?")
+                params_base.append(f"%{target_cat}%")
 
         if target_merek:
-            where_clauses.append("(LOWER(brand) LIKE ? OR LOWER(nama) LIKE ?)")
-            params.append(f"%{target_merek}%")
-            params.append(f"%{target_merek}%")
+            where_base.append("(LOWER(brand) LIKE ? OR LOWER(nama) LIKE ?)")
+            params_base.append(f"%{target_merek}%")
+            params_base.append(f"%{target_merek}%")
 
         if b_min is not None and b_min > 0:
-            where_clauses.append("CAST(harga_idr AS INTEGER) >= ?")
-            params.append(int(b_min))
+            where_base.append("CAST(harga_idr AS INTEGER) >= ?")
+            params_base.append(int(b_min))
+
+        where_specs: list[str] = []
+        params_specs: list[Any] = []
 
         if r_min is not None and r_min > 0:
-            where_clauses.append("CAST(ram_gb AS INTEGER) >= ?")
-            params.append(int(r_min))
+            where_specs.append("CAST(ram_gb AS INTEGER) >= ?")
+            params_specs.append(int(r_min))
 
         if s_min is not None and s_min > 0:
-            where_clauses.append("storage_ssd_gb >= ?")
-            params.append(int(s_min))
+            where_specs.append("storage_ssd_gb >= ?")
+            params_specs.append(int(s_min))
 
         if g_ded is not None:
             if g_ded:
-                where_clauses.append("CAST(gpu_dedicated AS INTEGER) = 1")
+                where_specs.append("CAST(gpu_dedicated AS INTEGER) = 1")
             else:
-                where_clauses.append("(gpu_dedicated = 0 OR gpu_dedicated IS NULL)")
+                where_specs.append("(gpu_dedicated = 0 OR gpu_dedicated IS NULL)")
 
         if v_min is not None and v_min > 0:
-            where_clauses.append("CAST(vram_gb AS INTEGER) >= ?")
-            params.append(int(v_min))
+            where_specs.append("CAST(vram_gb AS INTEGER) >= ?")
+            params_specs.append(int(v_min))
 
         if l_min is not None and l_min > 0:
-            where_clauses.append("CAST(screen_inch AS REAL) >= ?")
-            params.append(float(l_min))
+            where_specs.append("CAST(screen_inch AS REAL) >= ?")
+            params_specs.append(float(l_min))
 
         if l_max is not None and l_max > 0:
-            where_clauses.append("CAST(screen_inch AS REAL) <= ?")
-            params.append(float(l_max))
+            where_specs.append("CAST(screen_inch AS REAL) <= ?")
+            params_specs.append(float(l_max))
 
         if ref_min is not None and ref_min > 0:
-            where_clauses.append("CAST(refresh_hz AS INTEGER) >= ?")
-            params.append(int(ref_min))
+            where_specs.append("CAST(refresh_hz AS INTEGER) >= ?")
+            params_specs.append(int(ref_min))
+
+        where_clauses = list(where_base) + where_specs
+        params = list(params_base) + params_specs
 
         if b_max is not None and b_max > 0:
             where_with_bmax = list(where_clauses) + ["CAST(harga_idr AS INTEGER) <= ?"]
@@ -438,7 +551,51 @@ def katalog(
             cur.execute(sql_check, params_with_bmax)
             rows_check = cur.fetchall()
             if not rows_check:
-                # melebihi_budget
+                # Cek dulu apakah 0 hasil disebabkan oleh filter spek (Putaran 29 Butir 4)
+                if active_produk_terdekat and where_specs:
+                    where_base_with_bmax = list(where_base) + ["CAST(harga_idr AS INTEGER) <= ?"]
+                    params_base_with_bmax = list(params_base) + [int(b_max)]
+                    sql_check_base = "SELECT kode FROM products"
+                    if where_base_with_bmax:
+                        sql_check_base += " WHERE " + " AND ".join(where_base_with_bmax)
+                    cur.execute(sql_check_base, params_base_with_bmax)
+                    rows_base = cur.fetchall()
+                    if rows_base:
+                        pool_fb = [cat_inst.by_code.get(r[0]) or cat_inst.by_code.get(r[0].upper()) for r in rows_base]
+                        pool_fb = [p for p in pool_fb if p]
+                        conn.close()
+                        first_spec_key = active_spec_keys[0] if active_spec_keys else "ram_min_gb"
+                        sorted_terdekat = _sort_produk_terdekat(pool_fb, first_spec_key)
+                        prods_terdekat = sorted_terdekat[:3]
+                        res_dict = {
+                            "status": "sukses",
+                            "total_cocok": 0,
+                            "catatan": (
+                                "Tidak ada produk yang memenuhi filter ini. Sampaikan apa adanya; "
+                                "bila relevan, tawarkan produk_terdekat dan sebut perbedaannya. "
+                                "Jangan menyarankan menaikkan budget bila pelanggan tidak menyebut budget."
+                            ),
+                            "produk": [],
+                            "produk_terdekat": [_format_ringkas(p) for p in prods_terdekat],
+                            "urutan": urutan_norm or "termurah"
+                        }
+                        if is_kirim_foto:
+                            akan_kirim = []
+                            tidak_ada = []
+                            for p in prods_terdekat:
+                                c = p.get("kode")
+                                if not c:
+                                    continue
+                                img_f = (p.get("image_file") or "").strip()
+                                if bool(img_f and Path(img_f).is_file()):
+                                    akan_kirim.append(c)
+                                else:
+                                    tidak_ada.append(c)
+                            res_dict["foto_tersedia"] = akan_kirim
+                            res_dict["foto_tidak_tersedia"] = tidak_ada
+                        return res_dict
+
+                # melebihi_budget standar bila bukan karena filter spek
                 cheapest_sql = "SELECT kode FROM products"
                 cheapest_params = list(params)
                 if where_clauses:
@@ -481,6 +638,12 @@ def katalog(
             where_clauses = where_with_bmax
             params = params_with_bmax
 
+        where_base_exec = list(where_base)
+        params_base_exec = list(params_base)
+        if b_max is not None and b_max > 0:
+            where_base_exec.append("CAST(harga_idr AS INTEGER) <= ?")
+            params_base_exec.append(int(b_max))
+
         order_sql = "ORDER BY CAST(harga_idr AS INTEGER) DESC" if urutan_norm == "termahal" else "ORDER BY CAST(harga_idr AS INTEGER) ASC"
         query_sql = "SELECT kode FROM products"
         if where_clauses:
@@ -489,6 +652,49 @@ def katalog(
 
         cur.execute(query_sql, params)
         rows = cur.fetchall()
+
+        # Bila rows kosong dan filter spek diisi (Putaran 29 Butir 4):
+        if not rows and active_produk_terdekat and where_specs:
+            query_fb_sql = "SELECT kode FROM products"
+            if where_base_exec:
+                query_fb_sql += " WHERE " + " AND ".join(where_base_exec)
+            cur.execute(query_fb_sql, params_base_exec)
+            rows_fb = cur.fetchall()
+            if rows_fb:
+                conn.close()
+                pool_fb = [cat_inst.by_code.get(r[0]) or cat_inst.by_code.get(r[0].upper()) for r in rows_fb]
+                pool_fb = [p for p in pool_fb if p]
+                first_spec_key = active_spec_keys[0] if active_spec_keys else "ram_min_gb"
+                sorted_terdekat = _sort_produk_terdekat(pool_fb, first_spec_key)
+                prods_terdekat = sorted_terdekat[:3]
+                res_dict = {
+                    "status": "sukses",
+                    "total_cocok": 0,
+                    "catatan": (
+                        "Tidak ada produk yang memenuhi filter ini. Sampaikan apa adanya; "
+                        "bila relevan, tawarkan produk_terdekat dan sebut perbedaannya. "
+                        "Jangan menyarankan menaikkan budget bila pelanggan tidak menyebut budget."
+                    ),
+                    "produk": [],
+                    "produk_terdekat": [_format_ringkas(p) for p in prods_terdekat],
+                    "urutan": urutan_norm or "termurah"
+                }
+                if is_kirim_foto:
+                    akan_kirim = []
+                    tidak_ada = []
+                    for p in prods_terdekat:
+                        c = p.get("kode")
+                        if not c:
+                            continue
+                        img_f = (p.get("image_file") or "").strip()
+                        if bool(img_f and Path(img_f).is_file()):
+                            akan_kirim.append(c)
+                        else:
+                            tidak_ada.append(c)
+                    res_dict["foto_tersedia"] = akan_kirim
+                    res_dict["foto_tidak_tersedia"] = tidak_ada
+                return res_dict
+
         conn.close()
 
         pool = []
@@ -1010,13 +1216,15 @@ def execute_agent_tool(
     tool_args: dict[str, Any],
     catalog=None,
     kirim_foto_oleh_llm: bool | None = None,
-    catatan_pengetahuan_katalog: bool | None = None
+    catatan_pengetahuan_katalog: bool | None = None,
+    produk_terdekat: bool | None = None
 ) -> dict[str, Any]:
     """Menjalankan alat agent berdasarkan nama dan argumen."""
     t_name = str(tool_name or "").strip()
     args = dict(tool_args or {})
     active_foto_flag = kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None else args.get("kirim_foto_oleh_llm")
     active_catatan = catatan_pengetahuan_katalog if catatan_pengetahuan_katalog is not None else args.get("catatan_pengetahuan_katalog")
+    active_terdekat = produk_terdekat if produk_terdekat is not None else args.get("produk_terdekat")
 
     if t_name == "katalog":
         return katalog(
@@ -1037,7 +1245,8 @@ def execute_agent_tool(
             refresh_min_hz=args.get("refresh_min_hz"),
             catalog=catalog,
             katalog_sql=args.get("katalog_sql"),
-            kirim_foto_oleh_llm=active_foto_flag
+            kirim_foto_oleh_llm=active_foto_flag,
+            produk_terdekat=active_terdekat
         )
     elif t_name == "pengetahuan":
         return pengetahuan(

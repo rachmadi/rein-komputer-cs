@@ -269,6 +269,7 @@ ATURAN_PRIBADI_ATRIBUT: bool = False
 KIRIM_FOTO_OLEH_LLM: bool = True
 ATURAN_LAYANAN_P28: bool = False
 CATATAN_PENGETAHUAN_KATALOG: bool = False
+PRODUK_TERDEKAT: bool = False
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
@@ -413,9 +414,9 @@ def get_product_mention_position(product: dict, reply_text: str, catalog: Option
         return -1
 
     index = build_product_key_index(catalog)
-    keys = index.get(code, [])
+    keys = list(index.get(code, []))
     if not keys:
-        return -1
+        keys = [code.lower()]
 
     earliest_pos = -1
     for k in keys:
@@ -625,6 +626,7 @@ def run_agentic_tool(
     kirim_foto_oleh_llm: Optional[bool] = None,
     aturan_layanan_p28: Optional[bool] = None,
     catatan_pengetahuan_katalog: Optional[bool] = None,
+    produk_terdekat: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -677,6 +679,10 @@ def run_agentic_tool(
     active_catatan_pengetahuan = (
         catatan_pengetahuan_katalog if catatan_pengetahuan_katalog is not None
         else kwargs.get("catatan_pengetahuan_katalog", CATATAN_PENGETAHUAN_KATALOG)
+    )
+    active_produk_terdekat = (
+        produk_terdekat if produk_terdekat is not None
+        else kwargs.get("produk_terdekat", PRODUK_TERDEKAT)
     )
     system_content = build_agent_system_prompt(
         varian=active_var,
@@ -935,7 +941,8 @@ def run_agentic_tool(
                     fn_args,
                     catalog=catalog,
                     kirim_foto_oleh_llm=active_foto_llm,
-                    catatan_pengetahuan_katalog=active_catatan_pengetahuan
+                    catatan_pengetahuan_katalog=active_catatan_pengetahuan,
+                    produk_terdekat=active_produk_terdekat
                 )
                 t_tool = (time.perf_counter() - t0_tool) * 1000
 
@@ -944,7 +951,7 @@ def run_agentic_tool(
                 total_cocok = 0
                 if isinstance(tool_res, dict):
                     total_cocok = tool_res.get("total_cocok", 0)
-                    if "produk" in tool_res:
+                    if "produk" in tool_res and tool_res.get("produk"):
                         prods = tool_res.get("produk", [])
                         if isinstance(prods, list) and prods:
                             all_tools_products_returned.extend(prods)
@@ -960,22 +967,38 @@ def run_agentic_tool(
                                     "spek": spek_val,
                                     "ada_foto": bool(p.get("ada_foto"))
                                 })
-                        elif "produk_di_kategori" in tool_res:
-                            prods_kat = tool_res.get("produk_di_kategori", [])
-                            if isinstance(prods_kat, list):
-                                all_tools_products_returned.extend(prods_kat)
-                                for p in prods_kat:
-                                    spek_val = p.get("spek_ringkas")
-                                    if not spek_val:
-                                        cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
-                                        spek_val = clean_specs(cat_p or p)
-                                    prod_summary_list.append({
-                                        "kode": p.get("kode"),
-                                        "nama": p.get("nama"),
-                                        "harga": p.get("harga") or p.get("harga_idr"),
-                                        "spek": spek_val,
-                                        "ada_foto": bool(p.get("ada_foto"))
-                                    })
+                    elif "produk_terdekat" in tool_res:
+                        prods_terdekat = tool_res.get("produk_terdekat", [])
+                        if isinstance(prods_terdekat, list):
+                            all_tools_products_returned.extend(prods_terdekat)
+                            for p in prods_terdekat:
+                                spek_val = p.get("spek_ringkas")
+                                if not spek_val:
+                                    cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
+                                    spek_val = clean_specs(cat_p or p)
+                                prod_summary_list.append({
+                                    "kode": p.get("kode"),
+                                    "nama": p.get("nama"),
+                                    "harga": p.get("harga") or p.get("harga_idr"),
+                                    "spek": spek_val,
+                                    "ada_foto": bool(p.get("ada_foto"))
+                                })
+                    elif "produk_di_kategori" in tool_res:
+                        prods_kat = tool_res.get("produk_di_kategori", [])
+                        if isinstance(prods_kat, list):
+                            all_tools_products_returned.extend(prods_kat)
+                            for p in prods_kat:
+                                spek_val = p.get("spek_ringkas")
+                                if not spek_val:
+                                    cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
+                                    spek_val = clean_specs(cat_p or p)
+                                prod_summary_list.append({
+                                    "kode": p.get("kode"),
+                                    "nama": p.get("nama"),
+                                    "harga": p.get("harga") or p.get("harga_idr"),
+                                    "spek": spek_val,
+                                    "ada_foto": bool(p.get("ada_foto"))
+                                })
                     elif "detail" in tool_res:
                         details = tool_res.get("detail", [])
                         if isinstance(details, list):
@@ -1016,6 +1039,10 @@ def run_agentic_tool(
                         tool_sum["sumber"] = tool_res["sumber"]
                     if "alasan_cadangan" in tool_res:
                         tool_sum["alasan_cadangan"] = tool_res["alasan_cadangan"]
+                    if "catatan" in tool_res:
+                        tool_sum["catatan"] = tool_res["catatan"]
+                    if "produk_terdekat" in tool_res:
+                        tool_sum["produk_terdekat"] = prod_summary_list
                 this_turn_tool_summaries.append(tool_sum)
 
                 if active_foto_llm and isinstance(tool_res, dict):
