@@ -685,6 +685,7 @@ def katalog(
 
 PENGETAHUAN_GABUNGAN: bool = False
 PENGETAHUAN_TOPK: int = int(os.getenv("PENGETAHUAN_TOPK", "3"))
+CATATAN_PENGETAHUAN_KATALOG: bool = False
 
 
 def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict], limit: int = 3) -> list[dict]:
@@ -712,21 +713,32 @@ def _combine_qdrant_and_keyword(qdrant_items: list[dict], kw_items: list[dict], 
     return final_items[:limit]
 
 
-def pengetahuan(pertanyaan: str, top_k: Optional[int] = None) -> dict[str, Any]:
+def pengetahuan(
+    pertanyaan: str,
+    top_k: Optional[int] = None,
+    catatan_pengetahuan_katalog: Optional[bool] = None
+) -> dict[str, Any]:
     """
     Mencari panduan kebutuhan pengguna, penjelasan dan pertimbangan teknis komponen,
     panduan memilih kategori, atau kebijakan resmi toko ReIn Komputer.
     Cari ke SEMUA tipe chunk (G, P, M, kebijakan toko) di Qdrant.
     Kembalikan PENGETAHUAN_TOPK chunk teratas beserta ID dan judul bersih.
     """
+    active_catatan = (
+        CATATAN_PENGETAHUAN_KATALOG if catatan_pengetahuan_katalog is None
+        else bool(catatan_pengetahuan_katalog)
+    )
     q_str = str(pertanyaan or "").strip()
     if not q_str:
-        return {
+        res_empty = {
             "status": "tidak_ada_input",
             "pesan": "Pertanyaan belum diisi.",
             "total_cocok": 0,
             "pengetahuan": []
         }
+        if active_catatan:
+            res_empty["catatan"] = "Ini panduan, bukan daftar produk. Bila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, panggil katalog juga sebelum menjawab."
+        return res_empty
 
     limit_k = top_k if top_k is not None else PENGETAHUAN_TOPK
     hasil_chunks = []
@@ -792,6 +804,8 @@ def pengetahuan(pertanyaan: str, top_k: Optional[int] = None) -> dict[str, Any]:
     }
     if sumber == "kata_kunci":
         res["alasan_cadangan"] = alasan_cadangan or "qdrant_kosong"
+    if active_catatan:
+        res["catatan"] = "Ini panduan, bukan daftar produk. Bila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, panggil katalog juga sebelum menjawab."
     return res
 
 
@@ -995,12 +1009,14 @@ def execute_agent_tool(
     tool_name: str,
     tool_args: dict[str, Any],
     catalog=None,
-    kirim_foto_oleh_llm: bool | None = None
+    kirim_foto_oleh_llm: bool | None = None,
+    catatan_pengetahuan_katalog: bool | None = None
 ) -> dict[str, Any]:
     """Menjalankan alat agent berdasarkan nama dan argumen."""
     t_name = str(tool_name or "").strip()
     args = dict(tool_args or {})
     active_foto_flag = kirim_foto_oleh_llm if kirim_foto_oleh_llm is not None else args.get("kirim_foto_oleh_llm")
+    active_catatan = catatan_pengetahuan_katalog if catatan_pengetahuan_katalog is not None else args.get("catatan_pengetahuan_katalog")
 
     if t_name == "katalog":
         return katalog(
@@ -1026,7 +1042,8 @@ def execute_agent_tool(
     elif t_name == "pengetahuan":
         return pengetahuan(
             pertanyaan=args.get("pertanyaan") or args.get("query") or args.get("kebutuhan") or args.get("topik") or "",
-            top_k=args.get("top_k")
+            top_k=args.get("top_k"),
+            catatan_pengetahuan_katalog=active_catatan
         )
     elif t_name == "cari_produk":
         return katalog(
@@ -1058,11 +1075,13 @@ def execute_agent_tool(
         )
     elif t_name == "pengetahuan_kebutuhan":
         return pengetahuan(
-            pertanyaan=args.get("kebutuhan") or args.get("query") or ""
+            pertanyaan=args.get("kebutuhan") or args.get("query") or "",
+            catatan_pengetahuan_katalog=active_catatan
         )
     elif t_name == "info_toko":
         return pengetahuan(
-            pertanyaan=args.get("topik") or args.get("query") or "kebijakan toko"
+            pertanyaan=args.get("topik") or args.get("query") or "kebijakan toko",
+            catatan_pengetahuan_katalog=active_catatan
         )
     else:
         return {

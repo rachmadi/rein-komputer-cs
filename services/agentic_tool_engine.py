@@ -268,6 +268,7 @@ PERSONA_NAMA_R3: bool = True
 ATURAN_PRIBADI_ATRIBUT: bool = False
 KIRIM_FOTO_OLEH_LLM: bool = True
 ATURAN_LAYANAN_P28: bool = False
+CATATAN_PENGETAHUAN_KATALOG: bool = False
 PEMERIKSAAN_ULANG_JANJI: bool = False
 MODE_BERPIKIR: bool = False
 MODE_BERPIKIR_SEBAGIAN: bool = True
@@ -623,6 +624,7 @@ def run_agentic_tool(
     aturan_pribadi_atribut: Optional[bool] = None,
     kirim_foto_oleh_llm: Optional[bool] = None,
     aturan_layanan_p28: Optional[bool] = None,
+    catatan_pengetahuan_katalog: Optional[bool] = None,
     **kwargs
 ) -> dict[str, Any]:
     """
@@ -671,6 +673,10 @@ def run_agentic_tool(
     active_layanan_p28 = (
         aturan_layanan_p28 if aturan_layanan_p28 is not None
         else kwargs.get("aturan_layanan_p28", ATURAN_LAYANAN_P28)
+    )
+    active_catatan_pengetahuan = (
+        catatan_pengetahuan_katalog if catatan_pengetahuan_katalog is not None
+        else kwargs.get("catatan_pengetahuan_katalog", CATATAN_PENGETAHUAN_KATALOG)
     )
     system_content = build_agent_system_prompt(
         varian=active_var,
@@ -924,7 +930,13 @@ def run_agentic_tool(
                         fn_args = {}
 
                 t0_tool = time.perf_counter()
-                tool_res = execute_agent_tool(fn_name, fn_args, catalog=catalog, kirim_foto_oleh_llm=active_foto_llm)
+                tool_res = execute_agent_tool(
+                    fn_name,
+                    fn_args,
+                    catalog=catalog,
+                    kirim_foto_oleh_llm=active_foto_llm,
+                    catatan_pengetahuan_katalog=active_catatan_pengetahuan
+                )
                 t_tool = (time.perf_counter() - t0_tool) * 1000
 
                 prod_summary_list = []
@@ -1020,6 +1032,7 @@ def run_agentic_tool(
                     "nama": fn_name,
                     "argumen": fn_args,
                     "ringkasan_hasil": ringkasan,
+                    "hasil": tool_res,
                     "latensi_ms": round(t_tool, 2),
                     "latensi": round(t_tool, 2),
                 }

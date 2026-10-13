@@ -1732,6 +1732,35 @@ def test_putaran28_butir6_aturan_layanan_p28():
     assert idx_kalimat5 < idx_t
 
 
+def test_putaran29_butir3_catatan_pengetahuan():
+    """Menguji flag CATATAN_PENGETAHUAN_KATALOG dan catatan hasil alat pengetahuan (Putaran 29 Butir 3)."""
+    from services.agent_tools import CATATAN_PENGETAHUAN_KATALOG, pengetahuan, execute_agent_tool
+
+    # 1. Bawaan flag harus False
+    assert CATATAN_PENGETAHUAN_KATALOG is False
+
+    teks_catatan = "Ini panduan, bukan daftar produk. Bila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, panggil katalog juga sebelum menjawab."
+
+    # 2. Bila False (bawaan), catatan TIDAK muncul di hasil pengetahuan
+    res_false = pengetahuan("rekomendasi laptop desain", catatan_pengetahuan_katalog=False)
+    assert "catatan" not in res_false
+
+    res_default = pengetahuan("rekomendasi laptop desain")
+    assert "catatan" not in res_default
+
+    # 3. Bila True, catatan muncul apa adanya di hasil pengetahuan
+    res_true = pengetahuan("rekomendasi laptop desain", catatan_pengetahuan_katalog=True)
+    assert res_true.get("catatan") == teks_catatan
+
+    # 4. Uji via execute_agent_tool
+    res_exec_false = execute_agent_tool("pengetahuan", {"pertanyaan": "laptop desain"}, catatan_pengetahuan_katalog=False)
+    assert "catatan" not in res_exec_false
+
+    res_exec_true = execute_agent_tool("pengetahuan", {"pertanyaan": "laptop desain"}, catatan_pengetahuan_katalog=True)
+    assert res_exec_true.get("catatan") == teks_catatan
+
+
+
 
 
 
