@@ -1733,22 +1733,22 @@ def test_putaran28_butir6_aturan_layanan_p28():
 
 
 def test_putaran29_butir3_catatan_pengetahuan():
-    """Menguji flag CATATAN_PENGETAHUAN_KATALOG dan catatan hasil alat pengetahuan (Putaran 29 Butir 3)."""
+    """Menguji flag CATATAN_PENGETAHUAN_KATALOG dan catatan hasil alat pengetahuan (Putaran 29 Butir 3 & Putaran 30 Butir 2)."""
     from services.agent_tools import CATATAN_PENGETAHUAN_KATALOG, pengetahuan, execute_agent_tool
 
-    # 1. Bawaan flag harus False
-    assert CATATAN_PENGETAHUAN_KATALOG is False
+    # 1. Bawaan flag (sejak Putaran 30 adalah True)
+    assert CATATAN_PENGETAHUAN_KATALOG is True
 
     teks_catatan = "Ini panduan, bukan daftar produk. Bila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, panggil katalog juga sebelum menjawab."
 
-    # 2. Bila False (bawaan), catatan TIDAK muncul di hasil pengetahuan
+    # 2. Bila False secara eksplisit, catatan TIDAK muncul di hasil pengetahuan
     res_false = pengetahuan("rekomendasi laptop desain", catatan_pengetahuan_katalog=False)
     assert "catatan" not in res_false
 
+    # 3. Bila True atau default (Putaran 30), catatan muncul apa adanya di hasil pengetahuan
     res_default = pengetahuan("rekomendasi laptop desain")
-    assert "catatan" not in res_default
+    assert res_default.get("catatan") == teks_catatan
 
-    # 3. Bila True, catatan muncul apa adanya di hasil pengetahuan
     res_true = pengetahuan("rekomendasi laptop desain", catatan_pengetahuan_katalog=True)
     assert res_true.get("catatan") == teks_catatan
 
@@ -1761,11 +1761,11 @@ def test_putaran29_butir3_catatan_pengetahuan():
 
 
 def test_putaran29_butir4_produk_terdekat():
-    """Menguji fallback produk_terdekat saat filter spek menghasilkan 0 hasil (Putaran 29 Butir 4)."""
+    """Menguji fallback produk_terdekat saat filter spek menghasilkan 0 hasil (Putaran 29 Butir 4 & Putaran 30 Butir 1)."""
     from services.agent_tools import PRODUK_TERDEKAT, katalog, execute_agent_tool
 
-    # 1. Bawaan flag harus False
-    assert PRODUK_TERDEKAT is False
+    # 1. Bawaan flag (sejak Putaran 30 adalah True)
+    assert PRODUK_TERDEKAT is True
 
     teks_catatan = (
         "Tidak ada produk yang memenuhi filter ini. Sampaikan apa adanya; "
@@ -1773,18 +1773,22 @@ def test_putaran29_butir4_produk_terdekat():
         "Jangan menyarankan menaikkan budget bila pelanggan tidak menyebut budget."
     )
 
-    # 2. Saat False (bawaan): katalog(kategori="desktop", ram_min_gb=32) memberi 0 hasil tanpa produk_terdekat
+    # 2. Saat False secara eksplisit: katalog(kategori="desktop", ram_min_gb=32) memberi 0 hasil tanpa produk_terdekat
     res_false = katalog(kategori="desktop", ram_min_gb=32, produk_terdekat=False)
     assert res_false.get("total_cocok") == 0
     assert "produk_terdekat" not in res_false
     assert "catatan" not in res_false
 
-    # 3. Saat True: katalog(kategori="desktop", ram_min_gb=32) memberi 0 hasil + produk_terdekat desktop RAM tertinggi
+    # 3. Saat True atau default: katalog(kategori="desktop", ram_min_gb=32) memberi 0 hasil + produk_terdekat desktop RAM tertinggi
     res_true = katalog(kategori="desktop", ram_min_gb=32, produk_terdekat=True)
     assert res_true.get("total_cocok") == 0
     assert "produk_terdekat" in res_true
     assert len(res_true["produk_terdekat"]) <= 3
     assert res_true.get("catatan") == teks_catatan
+
+    res_default = katalog(kategori="desktop", ram_min_gb=32)
+    assert res_default.get("total_cocok") == 0
+    assert "produk_terdekat" in res_default
 
     # Verifikasi produk terdekat adalah desktop dengan RAM tertinggi di katalog (16 GB)
     codes_terdekat = [p["kode"] for p in res_true["produk_terdekat"]]
@@ -1795,6 +1799,161 @@ def test_putaran29_butir4_produk_terdekat():
     assert res_exec.get("total_cocok") == 0
     assert "produk_terdekat" in res_exec
     assert [p["kode"] for p in res_exec["produk_terdekat"]] == ["KB-D15", "KB-D13", "KB-D08"]
+
+
+def test_putaran30_default_flags():
+    """Menguji bahwa default produksi kedua flag adalah True (Putaran 30 Butir 1 & 2)."""
+    from services.agent_tools import PRODUK_TERDEKAT, CATATAN_PENGETAHUAN_KATALOG, pengetahuan, katalog
+    from services.agentic_tool_engine import (
+        PRODUK_TERDEKAT as ENGINE_PRODUK_TERDEKAT,
+        CATATAN_PENGETAHUAN_KATALOG as ENGINE_CATATAN_PENGETAHUAN_KATALOG,
+        build_agent_system_prompt,
+    )
+
+    assert PRODUK_TERDEKAT is True
+    assert CATATAN_PENGETAHUAN_KATALOG is True
+    assert ENGINE_PRODUK_TERDEKAT is True
+    assert ENGINE_CATATAN_PENGETAHUAN_KATALOG is True
+
+    # Panggilan default tanpa argumen flag
+    res_p = pengetahuan("rekomendasi laptop desain")
+    assert "catatan" in res_p
+    assert res_p["catatan"] == (
+        "Ini panduan, bukan daftar produk. Bila pelanggan bertanya apakah toko menjual sesuatu atau meminta rekomendasi, "
+        "panggil katalog juga sebelum menjawab."
+    )
+
+    res_k = katalog(kategori="desktop", ram_min_gb=32)
+    assert res_k.get("total_cocok") == 0
+    assert "produk_terdekat" in res_k
+    assert [p["kode"] for p in res_k["produk_terdekat"]] == ["KB-D15", "KB-D13", "KB-D08"]
+
+    # Verifikasi kalimat tegas di sistem prompt
+    prompt = build_agent_system_prompt()
+    aturan_tegas = (
+        "Bila jawabanmu menyebut kategori atau profil kebutuhan produk, kamu wajib memanggil katalog pada giliran "
+        "yang sama sebelum menjawab, memakai kata kunci atau tag kategori dari profil yang cocok. "
+        "Jangan menjawab rekomendasi produk hanya dari panduan tanpa memeriksa katalog."
+    )
+    assert aturan_tegas in prompt
+
+
+def test_putaran30_pengaman_katalog_otomatis():
+    """Menguji pengaman pemanggilan katalog otomatis jika pengetahuan dipanggil tapi katalog tidak dipanggil (Putaran 30 Butir 2)."""
+    from unittest.mock import patch
+    from services.agentic_tool_engine import run_agentic_tool
+
+    # 1. Kasus A: Model memanggil pengetahuan (dengan catatan), tapi TIDAK memanggil katalog.
+    # Pengaman harus otomatis memanggil katalog satu kali, dan model merevisi balasan.
+    llm_call_count = 0
+    def mock_ollama_tanpa_katalog(messages, **kwargs):
+        nonlocal llm_call_count
+        llm_call_count += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count == 1:
+            # Round 1: Model hanya memanggil pengetahuan
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "desain 3D"}
+                            }
+                        }
+                    ]
+                }
+            }
+        elif tools and llm_call_count == 2:
+            # Round 2: Model menjawab tanpa memanggil katalog sama sekali
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Untuk kebutuhan desain 3D, disarankan PC desktop dengan CPU Core i7/Ryzen 7 dan RAM minimal 16GB."
+                }
+            }
+        else:
+            # Panggilan revisi pengaman (tools=None)
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Untuk desain 3D, kami punya PC Gaming ROG Strix G15CF (Core i7, RAM 16GB) seharga Rp 22.000.000."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_tanpa_katalog):
+        res_a = run_agentic_tool(
+            user_text="Kalo desktop untuk desain 3D, apa rekomendasimu?",
+            history=[],
+        )
+
+    # Verifikasi pengaman otomatis berjalan
+    tool_calls_a = res_a.get("tool_calls", [])
+    auto_guard_calls = [tc for tc in tool_calls_a if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls) == 1, f"Harus ada tepat 1 panggilan katalog dari pengaman otomatis: {tool_calls_a}"
+    assert auto_guard_calls[0]["nama"] == "katalog"
+    assert auto_guard_calls[0]["argumen"].get("kategori") == "desktop"
+    assert "ROG Strix" in res_a["reply"]
+
+    # 2. Kasus B: Model SUDAH memanggil katalog secara manual.
+    # Pengaman TIDAK BOLEH memanggil katalog untuk kedua kalinya.
+    llm_call_count_b = 0
+    def mock_ollama_dengan_katalog(messages, **kwargs):
+        nonlocal llm_call_count_b
+        llm_call_count_b += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_b == 1:
+            # Round 1: Model memanggil pengetahuan dan katalog
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "desain 3D"}
+                            }
+                        },
+                        {
+                            "function": {
+                                "name": "katalog",
+                                "arguments": {"kata_kunci": "desain 3D", "kategori": "desktop"}
+                            }
+                        }
+                    ]
+                }
+            }
+        elif tools and llm_call_count_b == 2:
+            # Round 2: Model menjawab akhir
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Rekomendasi desktop untuk desain 3D adalah PC Gaming ROG Strix G15CF."
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Revisi tidak diharapkan terjadi."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_dengan_katalog):
+        res_b = run_agentic_tool(
+            user_text="Kalo desktop untuk desain 3D, apa rekomendasimu?",
+            history=[],
+        )
+
+    tool_calls_b = res_b.get("tool_calls", [])
+    auto_guard_calls_b = [tc for tc in tool_calls_b if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_b) == 0, "Pengaman tidak boleh memanggil katalog jika katalog sudah dipanggil oleh model!"
+    katalog_calls_b = [tc for tc in tool_calls_b if tc.get("nama") == "katalog"]
+    assert len(katalog_calls_b) == 1, "Harus hanya ada 1 panggilan katalog (dari LLM)"
+
 
 
 def test_putaran29_butir2_gambar_kandidat_terpasang():
