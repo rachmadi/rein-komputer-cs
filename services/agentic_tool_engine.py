@@ -908,7 +908,7 @@ def run_agentic_tool(
                     total_cocok = tool_res.get("total_cocok", 0)
                     if "produk" in tool_res:
                         prods = tool_res.get("produk", [])
-                        if isinstance(prods, list):
+                        if isinstance(prods, list) and prods:
                             all_tools_products_returned.extend(prods)
                             for p in prods:
                                 spek_val = p.get("spek_ringkas")
@@ -922,6 +922,22 @@ def run_agentic_tool(
                                     "spek": spek_val,
                                     "ada_foto": bool(p.get("ada_foto"))
                                 })
+                        elif "produk_di_kategori" in tool_res:
+                            prods_kat = tool_res.get("produk_di_kategori", [])
+                            if isinstance(prods_kat, list):
+                                all_tools_products_returned.extend(prods_kat)
+                                for p in prods_kat:
+                                    spek_val = p.get("spek_ringkas")
+                                    if not spek_val:
+                                        cat_p = cat.by_code.get(p.get("kode")) if p.get("kode") else None
+                                        spek_val = clean_specs(cat_p or p)
+                                    prod_summary_list.append({
+                                        "kode": p.get("kode"),
+                                        "nama": p.get("nama"),
+                                        "harga": p.get("harga") or p.get("harga_idr"),
+                                        "spek": spek_val,
+                                        "ada_foto": bool(p.get("ada_foto"))
+                                    })
                     elif "detail" in tool_res:
                         details = tool_res.get("detail", [])
                         if isinstance(details, list):

@@ -503,13 +503,37 @@ def test_prompt_variants_v0_v3_match_baselines():
 
 
 def test_katalog_kata_kunci_tidak_cocok_kembalikan_catatan():
-    """Menguji monitor + 'perbandingan' -> total 0, catatan menyebut 5 produk (Putaran 20 Butir 4)."""
+    """Menguji monitor + 'perbandingan' -> total 0, catatan menyebut kategori dan menyertakan produk_di_kategori (Putaran 20 Butir 4 / Putaran 28 Butir 4)."""
     res = katalog(kategori="monitor", kata_kunci="perbandingan")
     assert res["total_cocok"] == 0
     assert "catatan" in res
     assert "perbandingan" in res["catatan"]
-    assert "Ada 5 produk di monitor ini" in res["catatan"]
+    assert "produk_di_kategori" in res
+    assert len(res["produk_di_kategori"]) == 5
     assert res.get("produk") == []
+
+
+def test_putaran28_butir4_pencarian_kategori_fallback():
+    """Menguji ekstraksi kategori otomatis dan fallback produk_di_kategori (Putaran 28 Butir 4 & Butir 7a)."""
+    # 1. 'printer irit volume tinggi' tanpa kategori -> kategori terisi printer, 0 hasil cocok, produk_di_kategori berisi 5 printer asli
+    res = katalog(kata_kunci="printer irit volume tinggi")
+    assert res["status"] == "sukses"
+    assert res["total_cocok"] == 0
+    assert "produk_di_kategori" in res
+    assert len(res["produk_di_kategori"]) in (5, 10)
+    assert all(p["kode"].startswith("KB-P") for p in res["produk_di_kategori"])
+    assert "printer" in res["catatan"].lower()
+    assert "Jangan sebut produk atau harga di luar daftar ini" in res["catatan"]
+
+    # 2. Urutan termahal dihormati pada fallback
+    res_mahal = katalog(kata_kunci="printer irit volume tinggi", urutan="termahal")
+    assert res_mahal["produk_di_kategori"][0]["harga_idr"] >= res_mahal["produk_di_kategori"][-1]["harga_idr"]
+    assert res_mahal["produk_di_kategori"][0]["kode"] in ("KB-P05", "KB-P10")
+
+    # 3. Urutan termurah bawaan
+    res_murah = katalog(kata_kunci="printer irit volume tinggi")
+    assert res_murah["produk_di_kategori"][0]["harga_idr"] <= res_murah["produk_di_kategori"][-1]["harga_idr"]
+    assert res_murah["produk_di_kategori"][0]["kode"] == "KB-P07"
 
 
 def test_pesan_tertunda_sisipan_catatan():

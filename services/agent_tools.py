@@ -598,29 +598,45 @@ def katalog(
             if score > 0:
                 scored_pool.append((score, p))
 
-        # Putaran 20 Butir 4: jika sesudah filter masih ada produk tetapi tidak ada yang cocok kata kunci
+        # Putaran 28 Butir 4b: jika hasil tetap 0 karena kata kunci, sertakan produk_di_kategori dan catatan
         if pool and not scored_pool:
-            scope_parts = []
-            if target_cat:
-                scope_parts.append(target_cat)
-            if target_merek:
-                scope_parts.append(target_merek)
-            scope_str = " ".join(scope_parts) if scope_parts else "kategori/merek"
             kw_str = kata_kunci if kata_kunci is not None else " ".join(scoring_tokens)
+            k_name = target_cat or (target_merek if target_merek else "kategori ini")
+
+            if urutan_norm == "termahal":
+                cat_products = sorted(pool, key=lambda p: -(p.get("harga") or p.get("harga_idr") or 0))
+            else:
+                cat_products = sorted(pool, key=lambda p: (p.get("harga") or p.get("harga_idr") or 0))
+
+            p_kategori_info = [_format_ringkas(p) for p in cat_products[:10]]
+
             res_dict = {
                 "status": "sukses",
                 "total_cocok": 0,
                 "catatan": (
-                    f"Kata kunci '{kw_str}' tidak cocok dengan produk mana pun. "
-                    f"Ada {len(pool)} produk di {scope_str} ini; "
-                    "panggil katalog tanpa kata kunci untuk melihatnya."
+                    f"Kata kunci '{kw_str}' tidak cocok dengan produk mana pun; "
+                    f"berikut produk yang ada di kategori {k_name}. "
+                    "Jangan sebut produk atau harga di luar daftar ini."
                 ),
                 "produk": [],
-                "urutan": urutan_norm
+                "produk_di_kategori": p_kategori_info,
+                "urutan": urutan_norm or "termurah"
             }
             if is_kirim_foto:
-                res_dict["foto_akan_dikirim"] = []
-                res_dict["foto_tidak_tersedia"] = []
+                akan_kirim = []
+                tidak_ada = []
+                for p in cat_products[:10]:
+                    c = p.get("kode")
+                    if not c:
+                        continue
+                    img_f = (p.get("image_file") or "").strip()
+                    has_photo = bool(img_f and Path(img_f).is_file())
+                    if has_photo:
+                        akan_kirim.append(c)
+                    else:
+                        tidak_ada.append(c)
+                res_dict["foto_akan_dikirim"] = akan_kirim
+                res_dict["foto_tidak_tersedia"] = tidak_ada
             return res_dict
 
         if urutan_norm == "termurah":
