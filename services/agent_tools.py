@@ -25,7 +25,7 @@ logger = logging.getLogger("agent_tools")
 
 KATALOG_SQL: bool = True
 KIRIM_FOTO_OLEH_LLM: bool = True
-PRODUK_TERDEKAT: bool = False
+PRODUK_TERDEKAT: bool = True
 
 
 def _get_catalog_db_path() -> str:
