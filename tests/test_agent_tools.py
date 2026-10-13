@@ -1797,13 +1797,61 @@ def test_putaran29_butir4_produk_terdekat():
     assert [p["kode"] for p in res_exec["produk_terdekat"]] == ["KB-D15", "KB-D13", "KB-D08"]
 
 
+def test_putaran29_butir2_gambar_kandidat_terpasang():
+    """Menguji bahwa keempat image_file baru menunjuk berkas png yang ada dan berkas jpg lama telah dihapus (Putaran 29 Butir 2 & 5a)."""
+    import os
+    import sqlite3
+    from services.agent_tools import _get_catalog_db_path
+
+    db_path = _get_catalog_db_path()
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    new_items = ["KB-L12", "KB-D15", "KB-L23", "KB-L29"]
+    for code in new_items:
+        cur.execute("SELECT image_file FROM products WHERE kode = ?", (code,))
+        row = cur.fetchone()
+        assert row is not None, f"Produk {code} harus ada di DB"
+        img_f = row[0]
+        assert img_f == f"data/images/{code}.png", f"image_file {code} harus .png, bukan {img_f}"
+        assert os.path.isfile(img_f), f"Berkas gambar {img_f} harus ada di disk"
+
+        # Berkas lama .jpg harus sudah terhapus
+        old_jpg = f"data/images/{code}.jpg"
+        assert not os.path.exists(old_jpg), f"Berkas lama {old_jpg} harus sudah dihapus dari data/images/"
+
+    # KB-P10 tetap memakai gambar yang terpasang sekarang (.png)
+    cur.execute("SELECT image_file FROM products WHERE kode = 'KB-P10'")
+    row_p10 = cur.fetchone()
+    assert row_p10 is not None
+    assert row_p10[0] == "data/images/KB-P10.png"
+    assert os.path.isfile(row_p10[0])
+    conn.close()
 
 
+def test_putaran29_butir1_nama_field_foto_tersedia():
+    """Menguji bahwa nama field baru 'foto_tersedia' dipakai di semua modul (Putaran 29 Butir 1 & 5a)."""
+    import inspect
+    from services.agent_tools import katalog, execute_agent_tool
+    from services.agentic_tool_engine import pilih_foto_yang_akan_dikirim, run_agentic_tool
 
+    # 1. Output katalog memuat foto_tersedia saat kirim_foto=True
+    res = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=True)
+    assert "foto_tersedia" in res
+    assert "foto_akan_dikirim" not in res
+    assert res["foto_tersedia"] == ["KB-D10"]
 
+    # 2. Output execute_agent_tool memuat foto_tersedia
+    res_exec = execute_agent_tool("katalog", {"kode_atau_nama": "KB-D10", "kirim_foto": True}, kirim_foto_oleh_llm=True)
+    assert "foto_tersedia" in res_exec
+    assert "foto_akan_dikirim" not in res_exec
+    assert res_exec["foto_tersedia"] == ["KB-D10"]
 
+    # 3. Signature pilih_foto_yang_akan_dikirim memiliki parameter foto_tersedia
+    sig = inspect.signature(pilih_foto_yang_akan_dikirim)
+    assert "foto_tersedia" in sig.parameters
 
-
-
-
-
+    # 4. telegram_bot membaca foto_tersedia
+    with open("telegram_bot.py", "r", encoding="utf-8") as f:
+        tg_code = f.read()
+    assert 'res.get("foto_tersedia"' in tg_code
