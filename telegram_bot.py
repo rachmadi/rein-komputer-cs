@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Bobby Computer — Telegram Bot Customer Care
+ReIn Komputer — Telegram Bot Customer Care
 Terhubung langsung dengan Unified Chat Service (Core Engine FSM v1.2 & Qdrant).
 Mendukung multi-user session per chat_id Telegram.
 
@@ -51,6 +51,7 @@ load_dotenv()
 
 # Integrasi dengan Unified Chat Service
 from services.chat_service import process_chat_message, reset_chat_session, CHAT_ENGINE_MODE
+from services.catalog_service import get_active_catalog
 
 from core.config import KONTAK_STAF
 from core.chat_logger import anonymize_id, log_session_boundary, log_foto_terkirim, log_status_kirim
@@ -346,7 +347,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 else:
                     last_codes = context.user_data.get("last_mentioned_products", [])
                     if last_codes:
-                        from services.catalog_service import get_active_catalog
                         cat = get_active_catalog()
                         prods_to_send = [cat.by_code[c] for c in last_codes if c in cat.by_code][:2]
             else:
@@ -540,7 +540,7 @@ def warmup_models(timeout: float = 60.0) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Bobby Computer Telegram Bot")
+    parser = argparse.ArgumentParser(description="ReIn Komputer Telegram Bot")
     parser.add_argument("--token", help="Telegram Bot Token dari BotFather", default=None)
     args = parser.parse_args()
 

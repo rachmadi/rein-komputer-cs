@@ -1193,10 +1193,14 @@ def run_agentic_tool(
         for tc in all_tool_calls_logged
     )
 
+    # Jangan picu pengaman otomatis jika pengguna sedang bertanya alasan / komplain atas balasan sebelumnya
+    is_meta_or_complaint = bool(re.search(r"^\s*(kenapa|mengapa|kok|kenape|ngapain)\b", user_text.lower()))
+
     if (
         pengetahuan_calls_with_catatan
         and not katalog_sudah_dipanggil
         and not is_emergency_fallback
+        and not is_meta_or_complaint
         and final_reply
     ):
         # Ekstrak Tag katalog dari profil yang paling cocok di hasil pengetahuan
@@ -1229,11 +1233,47 @@ def run_agentic_tool(
             "monitor": "monitor", "layar": "monitor"
         }
         detected_cat = None
+        # 1. Deteksi dari user_text giliran saat ini
         u_tokens = [w for w in re.findall(r"\w+", user_text.lower())]
         for tok in u_tokens:
             if tok in cat_synonyms_map:
                 detected_cat = cat_synonyms_map[tok]
                 break
+
+        # 2. Jika tidak ada di user_text, ambil dari session_state
+        if not detected_cat and session_state:
+            s_cat = session_state.get("category") or session_state.get("kategori")
+            if s_cat and str(s_cat).lower() in ("laptop", "desktop", "printer", "monitor"):
+                detected_cat = str(s_cat).lower()
+
+        # 3. Jika tidak ada di session_state, telusuri riwayat percakapan sebelumnya
+        if not detected_cat and history:
+            for h in reversed(history[-6:]):
+                h_text = (h.get("content") or "").lower()
+                for tok in re.findall(r"\w+", h_text):
+                    if tok in cat_synonyms_map:
+                        detected_cat = cat_synonyms_map[tok]
+                        break
+                if detected_cat:
+                    break
+
+        # 4. Jika masih belum ditemukan, ambil petunjuk perangkat dari chunk pengetahuan
+        if not detected_cat:
+            for pt in pengetahuan_calls_with_catatan:
+                p_items = pt.get("hasil", {}).get("pengetahuan", [])
+                for chunk in p_items:
+                    c_text = chunk.get("teks", "")
+                    m_perangkat = re.search(r"\*\*Perangkat:\*\*\s*([^\n]+)", c_text)
+                    if m_perangkat:
+                        raw_per = m_perangkat.group(1).lower()
+                        for tok in re.findall(r"\w+", raw_per):
+                            if tok in cat_synonyms_map:
+                                detected_cat = cat_synonyms_map[tok]
+                                break
+                    if detected_cat:
+                        break
+                if detected_cat:
+                    break
 
         katalog_guard_args: dict[str, Any] = {}
         if tag_kata_kunci:
@@ -1293,16 +1333,18 @@ def run_agentic_tool(
                         if len(foto_tersedia_turn) >= 5:
                             break
 
-        # Berikan hasil katalog ke model untuk merevisi balasan
+        # Berikan hasil katalog ke model untuk merevisi balasan dengan guardrail ketat
         messages.append({"role": "assistant", "content": final_reply})
         messages.append({
             "role": "system",
             "content": (
                 f"Hasil pemeriksaan katalog toko untuk '{tag_kata_kunci or user_text}':\n"
                 f"{json.dumps(guard_catalog_res, ensure_ascii=False)}\n\n"
-                "Revisi balasanmu sebelumnya dengan menyertakan rekomendasi produk nyata dari hasil katalog di atas "
-                "(sebutkan nama produk, spesifikasi ringkas, dan harganya). "
-                "Jangan hanya menjawab dari panduan tanpa menyebut produk nyata dari katalog."
+                "Berdasarkan hasil pemeriksaan katalog di atas, revisi balasanmu sebelumnya dengan menyertakan "
+                "rekomendasi produk nyata yang relevan dari katalog (sebutkan nama produk, spesifikasi ringkas, dan harganya). "
+                "PENTING: Hanya sebutkan produk yang BENAR-BENAR SESUAI dengan kategori dan profil kebutuhan pelanggan. "
+                "Jangan menawarkan produk di luar kategori yang sedang dicari (misalnya jangan menawarkan desktop/mini PC jika pelanggan mencari laptop), "
+                "dan jangan menawarkan produk yang spesifikasinya jelas tidak memadai untuk kebutuhan tersebut."
             )
         })
 

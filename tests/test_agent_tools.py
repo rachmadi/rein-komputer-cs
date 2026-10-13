@@ -1954,6 +1954,97 @@ def test_putaran30_pengaman_katalog_otomatis():
     katalog_calls_b = [tc for tc in tool_calls_b if tc.get("nama") == "katalog"]
     assert len(katalog_calls_b) == 1, "Harus hanya ada 1 panggilan katalog (dari LLM)"
 
+    # 3. Kasus C: User query tidak memuat kata kategori ('Kan buat AI lokal?'),
+    # tetapi session_state memiliki kategori='laptop'.
+    # Pengaman harus mewarisi kategori='laptop' dari sesi agar tidak terjadi fallback lintas kategori (anomali Intel NUC).
+    llm_call_count_c = 0
+    def mock_ollama_waris_kategori(messages, **kwargs):
+        nonlocal llm_call_count_c
+        llm_call_count_c += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_c == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "persyaratan hardware untuk AI lokal"}
+                            }
+                        }
+                    ]
+                }
+            }
+        elif tools and llm_call_count_c == 2:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Untuk AI lokal disarankan GPU Nvidia dengan VRAM besar."
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Rekomendasi laptop untuk AI lokal adalah Acer Nitro V 15."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_waris_kategori):
+        res_c = run_agentic_tool(
+            user_text="Kan buat AI lokal?",
+            history=[],
+            session_state={"category": "laptop"},
+        )
+
+    tool_calls_c = res_c.get("tool_calls", [])
+    auto_guard_calls_c = [tc for tc in tool_calls_c if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_c) == 1
+    assert auto_guard_calls_c[0]["argumen"].get("kategori") == "laptop", "Pengaman wajib mewarisi kategori='laptop' dari session_state!"
+
+    # 4. Kasus D: Pertanyaan komplain / klarifikasi ('Kenapa juga ditawari intel NUC?')
+    # Pengaman TIDAK BOLEH memicu katalog otomatis baru.
+    llm_call_count_d = 0
+    def mock_ollama_komplain(messages, **kwargs):
+        nonlocal llm_call_count_d
+        llm_call_count_d += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_d == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "perbedaan mini pc dan laptop"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Mohon maaf atas kekeliruan tadi, saya akan fokus hanya pada laptop."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_komplain):
+        res_d = run_agentic_tool(
+            user_text="Kenapa juga ditawari intel NUC?",
+            history=[],
+            session_state={"category": "laptop"},
+        )
+
+    tool_calls_d = res_d.get("tool_calls", [])
+    auto_guard_calls_d = [tc for tc in tool_calls_d if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_d) == 0, "Pengaman tidak boleh terpicu pada pertanyaan komplain/klarifikasi!"
+
 
 
 def test_putaran29_butir2_gambar_kandidat_terpasang():
