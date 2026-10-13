@@ -1268,11 +1268,43 @@ def run_agentic_tool(
     # Jangan picu pengaman otomatis jika pengguna sedang bertanya alasan / komplain atas balasan sebelumnya
     is_meta_or_complaint = bool(re.search(r"^\s*(kenapa|mengapa|kok|kenape|ngapain)\b", user_text.lower()))
 
+    # Jangan picu pengaman otomatis jika pengguna menanyakan kelengkapan / isi paket (misal: "apakah termasuk monitor?")
+    is_kelengkapan_paket = bool(
+        re.search(
+            r"\b(termasuk|include|kelengkapan|isi paket|paket penjualan|ada bonus|dapet bonus|gratisan?)\b"
+            r"|\b(sudah|udah)\s+(dapat|dapet|ada|sama)\b",
+            user_text.lower()
+        )
+    )
+
+    # Jangan picu pengaman otomatis jika mengevaluasi fitur/kecocokan produk yang sedang aktif dibahas
+    ada_produk_aktif = bool(
+        mentioned_history
+        or all_tools_products_returned
+        or state.get("offered_products")
+        or state.get("shown")
+    )
+    is_evaluasi_fitur = ada_produk_aktif and bool(
+        re.search(
+            r"\b(bisa|kuat|cocok|sanggup|mampu|ngangkat)\s+(untuk|buat|dipakai|pake|ngoding|render|game|gaming|editing|edit|kantor|sekolah|kuliah|ai)\b"
+            r"|\b(bisa|kuat|cocok|sanggup|mampu|ngangkat)\s+gak\b",
+            user_text.lower()
+        )
+    )
+
+    if pengetahuan_calls_with_catatan and not katalog_sudah_dipanggil:
+        if is_kelengkapan_paket:
+            logger.info("Pengaman P30 Butir 2 dilewati: pertanyaan kelengkapan/isi paket.")
+        elif is_evaluasi_fitur:
+            logger.info("Pengaman P30 Butir 2 dilewati: evaluasi fitur/kecocokan produk aktif.")
+
     if (
         pengetahuan_calls_with_catatan
         and not katalog_sudah_dipanggil
         and not is_emergency_fallback
         and not is_meta_or_complaint
+        and not is_kelengkapan_paket
+        and not is_evaluasi_fitur
         and final_reply
     ):
         # Ekstrak Tag katalog dari profil yang paling cocok di hasil pengetahuan

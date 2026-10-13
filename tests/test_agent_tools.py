@@ -2045,6 +2045,92 @@ def test_putaran30_pengaman_katalog_otomatis():
     auto_guard_calls_d = [tc for tc in tool_calls_d if tc.get("pengaman_otomatis") is True]
     assert len(auto_guard_calls_d) == 0, "Pengaman tidak boleh terpicu pada pertanyaan komplain/klarifikasi!"
 
+    # 5. Kasus E: Pertanyaan kelengkapan / isi paket (misal: "Mac mini sudah termasuk monitor?")
+    # Pengaman TIDAK BOLEH memanggil katalog otomatis
+    llm_call_count_e = 0
+    def mock_ollama_kelengkapan(messages, **kwargs):
+        nonlocal llm_call_count_e
+        llm_call_count_e += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_e == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "apakah mac mini sudah termasuk monitor"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Berdasarkan kebijakan toko, paket Mac mini belum termasuk monitor Kak."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_kelengkapan):
+        res_e = run_agentic_tool(
+            user_text="Mac mini sudah termasuk monitor?",
+            history=[],
+            session_state={"category": "desktop"},
+        )
+
+    tool_calls_e = res_e.get("tool_calls", [])
+    auto_guard_calls_e = [tc for tc in tool_calls_e if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_e) == 0, "Pengaman tidak boleh terpicu pada pertanyaan kelengkapan/isi paket!"
+
+    # 6. Kasus F: Evaluasi fitur/kecocokan produk yang sedang aktif dibahas (misal: "Bisa untuk coding gak?")
+    # Pengaman TIDAK BOLEH memanggil katalog otomatis
+    llm_call_count_f = 0
+    def mock_ollama_evaluasi(messages, **kwargs):
+        nonlocal llm_call_count_f
+        llm_call_count_f += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_f == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "kebutuhan coding"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Untuk coding ringan sampai menengah, laptop MSI Modern 14 C12M dengan RAM 16GB ini sudah sangat memadai Kak."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_evaluasi):
+        res_f = run_agentic_tool(
+            user_text="Bisa untuk coding gak?",
+            history=[{"role": "user", "content": "Minta spek MSI"}, {"role": "assistant", "content": "MSI Modern 14 C12M RAM 16GB"}],
+            session_state={
+                "category": "laptop",
+                "mentioned_products": [{"kode": "KB-L21", "nama": "MSI Modern 14 C12M"}]
+            },
+        )
+
+    tool_calls_f = res_f.get("tool_calls", [])
+    auto_guard_calls_f = [tc for tc in tool_calls_f if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_f) == 0, "Pengaman tidak boleh terpicu pada evaluasi fitur produk yang sedang dibahas!"
+
+
 
 
 def test_putaran29_butir2_gambar_kandidat_terpasang():
