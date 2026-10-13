@@ -1,0 +1,3 @@
+storage:
+  storage_path: "D:/Qdrant/storage"
+  snapshots_path: "D:/Qdrant/snapshots"

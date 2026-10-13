@@ -1,0 +1,41 @@
+id,pesan,gold_aksi,pred_aksi,benar_salah,gold_args,pred_args,latensi_ms,retried
+dev-001,Emang spek segitu cukup?,evaluasi_kecocokan,evaluasi_kecocokan,True,"{""produk"": [""KB-L01"", ""KB-L02""], ""kebutuhan_teks"": ""cari resep dan nonton YouTube""}","{""produk"": [""KB-L01"", ""KB-L02""]}",4766.2,False
+dev-002,Yang tanya HP 14 siapa?,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""keluhan"", ""rujukan"": ""HP 14""}","{""jenis"": ""koreksi"", ""rujukan"": ""siapa yang bertanya""}",3821.8,False
+dev-003,Buat hiburan,jawab_pertanyaan_bot,minta_rekomendasi,False,"{""slot"": ""aktivitas"", ""nilai"": ""hiburan""}","{""kebutuhan_teks"": ""hiburan""}",3904.3,False
+dev-004,Mana?,minta_rekomendasi,tidak_jelas,False,"{""kebutuhan_teks"": ""hiburan nonton youtube""}","{""alasan"": ""pertanyaan terlalu singkat dan tidak merujuk pada konteks sebelumnya atau produk yang ditampilkan.""}",3580.4,False
+dev-005,ada asus?,cari_produk,cari_produk,True,"{""merek"": ""asus"", ""kategori"": ""laptop""}","{""merek"": ""asus""}",3497.2,False
+dev-006,yang kedua bagus nggak?,evaluasi_kecocokan,tidak_jelas,False,"{""produk"": [""2""]}","{""alasan"": ""tidak ada konteks produk yang jelas untuk merujuk 'yang kedua' selain dari daftar yang ditampilkan sebelumnya.""}",3824.6,False
+dev-007,Aku tanya kok malah dikasih spek lain,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""salah_paham"", ""rujukan"": ""dikasih spek lain""}","{""jenis"": ""keluhan"", ""rujukan"": ""spek lain""}",3882.8,False
+dev-008,Kan sudah dibilang buat hiburan,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""koreksi"", ""rujukan"": ""buat hiburan""}","{""jenis"": ""koreksi"", ""rujukan"": ""kebutuhan hiburan""}",7786.1,True
+dev-009,halo kak,sapa,sapa,True,,{},3060.9,False
+dev-010,p,sapa,tidak_jelas,False,,"{""alasan"": ""input terlalu singkat dan tidak jelas""}",3500.2,False
+dev-011,siang min mau nanya2 nih,sapa,sapa,True,,{},3031.6,False
+dev-012,jual laptop acer?,cari_produk,cari_produk,True,"{""merek"": ""acer"", ""kategori"": ""laptop""}","{""kategori"": ""laptop"", ""merek"": ""acer""}",3652.8,False
+dev-013,laptop lenovo dibawah 10 juta ada ga?,cari_produk,cari_produk,True,"{""merek"": ""lenovo"", ""kategori"": ""laptop"", ""max_harga"": 10000000}","{""kategori"": ""laptop"", ""merek"": ""lenovo"", ""max_harga"": 10000000}",4115.5,False
+dev-014,laptp asus ram 16gb,cari_produk,cari_produk,True,"{""merek"": ""asus"", ""kategori"": ""laptop"", ""ram_gb_min"": 16}","{""kategori"": ""laptop"", ""merek"": ""asus"", ""ram_gb_min"": 16}",4384.0,False
+dev-015,ada printer canon ga ya,cari_produk,cari_produk,True,"{""merek"": ""canon"", ""kategori"": ""printer""}","{""kategori"": ""printer"", ""merek"": ""canon""}",3725.0,False
+dev-016,Buat mama sih bukan buat aku,jawab_pertanyaan_bot,jawab_pertanyaan_bot,True,"{""slot"": ""persona"", ""nilai"": ""mama""}","{""slot"": ""persona"", ""nilai"": ""mama""}",3621.7,False
+dev-017,Paling cuma cari resep dan nonton youtube,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""cari resep dan nonton youtube"", ""persona"": ""mama""}","{""kebutuhan_teks"": ""mencari resep dan menonton youtube"", ""persona"": ""umum""}",4776.3,False
+dev-018,Untuk ibu saya yang sudah sepuh,jawab_pertanyaan_bot,jawab_pertanyaan_bot,True,"{""slot"": ""persona"", ""nilai"": ""ibu sepuh""}","{""slot"": ""persona"", ""nilai"": ""ibu""}",3658.4,False
+dev-019,butuh laptop buat anak dkv semester 1,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""desain grafis dkv"", ""persona"": ""anak dkv""}","{""kebutuhan_teks"": ""desain grafis (DKV)"", ""persona"": ""anak kuliah""}",4153.1,False
+dev-020,budget maksimal 7 jutaan aja,jawab_pertanyaan_bot,jawab_pertanyaan_bot,True,"{""slot"": ""budget"", ""nilai"": 7000000}","{""slot"": ""budget"", ""nilai"": ""7000000""}",3991.3,False
+dev-021,ada yang lebih murah?,lanjutan_hasil,lanjutan_hasil,True,"{""jenis"": ""lebih_murah""}","{""jenis"": ""lebih_murah""}",3385.0,False
+dev-022,ada opsi merk lain ga selain acer?,lanjutan_hasil,lanjutan_hasil,True,"{""jenis"": ""yang_lain"", ""merek_kecuali"": ""acer""}","{""merek_kecuali"": ""acer""}",3479.1,False
+dev-023,garansinya berapa lama min?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""garansi""}","{""topik"": ""garansi""}",3433.8,False
+dev-024,tokonya ada di mana ya lokasinya?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""alamat""}","{""topik"": ""alamat""}",3376.1,False
+dev-025,bisa bayar pake kartu kredit cicilan?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""pembayaran""}","{""topik"": ""pembayaran""}",3470.2,False
+dev-026,bagusan nomor 1 apa nomor 2?,bandingkan,bandingkan,True,"{""produk"": [""1"", ""2""]}","{""rujukan_produk"": [1, 2], ""produk"": [""KB-L01"", ""KB-L02""]}",3407.2,False
+dev-027,makasih banyak infonya sangat membantu,basa_basi,basa_basi,True,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3365.3,False
+dev-028,ok sip makasih ya,basa_basi,basa_basi,True,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3347.6,False
+dev-029,asdfghjkl,tidak_jelas,tidak_jelas,True,"{""alasan"": ""teks acak tanpa arti""}",{},2902.0,False
+dev-030,hmm gimana ya,tidak_jelas,basa_basi,False,"{""alasan"": ""ragu-ragu tanpa maksud spesifik""}",{},3050.4,False
+dev-031,pc dekstop gaming rtx 4060,cari_produk,cari_produk,True,"{""kategori"": ""desktop"", ""gpu"": ""rtx 4060""}","{""kategori"": ""desktop"", ""gpu"": ""rtx 4060""}",3889.9,False
+dev-032,laptop murah buat ngetik word aja,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""ketik word office"", ""kategori"": ""laptop""}","{""kebutuhan_teks"": ""mengetik dokumen Word"", ""persona"": ""umum""}",4385.8,False
+dev-033,yang ram 32gb ada?,cari_produk,cari_produk,True,"{""ram_gb_min"": 32}",{},3727.0,False
+dev-034,bisa buat main valorant ga laptop ini?,evaluasi_kecocokan,evaluasi_kecocokan,True,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""main valorant""}","{""kebutuhan_teks"": ""main valorant"", ""produk"": [""KB-L01""]}",3601.5,False
+dev-035,bukan itu yang kumaksud,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""koreksi"", ""rujukan"": ""bukan itu""}","{""jenis"": ""koreksi"", ""rujukan"": ""tidak jelas""}",3727.2,False
+dev-036,jam buka toko sampe jam berapa?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""jam_buka""}","{""topik"": ""jam_buka""}",3451.9,False
+dev-037,apakah ada garansi resmi?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""garansi""}","{""topik"": ""garansi""}",3431.8,False
+dev-038,laptop layar 15.6 inch buat kakek,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""layar 15.6 inch"", ""persona"": ""kakek"", ""ukuran_layar"": 15.6, ""kategori"": ""laptop""}","{""kebutuhan_teks"": ""penggunaan umum untuk kakek"", ""persona"": ""kakek""}",4646.5,False
+dev-039,ada printer brother?,cari_produk,cari_produk,True,"{""merek"": ""brother"", ""kategori"": ""printer""}","{""kategori"": ""printer"", ""merek"": ""brother""}",3674.4,False
+dev-040,layarnya udah ips?,tanya_spesifikasi,tanya_spesifikasi,True,"{""produk"": [""KB-L01""], ""atribut"": ""layar""}","{""produk"": [""KB-L01""], ""atribut"": ""layar""}",3529.9,False

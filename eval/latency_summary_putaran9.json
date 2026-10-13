@@ -1,0 +1,11 @@
+{
+  "parser_median_ms": 2034.4,
+  "parser_p95_ms": 2906.8,
+  "engine_median_ms": 0.1,
+  "engine_p95_ms": 4177.3,
+  "generator_median_ms": 3885.9,
+  "generator_p95_ms": 7148.5,
+  "total_median_ms": 5967.6,
+  "total_p95_ms": 12789.0,
+  "concurrent_processes": 1
+}

@@ -1,0 +1,48 @@
+kalimat,expected,top1,score1,top2,score2,delta,type
+laptop buat kuliah yang murah,P01,P01,0.6667,P16,0.6179,0.0488,asli
+laptop buat mama nonton YouTube dan video call,P11,P11,0.6502,P01,0.5729,0.0773,asli
+laptop buat edit foto Photoshop dan CorelDraw,P02,P02,0.6705,P03,0.5765,0.094,asli
+edit video 4K dan render Blender,P03,P03,0.6524,P12,0.5308,0.1216,asli
+PC buat main Valorant dan Dota 2,P04,P04,0.6982,P05,0.5429,0.1553,asli
+mau main Cyberpunk setting ultra,P05,P05,0.509,P09,0.4264,0.0826,asli
+"laptop buat ngoding Flutter, Docker, emulator Android",P06,P06,0.6414,P04,0.5694,0.0719,asli
+"laptop buat arsitek, AutoCAD dan SketchUp",P07,P07,0.694,P03,0.588,0.106,asli
+mau live streaming pakai OBS,P08,P08,0.6641,P09,0.4438,0.2202,asli
+buat bikin musik pakai FL Studio,P09,P09,0.556,P12,0.4522,0.1038,asli
+buat trading saham pakai 4 monitor,P10,P10,0.6429,M01,0.5462,0.0966,asli
+mau jalanin Ollama dan LLM lokal,P13,P13,0.5444,P09,0.4346,0.1098,asli
+"Excel berat, pivot, Power BI",P14,P14,0.6078,P04,0.4631,0.1447,asli
+komputer buat kasir di toko,P15,P15,0.6604,P10,0.4977,0.1627,asli
+CapCut buat konten TikTok,P12,P12,0.5261,P08,0.4188,0.1072,asli
+laptop buat kerja tapi sesekali main game,P16,P16,0.7025,P04,0.5982,0.1043,asli
+bedanya inkjet tangki tinta sama laser?,M02,M02,0.6249,G03,0.4436,0.1812,asli
+monitor yang bagus buat desain,M01,M01,0.6302,P02,0.5788,0.0514,asli
+"halo, apa kabar?",none,P11,0.4397,P08,0.4317,0.008,asli
+nyari lepi yg mureh bgt buat ngetik,-,P09,0.4397,P11,0.4055,0.0342,validasi
+bang ada lptop bt geiming yg gahar gak,-,P11,0.5073,P10,0.5053,0.002,validasi
+pc rakitsn wat maen pepes n epep,-,P15,0.509,P14,0.5068,0.0021,validasi
+buatin spec wat ngedit pideo hd,-,P12,0.5201,P03,0.5177,0.0024,validasi
+looking for a laptop for programming backend,-,P06,0.6414,P01,0.6294,0.0119,validasi
+need pc for hard graphic design and rendering,-,P03,0.6696,P02,0.6648,0.0049,validasi
+best laptop for casual use and netflix,-,P01,0.6123,P11,0.6075,0.0048,validasi
+gaming pc with good cooling for AAA games,-,P05,0.6987,P04,0.6324,0.0662,validasi
+komputer yang layarnya bagus,-,P05,0.5975,M01,0.5884,0.0091,validasi
+buat kerja kantoran tapi pengen kenceng,-,P16,0.551,P01,0.5462,0.0048,validasi
+buat anak sekolah,-,P01,0.4363,P16,0.4149,0.0214,validasi
+komputer yang bisa dipake apa aja,-,P16,0.6274,P15,0.612,0.0154,validasi
+laptop yang tipis,-,P11,0.6451,P01,0.6032,0.0419,validasi
+pc buat kantor desa,-,P15,0.566,P01,0.5534,0.0126,validasi
+buat main ps,-,P02,0.5086,P12,0.4945,0.0141,validasi
+spek pc buat warnet,-,P15,0.5785,P07,0.5772,0.0013,validasi
+kebutuhan ngetik dan skripsi,-,P01,0.5145,P06,0.5025,0.012,validasi
+laptop buat dosen,-,P01,0.6207,P16,0.5807,0.04,validasi
+butuh buat ngedit ringan,-,P12,0.5672,P11,0.5542,0.013,validasi
+gaming ringan,-,P04,0.611,P16,0.5863,0.0248,validasi
+harga Acer Nitro V 15,-,P15,0.533,P14,0.4522,0.0808,negatif
+jam buka toko,-,P15,0.4837,P10,0.424,0.0597,negatif
+cara bayar cicilan,-,G04,0.4351,P15,0.423,0.0121,negatif
+halo bang,-,P05,0.429,P16,0.425,0.004,negatif
+gimana cara klaim garansi?,-,P05,0.4631,G04,0.4565,0.0066,negatif
+terima kasih infonya,-,P11,0.4574,G04,0.4503,0.0071,negatif
+ada diskon ga hari ini,-,P15,0.4458,P05,0.4174,0.0283,negatif
+lokasi toko dimana,-,P15,0.4345,P10,0.3632,0.0712,negatif

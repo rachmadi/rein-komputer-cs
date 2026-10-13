@@ -1,0 +1,57 @@
+{
+  "total": 40,
+  "accuracy_pct": 95.0,
+  "valid_json_pct": 100.0,
+  "latency_p50_ms": 3621.4,
+  "latency_p95_ms": 4339.8,
+  "f1_structured_pct": 88.2,
+  "f1_free_text_pct": 75.0,
+  "argument_errors_focus": [
+    {
+      "no": 5,
+      "pesan": "ada asus?",
+      "slot": "kategori",
+      "prediksi": null,
+      "gold": "laptop",
+      "tipe": "missing_pred"
+    },
+    {
+      "no": 19,
+      "pesan": "butuh laptop buat anak dkv semester 1",
+      "slot": "persona",
+      "prediksi": null,
+      "gold": "anak dkv",
+      "tipe": "missing_pred"
+    },
+    {
+      "no": 26,
+      "pesan": "bagusan nomor 1 apa nomor 2?",
+      "slot": "produk",
+      "prediksi": [
+        "KB-L01",
+        "KB-L02"
+      ],
+      "gold": [
+        "1",
+        "2"
+      ],
+      "tipe": "mismatch"
+    },
+    {
+      "no": 32,
+      "pesan": "laptop murah buat ngetik word aja",
+      "slot": "kategori",
+      "prediksi": null,
+      "gold": "laptop",
+      "tipe": "missing_pred"
+    },
+    {
+      "no": 38,
+      "pesan": "laptop layar 15.6 inch buat kakek",
+      "slot": "kategori",
+      "prediksi": null,
+      "gold": "laptop",
+      "tipe": "missing_pred"
+    }
+  ]
+}

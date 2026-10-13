@@ -1,0 +1,23 @@
+no,query,route,profile,latency_ms
+1,laptop buat mahasiswa teknik sipil hitung SAP2000,FAST_AGENTIC,"P07,P01",12661.42
+2,komputer meja untuk studio rekaman musik podcast,FAST_AGENTIC,P09,12541.62
+3,laptop tipis layar bagus untuk nonton netflix dan drakor,FAST_AGENTIC,"P04,P01",12581.71
+4,PC desktop mini untuk laboratorium bahasa sekolah,FAST_AGENTIC,P01,12717.87
+5,laptop untuk desainer UI UX pakai figma lancar,CLARIFY_CATEGORY,,0.65
+6,laptop buat guru bikin modul ajar dan presentasi canva,CLARIFY_CATEGORY,,0.27
+7,komputer render animasi 3D blender dan after effects,FAST_AGENTIC,P03,11580.51
+8,laptop buat anak SMA belajar coding python pemula,FAST_AGENTIC,P01,11615.65
+9,komputer gaming e-sports main valorant 144hz lancar,FAST_AGENTIC,P04,9192.42
+10,laptop kerja kantoran excel vlookup dan data entry,FAST_AGENTIC,P01,12154.23
+11,komputer kasir resto touch screen cetak struk,FAST_AGENTIC,P15,2073.46
+12,laptop bisnis ringan buat sering dinas luar kota,FAST_AGENTIC,"P01,P16",10677.47
+13,PC gaming cyberpunk 2077 ray tracing settingan rata kanan,FAST_AGENTIC,P05,10587.02
+14,laptop mahasiswa kedokteran buka jurnal dan anatomi 3D,FAST_AGENTIC,"P16,P01",10597.12
+15,komputer buat kantor notaris ketik akta dan scan dokumen,FAST_AGENTIC,P15,9357.6
+16,laptop buat fotografer edit ratusan foto raw lightroom,FAST_AGENTIC,P02,9314.74
+17,PC server mini buat database toko kelontong kasir,FAST_AGENTIC,P15,2038.24
+18,laptop buat arsitek render lumion dan rancang autocad,FAST_AGENTIC,P07,13471.36
+19,laptop multimedia layar jernih baterai irit buat santai,FAST_AGENTIC,"P16,P01",10689.32
+20,komputer editing video vlog 4k youtube premiere pro,FAST_AGENTIC,P03,9369.77
+
+# Summary: Min=0.27ms, Max=13471.36ms, Mean=9161.12ms, p50=10637.29ms, p95=12717.87ms

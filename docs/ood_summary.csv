@@ -1,0 +1,3 @@
+stage,pos_count,neg_count,retrieval_tp,retrieval_fp,retrieval_fn,retrieval_tn,retrieval_recall,retrieval_fp_rate,guard_tp,guard_fp,guard_fn,guard_tn,guard_recall,guard_fp_rate
+SEBELUM_INGEST,10,5,8,0,2,5,0.8,0.0,8,0,2,5,0.8,0.0
+SESUDAH_INGEST,10,5,7,0,3,5,0.7,0.0,7,0,3,5,0.7,0.0

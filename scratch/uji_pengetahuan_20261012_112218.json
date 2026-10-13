@@ -1,0 +1,1723 @@
+{
+  "timestamp": "20261012_112218",
+  "total_pertanyaan": 17,
+  "summary": {
+    "C0": {
+      "hit@1": "14/17",
+      "hit@1_num": 14,
+      "hit@1_pct": 82.4,
+      "hit@3": "16/17",
+      "hit@3_num": 16,
+      "hit@3_pct": 94.1
+    },
+    "C1": {
+      "hit@1": "16/17",
+      "hit@1_num": 16,
+      "hit@1_pct": 94.1,
+      "hit@3": "17/17",
+      "hit@3_num": 17,
+      "hit@3_pct": 100.0
+    },
+    "C2": {
+      "hit@1": "7/17",
+      "hit@1_num": 7,
+      "hit@1_pct": 41.2,
+      "hit@3": "16/17",
+      "hit@3_num": 16,
+      "hit@3_pct": 94.1
+    },
+    "C3": {
+      "hit@1": "14/17",
+      "hit@1_num": 14,
+      "hit@1_pct": 82.4,
+      "hit@3": "17/17",
+      "hit@3_num": 17,
+      "hit@3_pct": 100.0
+    }
+  },
+  "details": [
+    {
+      "no": 1,
+      "pertanyaan": "apakah mini pc bisa dijual dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 2,
+      "pertanyaan": "apakah mini pc bisa dijual paket dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 3,
+      "pertanyaan": "penjualan paket desktop dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "P15"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            }
+          ],
+          "top_ids": [
+            "P10",
+            "K01",
+            "P15"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 4,
+      "pertanyaan": "kebijakan paket mini pc dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P15",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P15",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 5,
+      "pertanyaan": "cara membeli mini pc dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "M01",
+            "K01",
+            "P10"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "P10",
+            "M01",
+            "K01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 6,
+      "pertanyaan": "kebijakan paket bundling desktop dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "M01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 7,
+      "pertanyaan": "apakah mini pc dijual sudah termasuk monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 8,
+      "pertanyaan": "mini pc termasuk monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "P11"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "P10",
+            "P11"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 9,
+      "pertanyaan": "Desktop mini sudah termasuk monitor belum?",
+      "id_harapan": "K01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 10,
+      "pertanyaan": "perbedaan mini pc dan desktop pc",
+      "id_harapan": "G03",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "G01",
+              "judul": "Panduan Umum: Tingkatan Prosesor (CPU)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "G01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "P01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G01",
+              "judul": "Panduan Umum: Tingkatan Prosesor (CPU)"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "G01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "P01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 11,
+      "pertanyaan": "portabilitas mini pc vs desktop pc",
+      "id_harapan": "G03",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P04",
+              "judul": "Gamer Kasual dan E-Sports"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "P04"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "P01",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P04",
+              "judul": "Gamer Kasual dan E-Sports"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "K01",
+            "P04"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "P01",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 12,
+      "pertanyaan": "monitor yang cocok untuk mini pc",
+      "id_harapan": "M01",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            }
+          ],
+          "top_ids": [
+            "M01",
+            "K01",
+            "G03"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "M01",
+            "P11",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "G03",
+            "M01",
+            "K01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "M01",
+            "P11",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 13,
+      "pertanyaan": "Apa kelebihan ecotank?",
+      "id_harapan": "M02",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P05",
+              "judul": "Gamer Hardcore (Game AAA)"
+            },
+            {
+              "id": "P14",
+              "judul": "Akuntan, Analis Data, dan Pengguna Excel Berat"
+            }
+          ],
+          "top_ids": [
+            "P15",
+            "P05",
+            "P14"
+          ],
+          "hit@1": false,
+          "hit@3": false
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P14",
+              "judul": "Akuntan, Analis Data, dan Pengguna Excel Berat"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "P14"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P05",
+              "judul": "Gamer Hardcore (Game AAA)"
+            },
+            {
+              "id": "P14",
+              "judul": "Akuntan, Analis Data, dan Pengguna Excel Berat"
+            }
+          ],
+          "top_ids": [
+            "P15",
+            "P05",
+            "P14"
+          ],
+          "hit@1": false,
+          "hit@3": false
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P14",
+              "judul": "Akuntan, Analis Data, dan Pengguna Excel Berat"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "P14"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 14,
+      "pertanyaan": "Kan pake tangki tinta, jadi gak pake catrige?",
+      "id_harapan": "M02",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P07",
+              "judul": "Arsitek dan Mahasiswa Teknik (CAD, SketchUp, Revit)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M02",
+            "P07"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P07",
+              "judul": "Arsitek dan Mahasiswa Teknik (CAD, SketchUp, Revit)"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "K01",
+            "P07"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P07",
+              "judul": "Arsitek dan Mahasiswa Teknik (CAD, SketchUp, Revit)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "M02",
+            "P07"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            },
+            {
+              "id": "P07",
+              "judul": "Arsitek dan Mahasiswa Teknik (CAD, SketchUp, Revit)"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "K01",
+            "P07"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 15,
+      "pertanyaan": "Edit video kan gak berat banget?",
+      "id_harapan": "P12|P03",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P11"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P09",
+              "judul": "Music Producer dan Audio Engineer"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P09"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P11"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P09",
+              "judul": "Music Producer dan Audio Engineer"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P09"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 16,
+      "pertanyaan": "Memangnya vivobook go 14 bisa untuk edit video?",
+      "id_harapan": "P12|P03",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P08",
+              "judul": "Live Streamer dan VTuber"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P08"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P08",
+              "judul": "Live Streamer dan VTuber"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P08"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P08",
+              "judul": "Live Streamer dan VTuber"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P08"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P08",
+              "judul": "Live Streamer dan VTuber"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P08"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 17,
+      "pertanyaan": "T82X cuma untuk cetak struk? Gak bisa cetak dokumen?",
+      "id_harapan": "P15|M02",
+      "configs": {
+        "C0": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C1": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C2": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        },
+        "C3": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bobby Computer — Admin Katalog Produk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- Top Navigation -->
+  <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xl shadow">
+          <i class="fa-solid fa-server"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Bobby Computer Admin</h1>
+          <p class="text-xs text-indigo-200">Manajemen Master Katalog & Sinkronisasi Vektor</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="/" target="_blank" class="text-sm bg-indigo-800 hover:bg-indigo-700 text-indigo-100 px-3.5 py-1.5 rounded-lg transition flex items-center space-x-2">
+          <i class="fa-solid fa-comments"></i>
+          <span>Buka Live Chat CS</span>
+        </a>
+        <button onclick="syncAllQdrant()" id="btnSyncAll" class="text-sm bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg shadow transition flex items-center space-x-2">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Sinkronisasi ke Qdrant</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Metric Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Produk</span>
+        <div class="text-2xl font-bold text-slate-800 mt-1" id="statTotal">-</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Laptop</span>
+        <div class="text-2xl font-bold text-indigo-600 mt-1" id="statLaptop">-</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Desktop (PC)</span>
+        <div class="text-2xl font-bold text-blue-600 mt-1" id="statDesktop">-</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Printer & Monitor</span>
+        <div class="text-2xl font-bold text-teal-600 mt-1" id="statOther">-</div>
+      </div>
+    </div>
+
+    <!-- Toolbar: Filter, Search & Add -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="setCategoryFilter('')" class="cat-btn active px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-900 text-white" data-cat="">Semua</button>
+        <button onclick="setCategoryFilter('laptop')" class="cat-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700" data-cat="laptop">Laptop</button>
+        <button onclick="setCategoryFilter('desktop')" class="cat-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700" data-cat="desktop">Desktop</button>
+        <button onclick="setCategoryFilter('printer')" class="cat-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700" data-cat="printer">Printer</button>
+        <button onclick="setCategoryFilter('monitor')" class="cat-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700" data-cat="monitor">Monitor</button>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="relative w-full md:w-64">
+          <input type="text" id="searchInput" oninput="renderTable()" placeholder="Cari kode atau nama..." 
+                 class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+        </div>
+        <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg shadow transition flex items-center space-x-2 shrink-0">
+          <i class="fa-solid fa-plus"></i>
+          <span>Tambah Produk</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs tracking-wider">
+              <th class="py-3 px-4">Kode</th>
+              <th class="py-3 px-4">Nama Produk</th>
+              <th class="py-3 px-4">Kategori & Brand</th>
+              <th class="py-3 px-4">Harga (IDR)</th>
+              <th class="py-3 px-4">Prosesor & GPU</th>
+              <th class="py-3 px-4">RAM & Storage</th>
+              <th class="py-3 px-4 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="7" class="text-center py-8 text-slate-400">Memuat katalog...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Form Add/Edit Product -->
+  <div id="productModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 id="modalTitle" class="font-bold text-lg text-slate-800">Tambah Produk Baru</h2>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="productForm" onsubmit="saveProduct(event)" class="p-6 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kode Produk *</label>
+            <input type="text" id="formKode" required placeholder="Contoh: KB-L11" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kategori *</label>
+            <select id="formKategori" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="laptop">Laptop</option>
+              <option value="desktop">Desktop</option>
+              <option value="printer">Printer</option>
+              <option value="monitor">Monitor</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Produk *</label>
+            <input type="text" id="formNama" required placeholder="Contoh: Acer Swift Go 14 OLED" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Brand / Merek *</label>
+            <input type="text" id="formBrand" required placeholder="Contoh: acer, asus, lenovo" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Harga (IDR) *</label>
+            <input type="number" id="formHarga" required placeholder="Contoh: 12499000" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Prosesor (CPU)</label>
+            <input type="text" id="formCpu" placeholder="Contoh: Intel Core i5-13500H" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">RAM (Teks)</label>
+            <input type="text" id="formRam" placeholder="Contoh: 16 GB LPDDR5" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">RAM GB (Numerik)</label>
+            <input type="number" id="formRamGb" placeholder="16" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipe RAM</label>
+            <input type="text" id="formRamType" placeholder="DDR5" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kartu Grafis (GPU)</label>
+            <input type="text" id="formGpu" placeholder="Contoh: Intel Iris Xe / NVIDIA RTX 3050" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Storage</label>
+            <input type="text" id="formStorage" placeholder="Contoh: 512 GB NVMe SSD" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Layar (Display)</label>
+            <input type="text" id="formDisplay" placeholder="Contoh: 14 inci 2.8K OLED 90Hz" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Sistem Operasi</label>
+            <input type="text" id="formOs" placeholder="Windows 11 Home" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Rekomendasi Pemakaian / Use-Case</label>
+          <textarea id="formUsage" rows="2" placeholder="Contoh: Cocok untuk kerja kantor, kuliah, nonton film santai, dan desain grafis ringan." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-2">
+          <input type="checkbox" id="formSyncQdrant" checked class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+          <label for="formSyncQdrant" class="text-sm text-slate-700">Otomatis buat embedding dan sinkronisasi ke vektor Qdrant</label>
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 flex justify-end space-x-3">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Batal</button>
+          <button type="submit" id="btnSubmitForm" class="px-5 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow transition flex items-center space-x-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Simpan Produk</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm flex items-center space-x-3 transition-opacity opacity-0 pointer-events-none z-50">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">Notifikasi</span>
+  </div>
+
+  <script>
+    let products = [];
+    let currentCategory = '';
+    let isEditing = false;
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      toastMsg.textContent = msg;
+      toastIcon.className = isError ? 'fa-solid fa-triangle-exclamation text-rose-400' : 'fa-solid fa-circle-check text-emerald-400';
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 3500);
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        document.getElementById('statTotal').textContent = data.total_products || 0;
+        document.getElementById('statLaptop').textContent = data.categories.laptop || 0;
+        document.getElementById('statDesktop').textContent = data.categories.desktop || 0;
+        const other = (data.categories.printer || 0) + (data.categories.monitor || 0);
+        document.getElementById('statOther').textContent = other;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const url = currentCategory ? `/api/admin/products?category=${currentCategory}` : '/api/admin/products';
+        const res = await fetch(url);
+        products = await res.json();
+        renderTable();
+        loadStats();
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal memuat produk', true);
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('productTableBody');
+      const search = document.getElementById('searchInput').value.toLowerCase().trim();
+      
+      const filtered = products.filter(p => {
+        const matchSearch = !search || p.kode.toLowerCase().includes(search) || p.nama.toLowerCase().includes(search) || (p.cpu && p.cpu.toLowerCase().includes(search));
+        return matchSearch;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Tidak ada produk ditemukan.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const badgeColor = p.kategori === 'laptop' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                           p.kategori === 'desktop' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                           p.kategori === 'printer' ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-slate-50 text-slate-700 border-slate-200';
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3 px-4 font-mono font-semibold text-slate-700">${p.kode}</td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-900">${p.nama}</div>
+              <div class="text-xs text-slate-400 line-clamp-1">${p.usage_text || '-'}</div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full border ${badgeColor}">${p.kategori.toUpperCase()}</span>
+              <span class="text-xs text-slate-500 ml-1">(${p.brand || '-'})</span>
+            </td>
+            <td class="py-3 px-4 font-semibold text-slate-800">Rp${Number(p.harga_idr).toLocaleString('id-ID')}</td>
+            <td class="py-3 px-4 text-xs">
+              <div class="font-medium text-slate-700">${p.cpu || '-'}</div>
+              <div class="text-slate-500">${p.gpu || '-'}</div>
+            </td>
+            <td class="py-3 px-4 text-xs">
+              <div class="font-medium text-slate-700">${p.ram || '-'}</div>
+              <div class="text-slate-500">${p.storage || '-'}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="inline-flex items-center space-x-1">
+                <button onclick="editProduct('${p.kode}')" class="p-1.5 text-slate-500 hover:text-indigo-600 rounded transition" title="Edit">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteProduct('${p.kode}')" class="p-1.5 text-slate-500 hover:text-rose-600 rounded transition" title="Hapus">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setCategoryFilter(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-btn active px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-900 text-white';
+        } else {
+          btn.className = 'cat-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700';
+        }
+      });
+      loadProducts();
+    }
+
+    function openModal(editing = false) {
+      isEditing = editing;
+      document.getElementById('modalTitle').textContent = editing ? 'Edit Produk' : 'Tambah Produk Baru';
+      document.getElementById('formKode').disabled = editing;
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('productModal').classList.add('hidden');
+      document.getElementById('productForm').reset();
+    }
+
+    function editProduct(kode) {
+      const p = products.find(x => x.kode === kode);
+      if (!p) return;
+      document.getElementById('formKode').value = p.kode;
+      document.getElementById('formNama').value = p.nama;
+      document.getElementById('formKategori').value = p.kategori;
+      document.getElementById('formBrand').value = p.brand || '';
+      document.getElementById('formHarga').value = p.harga_idr;
+      document.getElementById('formCpu').value = p.cpu || '';
+      document.getElementById('formRam').value = p.ram || '';
+      document.getElementById('formRamGb').value = p.ram_gb || '';
+      document.getElementById('formRamType').value = p.ram_type || '';
+      document.getElementById('formGpu').value = p.gpu || '';
+      document.getElementById('formStorage').value = p.storage || '';
+      document.getElementById('formDisplay').value = p.display || '';
+      document.getElementById('formOs').value = p.os || '';
+      document.getElementById('formUsage').value = p.usage_text || '';
+      openModal(true);
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const payload = {
+        kode: document.getElementById('formKode').value.trim(),
+        nama: document.getElementById('formNama').value.trim(),
+        kategori: document.getElementById('formKategori').value,
+        brand: document.getElementById('formBrand').value.trim(),
+        harga_idr: parseInt(document.getElementById('formHarga').value, 10),
+        cpu: document.getElementById('formCpu').value.trim() || null,
+        ram: document.getElementById('formRam').value.trim() || null,
+        ram_gb: document.getElementById('formRamGb').value ? parseInt(document.getElementById('formRamGb').value, 10) : null,
+        ram_type: document.getElementById('formRamType').value.trim() || null,
+        gpu: document.getElementById('formGpu').value.trim() || null,
+        storage: document.getElementById('formStorage').value.trim() || null,
+        display: document.getElementById('formDisplay').value.trim() || null,
+        os: document.getElementById('formOs').value.trim() || null,
+        usage_text: document.getElementById('formUsage').value.trim() || null,
+        sync_qdrant: document.getElementById('formSyncQdrant').checked
+      };
+
+      try {
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Produk ${payload.kode} berhasil disimpan!` + (data.qdrant_synced ? ' (Sync Qdrant OK)' : ''));
+          closeModal();
+          loadProducts();
+        } else {
+          showToast('Gagal menyimpan produk', true);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Terjadi kesalahan koneksi', true);
+      }
+    }
+
+    async function deleteProduct(kode) {
+      if (!confirm(`Apakah Anda yakin ingin menghapus produk ${kode}?`)) return;
+      try {
+        const res = await fetch(`/api/admin/products/${kode}`, {method: 'DELETE'});
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Produk ${kode} berhasil dihapus.`);
+          loadProducts();
+        } else {
+          showToast('Gagal menghapus produk', true);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Terjadi kesalahan koneksi', true);
+      }
+    }
+
+    async function syncAllQdrant() {
+      const btn = document.getElementById('btnSyncAll');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Menyinkronkan...</span>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/admin/sync-qdrant', {method: 'POST'});
+        const data = await res.json();
+        showToast(`Sinkronisasi selesai: ${data.synced} dari ${data.total} produk terindeks di Qdrant.`);
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal sinkronisasi ke Qdrant', true);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Load data on page load
+    loadProducts();
+  </script>
+</body>
+</html>

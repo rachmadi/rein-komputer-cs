@@ -1,0 +1,40 @@
+{
+  "live37_varian_a": {
+    "median_s": 14.25,
+    "p95_s": 26.46,
+    "max_s": 46.57
+  },
+  "live37_varian_b": {
+    "median_s": 15.34,
+    "p95_s": 25.73,
+    "max_s": 34.47
+  },
+  "regresi_live26": {
+    "median_s": 13.86,
+    "p95_s": 20.84,
+    "max_s": 24.27
+  },
+  "regresi_multi20": {
+    "median_s": 13.63,
+    "p95_s": 26.21,
+    "max_s": 38.05,
+    "multigiliran_perlu_alat": "28/28",
+    "salah_panggil": "7/12"
+  },
+  "regresi_single27": {
+    "median_s": 7.79,
+    "p95_s": 11.62,
+    "max_s": 15.41,
+    "rep1_dipanggil_saat_perlu": "20/20",
+    "rep1_salah_panggil": "0/7",
+    "rep2_dipanggil_saat_perlu": "20/20",
+    "rep2_salah_panggil": "0/7"
+  },
+  "keseluruhan": {
+    "total_turns": 368,
+    "median_s": 13.67,
+    "p95_s": 25.18,
+    "max_s": 46.57,
+    "total_durasi_menit": 88.98
+  }
+}

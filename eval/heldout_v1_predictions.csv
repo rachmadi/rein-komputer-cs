@@ -1,0 +1,51 @@
+id,pesan,gold_aksi,pred_aksi,benar_salah,gold_args,pred_args,latensi_ms,retried
+ho-001,assalamualaikum min,sapa,sapa,True,,{},3056.3,False
+ho-002,laptop asus tuf gaming ada?,cari_produk,cari_produk,True,"{""merek"": ""asus"", ""nama_model"": ""tuf gaming"", ""kategori"": ""laptop""}","{""kategori"": ""laptop"", ""merek"": ""asus"", ""nama_model"": ""tuf gaming""}",4022.6,False
+ho-003,butuh buat kasir toko sembako,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""kasir toko pos"", ""kategori"": ""desktop""}","{""kebutuhan_teks"": ""kasir toko sembako""}",4035.4,False
+ho-004,cuma buat zoom meeting dan skripsi aja,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""zoom meeting dan skripsi""}","{""kebutuhan_teks"": ""zoom meeting dan skripsi"", ""persona"": ""mahasiswa""}",4638.5,False
+ho-005,yang ketiga baterainya tahan berapa lama?,tanya_spesifikasi,tanya_spesifikasi,True,"{""produk"": [""3""], ""atribut"": ""baterai""}","{""rujukan_produk"": [3], ""produk"": [""KB-L03""], ""atribut"": ""baterai""}",3827.7,False
+ho-006,antara ideapad sama vivobook bagusan mana?,bandingkan,bandingkan,True,"{""produk"": [""KB-L01"", ""KB-L02""]}","{""rujukan_produk"": [1, 2], ""produk"": [""KB-L01"", ""KB-L02""]}",3447.7,False
+ho-007,ada yang di bawah 5 juta?,lanjutan_hasil,lanjutan_hasil,True,"{""jenis"": ""lebih_murah""}",{},3561.5,False
+ho-008,bisa gosend instan hari ini?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""pengiriman""}","{""topik"": ""pengiriman""}",3404.4,False
+ho-009,kok ngulang salam lagi sih,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""keluhan"", ""rujukan"": ""ngulang salam""}","{""jenis"": ""koreksi""}",3781.6,False
+ho-010,makasih banyak infonya kak,basa_basi,basa_basi,True,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3407.6,False
+ho-011,halo selamat sore,sapa,sapa,True,,{},3020.9,False
+ho-012,printer epson l3210 ada ga?,cari_produk,cari_produk,True,"{""merek"": ""epson"", ""nama_model"": ""l3210"", ""kategori"": ""printer""}","{""kategori"": ""printer"", ""merek"": ""epson"", ""nama_model"": ""l3210""}",4085.8,False
+ho-013,laptop gaming rtx 4050 murah,cari_produk,cari_produk,True,"{""kategori"": ""laptop"", ""gpu"": ""rtx 4050""}","{""kategori"": ""laptop"", ""gpu"": ""rtx 4050""}",3800.7,False
+ho-014,buat anak sma belajar coding python,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""belajar coding python"", ""persona"": ""anak sma""}","{""kebutuhan_teks"": ""belajar coding python"", ""persona"": ""anak sma""}",4030.4,False
+ho-015,budget maksimal 12 juta pas,jawab_pertanyaan_bot,jawab_pertanyaan_bot,True,"{""slot"": ""budget"", ""nilai"": 12000000}","{""slot"": ""budget"", ""nilai"": 12000000}",4003.8,False
+ho-016,cukup ga ram segitu buat buka 20 tab chrome?,evaluasi_kecocokan,evaluasi_kecocokan,True,"{""produk"": [""KB-L01""], ""kebutuhan_teks"": ""20 tab chrome""}","{""kebutuhan_teks"": ""buka 20 tab chrome"", ""produk"": [""KB-L01""]}",3657.7,False
+ho-017,tampilin opsi yang lenovo aja dong,lanjutan_hasil,lanjutan_hasil,True,"{""jenis"": ""filter_tambahan""}",{},3336.2,False
+ho-018,ada garansi tukar unit baru ga kalau rusak?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""garansi""}","{""topik"": ""garansi""}",3383.9,False
+ho-019,bukan laptop gaming min maksud saya laptop tipis,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""koreksi"", ""rujukan"": ""laptop tipis""}","{""jenis"": ""koreksi"", ""rujukan"": ""laptop tipis""}",3619.6,False
+ho-020,siap nanti saya kabari lagi ya,basa_basi,basa_basi,True,"{""jenis"": ""pamit""}","{""jenis"": ""pamit""}",3390.9,False
+ho-021,pagi,sapa,sapa,True,,{},2996.0,False
+ho-022,cari pc meja all in one,cari_produk,cari_produk,True,"{""kategori"": ""desktop"", ""nama_model"": ""all in one""}","{""kategori"": ""desktop""}",3453.0,False
+ho-023,laptop buat arsitek autocad dan sketchup,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""arsitek autocad sketchup"", ""persona"": ""arsitek""}","{""kebutuhan_teks"": ""autocad dan sketchup"", ""persona"": ""arsitek""}",4697.8,False
+ho-024,buat bapak saya,jawab_pertanyaan_bot,jawab_pertanyaan_bot,True,"{""slot"": ""persona"", ""nilai"": ""bapak""}","{""slot"": ""persona"", ""nilai"": ""bapak""}",3657.0,False
+ho-025,yang pertama ini ssd nya berapa gb?,tanya_spesifikasi,tanya_spesifikasi,True,"{""produk"": [""1""], ""atribut"": ""storage""}","{""rujukan_produk"": [1], ""produk"": [""KB-L01""], ""atribut"": ""storage""}",3644.9,False
+ho-026,beda spek no 2 sama no 3 apa aja ya?,bandingkan,bandingkan,True,"{""produk"": [""2"", ""3""]}","{""rujukan_produk"": [2, 3], ""produk"": [""KB-L02"", ""KB-L03""]}",3434.5,False
+ho-027,ada pilihan warna lain ga?,lanjutan_hasil,tidak_jelas,False,"{""jenis"": ""yang_lain""}","{""alasan"": ""Jenis 'pamit' tidak valid untuk aksi lanjutan_hasil""}",3473.8,False
+ho-028,alamat service center resminya di mana?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""alamat""}","{""topik"": ""alamat""}",3375.0,False
+ho-029,kok malah rekomendasiin yang mahal banget,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""keluhan"", ""rujukan"": ""terlalu mahal""}","{""jenis"": ""keluhan""}",3689.6,False
+ho-030,mantap makasih rekomendasinya,basa_basi,basa_basi,True,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3382.3,False
+ho-031,permisi,sapa,sapa,True,,{},3065.0,False
+ho-032,ada laptop monitor 14 inch?,cari_produk,cari_produk,True,"{""kategori"": ""laptop"", ""ukuran_layar"": 14.0}","{""kategori"": ""laptop"", ""ukuran_layar"": 14.0}",3902.9,False
+ho-033,butuh laptop ringan enteng dibawa ke kampus,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""ringan portabel kampus"", ""persona"": ""mahasiswa""}","{""kebutuhan_teks"": ""laptop ringan untuk dibawa ke kampus"", ""persona"": ""mahasiswa""}",4483.2,False
+ho-034,buat kantor administrasi input excel,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""administrasi excel""}","{""kebutuhan_teks"": ""input excel untuk kantor administrasi""}",4156.4,False
+ho-035,apakah prosesornya i5 atau i3?,tanya_spesifikasi,tanya_spesifikasi,True,"{""produk"": [""KB-L01""], ""atribut"": ""cpu""}","{""produk"": [""KB-L01""], ""atribut"": ""cpu""}",3392.4,False
+ho-036,kalau dibanding macbook air m1 kencengan mana?,bandingkan,bandingkan,True,"{""produk"": [""KB-L01"", ""macbook air m1""]}","{""produk"": [""KB-L01""], ""produk_luar_katalog"": [""MacBook Air M1""]}",3705.7,False
+ho-037,ada yang harganya 8 jutaan?,lanjutan_hasil,lanjutan_hasil,True,"{""jenis"": ""lebih_murah""}",{},3537.0,False
+ho-038,bisa split payment sebagian transfer sebagian cash?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""pembayaran""}","{""topik"": ""pembayaran""}",3497.6,False
+ho-039,maksud saya bukan merek itu,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""koreksi"", ""rujukan"": ""bukan merek itu""}","{""jenis"": ""koreksi"", ""rujukan"": ""bukan merek itu""}",3738.7,False
+ho-040,terima kasih banyak min,basa_basi,basa_basi,True,"{""jenis"": ""terima_kasih""}","{""jenis"": ""terima_kasih""}",3497.4,False
+ho-041,woi,sapa,tidak_jelas,False,,{},2816.9,False
+ho-042,monitor 24 inch 144hz ada?,cari_produk,cari_produk,True,"{""kategori"": ""monitor"", ""ukuran_layar"": 24.0}","{""kategori"": ""monitor"", ""ukuran_layar"": 24.0}",4293.1,False
+ho-043,laptop buat ngetik tesis s2,minta_rekomendasi,minta_rekomendasi,True,"{""kebutuhan_teks"": ""ngetik tesis s2"", ""persona"": ""mahasiswa s2""}","{""kebutuhan_teks"": ""mengetik tesis S2"", ""persona"": ""mahasiswa""}",4688.4,False
+ho-044,budget sekitar 15 jutaan,jawab_pertanyaan_bot,jawab_pertanyaan_bot,True,"{""slot"": ""budget"", ""nilai"": 15000000}","{""slot"": ""budget"", ""nilai"": ""15 juta""}",3899.5,False
+ho-045,apakah keyboardnya ada backlight nyala?,tanya_spesifikasi,tanya_spesifikasi,True,"{""produk"": [""KB-L01""], ""atribut"": ""keyboard""}","{""produk"": [""KB-L01""], ""atribut"": ""keyboard""}",3424.2,False
+ho-046,tampilkan merek asus saja,lanjutan_hasil,cari_produk,False,"{""jenis"": ""filter_tambahan""}","{""merek"": ""asus""}",3439.5,False
+ho-047,apakah bisa klaim nota untuk kantor?,tanya_info_toko,tanya_info_toko,True,"{""topik"": ""pembayaran""}","{""topik"": ""pembayaran""}",3446.0,False
+ho-048,lho kan tadi saya bilang budget 6 juta,perbaiki_percakapan,perbaiki_percakapan,True,"{""jenis"": ""keluhan"", ""rujukan"": ""budget 6 juta""}","{""jenis"": ""koreksi"", ""rujukan"": ""budget 6 juta""}",3804.2,False
+ho-049,wkwkwk mantap,basa_basi,basa_basi,True,"{""jenis"": ""lainnya""}",{},3128.5,False
+ho-050,zzzzz,tidak_jelas,tidak_jelas,True,"{""alasan"": ""teks tidak bermakna""}",{},2824.3,False

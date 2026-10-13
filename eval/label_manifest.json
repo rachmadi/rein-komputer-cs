@@ -1,0 +1,20 @@
+{
+  "files": {
+    "eval/parse_frozen_putaran8.csv": {
+      "sha256": "8c4e81b323e241cd28579938e984180f05fd0c1b23fa4534585cee08e5c08f0c",
+      "last_commit": "e25d0643c44e90d7155f5106f0c7e90c4f8b9419"
+    },
+    "eval/dev_multi_putaran8.jsonl": {
+      "sha256": "d431deecd5a75fd6ca01f8bd8845fba12644a0fce473d6f8ddb7b5b86c2b14ea",
+      "last_commit": "45dbfa69a24463ee40f6d61ee58ce547ee0f844c"
+    },
+    "eval/dev_multi_putaran7_koreksi.jsonl": {
+      "sha256": "d7639e3ca3cc5427b279ad59d33b3ad179d8668c05936156126f3bab97575129",
+      "last_commit": "e25d0643c44e90d7155f5106f0c7e90c4f8b9419"
+    }
+  },
+  "tool_sha256": {
+    "scripts/metrics.py": "95276d09263b91c4599e18d33ed20fd1176da6b952215e19545e8d4011e1d540",
+    "scripts/gate_putaran9.py": "d689b2af36213ab5ba59c0c58776a6f9b3ec1387024d070c927dc778818cfef4"
+  }
+}

@@ -1,0 +1,140 @@
+[
+  {
+    "point_id": "0985cb96-a094-514e-ab8e-e87f635d6f8a",
+    "id": "P15",
+    "judul": "P15 — UMKM, Kasir, dan Perangkat Toko (POS)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "0c262e71-72bc-5611-9b5b-a01855b22e8f",
+    "id": "G04",
+    "judul": "G04 — Panduan Umum: Jika Kebutuhan Pelanggan Belum Jelas atau Campuran",
+    "tipe": "panduan umum"
+  },
+  {
+    "point_id": "0ebb1fca-19db-5b8a-a611-3001cb4c5790",
+    "id": "P02",
+    "judul": "P02 — Desain Grafis 2D dan Fotografer (Creative Beginner)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "1ec65f69-3113-59e9-8d52-8bf2ba7d5e6a",
+    "id": "P10",
+    "judul": "P10 — Trader Saham dan Kripto",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "23b5e86a-250d-5ba4-8d11-898ba57a8136",
+    "id": "G01",
+    "judul": "G01 — Panduan Umum: Tingkatan Prosesor (CPU)",
+    "tipe": "panduan umum"
+  },
+  {
+    "point_id": "3b5781ba-98b9-5041-9d0a-ce2ea8e062c7",
+    "id": "P03",
+    "judul": "P03 — Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "48856337-fc12-50d1-a1b2-abada299b6be",
+    "id": "P01",
+    "judul": "P01 — Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "48a30ee2-d821-55ce-9c6d-cda8be6186e5",
+    "id": "P04",
+    "judul": "P04 — Gamer Kasual dan E-Sports",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "4e61c95f-5cd6-56ac-b575-2f98e42a1d3c",
+    "id": "K01",
+    "judul": "Kebijakan Toko",
+    "tipe": "kebijakan_toko"
+  },
+  {
+    "point_id": "5d87c1b7-277c-557d-ab48-8db54cd33a34",
+    "id": "G03",
+    "judul": "G03 — Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop",
+    "tipe": "panduan umum"
+  },
+  {
+    "point_id": "6f7886cb-7834-50f4-b14a-b74ee63fe6f1",
+    "id": "P12",
+    "judul": "P12 — Content Creator Ringan (Media Sosial dan Video 1080p)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "70fb3b5f-e2f7-59b5-bcaa-c75f957f286b",
+    "id": "P09",
+    "judul": "P09 — Music Producer dan Audio Engineer",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "7544fe4c-ac89-5185-b16e-8964bba42867",
+    "id": "G02",
+    "judul": "G02 — Panduan Umum: Kartu Grafis (GPU) dan VRAM",
+    "tipe": "panduan umum"
+  },
+  {
+    "point_id": "9d8a9b6a-4bb8-5e2b-a4e9-878b6077c911",
+    "id": "M01",
+    "judul": "M01 — Panduan Memilih Monitor",
+    "tipe": "panduan kategori"
+  },
+  {
+    "point_id": "a071d682-321f-5a5c-b006-f60cfd4d19c1",
+    "id": "P13",
+    "judul": "P13 — Data Scientist, AI/Machine Learning, dan LLM Lokal",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "b391e4c1-9f46-5826-8c09-2c55e33194a1",
+    "id": "P11",
+    "judul": "P11 — Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "b4b93c19-e57e-5da4-96aa-062f73638cdf",
+    "id": "P05",
+    "judul": "P05 — Gamer Hardcore (Game AAA)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "bb09190b-c949-5296-8ef9-d1abbe85550c",
+    "id": "P14",
+    "judul": "P14 — Akuntan, Analis Data, dan Pengguna Excel Berat",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "d78dbf4b-e40c-5a29-bcec-12e30d582e2c",
+    "id": "P06",
+    "judul": "P06 — Programmer dan Software Developer",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "edb0eba6-a984-5410-a626-5c5ab01de9dd",
+    "id": "M02",
+    "judul": "M02 — Panduan Memilih Printer",
+    "tipe": "panduan kategori"
+  },
+  {
+    "point_id": "f626e9a2-dfdc-569c-9fda-04afef1db752",
+    "id": "P07",
+    "judul": "P07 — Arsitek dan Mahasiswa Teknik (CAD, SketchUp, Revit)",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "f66939c9-837a-5192-8204-6774bb4415f2",
+    "id": "P16",
+    "judul": "P16 — Serbaguna: Kerja/Kuliah dan Game Sesekali",
+    "tipe": "profil"
+  },
+  {
+    "point_id": "fcd9d68a-6011-5346-8076-7368362333bd",
+    "id": "P08",
+    "judul": "P08 — Live Streamer dan VTuber",
+    "tipe": "profil"
+  }
+]

@@ -1,0 +1,100 @@
+{
+  "PRODUKSI": {
+    "total_runs": 27,
+    "tingkat_panggil_alat_pct": 70.0,
+    "ketepatan_alat_pct": 77.8,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 6,
+    "janji_tanpa_aksi_items": [
+      {
+        "varian": "PRODUKSI",
+        "pesan": "Jual monitor?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, saya Reni dari ReIn Komputer. Boleh tahu Kakak cari monitor untuk keperluan apa nih?",
+        "eval_count": "25",
+        "latensi_ms": "3031.55"
+      },
+      {
+        "varian": "PRODUKSI",
+        "pesan": "Kalo laptop ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, saya Reni. Ada yang bisa saya bantu hari ini? Untuk laptop, kami punya banyak pilihan lho. Boleh tahu Kakak cari laptop untuk kebutuhan apa nih?",
+        "eval_count": "38",
+        "latensi_ms": "3492.5"
+      },
+      {
+        "varian": "PRODUKSI",
+        "pesan": "Jual printer apa?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, saya Reni dari ReIn Komputer. Untuk rekomendasi printer, Kakak mau untuk kebutuhan apa nih? Apakah untuk keperluan rumahan, kantor, atau mungkin untuk foto-foto aja?",
+        "eval_count": "42",
+        "latensi_ms": "3559.69"
+      },
+      {
+        "varian": "PRODUKSI",
+        "pesan": "Ada yang ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, saya Reni. Ada yang bisa saya bantu hari ini? Untuk yang ecotank, Kakak sedang mencari printer jenis apa ya?",
+        "eval_count": "31",
+        "latensi_ms": "3179.09"
+      },
+      {
+        "varian": "PRODUKSI",
+        "pesan": "Ada mini pc?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, saya Reni dari ReIn Komputer. Boleh tahu Kakak cari mini PC untuk keperluan apa nih?",
+        "eval_count": "26",
+        "latensi_ms": "3077.23"
+      },
+      {
+        "varian": "PRODUKSI",
+        "pesan": "Epson ecotank itu harganya bisa kurang gak?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, saya Reni dari ReIn Komputer. Untuk menanyakan harga Epson EcoTank, saya perlu tahu model atau jenis printer yang Kakak maksud dulu ya. Boleh tolong sebutkan modelnya atau apakah Kakak mau saya cek berdasarkan kategori printer?",
+        "eval_count": "55",
+        "latensi_ms": "3969.64"
+      }
+    ],
+    "median_latensi_ms": 3559.7,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 13,
+        "called": 8,
+        "rate_pct": 61.5
+      },
+      "pengetahuan": {
+        "total": 4,
+        "called": 4,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 3,
+        "called": 2,
+        "rate_pct": 66.7
+      },
+      "tidak_ada": {
+        "total": 7,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  }
+}

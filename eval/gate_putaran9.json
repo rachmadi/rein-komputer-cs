@@ -1,0 +1,47 @@
+{
+  "total_checks": 8,
+  "total_pass": 8,
+  "total_fail": 0,
+  "checks": {
+    "G1": {
+      "deskripsi": "Kebersihan & Integritas Repositori",
+      "status": "PASS",
+      "bukti": "Kebersihan repo sempurna (gold valid, RAG 0.40, 0 berkas terlarang, 4 untracked sah, 0 remote)"
+    },
+    "G2": {
+      "deskripsi": "Integritas Label & Kronologi Commit",
+      "status": "PASS",
+      "bukti": "Label utuh, checksum manifest valid, commit Tahap 0 mendahului kode"
+    },
+    "G3": {
+      "deskripsi": "Ketiadaan Penulisan Ulang Riwayat Git",
+      "status": "PASS",
+      "bukti": "Belum ada commit baru sejak sebelum-putaran9 (reflog bersih)"
+    },
+    "G4": {
+      "deskripsi": "Kesesuaian Hasil dengan Kode (Provenance)",
+      "status": "PASS",
+      "bukti": "Seluruh 4 berkas hasil mencatat code_sha256 identik (c787124981...)"
+    },
+    "G5": {
+      "deskripsi": "Kelulusan Suite Tes & Bukti Merah/Live",
+      "status": "PASS",
+      "bukti": "Pytest 271 passed/20 skipped/0 failed, bukti merah F1–F6 lengkap, live smoke terekam"
+    },
+    "G6": {
+      "deskripsi": "Pencegahan Kebocoran N-Gram & Frasa",
+      "status": "PASS",
+      "bukti": "0 kebocoran n-gram (≥4 kata/12 karakter) antara prompt/few-shot/tes vs eval"
+    },
+    "G7": {
+      "deskripsi": "Kualitas Teknis & Ketepatan Jawaban",
+      "status": "PASS",
+      "bukti": "Kualitas teknis lolos (dev7=86.3%, dev8=75.5% (dikecualikan (label berubah)), parse_frozen=97.9%, dev7-09 t2 OK, replay viol=0.7%, mismatch=0)"
+    },
+    "G8": {
+      "deskripsi": "Validitas Replay Penuh & Determinisme",
+      "status": "PASS",
+      "bukti": "Replay 134 giliran valid, determinisme 134/134 identik, latensi median=5967.6ms, p95=12789.0ms (proses konkuren=1)"
+    }
+  }
+}

@@ -1,0 +1,1286 @@
+{
+  "total_rows": 48,
+  "correct_actions": 47,
+  "accuracy_percent": 97.92,
+  "latency_median_sec": 3.6911,
+  "latency_p95_sec": 4.3924,
+  "per_action_stats": {
+    "lanjutan_hasil": {
+      "total": 12,
+      "correct": 11
+    },
+    "tanya_spesifikasi": {
+      "total": 10,
+      "correct": 10
+    },
+    "cari_produk": {
+      "total": 9,
+      "correct": 9
+    },
+    "minta_rekomendasi": {
+      "total": 3,
+      "correct": 3
+    },
+    "evaluasi_kecocokan": {
+      "total": 3,
+      "correct": 3
+    },
+    "perbaiki_percakapan": {
+      "total": 3,
+      "correct": 3
+    },
+    "basa_basi": {
+      "total": 3,
+      "correct": 3
+    },
+    "tidak_jelas": {
+      "total": 3,
+      "correct": 3
+    },
+    "sapa": {
+      "total": 1,
+      "correct": 1
+    },
+    "tanya_info_toko": {
+      "total": 1,
+      "correct": 1
+    }
+  },
+  "results": [
+    {
+      "index": 1,
+      "pesan": "Bisa berikan saran pengganti berbiaya lebih hemat?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "lebih_murah"
+      },
+      "pred_argumen": {
+        "jenis": "lebih_murah"
+      },
+      "latency_sec": 4.0097,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L03",
+          "KB-L04"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "asus",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 2,
+      "pesan": "Ada varian desktop berikutnya yang harganya lebih hemat di dompet?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "lebih_murah"
+      },
+      "pred_argumen": {
+        "jenis": "lebih_murah"
+      },
+      "latency_sec": 3.4632,
+      "state_json": {
+        "produk_tampil": [
+          "KB-D01"
+        ],
+        "kategori": "desktop",
+        "budget": 10000000,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 3,
+      "pesan": "Apakah ada tipe yang posisinya di bawah unit barusan?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "di_bawah_itu"
+      },
+      "pred_argumen": {
+        "jenis": "lebih_murah"
+      },
+      "latency_sec": 3.4454,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L07"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 4,
+      "pesan": "Kalau seri yang levelnya di atas perangkat itu ada opsi apa?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "di_atas_itu"
+      },
+      "pred_argumen": {
+        "jenis": "lebih_mahal"
+      },
+      "latency_sec": 3.4545,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 5,
+      "pesan": "Tampilkan opsi lain yang kelas harganya lebih premium dari list tadi",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "lebih_mahal"
+      },
+      "pred_argumen": {
+        "jenis": "lebih_mahal"
+      },
+      "latency_sec": 3.3851,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L02"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 6,
+      "pesan": "Kira-kira produk pembanding yang sepadan performanya ada apa lagi?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "yang_setara"
+      },
+      "pred_argumen": {
+        "jenis": "yang_lain"
+      },
+      "latency_sec": 3.3648,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L06"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 7,
+      "pesan": "Ada pilihan alternatif yang setara dengan laptop tadi?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "yang_setara"
+      },
+      "pred_argumen": {
+        "jenis": "yang_lain"
+      },
+      "latency_sec": 3.3708,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L05"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 8,
+      "pesan": "Saya mau lihat dari brand pabrikan yang lain dong",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "merek_lain"
+      },
+      "pred_argumen": {
+        "jenis": "yang_lain"
+      },
+      "latency_sec": 3.3877,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "asus",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 9,
+      "pesan": "Boleh berikan saran produk selain pabrikan tersebut?",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "merek_lain"
+      },
+      "pred_argumen": {
+        "jenis": "yang_lain"
+      },
+      "latency_sec": 3.3894,
+      "state_json": {
+        "produk_tampil": [
+          "KB-D01"
+        ],
+        "kategori": "desktop",
+        "budget": null,
+        "merek": "lenovo",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 10,
+      "pesan": "Coba perlihatkan varian selain dua perangkat tersebut",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "yang_lain"
+      },
+      "pred_argumen": {
+        "jenis": "yang_lain"
+      },
+      "latency_sec": 3.4334,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L02",
+          "KB-L05"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 11,
+      "pesan": "Sajikan katalog alternatif yang lainnya kak",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "lanjutan_hasil",
+      "action_match": true,
+      "gold_argumen": {
+        "filter_relatif": "yang_lain"
+      },
+      "pred_argumen": {
+        "jenis": "yang_lain"
+      },
+      "latency_sec": 3.3877,
+      "state_json": {
+        "produk_tampil": [
+          "KB-P01"
+        ],
+        "kategori": "printer",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 12,
+      "pesan": "Berapa banderol harga untuk unit tersebut?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "atribut": "harga"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L03"
+        ],
+        "atribut": "harga"
+      },
+      "latency_sec": 3.6911,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "asus",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 13,
+      "pesan": "Berapa harga jual dari laptop nomor satu?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "atribut": "harga"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L02"
+        ],
+        "atribut": "harga"
+      },
+      "latency_sec": 3.6559,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L02",
+          "KB-L04"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 14,
+      "pesan": "Unit nomor wahid itu bobotnya berapa kilo ya?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "atribut": "bobot"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L01"
+        ],
+        "atribut": "bobot"
+      },
+      "latency_sec": 3.7665,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01",
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 15,
+      "pesan": "Varian Pro 15 tersebut apakah dibekali chip grafis RTX 3050?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "atribut": "gpu"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          "Pro 15"
+        ],
+        "produk": [
+          "KB-L07"
+        ],
+        "atribut": "gpu"
+      },
+      "latency_sec": 4.3739,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L07"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "asus",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 16,
+      "pesan": "Model barusan memakai memori RAM DDR4 ataukah DDR5?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "atribut": "ram"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L07"
+        ],
+        "atribut": "ram"
+      },
+      "latency_sec": 3.6716,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L07"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "asus",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 17,
+      "pesan": "Bisa tolong jabarkan spesifikasi lengkap unit nomor dua?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 2,
+        "atribut": "lainnya"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          2
+        ],
+        "produk": [
+          "KB-L06"
+        ]
+      },
+      "latency_sec": 3.6845,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01",
+          "KB-L06"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 18,
+      "pesan": "Perangkat tersebut kapasitas RAM bawaannya berapa giga?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "atribut": "ram"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L04"
+        ],
+        "atribut": "ram"
+      },
+      "latency_sec": 3.6372,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L04"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "hp",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 19,
+      "pesan": "Untuk desktop nomor 1 jenis prosesornya apa?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "atribut": "cpu"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-D01"
+        ],
+        "atribut": "cpu"
+      },
+      "latency_sec": 3.6185,
+      "state_json": {
+        "produk_tampil": [
+          "KB-D01"
+        ],
+        "kategori": "desktop",
+        "budget": null,
+        "merek": "lenovo",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 20,
+      "pesan": "Penyimpanan SSD di laptop kedua ukurannya seberapa besar?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 2,
+        "atribut": "storage"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          2
+        ],
+        "produk": [
+          "KB-L03"
+        ],
+        "atribut": "storage"
+      },
+      "latency_sec": 3.6448,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L02",
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 21,
+      "pesan": "Apakah laptop HP 14s itu layarnya sudah Full HD?",
+      "gold_aksi": "tanya_spesifikasi",
+      "pred_aksi": "tanya_spesifikasi",
+      "action_match": true,
+      "gold_argumen": {
+        "atribut": "layar"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          "hp 14s"
+        ],
+        "produk": [
+          "KB-L04"
+        ],
+        "atribut": "layar"
+      },
+      "latency_sec": 3.9091,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L04"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "hp",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 22,
+      "pesan": "Sediakan notebook Asus dengan olah grafis mandiri diskrit",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "laptop",
+        "merek": "asus"
+      },
+      "pred_argumen": {
+        "kategori": "laptop",
+        "merek": "asus",
+        "gpu": "diskrit"
+      },
+      "latency_sec": 3.9603,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 23,
+      "pesan": "Tolong perlihatkan komputer desktop Lenovo IdeaCentre",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "desktop",
+        "merek": "lenovo"
+      },
+      "pred_argumen": {
+        "kategori": "desktop",
+        "merek": "lenovo"
+      },
+      "latency_sec": 3.7872,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L02"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 24,
+      "pesan": "Carikan printer Canon dengan tangki tinta hemat",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "printer",
+        "merek": "canon"
+      },
+      "pred_argumen": {
+        "kategori": "printer",
+        "merek": "canon"
+      },
+      "latency_sec": 3.8108,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 25,
+      "pesan": "Kalau laptop pabrikan Acer prosesor Core i5 ada stoknya?",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "laptop",
+        "merek": "acer"
+      },
+      "pred_argumen": {
+        "merek": "acer"
+      },
+      "latency_sec": 4.1777,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L04"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "hp",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 26,
+      "pesan": "Saya mau survei printer Epson model EcoTank",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "printer",
+        "merek": "epson"
+      },
+      "pred_argumen": {
+        "kategori": "printer",
+        "merek": "epson"
+      },
+      "latency_sec": 3.7893,
+      "state_json": {
+        "produk_tampil": [
+          "KB-P01"
+        ],
+        "kategori": "printer",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 27,
+      "pesan": "Cari laptop gaming dengan kartu grafis diskrit RTX",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "laptop"
+      },
+      "pred_argumen": {
+        "kategori": "laptop",
+        "gpu": "RTX"
+      },
+      "latency_sec": 3.7999,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L05"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 28,
+      "pesan": "Apakah sedia laptop merk Lenovo seri ThinkPad?",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "laptop",
+        "merek": "lenovo"
+      },
+      "pred_argumen": {
+        "kategori": "laptop",
+        "merek": "lenovo"
+      },
+      "latency_sec": 3.839,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 29,
+      "pesan": "Saya perlu perangkat yang mumpuni untuk edit video 4K dan animasi blender",
+      "gold_aksi": "minta_rekomendasi",
+      "pred_aksi": "minta_rekomendasi",
+      "action_match": true,
+      "gold_argumen": {
+        "kebutuhan_teks": "edit video 4K dan animasi blender"
+      },
+      "pred_argumen": {
+        "kebutuhan_teks": "editing video 4K dan animasi blender"
+      },
+      "latency_sec": 4.7027,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 30,
+      "pesan": "Apakah laptop nomor 1 sanggup buat render 3D arsitektur sketchup seharian?",
+      "gold_aksi": "evaluasi_kecocokan",
+      "pred_aksi": "evaluasi_kecocokan",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "kebutuhan_teks": "render 3D arsitektur sketchup"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L06"
+        ]
+      },
+      "latency_sec": 4.3352,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L06"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": "acer",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 31,
+      "pesan": "Kalau difungsikan untuk ketik naskah skripsi dan olah dokumen kantor apa memadai?",
+      "gold_aksi": "evaluasi_kecocokan",
+      "pred_aksi": "evaluasi_kecocokan",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "kebutuhan_teks": "ketik naskah skripsi dan olah dokumen kantor"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-L02"
+        ]
+      },
+      "latency_sec": 4.2552,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L02"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 32,
+      "pesan": "Komputer ini rencananya dipakai untuk kompilasi kode software backend dan docker container",
+      "gold_aksi": "evaluasi_kecocokan",
+      "pred_aksi": "evaluasi_kecocokan",
+      "action_match": true,
+      "gold_argumen": {
+        "rujukan_produk": 1,
+        "kebutuhan_teks": "kompilasi kode software backend dan docker container"
+      },
+      "pred_argumen": {
+        "rujukan_produk": [
+          1
+        ],
+        "produk": [
+          "KB-D01"
+        ]
+      },
+      "latency_sec": 4.2646,
+      "state_json": {
+        "produk_tampil": [
+          "KB-D01"
+        ],
+        "kategori": "desktop",
+        "budget": null,
+        "merek": "lenovo",
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 33,
+      "pesan": "Bisa rekomendasikan laptop yang lancar jaya buat software data science dan python?",
+      "gold_aksi": "minta_rekomendasi",
+      "pred_aksi": "minta_rekomendasi",
+      "action_match": true,
+      "gold_argumen": {
+        "kebutuhan_teks": "software data science dan python"
+      },
+      "pred_argumen": {
+        "kebutuhan_teks": "data science dan python",
+        "persona": "programmer"
+      },
+      "latency_sec": 4.3924,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 34,
+      "pesan": "Saya membutuhkan PC desktop khusus transaksi kasir swalayan yang menyala non-stop",
+      "gold_aksi": "minta_rekomendasi",
+      "pred_aksi": "minta_rekomendasi",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "desktop",
+        "kebutuhan_teks": "transaksi kasir swalayan"
+      },
+      "pred_argumen": {
+        "kebutuhan_teks": "transaksi kasir swalayan yang menyala non-stop",
+        "persona": "kasir"
+      },
+      "latency_sec": 5.229,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": null,
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 35,
+      "pesan": "Saya punya plafon anggaran maksimal 6 juta rupiah",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "budget": 6000000
+      },
+      "pred_argumen": {
+        "max_harga": 6000000
+      },
+      "latency_sec": 3.7942,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 36,
+      "pesan": "Filter notebook bertarif maksimal 10 juta rupiah",
+      "gold_aksi": "cari_produk",
+      "pred_aksi": "cari_produk",
+      "action_match": true,
+      "gold_argumen": {
+        "kategori": "laptop",
+        "budget": 10000000
+      },
+      "pred_argumen": {
+        "kategori": "laptop",
+        "max_harga": 10000000
+      },
+      "latency_sec": 4.0159,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 37,
+      "pesan": "Anggaran saya saat ini hanya sekitar 4 jutaan saja kak",
+      "gold_aksi": "lanjutan_hasil",
+      "pred_aksi": "cari_produk",
+      "action_match": false,
+      "gold_argumen": {
+        "budget": 4000000,
+        "filter_relatif": "lebih_murah"
+      },
+      "pred_argumen": {
+        "max_harga": 4000000
+      },
+      "latency_sec": 3.792,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 38,
+      "pesan": "Tampaknya keliru kak, peruntukan saya tadi piranti cetak all-in-one",
+      "gold_aksi": "perbaiki_percakapan",
+      "pred_aksi": "perbaiki_percakapan",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {
+        "jenis": "koreksi",
+        "rujukan": "printer all-in-one"
+      },
+      "latency_sec": 3.9742,
+      "state_json": {
+        "produk_tampil": [
+          "KB-P02"
+        ],
+        "kategori": "printer",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 39,
+      "pesan": "Lho saya tadi minta laptop bukan komputer meja desktop kak",
+      "gold_aksi": "perbaiki_percakapan",
+      "pred_aksi": "perbaiki_percakapan",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {
+        "jenis": "koreksi",
+        "rujukan": "laptop bukan komputer meja desktop"
+      },
+      "latency_sec": 3.8029,
+      "state_json": {
+        "produk_tampil": [
+          "KB-D01"
+        ],
+        "kategori": "desktop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 40,
+      "pesan": "Salah mengerti kak, maksud saya tadi tolong ganti tipenya",
+      "gold_aksi": "perbaiki_percakapan",
+      "pred_aksi": "perbaiki_percakapan",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {
+        "jenis": "koreksi",
+        "rujukan": "ganti tipe"
+      },
+      "latency_sec": 3.7449,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L05"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 41,
+      "pesan": "Baiklah, infonya sangat bernilai kak, hendak saya rundingkan",
+      "gold_aksi": "basa_basi",
+      "pred_aksi": "basa_basi",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {
+        "jenis": "terima_kasih"
+      },
+      "latency_sec": 3.4438,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 42,
+      "pesan": "Baik kak nanti saya rembukan dulu dengan keluarga di rumah",
+      "gold_aksi": "basa_basi",
+      "pred_aksi": "basa_basi",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {
+        "jenis": "pamit"
+      },
+      "latency_sec": 3.3345,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L03"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 43,
+      "pesan": "Mantap betul penjelasannya kak, sangat terang dan komplit",
+      "gold_aksi": "basa_basi",
+      "pred_aksi": "basa_basi",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {},
+      "latency_sec": 3.1526,
+      "state_json": {
+        "produk_tampil": [
+          "KB-D02"
+        ],
+        "kategori": "desktop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 44,
+      "pesan": "zxcvbmnpoiuyt lkjhgf",
+      "gold_aksi": "tidak_jelas",
+      "pred_aksi": "tidak_jelas",
+      "action_match": true,
+      "gold_argumen": {
+        "alasan": "tidak_dipahami"
+      },
+      "pred_argumen": {
+        "alasan": "tidak_dipahami"
+      },
+      "latency_sec": 3.4433,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": null,
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 45,
+      "pesan": "109823 487123 ?????...",
+      "gold_aksi": "tidak_jelas",
+      "pred_aksi": "tidak_jelas",
+      "action_match": true,
+      "gold_argumen": {
+        "alasan": "tidak_dipahami"
+      },
+      "pred_argumen": {
+        "alasan": "tidak_dipahami"
+      },
+      "latency_sec": 3.2678,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": null,
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 46,
+      "pesan": "plokmijnbhuyvgcf",
+      "gold_aksi": "tidak_jelas",
+      "pred_aksi": "tidak_jelas",
+      "action_match": true,
+      "gold_argumen": {
+        "alasan": "tidak_dipahami"
+      },
+      "pred_argumen": {
+        "alasan": "tidak_dipahami"
+      },
+      "latency_sec": 3.3998,
+      "state_json": {
+        "produk_tampil": [
+          "KB-L01"
+        ],
+        "kategori": "laptop",
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 47,
+      "pesan": "Salam jumpa admin ReIn, selamat siang menjelang petang",
+      "gold_aksi": "sapa",
+      "pred_aksi": "sapa",
+      "action_match": true,
+      "gold_argumen": {},
+      "pred_argumen": {},
+      "latency_sec": 3.0807,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": null,
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    },
+    {
+      "index": 48,
+      "pesan": "Toko fisiknya berlokasi di daerah mana ya kak?",
+      "gold_aksi": "tanya_info_toko",
+      "pred_aksi": "tanya_info_toko",
+      "action_match": true,
+      "gold_argumen": {
+        "topik": "alamat"
+      },
+      "pred_argumen": {
+        "topik": "alamat"
+      },
+      "latency_sec": 3.3857,
+      "state_json": {
+        "produk_tampil": [],
+        "kategori": null,
+        "budget": null,
+        "merek": null,
+        "profil_aktif": null,
+        "pending_question": null
+      }
+    }
+  ],
+  "code_sha256": "c7871249813c76377862286df8a88cf935cfd71fe4bb4bf4ba557f34dd79222f",
+  "git_head": "9eb03a9293ac26a924fc47d6e500251c7ed2b8d0"
+}

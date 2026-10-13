@@ -1,0 +1,13 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\RAG
+configfile: pytest.ini
+
+FAILED tests/test_integrasi_putaran9.py::test_f1_kriteria_pelanggan_vs_batas_bot_terpisah
+FAILED tests/test_integrasi_putaran9.py::test_f1b_syarat_spesifikasi_dan_kriteria_diabaikan
+FAILED tests/test_integrasi_putaran9.py::test_f2_rujukan_default_produk_terakhir
+FAILED tests/test_integrasi_putaran9.py::test_f3_spek_umum_vs_atribut_tidak_tersedia
+FAILED tests/test_integrasi_putaran9.py::test_f4_teks_memuat_nilai_fakta_spesifik
+FAILED tests/test_integrasi_putaran9.py::test_f5_fallback_deterministik_bebas_nominal
+FAILED tests/test_integrasi_putaran9.py::test_f6_rujukan_riwayat_produk_pernah_tampil
+=========================== 7 failed in 0.28s ===========================

@@ -1,0 +1,109 @@
+varian,nomor,pesan,alat_diharapkan,tools_called,pemeriksaan_ulang,latensi_ms,sukses_panggil_saat_perlu,salah_panggil
+B,1,Halo,tidak_ada,,False,24467.42,False,False
+B,2,"Siang, Mbak",tidak_ada,,False,7668.98,False,False
+B,3,Selamat sore,tidak_ada,,False,6504.48,False,False
+B,4,"Wah, mahal banget. Gak jadi deh",tidak_ada,,False,14603.71,False,False
+B,5,Aku jadi bingung.,tidak_ada,,False,10554.11,False,False
+B,6,Ribet,tidak_ada,,False,14001.02,False,False
+B,7,Aku belum bilang untuk apa. Kok kamu menduga untuk kerja kantor dan kuliah?,tidak_ada,,False,14235.22,False,False
+B,8,Jual monitor?,katalog,katalog,False,16398.39,True,False
+B,9,Kalo laptop ada?,katalog,katalog,False,16981.03,True,False
+B,10,Jual printer apa?,katalog,katalog,False,21053.09,True,False
+B,11,Ada yang ecotank?,katalog,katalog,False,7260.44,True,False
+B,12,Epson ada tipe apa aja?,katalog,katalog,False,7877.08,True,False
+B,13,Laptop asus ada?,katalog,katalog,False,19536.79,True,False
+B,14,Ada mini pc?,katalog,katalog,False,7293.33,True,False
+B,15,"Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",katalog,katalog,False,14547.08,True,False
+B,16,Kalo laptop di bawah 8 juta ada?,katalog,katalog,False,21058.62,True,False
+B,17,"Laptop dengan ram 16 GB, berapa yang paling murah?",katalog,katalog,False,31354.7,True,False
+B,18,Desktop ukuran mini,katalog,katalog,False,15086.94,True,False
+B,19,T82X itu ecotank?,katalog,pengetahuan,False,17669.47,True,False
+B,20,Emangnya ada berapa produk desktop mini yang dijual di sini?,katalog,katalog,False,6448.86,True,False
+B,21,Apa kelebihan ecotank?,pengetahuan,pengetahuan,False,13896.46,True,False
+B,22,"Kan pake tangki tinta, jadi gak pake catrige?",pengetahuan,pengetahuan,False,13597.02,True,False
+B,23,Edit video kan gak berat banget?,pengetahuan,pengetahuan,False,15600.14,True,False
+B,24,Desktop mini sudah termasuk monitor belum?,pengetahuan,pengetahuan,False,8301.65,True,False
+B,25,T82X cuma untuk cetak struk? Gak bisa cetak dokumen?,keduanya,pengetahuan,False,17685.07,True,False
+B,26,Memangnya vivobook go 14 bisa untuk edit video?,keduanya,pengetahuan,False,21853.92,True,False
+B,27,Epson ecotank itu harganya bisa kurang gak?,keduanya,katalog,False,14292.97,True,False
+B1,1,Halo,tidak_ada,,False,6781.48,False,False
+B1,2,"Siang, Mbak",tidak_ada,,False,5794.13,False,False
+B1,3,Selamat sore,tidak_ada,,False,7134.47,False,False
+B1,4,"Wah, mahal banget. Gak jadi deh",tidak_ada,,False,13255.98,False,False
+B1,5,Aku jadi bingung.,tidak_ada,,False,12241.27,False,False
+B1,6,Ribet,tidak_ada,,False,11881.09,False,False
+B1,7,Aku belum bilang untuk apa. Kok kamu menduga untuk kerja kantor dan kuliah?,tidak_ada,,False,13315.83,False,False
+B1,8,Jual monitor?,katalog,katalog,False,10367.54,True,False
+B1,9,Kalo laptop ada?,katalog,katalog,False,6937.34,True,False
+B1,10,Jual printer apa?,katalog,pengetahuan,False,11373.23,True,False
+B1,11,Ada yang ecotank?,katalog,katalog,False,8469.11,True,False
+B1,12,Epson ada tipe apa aja?,katalog,pengetahuan,False,6402.84,True,False
+B1,13,Laptop asus ada?,katalog,katalog,False,13897.27,True,False
+B1,14,Ada mini pc?,katalog,katalog,False,5528.89,True,False
+B1,15,"Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",katalog,katalog,False,8410.48,True,False
+B1,16,Kalo laptop di bawah 8 juta ada?,katalog,katalog,False,10702.76,True,False
+B1,17,"Laptop dengan ram 16 GB, berapa yang paling murah?",katalog,katalog,False,8391.21,True,False
+B1,18,Desktop ukuran mini,katalog,katalog,False,5961.05,True,False
+B1,19,T82X itu ecotank?,katalog,katalog,False,7834.55,True,False
+B1,20,Emangnya ada berapa produk desktop mini yang dijual di sini?,katalog,katalog,False,5210.28,True,False
+B1,21,Apa kelebihan ecotank?,pengetahuan,pengetahuan,False,6038.93,True,False
+B1,22,"Kan pake tangki tinta, jadi gak pake catrige?",pengetahuan,pengetahuan,False,7046.78,True,False
+B1,23,Edit video kan gak berat banget?,pengetahuan,pengetahuan,False,10781.14,True,False
+B1,24,Desktop mini sudah termasuk monitor belum?,pengetahuan,pengetahuan,False,4760.15,True,False
+B1,25,T82X cuma untuk cetak struk? Gak bisa cetak dokumen?,keduanya,pengetahuan,False,12393.56,True,False
+B1,26,Memangnya vivobook go 14 bisa untuk edit video?,keduanya,pengetahuan,False,8644.58,True,False
+B1,27,Epson ecotank itu harganya bisa kurang gak?,keduanya,katalog,False,14040.36,True,False
+P,1,Halo,tidak_ada,,False,1865.69,False,False
+P,2,"Siang, Mbak",tidak_ada,,False,854.68,False,False
+P,3,Selamat sore,tidak_ada,,False,793.87,False,False
+P,4,"Wah, mahal banget. Gak jadi deh",tidak_ada,,False,1256.64,False,False
+P,5,Aku jadi bingung.,tidak_ada,,False,1403.68,False,False
+P,6,Ribet,tidak_ada,,False,806.41,False,False
+P,7,Aku belum bilang untuk apa. Kok kamu menduga untuk kerja kantor dan kuliah?,tidak_ada,,False,1683.2,False,False
+P,8,Jual monitor?,katalog,katalog,False,4852.02,True,False
+P,9,Kalo laptop ada?,katalog,katalog,False,3884.48,True,False
+P,10,Jual printer apa?,katalog,pengetahuan,False,5497.71,True,False
+P,11,Ada yang ecotank?,katalog,katalog,False,2878.47,True,False
+P,12,Epson ada tipe apa aja?,katalog,katalog,False,3862.96,True,False
+P,13,Laptop asus ada?,katalog,katalog,False,5448.94,True,False
+P,14,Ada mini pc?,katalog,katalog,False,4108.59,True,False
+P,15,"Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",katalog,katalog,False,3927.32,True,False
+P,16,Kalo laptop di bawah 8 juta ada?,katalog,katalog,False,5718.24,True,False
+P,17,"Laptop dengan ram 16 GB, berapa yang paling murah?",katalog,katalog,False,6494.32,True,False
+P,18,Desktop ukuran mini,katalog,katalog,False,4320.88,True,False
+P,19,T82X itu ecotank?,katalog,katalog,False,2601.64,True,False
+P,20,Emangnya ada berapa produk desktop mini yang dijual di sini?,katalog,katalog,False,3470.1,True,False
+P,21,Apa kelebihan ecotank?,pengetahuan,pengetahuan,False,3682.31,True,False
+P,22,"Kan pake tangki tinta, jadi gak pake catrige?",pengetahuan,pengetahuan,False,3662.95,True,False
+P,23,Edit video kan gak berat banget?,pengetahuan,pengetahuan,False,4807.59,True,False
+P,24,Desktop mini sudah termasuk monitor belum?,pengetahuan,pengetahuan,False,2874.87,True,False
+P,25,T82X cuma untuk cetak struk? Gak bisa cetak dokumen?,keduanya,pengetahuan,False,4821.91,True,False
+P,26,Memangnya vivobook go 14 bisa untuk edit video?,keduanya,pengetahuan,False,4514.96,True,False
+P,27,Epson ecotank itu harganya bisa kurang gak?,keduanya,katalog,False,2422.83,True,False
+PB1,1,Halo,tidak_ada,,False,7603.56,False,False
+PB1,2,"Siang, Mbak",tidak_ada,,False,7592.97,False,False
+PB1,3,Selamat sore,tidak_ada,,False,6216.28,False,False
+PB1,4,"Wah, mahal banget. Gak jadi deh",tidak_ada,,False,13186.72,False,False
+PB1,5,Aku jadi bingung.,tidak_ada,,False,12093.61,False,False
+PB1,6,Ribet,tidak_ada,,False,13036.61,False,False
+PB1,7,Aku belum bilang untuk apa. Kok kamu menduga untuk kerja kantor dan kuliah?,tidak_ada,,False,14168.07,False,False
+PB1,8,Jual monitor?,katalog,katalog,False,11818.26,True,False
+PB1,9,Kalo laptop ada?,katalog,katalog,False,15150.83,True,False
+PB1,10,Jual printer apa?,katalog,katalog,False,8422.75,True,False
+PB1,11,Ada yang ecotank?,katalog,katalog,False,4370.62,True,False
+PB1,12,Epson ada tipe apa aja?,katalog,katalog,False,5523.87,True,False
+PB1,13,Laptop asus ada?,katalog,katalog,False,11998.57,True,False
+PB1,14,Ada mini pc?,katalog,katalog,False,5894.04,True,False
+PB1,15,"Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",katalog,katalog,False,8301.9,True,False
+PB1,16,Kalo laptop di bawah 8 juta ada?,katalog,katalog,False,11153.26,True,False
+PB1,17,"Laptop dengan ram 16 GB, berapa yang paling murah?",katalog,katalog,False,10782.22,True,False
+PB1,18,Desktop ukuran mini,katalog,katalog,False,6806.71,True,False
+PB1,19,T82X itu ecotank?,katalog,katalog,False,13896.7,True,False
+PB1,20,Emangnya ada berapa produk desktop mini yang dijual di sini?,katalog,katalog,False,8170.86,True,False
+PB1,21,Apa kelebihan ecotank?,pengetahuan,pengetahuan,False,5491.92,True,False
+PB1,22,"Kan pake tangki tinta, jadi gak pake catrige?",pengetahuan,pengetahuan,False,5994.11,True,False
+PB1,23,Edit video kan gak berat banget?,pengetahuan,pengetahuan,False,10406.51,True,False
+PB1,24,Desktop mini sudah termasuk monitor belum?,pengetahuan,pengetahuan,False,4543.4,True,False
+PB1,25,T82X cuma untuk cetak struk? Gak bisa cetak dokumen?,keduanya,pengetahuan,False,12829.0,True,False
+PB1,26,Memangnya vivobook go 14 bisa untuk edit video?,keduanya,pengetahuan,False,7815.73,True,False
+PB1,27,Epson ecotank itu harganya bisa kurang gak?,keduanya,katalog,False,8366.2,True,False

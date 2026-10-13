@@ -1,0 +1,594 @@
+[
+  {
+    "query": "Jual laptop untuk desain gak?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Alhamdulillah. Aku baik. Jual laptop untuk desain gak?",
+        "turn_idx": 1,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"laptop untuk desain\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Halo Kak, saya Reni dari ReIn Komputer. Untuk kebutuhan desain, Kakak bisa lihat panduan yang saya dapatkan ya.\n\nBerdasarkan kebutuhan desain grafis 2D dan fotografer, idealnya Kakak cari laptop dengan RAM minimal 16GB, SSD 512GB NVMe, dan yang paling penting adalah akurasi warna layarnya tinggi. Kalau Kakak mau yang lebih umum untuk kerja dan sesekali main game, spesifikasi yang dibutuhkan sedikit berbeda."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Alhamdulillah. Aku baik. Jual laptop untuk desain gak?",
+        "turn_idx": 1,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"laptop untuk desain\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Halo Kak, saya Reni dari ReIn Komputer. Untuk kebutuhan desain, Kakak bisa lihat panduan spesifiknya dulu ya. Berdasarkan panduan, untuk desain grafis 2D dan fotografer, direkomendasikan minimal RAM 16GB dan CPU Core i7 atau Ryzen 7. Kalau Kakak mau tahu rekomendasi produknya, kasih tahu Kakak budget atau preferensi mereknya dong."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Alhamdulillah. Aku baik. Jual laptop untuk desain gak?",
+        "turn_idx": 1,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"laptop untuk desain\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Halo Kak, saya Reni dari ReIn Komputer. Untuk kebutuhan desain, Kakak bisa lihat panduan yang saya cek tadi.\n\nBerdasarkan kebutuhan desain grafis 2D dan fotografer, Kakak perlu fokus pada akurasi warna layar dan RAM yang lega. Untuk itu, saya sarankan minimal RAM 16GB dan layar dengan akurasi warna yang baik. Apakah Kakak sudah ada perkiraan budget atau preferensi merek tertentu?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Alhamdulillah. Aku baik. Jual laptop untuk desain gak?",
+        "turn_idx": 1,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"panduan memilih laptop untuk desain\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Halo Kak, saya Reni dari ReIn Komputer. Untuk kebutuhan desain, Kakak perlu tahu dulu untuk apa desainnya dan berapa budgetnya biar rekomendasinya pas. Secara umum, untuk desain grafis atau editing foto, minimal disarankan RAM 16GB dan SSD minimal 512GB. Kalau untuk video editing atau 3D, lebih baik cari yang punya VGA dedicated."
+      }
+    ]
+  },
+  {
+    "query": "Kasih aku spek ROG tadi deh sama gambarnya",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Kasih aku spek ROG tadi deh sama gambarnya",
+        "turn_idx": 8,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kode_atau_nama\": \"ASUS ROG Strix G16 G614JI\", \"kirim_foto\": true})",
+        "foto_dikirim": [
+          "KB-L28"
+        ],
+        "balasan_verbatim": "Ini dia detailnya Kak. ASUS ROG Strix G16 G614JI harganya Rp32.999.000. Laptop ini udah spek dewa banget dengan prosesor Intel Core i9-13980HX, RAM 32 GB DDR5, dan grafis NVIDIA GeForce RTX 4070 8GB. Layarnya juga 16 inch QHD+ IPS dengan *refresh rate* 240Hz. Foto produknya sudah saya kirimkan ya."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Kasih aku spek ROG tadi deh sama gambarnya",
+        "turn_idx": 8,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kode_atau_nama\": \"KB-L28\", \"kirim_foto\": true})",
+        "foto_dikirim": [
+          "KB-L28"
+        ],
+        "balasan_verbatim": "Ini dia detail spesifikasi untuk ASUS ROG Strix G16 G614JI yang Kakak maksud. Laptop ini udah dilengkapi Intel Core i9-13980HX, RAM 32 GB DDR5, dan kartu grafis NVIDIA GeForce RTX 4070 8GB. Layarnya juga udah 16 inch QHD+ IPS dengan *refresh rate* 240Hz. Harganya saat ini Rp32.999.000."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Kasih aku spek ROG tadi deh sama gambarnya",
+        "turn_idx": 8,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kirim_foto\": true, \"kode_atau_nama\": \"KB-L28\"})",
+        "foto_dikirim": [
+          "KB-L28"
+        ],
+        "balasan_verbatim": "Ini dia detail untuk ASUS ROG Strix G16 G614JI yang Kakak maksud. Harganya Rp32.999.000, dan ini laptop dengan prosesor Intel Core i9-13980HX, RAM 32 GB DDR5, serta GPU NVIDIA GeForce RTX 4070 8GB. Layarnya juga udah 16 inch QHD+ IPS dengan *refresh rate* 240Hz, jadi buat kerja berat atau main game bakal lancar banget. Saya kirimkan fotonya ya, Kak."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Kasih aku spek ROG tadi deh sama gambarnya",
+        "turn_idx": 8,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kirim_foto\": true, \"kode_atau_nama\": \"ASUS ROG Strix G16 G614JI\"})",
+        "foto_dikirim": [
+          "KB-L28"
+        ],
+        "balasan_verbatim": "Ini dia detail untuk ASUS ROG Strix G16 G614JI. Harganya Rp32.999.000. Laptop ini udah dilengkapi dengan Intel Core i9-13980HX, RAM 32 GB DDR5, dan kartu grafis NVIDIA GeForce RTX 4070 8GB. Layarnya juga 16 inch QHD+ IPS dengan *refresh rate* 240Hz."
+      }
+    ]
+  },
+  {
+    "query": "Gambarnya mana?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Gambarnya mana?",
+        "turn_idx": 9,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Mohon maaf Kak, gambarnya sudah saya lampirkan di balasan sebelumnya ya. Itu adalah tampilan visual dari ASUS ROG Strix G16 G614JI yang speknya tadi kita bahas. Semoga informasinya membantu Kakak dalam menentukan pilihan terbaik!"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Gambarnya mana?",
+        "turn_idx": 9,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Ini Kak, fotonya sudah saya lampirkan ya. Semoga spesifikasi dan gambarnya membantu Kakak dalam mengambil keputusan. Kalau ada pertanyaan lain soal produk atau perbandingan, jangan sungkan kasih tahu saya lagi ya."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Gambarnya mana?",
+        "turn_idx": 9,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kode_atau_nama\": \"KB-L28\", \"kirim_foto\": true})",
+        "foto_dikirim": [
+          "KB-L28"
+        ],
+        "balasan_verbatim": "Mohon maaf Kak, tadi saya lupa menyertakan fotonya. Ini dia foto untuk ASUS ROG Strix G16 G614JI yang Kakak mau. Seperti yang saya sebutkan sebelumnya, laptop ini speknya udah mantap banget buat kerja berat kayak 3D atau AI lokal."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Gambarnya mana?",
+        "turn_idx": 9,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kirim_foto\": true, \"kode_atau_nama\": \"ASUS ROG Strix G16 G614JI\"})",
+        "foto_dikirim": [
+          "KB-L28"
+        ],
+        "balasan_verbatim": "Kak, ini fotonya ya. ASUS ROG Strix G16 G614JI ini speknya udah lengkap banget buat kerja berat kayak rendering 3D atau eksplorasi AI lokal. Jadi, dengan Intel Core i9-13980HX, RTX 4070 8GB, dan RAM 32 GB, performanya dijamin oke banget buat kebutuhan Kakak."
+      }
+    ]
+  },
+  {
+    "query": "Kalo desktop untuk desain 3D, apa rekomendasimu?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Kalo desktop untuk desain 3D, apa rekomendasimu?",
+        "turn_idx": 16,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"desktop untuk desain 3D\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Menurut panduan kami, untuk desain 3D, Kakak perlu fokus pada performa CPU yang tinggi, RAM yang besar, dan GPU dengan VRAM yang memadai. Profil yang paling relevan adalah untuk Arsitek dan Mahasiswa Teknik yang menggunakan software seperti AutoCAD, SketchUp, atau Lumion.\n\nSecara spesifik, kami merekomendasikan minimal RAM 32GB dan GPU dengan VRAM yang cukup. Karena Kakak menyebut desktop, desktop biasanya lebih fleksibel untuk di-upgrade dibanding laptop."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Kalo desktop untuk desain 3D, apa rekomendasimu?",
+        "turn_idx": 16,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"desktop untuk desain 3D\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Halo Kak, untuk kebutuhan desain 3D, ini memang butuh spesifikasi yang cukup tinggi ya. Berdasarkan panduan yang ada, untuk aktivitas seperti pemodelan 3D, *drafting*, dan *rendering* arsitektur, Kakak perlu fokus pada performa CPU yang tinggi, RAM yang besar, dan GPU dengan VRAM yang memadai.\n\nSecara umum, untuk desain 3D, saya sarankan minimal CPU Core i7 atau Ryzen 7 seri H, RAM minimal 32GB, dan SSD minimal 1TB. Kalau Kakak mau lihat rekomendasi produk desktop yang sudah memenuhi spek ini, saya bisa cek di katalog."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Kalo desktop untuk desain 3D, apa rekomendasimu?",
+        "turn_idx": 16,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"desktop untuk desain 3D\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, untuk desain 3D, Kakak perlu mempertimbangkan beberapa komponen utama biar hasilnya maksimal. Berdasarkan panduan untuk arsitek dan mahasiswa teknik, performa single-core CPU yang tinggi, RAM besar, dan GPU dengan VRAM yang memadai itu penting banget.\n\nSecara umum, Kakak disarankan minimal pakai RAM 32GB dan SSD 1TB. Kalau mau rekomendasi produk spesifik, Kakak perlu kasih tahu budget atau apakah Kakak lebih condong ke laptop atau desktop."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Kalo desktop untuk desain 3D, apa rekomendasimu?",
+        "turn_idx": 16,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"desktop untuk desain 3D\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, untuk desain 3D, Kakak perlu fokus ke performa CPU dan GPU yang kuat, serta RAM yang besar. Berdasarkan panduan, untuk aktivitas seperti CAD, SketchUp, atau rendering, direkomendasikan minimal CPU Core i7 atau Ryzen 7 seri H, RAM minimal 32GB, dan GPU dengan VRAM yang memadai. Selain itu, pastikan menggunakan SSD NVMe sebagai penyimpanan utama ya."
+      }
+    ]
+  },
+  {
+    "query": "Gak ada yang ram 32 GB?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Gak ada yang ram 32 GB?",
+        "turn_idx": 18,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kategori\": \"desktop\", \"kirim_foto\": true, \"ram_min_gb\": 32})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Mohon maaf Kak, setelah saya cek di katalog, saat ini belum ada produk desktop yang spesifik memiliki RAM minimal 32 GB. Mungkin Kakak mau coba naikkan budget atau menurunkan sedikit spesifikasi RAM yang dicari?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Gak ada yang ram 32 GB?",
+        "turn_idx": 18,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kategori\": \"desktop\", \"kirim_foto\": true, \"ram_min_gb\": 32})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Maaf Kak, setelah saya cek di katalog untuk desktop dengan RAM minimal 32GB, saat ini belum ada produk yang tersedia. Mungkin Kakak mau coba cek dengan batas RAM yang sedikit lebih rendah dulu?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Gak ada yang ram 32 GB?",
+        "turn_idx": 18,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kategori\": \"desktop\", \"kirim_foto\": true, \"ram_min_gb\": 32})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Maaf Kak, setelah dicek di katalog, saat ini belum ada produk desktop yang spesifik dengan RAM minimal 32 GB. Tapi, Kakak bisa cek lagi spesifikasi produk yang tadi saya sebutkan, karena biasanya RAM bisa di-upgrade sendiri sesuai kebutuhan desain 3D Kakak."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Gak ada yang ram 32 GB?",
+        "turn_idx": 18,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kategori\": \"desktop\", \"kirim_foto\": true, \"ram_min_gb\": 32})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Mohon maaf Kak, setelah saya cek di katalog, saat ini belum ada produk desktop yang spesifikasinya minimal RAM 32GB. Mungkin Kakak mau coba naikkan sedikit budget atau kita cek lagi dengan spesifikasi RAM yang sedikit di bawah 32GB?"
+      }
+    ]
+  },
+  {
+    "query": "ROG itu bukannya untuk gaming?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "ROG itu bukannya untuk gaming?",
+        "turn_idx": 4,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"ROG itu bukannya untuk gaming?\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Menurut panduan yang saya cek, ternyata tidak melulu untuk *gaming* Kak. ROG itu sebenarnya adalah lini produk dari ASUS yang memang sangat kuat di performa tinggi, jadi memang sering banget dipakai buat *gaming* berat.\n\nTapi, karena performanya yang tinggi, dia juga sangat mumpuni buat kebutuhan profesional yang berat seperti rendering 3D atau desain grafis kompleks. Jadi, meskipun identik dengan *gaming*, speknya juga sangat cocok buat kerjaan yang butuh tenaga besar."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "ROG itu bukannya untuk gaming?",
+        "turn_idx": 4,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"Apakah laptop gaming seperti ROG juga cocok untuk desain 3D?\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Laptop gaming seperti ROG itu sebenarnya sangat cocok juga untuk desain 3D, Kak. Karena laptop jenis ini memang dirancang dengan komponen performa tinggi, seperti CPU seri H/HX dan GPU dedicated yang kuat. Jadi, meskipun fokus utamanya buat gaming, speknya yang tinggi justru sangat membantu banget buat proses rendering 3D atau editing video berat."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "ROG itu bukannya untuk gaming?",
+        "turn_idx": 4,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"fungsi laptop ROG untuk desain\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Wah, Kak, memang benar laptop dengan branding ROG itu memang sangat kuat di sisi gaming. Tapi, jangan salah dulu ya, Kak.\n\nBerdasarkan informasi yang saya cek, laptop dengan performa tinggi seperti seri ROG juga bisa banget dipakai buat desain 3D. Intinya, yang penting adalah spesifikasi internalnya yang kuat, seperti GPU dedicated dan RAM besar. Jadi, performa gaming dan desain 3D itu seringkali pakai komponen yang sama-sama 'berat'."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "ROG itu bukannya untuk gaming?",
+        "turn_idx": 4,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"Apakah laptop ROG hanya untuk gaming atau juga bisa untuk desain 3D?\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Maaf Kak, ternyata laptop ROG itu memang dikenal karena performa gaming-nya yang tinggi. Tapi, karena speknya yang kuat, laptop seri ROG juga sangat mumpuni banget buat kerja berat kayak desain 3D atau video editing. Jadi, performa tinggi yang Kakak butuhkan untuk 3D itu memang sudah didukung sama seri ini."
+      }
+    ]
+  },
+  {
+    "query": "Baiklah. DAri model yang kamu tawarkan, mana yang bisa upgrade ram?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Baiklah. DAri model yang kamu tawarkan, mana yang bisa upgrade ram?",
+        "turn_idx": 21,
+        "tools_called": [
+          "katalog",
+          "katalog",
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kode_atau_nama\": \"KB-D14\"}); katalog({\"kode_atau_nama\": \"KB-D09\"}); katalog({\"kode_atau_nama\": \"KB-D08\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, karena ketiga model yang saya sebutkan itu adalah tipe desktop tower atau mid-tower, secara umum memang dirancang untuk bisa di-upgrade RAM-nya. Untuk KB-D14 dan KB-D09, RAM-nya menggunakan tipe DDR5, sedangkan KB-D08 menggunakan DDR4. Namun, untuk memastikan kapasitas maksimal RAM yang didukung, Kakak sebaiknya konfirmasi langsung ke toko atau melihat manual unit fisiknya ya."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Baiklah. DAri model yang kamu tawarkan, mana yang bisa upgrade ram?",
+        "turn_idx": 21,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"model mana yang bisa upgrade ram\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Menurut panduan umum, Kak, banyak laptop tipis yang RAM-nya sudah disolder dan tidak bisa ditambah. Jadi, saat memilih, Kakak harus cek spesifikasi detailnya apakah RAM-nya bisa di-upgrade atau tidak. Untuk desktop biasanya lebih mudah di-upgrade RAM-nya."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Baiklah. DAri model yang kamu tawarkan, mana yang bisa upgrade ram?",
+        "turn_idx": 21,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"cara upgrade ram desktop komputer\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Berdasarkan panduan umum, secara umum, komputer tipe desktop biasanya lebih mudah untuk di-upgrade RAM-nya dibandingkan laptop. Model desktop yang saya sebutkan sebelumnya seperti Acer Aspire TC-1760, ASUS ROG Strix G10CE, MSI MAG Infinite S3, HP Pro Tower 280 G9, dan ASUS ROG Desktop G700 GM700TZ semuanya adalah tipe desktop, jadi secara fisik mereka dirancang untuk bisa di-upgrade RAM-nya Kak. Namun, untuk memastikan kapasitas maksimal dan jenis RAM yang kompatibel, sebaiknya dicek spesifikasi detail produknya lagi ya."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Baiklah. DAri model yang kamu tawarkan, mana yang bisa upgrade ram?",
+        "turn_idx": 21,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"kemampuan upgrade ram desktop pc\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Menurut panduan umum, untuk desktop PC seperti yang saya sebutkan sebelumnya, umumnya RAM-nya bisa di-upgrade karena arsitekturnya yang lebih terbuka dibandingkan laptop tipis. Jadi, secara umum, model desktop kami dirancang untuk mendukung peningkatan kapasitas RAM."
+      }
+    ]
+  },
+  {
+    "query": "Kasih rekomendasi",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Kasih rekomendasi",
+        "turn_idx": 30,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"rekomendasi printer untuk cetak dokumen volume tinggi dan irit\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Menurut panduan umum, untuk cetak dokumen volume tinggi dan irit, Kakak sebaiknya mempertimbangkan printer tipe tangki tinta atau laser monokrom. Printer tangki tinta bagus untuk dokumen dan foto volume menengah sampai sering, sementara laser monokrom sangat cepat dan hemat untuk teks hitam putih volume tinggi seperti di kantor.\n\nBerdasarkan pilihan sebelumnya, Epson EcoTank L3210 (tangki tinta) dan Brother HL-L2365DW (laser monokrom) adalah dua opsi yang sangat berbeda fungsinya. Kalau fokusnya murni dokumen teks hitam putih super banyak, laser lebih unggul. Tapi kalau kadang perlu cetak warna atau foto, tangki tinta lebih fleksibel."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Kasih rekomendasi",
+        "turn_idx": 30,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, rekomendasi terbaik itu tergantung kebutuhan utama Kakak. Kalau fokusnya dokumen teks hitam putih volume super banyak, Brother HL-L2365DW tipe laser monokrom paling irit. Tapi kalau Kakak butuh cetak warna juga dan volume-nya sering, Epson EcoTank L3210 atau Canon PIXMA G3020 tipe tangki tinta lebih cocok. Kira-kira, Kakak lebih mementingkan budget atau fungsi cetak warna?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Kasih rekomendasi",
+        "turn_idx": 30,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kategori\": \"printer\", \"kirim_foto\": true})",
+        "foto_dikirim": [
+          "KB-P07",
+          "KB-P08",
+          "KB-P06",
+          "KB-P10"
+        ],
+        "balasan_verbatim": "Kak, karena Kakak belum spesifik, aku kasih beberapa rekomendasi printer yang lagi banyak dicari ya. Ada HP DeskJet Ink Advantage 2336 seharga Rp650.000 buat penggunaan harian. Kalau buat kerja kantor, Brother HL-L2365DW (Rp1.750.000) atau Epson EcoTank L3210 (Rp2.250.000) ini bagus banget. Canon PIXMA G3020 juga pilihan bagus buat yang butuh fitur Wi-Fi."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Kasih rekomendasi",
+        "turn_idx": 30,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"printer irit untuk cetak dokumen banyak\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, berdasarkan panduan yang ada, untuk cetak dokumen banyak dan ingin irit, Kakak sebaiknya mempertimbangkan dua jenis utama. Pertama, kalau dokumennya kebanyakan teks hitam putih volume tinggi, Kakak paling cocok pakai printer laser monokrom karena cepat dan hemat. Kedua, kalau dokumennya campuran teks dan kadang perlu warna, Kakak bisa lihat printer *inkjet tangki tinta* karena biaya cetak per lembarannya rendah."
+      }
+    ]
+  },
+  {
+    "query": "Lihat spek ecotank deh. Kalo ada sama gambarnya",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Lihat spek ecotank deh. Kalo ada sama gambarnya",
+        "turn_idx": 31,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kirim_foto\": true, \"kode_atau_nama\": \"Epson EcoTank L3210\"})",
+        "foto_dikirim": [
+          "KB-P06"
+        ],
+        "balasan_verbatim": "Epson EcoTank L3210 harganya Rp2.250.000 Kak. Ini printer tipe tangki tinta yang fungsinya print, scan, dan copy. Spek lengkapnya menunjukkan resolusi cetak 5760 x 1440 dpi dan kecepatannya 10 ipm hitam / 5 ipm warna (ISO). Printer ini juga bisa cetak foto tanpa tepi sampai ukuran 4R, dan konektivitasnya pakai USB 2.0."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Lihat spek ecotank deh. Kalo ada sama gambarnya",
+        "turn_idx": 31,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kirim_foto\": true, \"kode_atau_nama\": \"KB-P06\"})",
+        "foto_dikirim": [
+          "KB-P06"
+        ],
+        "balasan_verbatim": "Ini dia detail untuk Epson EcoTank L3210, Kak. Harganya Rp2.250.000. Printer ini tipe tangki tinta, jadi cocok banget buat cetak dokumen banyak dan irit. Fungsinya lengkap, bisa print, scan, dan copy. Spesifikasinya menunjukkan resolusi cetak 5760 x 1440 dpi dan bisa cetak foto tanpa tepi sampai ukuran 4R."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Lihat spek ecotank deh. Kalo ada sama gambarnya",
+        "turn_idx": 31,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kode_atau_nama\": \"KB-P06\", \"kirim_foto\": true})",
+        "foto_dikirim": [
+          "KB-P06"
+        ],
+        "balasan_verbatim": "Epson EcoTank L3210 harganya Rp2.250.000 Kak. Ini printer tipe tangki tinta yang fungsinya print, scan, dan copy. Spek lengkapnya menunjukkan resolusi 5760 x 1440 dpi dan kecepatan cetak 10 ipm hitam. Printer ini juga bisa cetak foto tanpa tepi sampai ukuran 4R."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Lihat spek ecotank deh. Kalo ada sama gambarnya",
+        "turn_idx": 31,
+        "tools_called": [
+          "katalog"
+        ],
+        "argumen_alat": "katalog({\"kata_kunci\": \"ecotank\", \"kirim_foto\": true})",
+        "foto_dikirim": [
+          "KB-P06"
+        ],
+        "balasan_verbatim": "Kak, saya sudah cek untuk printer dengan tipe EcoTank. Ada Epson EcoTank L3210 dengan harga Rp2.250.000. Printer ini termasuk tipe tangki tinta dan fungsinya untuk print, scan, serta copy, jadi cocok untuk kebutuhan kuliah atau kantor. Saya kirimkan fotonya ya Kak."
+      }
+    ]
+  },
+  {
+    "query": "Di mana aku bisa lihat katalog kamu?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Di mana aku bisa lihat katalog kamu?",
+        "turn_idx": 33,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"cara melihat katalog produk ReIn Komputer\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, untuk melihat katalog produk, Kakak cukup bertanya langsung ke saya di chat ini saja. Saya akan bantu carikan informasi mengenai produk, harga, atau spesifikasi yang Kakak butuhkan. Kami tidak menyediakan website katalog atau tautan khusus di sini."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Di mana aku bisa lihat katalog kamu?",
+        "turn_idx": 33,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, Kakak tidak perlu repot-repot lihat katalognya secara langsung kok. Saya di sini untuk bantu Kakak cari produk yang paling pas sesuai kebutuhan. Kakak mau cari kategori apa nih, misalnya laptop, printer, atau monitor? Atau mungkin ada budget tertentu yang Kakak rencanakan?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Di mana aku bisa lihat katalog kamu?",
+        "turn_idx": 33,
+        "tools_called": [
+          "pengetahuan"
+        ],
+        "argumen_alat": "pengetahuan({\"pertanyaan\": \"cara melihat katalog produk toko\"})",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Maaf Kak, untuk melihat katalog lengkap, Kakak bisa langsung bertanya di sini aja ya. Semua informasi mengenai produk, harga, dan spesifikasi terbaru akan aku carikan langsung buat Kakak di chat ini. Aku tidak menyediakan katalog fisik atau tautan website katalog ya."
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Di mana aku bisa lihat katalog kamu?",
+        "turn_idx": 33,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Kak, karena kita lagi ngobrol lewat chat, Kakak nggak perlu repot-repot lihat katalog fisik ya. Semua informasi produk, mulai dari harga, spesifikasi, sampai ketersediaan, bisa saya bantu carikan langsung di sini. Kakak mau cari produk kategori apa atau merek apa nih?"
+      }
+    ]
+  },
+  {
+    "query": "Sama Reni kan?",
+    "cases": [
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 1,
+        "user_msg": "Sama Reni kan?",
+        "turn_idx": 34,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Iya Kak, saya Reni, chatbot CS dari ReIn Komputer. Ada lagi yang bisa saya bantu terkait produk atau kebijakan toko hari ini?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=False",
+        "ulangan": 2,
+        "user_msg": "Sama Reni kan?",
+        "turn_idx": 34,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Iya Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu lagi nih Kak? Mau cari produk atau ada pertanyaan lain soal komputer?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 1,
+        "user_msg": "Sama Reni kan?",
+        "turn_idx": 34,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Iya Kak, benar. Aku Reni, staf CS dari ReIn Komputer. Ada lagi yang bisa aku bantu Kak?"
+      },
+      {
+        "varian": "ATURAN_LAYANAN_P28=True",
+        "ulangan": 2,
+        "user_msg": "Sama Reni kan?",
+        "turn_idx": 34,
+        "tools_called": [],
+        "argumen_alat": "-",
+        "foto_dikirim": [],
+        "balasan_verbatim": "Iya Kak, benar banget. Saya Reni, staf CS dari ReIn Komputer. Ada lagi yang bisa saya bantu Kak terkait produk atau informasi lain hari ini?"
+      }
+    ]
+  }
+]

@@ -1,0 +1,722 @@
+{
+  "A": {
+    "total_runs": 81,
+    "tingkat_panggil_alat_pct": 16.7,
+    "ketepatan_alat_pct": 38.3,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 50,
+    "janji_tanpa_aksi_items": [
+      {
+        "varian": "A",
+        "pesan": "Jual monitor?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari monitor ya? Kami punya berbagai pilihan monitor dari berbagai merek. Boleh tahu Kakak ada preferensi merek, ukuran, atau kebutuhan khusus untuk monitornya?",
+        "eval_count": "37",
+        "latensi_ms": "3418.81"
+      },
+      {
+        "varian": "A",
+        "pesan": "Jual monitor?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, di ReIn Komputer kami jual berbagai jenis monitor lho. Kakak cari monitor untuk kebutuhan apa nih?",
+        "eval_count": "26",
+        "latensi_ms": "2995.5"
+      },
+      {
+        "varian": "A",
+        "pesan": "Jual monitor?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari monitor ya? Kami punya berbagai pilihan monitor dari berbagai merek. Kakak cari monitor untuk keperluan apa nih, biar saya bantu carikan yang pas?",
+        "eval_count": "35",
+        "latensi_ms": "3267.5"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kalo laptop ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Tentu Kak, di toko ReIn Komputer ada banyak pilihan laptop nih. Kakak cari laptop untuk kebutuhan apa nih biar saya bantu carikan yang pas?",
+        "eval_count": "33",
+        "latensi_ms": "3339.82"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kalo laptop ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Tentu Kak, di toko ReIn Komputer ada banyak pilihan laptop nih. Kakak cari laptop untuk kebutuhan apa nih biar saya bantu carikan yang pas?",
+        "eval_count": "33",
+        "latensi_ms": "3203.15"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kalo laptop ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Tentu Kak, di toko ReIn Komputer kami ada banyak pilihan laptop. Kakak cari laptop untuk keperluan apa nih?",
+        "eval_count": "26",
+        "latensi_ms": "2981.9"
+      },
+      {
+        "varian": "A",
+        "pesan": "Jual printer apa?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Kakak mau cari printer buat keperluan apa nih? Biar lebih pas rekomendasinya, boleh tahu mau dipakai buat nge-print dokumen biasa, foto, atau buat kebutuhan kantor yang banyak?",
+        "eval_count": "39",
+        "latensi_ms": "3513.94"
+      },
+      {
+        "varian": "A",
+        "pesan": "Jual printer apa?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari printer untuk keperluan apa nih? Biar saya bantu carikan yang paling pas ya.",
+        "eval_count": "23",
+        "latensi_ms": "2918.4"
+      },
+      {
+        "varian": "A",
+        "pesan": "Jual printer apa?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari printer untuk kebutuhan apa nih? Biar saya bantu carikan yang paling pas ya.",
+        "eval_count": "23",
+        "latensi_ms": "2891.14"
+      },
+      {
+        "varian": "A",
+        "pesan": "Ada yang ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, yang maksudnya ecotank ini untuk printer ya? Boleh saya cek dulu di katalog kami untuk merek atau tipe tertentu?",
+        "eval_count": "29",
+        "latensi_ms": "3207.51"
+      },
+      {
+        "varian": "A",
+        "pesan": "Ada yang ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, yang dimaksud ecotank ini untuk printer ya? Boleh saya cek dulu di katalog kami untuk produk dengan teknologi ecotank.",
+        "eval_count": "30",
+        "latensi_ms": "3141.45"
+      },
+      {
+        "varian": "A",
+        "pesan": "Ada yang ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, yang dimaksud ecotank ini untuk printer ya? Boleh saya cek dulu di katalog kami untuk produk yang ada ecotank-nya.",
+        "eval_count": "32",
+        "latensi_ms": "3193.66"
+      },
+      {
+        "varian": "A",
+        "pesan": "Epson ada tipe apa aja?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau tahu tipe printer Epson yang mana nih? Boleh tolong sebutkan kebutuhan Kakak biar saya bantu cek katalognya?",
+        "eval_count": "30",
+        "latensi_ms": "3253.22"
+      },
+      {
+        "varian": "A",
+        "pesan": "Epson ada tipe apa aja?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau tahu tipe printer Epson yang mana nih? Saya cek dulu ya di katalog kami untuk merek Epson.",
+        "eval_count": "24",
+        "latensi_ms": "2955.85"
+      },
+      {
+        "varian": "A",
+        "pesan": "Epson ada tipe apa aja?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau tahu tipe printer Epson yang mana nih? Boleh tolong sebutkan kebutuhan Kakak biar saya bantu cek katalognya.",
+        "eval_count": "30",
+        "latensi_ms": "3141.87"
+      },
+      {
+        "varian": "A",
+        "pesan": "Laptop asus ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, di ReIn Komputer ada banyak banget pilihan laptop Asus lho. Kakak mau cari berdasarkan kebutuhan tertentu atau ada tipe yang spesifik?",
+        "eval_count": "32",
+        "latensi_ms": "3265.78"
+      },
+      {
+        "varian": "A",
+        "pesan": "Laptop asus ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, di ReIn Komputer ada banyak banget pilihan laptop Asus lho. Kakak mau cari berdasarkan kebutuhan tertentu atau ada tipe spesifik yang diinginkan?",
+        "eval_count": "34",
+        "latensi_ms": "3246.0"
+      },
+      {
+        "varian": "A",
+        "pesan": "Laptop asus ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, di ReIn Komputer ada banyak pilihan laptop Asus lho. Kakak mau cari berdasarkan kebutuhan tertentu atau ada tipe yang spesifik?",
+        "eval_count": "31",
+        "latensi_ms": "3144.94"
+      },
+      {
+        "varian": "A",
+        "pesan": "Ada mini pc?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari mini PC ya? Boleh saya cek dulu ketersediaan dan pilihan mini PC yang ada di katalog kami.",
+        "eval_count": "28",
+        "latensi_ms": "3210.15"
+      },
+      {
+        "varian": "A",
+        "pesan": "Ada mini pc?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari mini PC ya? Boleh saya cek dulu ketersediaan dan pilihannya untuk Kakak.",
+        "eval_count": "25",
+        "latensi_ms": "2976.04"
+      },
+      {
+        "varian": "A",
+        "pesan": "Ada mini pc?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari mini PC ya? Boleh saya cek dulu ketersediaan dan pilihannya untuk Kakak.",
+        "eval_count": "25",
+        "latensi_ms": "2991.14"
+      },
+      {
+        "varian": "A",
+        "pesan": "Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari desktop mini ya. Saya cek dulu katalognya untuk rekomendasi dengan budget maksimal 6 juta.",
+        "eval_count": "25",
+        "latensi_ms": "3134.01"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kalo laptop di bawah 8 juta ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari laptop di bawah 8 juta ya. Boleh saya cek dulu ketersediaannya menggunakan katalog kami?",
+        "eval_count": "27",
+        "latensi_ms": "3072.63"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kalo laptop di bawah 8 juta ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Boleh Kak, biar saya cek dulu ya untuk laptop di bawah 8 juta. Saya akan gunakan katalog untuk mencarikan beberapa pilihan terbaik buat Kakak.",
+        "eval_count": "33",
+        "latensi_ms": "3252.91"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kalo laptop di bawah 8 juta ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Boleh Kak, biar saya cek dulu ya. Saya akan gunakan katalog untuk mencari laptop dengan budget maksimal 8 juta.",
+        "eval_count": "25",
+        "latensi_ms": "2979.72"
+      },
+      {
+        "varian": "A",
+        "pesan": "Desktop ukuran mini",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari desktop ukuran mini ya? Boleh saya cek dulu ketersediaan dan pilihan yang ada di katalog kami?",
+        "eval_count": "27",
+        "latensi_ms": "3167.35"
+      },
+      {
+        "varian": "A",
+        "pesan": "Desktop ukuran mini",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari desktop ukuran mini ya? Boleh saya cek dulu ketersediaan dan pilihan modelnya untuk Kakak?",
+        "eval_count": "27",
+        "latensi_ms": "3065.52"
+      },
+      {
+        "varian": "A",
+        "pesan": "Desktop ukuran mini",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau cari desktop ukuran mini ya? Boleh saya cek dulu ketersediaan dan pilihan yang ada di katalog kami?",
+        "eval_count": "27",
+        "latensi_ms": "3053.4"
+      },
+      {
+        "varian": "A",
+        "pesan": "T82X itu ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, T82X itu memang salah satu seri printer yang menggunakan teknologi EcoTank. Kalau Kakak mau tahu lebih detail soal printer EcoTank atau mau cek tipe T82X yang spesifik, saya bisa bantu cek di katalog ya.",
+        "eval_count": "51",
+        "latensi_ms": "3835.08"
+      },
+      {
+        "varian": "A",
+        "pesan": "T82X itu ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, T82X itu model printer, dan iya Kak, printer seri T82X dari Epson itu memang termasuk tipe EcoTank. Mau Kakak cek harga atau spesifikasi lengkapnya dulu?",
+        "eval_count": "43",
+        "latensi_ms": "3492.23"
+      },
+      {
+        "varian": "A",
+        "pesan": "T82X itu ecotank?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, T82X itu memang salah satu seri printer yang menggunakan teknologi EcoTank. Kalau Kakak mau tahu lebih detail soal printer EcoTank atau mau cek tipe T82X yang spesifik, boleh saya bantu cek di katalog?",
+        "eval_count": "50",
+        "latensi_ms": "3753.09"
+      },
+      {
+        "varian": "A",
+        "pesan": "Emangnya ada berapa produk desktop mini yang dijual di sini?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Biar aku cek dulu ya Kak untuk produk desktop mini yang ada di toko kami. Boleh aku gunakan alat katalog untuk mencarinya?",
+        "eval_count": "29",
+        "latensi_ms": "3179.18"
+      },
+      {
+        "varian": "A",
+        "pesan": "Emangnya ada berapa produk desktop mini yang dijual di sini?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Biar saya cek dulu ya Kak untuk produk desktop mini yang ada di toko kami. Boleh saya gunakan alat katalog untuk mencarinya?",
+        "eval_count": "29",
+        "latensi_ms": "3134.47"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kan pake tangki tinta, jadi gak pake catrige?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, maksud Kakak menanyakan tentang printer yang menggunakan tangki tinta ya? Untuk itu, Kakak bisa coba sebutkan merek atau jenis printer yang Kakak cari. Saya bantu cek ketersediaan dan informasinya ya.",
+        "eval_count": "48",
+        "latensi_ms": "3776.71"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kan pake tangki tinta, jadi gak pake catrige?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, maksud Kakak ini untuk printer ya? Kalau yang Kakak maksud adalah printer yang menggunakan sistem tangki tinta, itu biasanya disebut printer ink tank. Saya bisa bantu cek tipe-tipe printer seperti itu kalau Kakak mau.",
+        "eval_count": "49",
+        "latensi_ms": "3660.75"
+      },
+      {
+        "varian": "A",
+        "pesan": "Kan pake tangki tinta, jadi gak pake catrige?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, maksud Kakak ini untuk printer ya? Kalau memang ingin yang pakai tangki tinta, Kakak bisa cek produk printer dengan sistem tangki tinta. Boleh tahu Kakak mau cari printer untuk keperluan apa nih, biar saya bantu cek yang paling pas.",
+        "eval_count": "54",
+        "latensi_ms": "3829.77"
+      },
+      {
+        "varian": "A",
+        "pesan": "Edit video kan gak berat banget?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk pertanyaan soal beratnya edit video, saya sarankan Kakak cek dulu kebutuhan spesifiknya. Saya bisa bantu kasih panduan memilih komponen yang pas kalau Kakak kasih tahu jenis editing yang mau dilakukan.",
+        "eval_count": "45",
+        "latensi_ms": "3715.48"
+      },
+      {
+        "varian": "A",
+        "pesan": "Edit video kan gak berat banget?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, kalau soal beratnya edit video itu tergantung banget sama kebutuhan dan jenis editannya. Kakak mau edit video untuk keperluan apa nih?",
+        "eval_count": "30",
+        "latensi_ms": "3150.15"
+      },
+      {
+        "varian": "A",
+        "pesan": "Edit video kan gak berat banget?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk pertanyaan soal beratnya edit video, saya sarankan Kakak cek dulu kebutuhan spesifikasi yang dibutuhkan. Saya bisa bantu cek panduan memilih komponen yang sesuai kalau Kakak mau.",
+        "eval_count": "40",
+        "latensi_ms": "3416.07"
+      },
+      {
+        "varian": "A",
+        "pesan": "Desktop mini sudah termasuk monitor belum?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui apakah desktop mini sudah termasuk monitor atau belum, saya perlu cek dulu ya. Boleh saya bantu cek di katalog produknya?",
+        "eval_count": "31",
+        "latensi_ms": "3257.57"
+      },
+      {
+        "varian": "A",
+        "pesan": "Desktop mini sudah termasuk monitor belum?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui apakah desktop mini sudah termasuk monitor atau belum, saya perlu cek dulu ya. Boleh saya bantu cek di katalog produknya?",
+        "eval_count": "31",
+        "latensi_ms": "3131.38"
+      },
+      {
+        "varian": "A",
+        "pesan": "Desktop mini sudah termasuk monitor belum?",
+        "alat_diharapkan": "pengetahuan",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui apakah desktop mini sudah termasuk monitor atau belum, saya sarankan Kakak sebutkan model atau merek desktop mini yang Kakak minati. Saya akan cek dulu detail paketnya menggunakan katalog kami ya.",
+        "eval_count": "46",
+        "latensi_ms": "3589.68"
+      },
+      {
+        "varian": "A",
+        "pesan": "T82X cuma untuk cetak struk? Gak bisa cetak dokumen?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui detail printer T82X, saya perlu cek dulu ya. Boleh saya gunakan alat katalog untuk melihat spesifikasi lengkapnya?",
+        "eval_count": "32",
+        "latensi_ms": "3253.48"
+      },
+      {
+        "varian": "A",
+        "pesan": "T82X cuma untuk cetak struk? Gak bisa cetak dokumen?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui detail printer T82X, saya perlu cek dulu ya. Boleh saya cek spesifikasi dan fungsinya menggunakan katalog?",
+        "eval_count": "31",
+        "latensi_ms": "3112.0"
+      },
+      {
+        "varian": "A",
+        "pesan": "Memangnya vivobook go 14 bisa untuk edit video?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui apakah Vivobook Go 14 cocok untuk edit video, saya sarankan Kakak tanyakan lebih detail mengenai kebutuhan editingnya. Saya bisa bantu cek spesifikasi atau memberikan panduan memilih laptop yang lebih sesuai kalau Kakak mau.",
+        "eval_count": "53",
+        "latensi_ms": "3938.42"
+      },
+      {
+        "varian": "A",
+        "pesan": "Memangnya vivobook go 14 bisa untuk edit video?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui apakah Vivobook Go 14 cocok untuk edit video, saya sarankan Kakak bertanya lebih spesifik mengenai kebutuhan editingnya. Saya bisa bantu cek spesifikasi atau memberikan panduan memilih laptop untuk editing video kalau Kakak mau.",
+        "eval_count": "53",
+        "latensi_ms": "3860.43"
+      },
+      {
+        "varian": "A",
+        "pesan": "Memangnya vivobook go 14 bisa untuk edit video?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk mengetahui apakah Vivobook Go 14 cocok untuk edit video, saya sarankan Kakak bertanya lebih spesifik mengenai kebutuhan editingnya. Saya bisa bantu cek spesifikasi dan panduan pemilihannya ya.",
+        "eval_count": "47",
+        "latensi_ms": "3671.37"
+      },
+      {
+        "varian": "A",
+        "pesan": "Epson ecotank itu harganya bisa kurang gak?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk info harga Epson EcoTank, saya perlu tahu Kakak cari tipe atau model yang spesifik nggak? Saya cek dulu ya pakai katalog biar lebih akurat harganya.",
+        "eval_count": "38",
+        "latensi_ms": "3459.89"
+      },
+      {
+        "varian": "A",
+        "pesan": "Epson ecotank itu harganya bisa kurang gak?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, mau tanya soal harga Epson EcoTank ya? Boleh saya cek dulu harganya di katalog kami?",
+        "eval_count": "24",
+        "latensi_ms": "2976.74"
+      },
+      {
+        "varian": "A",
+        "pesan": "Epson ecotank itu harganya bisa kurang gak?",
+        "alat_diharapkan": "keduanya",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, untuk info harga Epson EcoTank yang paling akurat, saya cek dulu ya menggunakan katalog kami. Boleh Kak sebutkan tipe atau model Epson EcoTank yang Kakak cari?",
+        "eval_count": "40",
+        "latensi_ms": "3398.43"
+      }
+    ],
+    "median_latensi_ms": 3252.9,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 39,
+        "called": 6,
+        "rate_pct": 15.4
+      },
+      "pengetahuan": {
+        "total": 12,
+        "called": 3,
+        "rate_pct": 25.0
+      },
+      "keduanya": {
+        "total": 9,
+        "called": 1,
+        "rate_pct": 11.1
+      },
+      "tidak_ada": {
+        "total": 21,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  },
+  "B": {
+    "total_runs": 81,
+    "tingkat_panggil_alat_pct": 100.0,
+    "ketepatan_alat_pct": 97.5,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 0,
+    "janji_tanpa_aksi_items": [],
+    "median_latensi_ms": 2899.2,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 39,
+        "called": 39,
+        "rate_pct": 100.0
+      },
+      "pengetahuan": {
+        "total": 12,
+        "called": 12,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 9,
+        "called": 9,
+        "rate_pct": 100.0
+      },
+      "tidak_ada": {
+        "total": 21,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  },
+  "C": {
+    "total_runs": 81,
+    "tingkat_panggil_alat_pct": 100.0,
+    "ketepatan_alat_pct": 96.3,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 0,
+    "janji_tanpa_aksi_items": [],
+    "median_latensi_ms": 2916.9,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 39,
+        "called": 39,
+        "rate_pct": 100.0
+      },
+      "pengetahuan": {
+        "total": 12,
+        "called": 12,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 9,
+        "called": 9,
+        "rate_pct": 100.0
+      },
+      "tidak_ada": {
+        "total": 21,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  },
+  "D": {
+    "total_runs": 81,
+    "tingkat_panggil_alat_pct": 93.3,
+    "ketepatan_alat_pct": 95.1,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 4,
+    "janji_tanpa_aksi_items": [
+      {
+        "varian": "D",
+        "pesan": "Jual monitor?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, di ReIn Komputer kami menyediakan berbagai jenis monitor lho. Untuk membantu Kakak, apakah monitor ini akan dipakai untuk kerja, gaming, atau keperluan lainnya? Kalau sudah tahu kegunaannya, nanti saya bantu cek pilihan terbaiknya ya.",
+        "eval_count": "595",
+        "latensi_ms": "20674.17"
+      },
+      {
+        "varian": "D",
+        "pesan": "Jual monitor?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "3",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Halo Kak, tentu saja kami jual monitor lho. Kakak cari monitor untuk keperluan apa nih, misalnya buat kerja, gaming, atau buat nonton aja? Kalau Kakak sudah tahu budget atau ukuran yang diinginkan, kasih tahu aja ya biar saya bantu cek di katalog.",
+        "eval_count": "258",
+        "latensi_ms": "10104.72"
+      },
+      {
+        "varian": "D",
+        "pesan": "Kalo laptop ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Tentu Kak, di ReIn Komputer ada banyak pilihan laptop lho. Mau cari laptop untuk keperluan apa nih, Kak? Biar saya bisa bantu carikan yang paling pas, Kak. Kakak ada budget atau preferensi merek tertentu?",
+        "eval_count": "231",
+        "latensi_ms": "9438.75"
+      },
+      {
+        "varian": "D",
+        "pesan": "Kalo laptop ada?",
+        "alat_diharapkan": "katalog",
+        "ulangan": "2",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Ada Kak, di ReIn Komputer lengkap banget pilihan laptopnya. Mau cari laptop untuk kebutuhan apa nih, Kak? Biar saya bantu carikan yang paling pas buat Kakak.",
+        "eval_count": "122",
+        "latensi_ms": "5936.57"
+      }
+    ],
+    "median_latensi_ms": 9438.8,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 39,
+        "called": 35,
+        "rate_pct": 89.7
+      },
+      "pengetahuan": {
+        "total": 12,
+        "called": 12,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 9,
+        "called": 9,
+        "rate_pct": 100.0
+      },
+      "tidak_ada": {
+        "total": 21,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+varian,pesan,alat_diharapkan,ulangan,tool_calls,tools_called,raw_content,eval_count,latensi_ms
+V4,Halo,tidak_ada,1,,,"Halo Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu hari ini?",21,22203.94
+V4,"Siang, Mbak",tidak_ada,1,,,"Siang Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu hari ini?",22,814.68
+V4,Selamat sore,tidak_ada,1,,,"Selamat sore Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu hari ini?",22,767.02
+V4,"Wah, mahal banget. Gak jadi deh",tidak_ada,1,,,"Maaf Kak, kalau harganya kurang sesuai ya. Ada kebutuhan lain yang bisa saya bantu cek harganya atau mungkin ada tipe produk lain yang lebih pas buat Kakak?",35,1236.83
+V4,Aku jadi bingung.,tidak_ada,1,,,"Halo Kak, ada yang bisa saya bantu?",10,458.01
+V4,Ribet,tidak_ada,1,,,"Halo Kak, ada yang bisa saya bantu?",10,410.88
+V4,Aku belum bilang untuk apa. Kok kamu menduga untuk kerja kantor dan kuliah?,tidak_ada,1,,,"Saya Reni, staf customer service ReIn Komputer. Maaf Kak, saya tadi berasumsi berdasarkan pertanyaan sebelumnya. Boleh tahu Kak, untuk kebutuhan apa nih Kakak mau cari produknya?",41,1355.5
+V4,Jual monitor?,katalog,1,"[{""id"": ""call_rsyzm216"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""monitor""}}}]",katalog,,15,561.54
+V4,Kalo laptop ada?,katalog,1,"[{""id"": ""call_2ukft2h3"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""laptop""}}}]",katalog,,15,547.38
+V4,Jual printer apa?,katalog,1,"[{""id"": ""call_kjvl77b4"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""printer""}}}]",katalog,,15,602.98
+V4,Ada yang ecotank?,katalog,1,"[{""id"": ""call_ixu8jcnu"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""ecotank""}}}]",katalog,,19,680.97
+V4,Epson ada tipe apa aja?,katalog,1,"[{""id"": ""call_vvwc1yt9"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""merek"": ""Epson""}}}]",katalog,,16,591.3
+V4,Laptop asus ada?,katalog,1,"[{""id"": ""call_vq2f5o8y"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""laptop"", ""merek"": ""asus""}}}]",katalog,,22,789.06
+V4,Ada mini pc?,katalog,1,"[{""id"": ""call_iijpm43a"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""mini pc""}}}]",katalog,,18,680.29
+V4,"Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",katalog,1,"[{""id"": ""call_i99ihwlc"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""budget_max"": 6000000, ""kategori"": ""desktop"", ""kata_kunci"": ""mini""}}}]",katalog,,36,1235.06
+V4,Kalo laptop di bawah 8 juta ada?,katalog,1,"[{""id"": ""call_vc0ah9u2"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""budget_max"": 8000000, ""kategori"": ""laptop""}}}]",katalog,,27,911.3
+V4,"Laptop dengan ram 16 GB, berapa yang paling murah?",katalog,1,"[{""id"": ""call_r2ih99pm"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""laptop"", ""kata_kunci"": ""ram 16 gb""}}}]",katalog,,28,947.1
+V4,Desktop ukuran mini,katalog,1,"[{""id"": ""call_hcoax150"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""desktop"", ""kata_kunci"": ""mini""}}}]",katalog,,24,801.65
+V4,T82X itu ecotank?,katalog,1,"[{""id"": ""call_sr7vqfph"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""T82X""}}}]",katalog,,20,690.27
+V4,Emangnya ada berapa produk desktop mini yang dijual di sini?,katalog,1,"[{""id"": ""call_gykb6kdb"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""desktop"", ""kata_kunci"": ""mini""}}}]",katalog,,24,879.34
+V4,Apa kelebihan ecotank?,pengetahuan,1,"[{""id"": ""call_5gsmbokl"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""kelebihan ecotank""}}}]",pengetahuan,,19,706.7
+V4,"Kan pake tangki tinta, jadi gak pake catrige?",pengetahuan,1,"[{""id"": ""call_nay7vfgb"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""perbedaan printer tangki tinta dan cartridge""}}}]",pengetahuan,,22,763.99
+V4,Edit video kan gak berat banget?,pengetahuan,1,"[{""id"": ""call_u22xag9o"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""kebutuhan edit video""}}}]",pengetahuan,,19,689.72
+V4,Desktop mini sudah termasuk monitor belum?,pengetahuan,1,"[{""id"": ""call_ef2s1u1g"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""desktop mini sudah termasuk monitor belum""}}}]",pengetahuan,,20,768.07
+V4,T82X cuma untuk cetak struk? Gak bisa cetak dokumen?,keduanya,1,"[{""id"": ""call_r4kp4nk8"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""T82X fungsi cetak dokumen""}}}]",pengetahuan,,22,809.6
+V4,Memangnya vivobook go 14 bisa untuk edit video?,keduanya,1,"[{""id"": ""call_6q9pa80g"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""kemampuan laptop vivobook go 14 untuk edit video""}}}]",pengetahuan,,27,953.61
+V4,Epson ecotank itu harganya bisa kurang gak?,keduanya,1,"[{""id"": ""call_qdcr6sjd"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""Epson ecotank""}}}]",katalog,,21,707.57
+V6,Halo,tidak_ada,1,,,"Halo Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu hari ini?",21,1515.85
+V6,"Siang, Mbak",tidak_ada,1,,,"Siang Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu hari ini?",22,769.17
+V6,Selamat sore,tidak_ada,1,,,"Selamat sore Kak, saya Reni dari ReIn Komputer. Ada yang bisa saya bantu hari ini?",22,753.13
+V6,"Wah, mahal banget. Gak jadi deh",tidak_ada,1,,,"Maaf Kak, kalau harganya kurang sesuai ya. Ada kebutuhan lain yang bisa saya bantu cari rekomendasinya?",24,872.2
+V6,Aku jadi bingung.,tidak_ada,1,,,"Halo Kak, ada yang bisa saya bantu?",10,415.52
+V6,Ribet,tidak_ada,1,,,"Halo Kak, ada yang bisa dibantu? Saya Reni dari ReIn Komputer.",19,665.63
+V6,Aku belum bilang untuk apa. Kok kamu menduga untuk kerja kantor dan kuliah?,tidak_ada,1,,,"Saya Reni, staf customer service ReIn Komputer. Maaf Kak, saya tidak menduga kebutuhan Kakak, saya hanya ingin membantu Kakak menemukan produk yang paling pas. Boleh tahu Kakak sedang mencari produk untuk keperluan apa saja?",50,1567.44
+V6,Jual monitor?,katalog,1,"[{""id"": ""call_dh45kg0s"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""monitor""}}}]",katalog,,15,567.16
+V6,Kalo laptop ada?,katalog,1,"[{""id"": ""call_c30n95lk"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""laptop""}}}]",katalog,,15,575.85
+V6,Jual printer apa?,katalog,1,"[{""id"": ""call_kdg2hg7b"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""printer""}}}]",katalog,,15,574.76
+V6,Ada yang ecotank?,katalog,1,"[{""id"": ""call_kodd85l9"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""ecotank""}}}]",katalog,,19,686.82
+V6,Epson ada tipe apa aja?,katalog,1,"[{""id"": ""call_kq9tdrfl"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""merek"": ""Epson""}}}]",katalog,,16,646.46
+V6,Laptop asus ada?,katalog,1,"[{""id"": ""call_hmu9zbat"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""laptop"", ""merek"": ""asus""}}}]",katalog,,22,843.87
+V6,Ada mini pc?,katalog,1,"[{""id"": ""call_p0q7h9yv"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""mini pc""}}}]",katalog,,18,673.91
+V6,"Baiklah. Desktop mini dengan budget maksimal 6 juta, apa rekomendasimu?",katalog,1,"[{""id"": ""call_rxbxgjrf"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""budget_max"": 6000000, ""kategori"": ""desktop"", ""kata_kunci"": ""mini""}}}]",katalog,,36,1166.42
+V6,Kalo laptop di bawah 8 juta ada?,katalog,1,"[{""id"": ""call_43a3af9e"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""budget_max"": 8000000, ""kategori"": ""laptop""}}}]",katalog,,27,911.95
+V6,"Laptop dengan ram 16 GB, berapa yang paling murah?",katalog,1,"[{""id"": ""call_zaucm7qa"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""laptop"", ""kata_kunci"": ""ram 16 gb""}}}]",katalog,,28,915.06
+V6,Desktop ukuran mini,katalog,1,"[{""id"": ""call_9ig4oel6"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""desktop"", ""kata_kunci"": ""mini""}}}]",katalog,,24,821.77
+V6,T82X itu ecotank?,katalog,1,"[{""id"": ""call_mabtb3xy"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""T82X""}}}]",katalog,,20,727.08
+V6,Emangnya ada berapa produk desktop mini yang dijual di sini?,katalog,1,"[{""id"": ""call_v3osbsmr"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kategori"": ""desktop"", ""kata_kunci"": ""mini""}}}]",katalog,,24,853.33
+V6,Apa kelebihan ecotank?,pengetahuan,1,"[{""id"": ""call_anbjn0v6"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""kelebihan ecotank""}}}]",pengetahuan,,19,697.67
+V6,"Kan pake tangki tinta, jadi gak pake catrige?",pengetahuan,1,"[{""id"": ""call_3erflm1o"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""perbedaan printer tangki tinta dan cartridge""}}}]",pengetahuan,,22,768.31
+V6,Edit video kan gak berat banget?,pengetahuan,1,"[{""id"": ""call_i1ntvndp"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""berat tidaknya mengedit video""}}}]",pengetahuan,,20,717.57
+V6,Desktop mini sudah termasuk monitor belum?,pengetahuan,1,"[{""id"": ""call_42537dko"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""desktop mini sudah termasuk monitor belum""}}}]",pengetahuan,,20,720.79
+V6,T82X cuma untuk cetak struk? Gak bisa cetak dokumen?,keduanya,1,"[{""id"": ""call_pk4oq5vx"", ""function"": {""index"": 0, ""name"": ""pengetahuan"", ""arguments"": {""pertanyaan"": ""fungsi printer T82X untuk cetak dokumen""}}}]",pengetahuan,,24,828.57
+V6,Memangnya vivobook go 14 bisa untuk edit video?,keduanya,1,"[{""id"": ""call_qdm3col6"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""vivobook go 14""}}}]",katalog,,23,795.8
+V6,Epson ecotank itu harganya bisa kurang gak?,keduanya,1,"[{""id"": ""call_lvo3f23a"", ""function"": {""index"": 0, ""name"": ""katalog"", ""arguments"": {""kata_kunci"": ""epson ecotank""}}}]",katalog,,21,756.55

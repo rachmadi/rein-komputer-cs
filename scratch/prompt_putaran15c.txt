@@ -1,0 +1,117 @@
+<USER_REQUEST>
+INSTRUKSI PUTARAN 15c — ReIn Komputer (2026-10-11)
+
+Sebelum mulai: buat tag git `sebelum-putaran15c` dari HEAD saat ini.
+Satu commit per butir. Jangan push. Tidak ada perubahan di luar yang diminta di sini.
+
+=== BUTIR 1 — Impor ulang catalog.db dari catalog_v3.csv yang sudah dikoreksi ===
+
+File data/seed/catalog_v3.csv di repo SAAT INI sudah saya perbaiki langsung (dua
+perubahan dari versi yang dipakai saat impor Putaran 15b):
+  a. KB-L19 (Acer Swift Go 14): varian diganti dari AMD SFG14-41/Ryzen 5 7520U
+     menjadi Intel SFG14-73/Core Ultra 5 125H, Rp14.000.000 (sudah disetujui user
+     sebelumnya; raw_data sudah dianotasi sumbernya).
+  b. 5 kolom image_url diganti ke sumber yang stabil (bukan CDN bertanda-tangan
+     yang kedaluwarsa dalam hitungan jam): KB-L16, KB-L18, KB-L21, KB-L27, KB-D10.
+
+Tindakan:
+  1. Jalankan ulang:
+     python scripts/build_catalog_db.py --csv data/seed/catalog_v3.csv --force
+     python scripts/migrate_derived_fields.py data/catalog.db
+  2. Verifikasi dengan query SQL langsung (bukan hanya baca CSV) dan sertakan
+     hasilnya di laporan:
+     SELECT kode, nama, cpu, harga_idr, image_url FROM products WHERE kode='KB-L19';
+     -- harus menunjukkan "Acer Swift Go 14 SFG14-73" dan cpu mengandung "Ultra 5 125H"
+  3. Jalankan ulang replay (scratch/replay_model.py) dan bandingkan dengan
+     scratch/replay_model_gemma_p15b.json — laporkan giliran mana saja yang
+     berubah akibat impor ulang ini (seharusnya hanya yang menyebut KB-L19).
+
+=== BUTIR 2 — Perkuat skrip unduh gambar (scripts/unduh_gambar_produk.py) ===
+
+Masalah yang ditemukan: 5 dari 8 gambar yang berhasil diunduh di Putaran 15b
+ternyata file duplikat identik (logo MSI generik, bukan foto produk asli),
+lolos validasi karena validasi saat ini hanya cek HTTP 200 + content-type gambar
++ bisa dibuka Pillow — tidak cek apakah gambar itu benar-benar unik/relevan.
+
+Tindakan (perkuat kontrak, jangan tambal per-kasus):
+  1. Tambahkan pengecekan hash gambar (perceptual hash, pakai library `imagehash`
+     atau md5 sederhana sebagai langkah awal) SEBELUM menyimpan file: jika hash
+     gambar yang baru diunduh sama/sangat mirip dengan gambar produk LAIN yang
+     sudah tersimpan di data/images/, JANGAN simpan — tandai sebagai
+     "duplikat_dicurigai" di log, bukan "berhasil".
+  2. Dukung multi-kandidat per produk: jika image_url tunggal gagal (404/403/
+     bukan gambar/duplikat terdeteksi), skrip harus punya mekanisme fallback
+     (array kandidat, atau argumen --kandidat per kode) sebelum menyerah.
+  3. Setelah dijalankan, laporkan tabel: kode | status (berhasil/gagal/duplikat_dicurigai)
+     | ukuran file | hash — untuk SEMUA 40 produk, bukan hanya yang baru.
+  4. Jalankan unduhan untuk 5 produk yang URL image_url-nya baru diperbaiki di
+     Butir 1 (KB-L16, KB-L18, KB-L21, KB-L27, KB-D10). 32 produk lain yang masih
+     gagal/image_url belum terganti BOLEH tetap NULL di putaran ini — jangan
+     dipaksakan dengan data karangan.
+
+=== BUTIR 3 — Perbaiki regresi "speknya kosong" (giliran 52, replay P15b) ===
+
+Pada replay Putaran 14, giliran yang menanyakan spesifikasi produk sejenis
+menghasilkan lembar spesifikasi lengkap. Pada replay Putaran 15b giliran 52
+(pertanyaan serupa, bukan verbatim — reproduksi dengan menjalankan ulang
+replay harness, cari giliran yang menanyakan spesifikasi detail dari produk
+yang sudah ditampilkan sebelumnya), balasan menyatakan "spesifikasi belum
+tersedia" / kosong padahal data ada di katalog. Ini regresi antara P14 dan P15b.
+
+Tindakan: telusuri dengan git bisect/diff antara commit P14 dan P15b pada
+build_lembar_spesifikasi() dan handler terkait di action_engine.py /
+session_pipeline.py untuk menemukan perubahan yang menyebabkan field spek
+tidak lagi terisi. Perbaiki akar masalah (bukan menambah kondisi khusus untuk
+giliran 52), lalu jalankan ulang replay dan buktikan giliran tersebut kembali
+menampilkan spek lengkap TANPA meregresi perilaku giliran lain.
+
+=== BUTIR 4 — Perbaiki resolusi referensi (giliran 56 & 58, replay P15b) ===
+
+Giliran 56 (customer merujuk "3 pilihan tadi" / sejenis — merujuk ke
+produk_tampil sebelumnya) dan giliran 58 (customer menyebut nama produk
+pendek seperti "Nitro" tanpa kode lengkap, menanyakan kecocokan untuk 1 topik
+tertentu) keduanya gagal diresolusi dengan benar pada replay P15b — baik
+salah produk yang dirujuk, atau gagal total mengenali rujukan.
+
+Tindakan: reproduksi via replay, identifikasi di validator/session_pipeline
+bagian mana yang menangani rujukan ke produk_terakhir_dibahas /
+history_produk_tampil, dan perbaiki agar rujukan sebagian nama (substring
+case-insensitive terhadap nama produk di produk_tampil/history) dan rujukan
+posisional ("3 pilihan tadi" → produk_tampil saat itu) dikenali secara umum
+—bukan hanya pola kalimat spesifik dari replay ini. Sertakan di laporan: apa
+akar masalahnya, bukan hanya "sudah diperbaiki".
+
+=== BUTIR 5 — Diff LENGKAP untuk 7 file tes Putaran 15 Butir 6 ===
+
+Laporan Putaran 15b sebelumnya hanya memberi git diff --stat + ringkasan satu
+baris untuk 7 file tes yang diubah di Putaran 15 Butir 6. Itu tidak cukup
+untuk memverifikasi tidak ada assertion yang dilemahkan secara diam-diam.
+
+Tindakan: jalankan `git diff <tag-sebelum-putaran15>..<commit-butir6> -- <masing-masing file>`
+untuk SEMUA 7 file tersebut dan sertakan diff PENUH (bukan --stat, bukan
+ringkasan) di laporan Putaran 15c.
+
+=== VERIFIKASI AKHIR (wajib sebelum laporan dikirim) ===
+  1. pytest suite penuh — laporkan jumlah passed/skipped/failed (skipped harus
+     tetap 20, tidak boleh berubah).
+  2. Replay penuh — bandingkan dengan p15b, laporkan giliran yang berubah.
+  3. Query SQL langsung ke catalog.db untuk KB-L19 (lihat Butir 1).
+  4. Tabel status unduhan gambar untuk 40 produk (lihat Butir 2).
+  5. Diff lengkap 7 file tes (lihat Butir 5).
+Laporan tanpa keempat bukti ini akan saya minta ulang.
+
+=== CATATAN TAMBAHAN (berlaku untuk Butir 2) ===
+Katalog ini adalah data dummy dengan sumber yang cukup valid, bukan katalog
+nyata — gambar produk berfungsi sebagai ILUSTRASI yang meyakinkan, bukan
+harus foto varian yang 100% persis cocok (model/warna exact match TIDAK
+wajib). Syarat minimalnya hanya dua: (1) gambar harus sesuai KATEGORI produk
+(laptop bergambar laptop, printer bergambar printer, dst — bukan logo/ikon
+generik), dan (2) tidak ada file yang terpasang duplikat di lebih dari satu
+produk berbeda (itulah yang akan ditangkap oleh pengecekan hash di atas).
+Dengan pelonggaran ini, AG boleh memilih kandidat gambar yang "cukup mirip
+dan masuk akal" untuk 32 produk yang masih kosong, tanpa perlu riset
+verifikasi varian yang presisi.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-11T14:04:02+07:00.
+</ADDITIONAL_METADATA>

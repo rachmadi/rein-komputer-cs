@@ -1,0 +1,616 @@
+{
+  "timestamp": "20261012_152553",
+  "total_pertanyaan": 20,
+  "summary": {
+    "C1": {
+      "hit@1": "12/20",
+      "hit@1_num": 12,
+      "hit@1_pct": 60.0,
+      "hit@3": "17/20",
+      "hit@3_num": 17,
+      "hit@3_pct": 85.0
+    }
+  },
+  "details": [
+    {
+      "no": 1,
+      "pertanyaan": "apakah mini pc bisa dijual dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "P10",
+            "K01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 2,
+      "pertanyaan": "apakah mini pc bisa dijual paket dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "K01",
+            "P10"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 3,
+      "pertanyaan": "penjualan paket desktop dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G05",
+            "P10"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 4,
+      "pertanyaan": "kebijakan paket mini pc dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G05",
+            "P15"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 5,
+      "pertanyaan": "cara membeli mini pc dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "M01",
+            "P10"
+          ],
+          "hit@1": false,
+          "hit@3": false
+        }
+      }
+    },
+    {
+      "no": 6,
+      "pertanyaan": "kebijakan paket bundling desktop dengan monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            }
+          ],
+          "top_ids": [
+            "K01",
+            "G03",
+            "G05"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 7,
+      "pertanyaan": "apakah mini pc dijual sudah termasuk monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 8,
+      "pertanyaan": "mini pc termasuk monitor",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "P10",
+              "judul": "Trader Saham dan Kripto"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "P10",
+            "P11"
+          ],
+          "hit@1": false,
+          "hit@3": false
+        }
+      }
+    },
+    {
+      "no": 9,
+      "pertanyaan": "Desktop mini sudah termasuk monitor belum?",
+      "id_harapan": "K01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "K01",
+            "M01"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 10,
+      "pertanyaan": "perbedaan mini pc dan desktop pc",
+      "id_harapan": "G05|G03",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "G03",
+            "P01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 11,
+      "pertanyaan": "portabilitas mini pc vs desktop pc",
+      "id_harapan": "G05|G03",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "G03",
+            "P01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 12,
+      "pertanyaan": "monitor yang cocok untuk mini pc",
+      "id_harapan": "M01",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "M01",
+              "judul": "Panduan Memilih Monitor"
+            },
+            {
+              "id": "P11",
+              "judul": "Pengguna Sederhana dan Orang Tua (Penggunaan Ringan)"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "M01",
+            "P11"
+          ],
+          "hit@1": false,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 13,
+      "pertanyaan": "Apa kelebihan ecotank?",
+      "id_harapan": "M02",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "K01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 14,
+      "pertanyaan": "Kan pake tangki tinta, jadi gak pake catrige?",
+      "id_harapan": "M02",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "K01",
+              "judul": "Kebijakan Toko: Kelengkapan Paket"
+            },
+            {
+              "id": "K04",
+              "judul": "Kebijakan Toko: Harga dan Pembayaran"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "K01",
+            "K04"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 15,
+      "pertanyaan": "Edit video kan gak berat banget?",
+      "id_harapan": "P12|P03",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P09",
+              "judul": "Music Producer dan Audio Engineer"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P09"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 16,
+      "pertanyaan": "Memangnya vivobook go 14 bisa untuk edit video?",
+      "id_harapan": "P12|P03",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "P12",
+              "judul": "Content Creator Ringan (Media Sosial dan Video 1080p)"
+            },
+            {
+              "id": "P03",
+              "judul": "Video Editor 4K, 3D Animator, dan Game Developer (Creative Pro)"
+            },
+            {
+              "id": "P08",
+              "judul": "Live Streamer dan VTuber"
+            }
+          ],
+          "top_ids": [
+            "P12",
+            "P03",
+            "P08"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 17,
+      "pertanyaan": "T82X cuma untuk cetak struk? Gak bisa cetak dokumen?",
+      "id_harapan": "P15|M02",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            },
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "G02",
+              "judul": "Panduan Umum: Kartu Grafis (GPU) dan VRAM"
+            }
+          ],
+          "top_ids": [
+            "M02",
+            "P15",
+            "G02"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 18,
+      "pertanyaan": "Epson ecotank itu harganya bisa kurang gak?",
+      "id_harapan": "K04",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "P15",
+              "judul": "UMKM, Kasir, dan Perangkat Toko (POS)"
+            },
+            {
+              "id": "P04",
+              "judul": "Gamer Kasual dan E-Sports"
+            },
+            {
+              "id": "M02",
+              "judul": "Panduan Memilih Printer"
+            }
+          ],
+          "top_ids": [
+            "P15",
+            "P04",
+            "M02"
+          ],
+          "hit@1": false,
+          "hit@3": false
+        }
+      }
+    },
+    {
+      "no": 19,
+      "pertanyaan": "Bisa dibawa-bawa dong?",
+      "id_harapan": "G05",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "K03",
+              "judul": "Kebijakan Toko: Pengiriman"
+            },
+            {
+              "id": "P16",
+              "judul": "Serbaguna: Kerja/Kuliah dan Game Sesekali"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "K03",
+            "P16"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    },
+    {
+      "no": 20,
+      "pertanyaan": "Apa sih bedanya mini pc dengan desktop pc?",
+      "id_harapan": "G05|G03",
+      "configs": {
+        "C1": {
+          "top_items": [
+            {
+              "id": "G05",
+              "judul": "Panduan Umum: Mini PC, Desktop Tower, All-in-One, dan Laptop"
+            },
+            {
+              "id": "G03",
+              "judul": "Panduan Umum: RAM, Penyimpanan, Laptop vs Desktop"
+            },
+            {
+              "id": "P01",
+              "judul": "Pekerjaan Kantoran, Administrasi, dan Pelajar (Penggunaan Dasar)"
+            }
+          ],
+          "top_ids": [
+            "G05",
+            "G03",
+            "P01"
+          ],
+          "hit@1": true,
+          "hit@3": true
+        }
+      }
+    }
+  ]
+}

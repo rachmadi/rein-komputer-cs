@@ -1,0 +1,103 @@
+[
+  {
+    "id": "dev-003",
+    "pesan": "Buat hiburan",
+    "gold_aksi": "jawab_pertanyaan_bot",
+    "gold_args": {
+      "slot": "aktivitas",
+      "nilai": "hiburan"
+    },
+    "pred_gemma4": "jawab_pertanyaan_bot",
+    "benar_gemma4": true,
+    "pred_qwen7b": "minta_rekomendasi",
+    "benar_qwen7b": false,
+    "klasifikasi_penyebab": "terselesaikan_lewat_konteks",
+    "penjelasan": "Dengan konteks lengkap (history bot/state consistency), gemma4:e4b berhasil memprediksi aksi dengan benar."
+  },
+  {
+    "id": "dev-004",
+    "pesan": "Mana?",
+    "gold_aksi": "minta_rekomendasi",
+    "gold_args": {
+      "kebutuhan_teks": "hiburan nonton youtube"
+    },
+    "pred_gemma4": "tidak_jelas",
+    "benar_gemma4": false,
+    "pred_qwen7b": "basa_basi",
+    "benar_qwen7b": false,
+    "klasifikasi_penyebab": "definisi_ambigu",
+    "penjelasan": "Kedua model memilih tidak_jelas / basa_basi; batas definisi aksi antara minta_rekomendasi dan prediksi memerlukan panduan skema lebih eksplisit."
+  },
+  {
+    "id": "dev-005",
+    "pesan": "ada asus?",
+    "gold_aksi": "cari_produk",
+    "gold_args": {
+      "merek": "asus",
+      "kategori": "laptop"
+    },
+    "pred_gemma4": "cari_produk",
+    "benar_gemma4": true,
+    "pred_qwen7b": "cari_produk",
+    "benar_qwen7b": true,
+    "klasifikasi_penyebab": "terselesaikan_lewat_konteks",
+    "penjelasan": "Dengan konteks lengkap (history bot/state consistency), gemma4:e4b berhasil memprediksi aksi dengan benar."
+  },
+  {
+    "id": "dev-006",
+    "pesan": "yang kedua bagus nggak?",
+    "gold_aksi": "evaluasi_kecocokan",
+    "gold_args": {
+      "produk": [
+        "2"
+      ]
+    },
+    "pred_gemma4": "evaluasi_kecocokan",
+    "benar_gemma4": true,
+    "pred_qwen7b": "bandingkan",
+    "benar_qwen7b": false,
+    "klasifikasi_penyebab": "terselesaikan_lewat_konteks",
+    "penjelasan": "Dengan konteks lengkap (history bot/state consistency), gemma4:e4b berhasil memprediksi aksi dengan benar."
+  },
+  {
+    "id": "dev-010",
+    "pesan": "p",
+    "gold_aksi": "sapa",
+    "gold_args": {},
+    "pred_gemma4": "tidak_jelas",
+    "benar_gemma4": false,
+    "pred_qwen7b": "basa_basi",
+    "benar_qwen7b": false,
+    "klasifikasi_penyebab": "definisi_ambigu",
+    "penjelasan": "Kedua model memilih tidak_jelas / basa_basi; batas definisi aksi antara sapa dan prediksi memerlukan panduan skema lebih eksplisit."
+  },
+  {
+    "id": "dev-016",
+    "pesan": "Buat mama sih bukan buat aku",
+    "gold_aksi": "jawab_pertanyaan_bot",
+    "gold_args": {
+      "slot": "persona",
+      "nilai": "mama"
+    },
+    "pred_gemma4": "jawab_pertanyaan_bot",
+    "benar_gemma4": true,
+    "pred_qwen7b": "jawab_pertanyaan_bot",
+    "benar_qwen7b": true,
+    "klasifikasi_penyebab": "terselesaikan_lewat_konteks",
+    "penjelasan": "Dengan konteks lengkap (history bot/state consistency), gemma4:e4b berhasil memprediksi aksi dengan benar."
+  },
+  {
+    "id": "dev-030",
+    "pesan": "hmm gimana ya",
+    "gold_aksi": "tidak_jelas",
+    "gold_args": {
+      "alasan": "ragu-ragu tanpa maksud spesifik"
+    },
+    "pred_gemma4": "tidak_jelas",
+    "benar_gemma4": true,
+    "pred_qwen7b": "basa_basi",
+    "benar_qwen7b": false,
+    "klasifikasi_penyebab": "terselesaikan_lewat_konteks",
+    "penjelasan": "Dengan konteks lengkap (history bot/state consistency), gemma4:e4b berhasil memprediksi aksi dengan benar."
+  }
+]

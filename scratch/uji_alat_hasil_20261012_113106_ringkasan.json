@@ -1,0 +1,80 @@
+{
+  "V4": {
+    "total_runs": 27,
+    "panggil_saat_perlu": "20/20",
+    "salah_panggil": "0/7",
+    "tingkat_panggil_alat_pct": 100.0,
+    "ketepatan_alat_pct": 100.0,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 1,
+    "janji_tanpa_aksi_items": [
+      {
+        "varian": "V4",
+        "pesan": "Wah, mahal banget. Gak jadi deh",
+        "alat_diharapkan": "tidak_ada",
+        "ulangan": "1",
+        "tool_calls": "",
+        "tools_called": "",
+        "raw_content": "Maaf Kak, kalau harganya kurang sesuai ya. Ada kebutuhan lain yang bisa saya bantu cek harganya atau mungkin ada tipe produk lain yang lebih pas buat Kakak?",
+        "eval_count": "35",
+        "latensi_ms": "1236.83"
+      }
+    ],
+    "median_latensi_ms": 767.0,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 13,
+        "called": 13,
+        "rate_pct": 100.0
+      },
+      "pengetahuan": {
+        "total": 4,
+        "called": 4,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 3,
+        "called": 3,
+        "rate_pct": 100.0
+      },
+      "tidak_ada": {
+        "total": 7,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  },
+  "V6": {
+    "total_runs": 27,
+    "panggil_saat_perlu": "20/20",
+    "salah_panggil": "0/7",
+    "tingkat_panggil_alat_pct": 100.0,
+    "ketepatan_alat_pct": 100.0,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 0,
+    "janji_tanpa_aksi_items": [],
+    "median_latensi_ms": 756.5,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 13,
+        "called": 13,
+        "rate_pct": 100.0
+      },
+      "pengetahuan": {
+        "total": 4,
+        "called": 4,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 3,
+        "called": 3,
+        "rate_pct": 100.0
+      },
+      "tidak_ada": {
+        "total": 7,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  }
+}

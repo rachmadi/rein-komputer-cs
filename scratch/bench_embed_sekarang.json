@@ -1,0 +1,274 @@
+{
+  "label": "sekarang",
+  "llm": "gemma4:e4b",
+  "embed": "bge-m3",
+  "versi": {
+    "version": "0.40.0"
+  },
+  "ukuran_model_gb": {
+    "bge-m3:latest": 1.16,
+    "gemma4:e4b": 9.61
+  },
+  "hasil": [
+    {
+      "mode": "embed_default",
+      "opts": {},
+      "rows": [
+        {
+          "i": 0,
+          "llm_s": 17.07,
+          "embed_s": 8.04,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 0.66,
+              "vram_gb": 0.66
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 1,
+          "llm_s": 2.42,
+          "embed_s": 2.09,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 0.66,
+              "vram_gb": 0.66
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 2,
+          "llm_s": 2.45,
+          "embed_s": 2.19,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 0.66,
+              "vram_gb": 0.66
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 3,
+          "llm_s": 2.36,
+          "embed_s": 2.13,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 0.66,
+              "vram_gb": 0.66
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 4,
+          "llm_s": 2.39,
+          "embed_s": 2.14,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 0.66,
+              "vram_gb": 0.66
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 5,
+          "llm_s": 2.6,
+          "embed_s": 2.1,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 0.66,
+              "vram_gb": 0.66
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "embed_cpu",
+      "opts": {
+        "num_gpu": 0
+      },
+      "rows": [
+        {
+          "i": 0,
+          "llm_s": 16.09,
+          "embed_s": 7.3,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 1.22,
+              "vram_gb": 0.0
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 1,
+          "llm_s": 2.44,
+          "embed_s": 2.09,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 1.22,
+              "vram_gb": 0.0
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 2,
+          "llm_s": 2.48,
+          "embed_s": 2.13,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 1.22,
+              "vram_gb": 0.0
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 3,
+          "llm_s": 2.44,
+          "embed_s": 2.08,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 1.22,
+              "vram_gb": 0.0
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 4,
+          "llm_s": 2.47,
+          "embed_s": 2.13,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 1.22,
+              "vram_gb": 0.0
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        },
+        {
+          "i": 5,
+          "llm_s": 2.41,
+          "embed_s": 2.06,
+          "ps": [
+            {
+              "name": "bge-m3:latest",
+              "size_gb": 1.22,
+              "vram_gb": 0.0
+            },
+            {
+              "name": "gemma4:e4b",
+              "size_gb": 3.23,
+              "vram_gb": 3.23
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ringkasan": [
+    {
+      "mode": "embed_default",
+      "embed_median_s": 2.13,
+      "llm_median_s": 2.42,
+      "embed_pertama_s": 8.04,
+      "llm_masih_termuat_setelah_embed": "6/6",
+      "ps_terakhir": [
+        {
+          "name": "bge-m3:latest",
+          "size_gb": 0.66,
+          "vram_gb": 0.66
+        },
+        {
+          "name": "gemma4:e4b",
+          "size_gb": 3.23,
+          "vram_gb": 3.23
+        }
+      ],
+      "jumlah_error": 0
+    },
+    {
+      "mode": "embed_cpu",
+      "embed_median_s": 2.09,
+      "llm_median_s": 2.44,
+      "embed_pertama_s": 7.3,
+      "llm_masih_termuat_setelah_embed": "6/6",
+      "ps_terakhir": [
+        {
+          "name": "bge-m3:latest",
+          "size_gb": 1.22,
+          "vram_gb": 0.0
+        },
+        {
+          "name": "gemma4:e4b",
+          "size_gb": 3.23,
+          "vram_gb": 3.23
+        }
+      ],
+      "jumlah_error": 0
+    }
+  ]
+}

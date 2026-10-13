@@ -1,0 +1,33 @@
+{
+  "PRODUKSI": {
+    "total_runs": 27,
+    "tingkat_panggil_alat_pct": 100.0,
+    "ketepatan_alat_pct": 96.3,
+    "panggilan_salah_pct": 0.0,
+    "janji_tanpa_aksi_count": 0,
+    "janji_tanpa_aksi_items": [],
+    "median_latensi_ms": 2978.0,
+    "kategori_breakdown": {
+      "katalog": {
+        "total": 13,
+        "called": 13,
+        "rate_pct": 100.0
+      },
+      "pengetahuan": {
+        "total": 4,
+        "called": 4,
+        "rate_pct": 100.0
+      },
+      "keduanya": {
+        "total": 3,
+        "called": 3,
+        "rate_pct": 100.0
+      },
+      "tidak_ada": {
+        "total": 7,
+        "called": 0,
+        "rate_pct": 0.0
+      }
+    }
+  }
+}

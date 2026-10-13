@@ -1,0 +1,35 @@
+{
+  "A": {
+    "panggil_saat_perlu": "20/20",
+    "salah_panggil": "0/7",
+    "perlu_dipanggil_28": "25/28",
+    "latensi_maksimum_s": 31.42,
+    "total_foto_live26_2reps": 13,
+    "giliran_berfoto_live26_2reps": 8,
+    "total_foto_multi20_2reps": 6,
+    "giliran_berfoto_multi20_2reps": 6,
+    "total_foto_single27": 6
+  },
+  "B": {
+    "panggil_saat_perlu": "20/20",
+    "salah_panggil": "0/7",
+    "perlu_dipanggil_28": "27/28",
+    "latensi_maksimum_s": 30.48,
+    "total_foto_live26_2reps": 6,
+    "giliran_berfoto_live26_2reps": 5,
+    "total_foto_multi20_2reps": 4,
+    "giliran_berfoto_multi20_2reps": 4,
+    "total_foto_single27": 7
+  },
+  "C": {
+    "panggil_saat_perlu": "20/20",
+    "salah_panggil": "0/7",
+    "perlu_dipanggil_28": "26/28",
+    "latensi_maksimum_s": 32.25,
+    "total_foto_live26_2reps": 10,
+    "giliran_berfoto_live26_2reps": 4,
+    "total_foto_multi20_2reps": 8,
+    "giliran_berfoto_multi20_2reps": 8,
+    "total_foto_single27": 12
+  }
+}

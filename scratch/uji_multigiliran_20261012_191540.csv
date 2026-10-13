@@ -1,0 +1,3 @@
+varian,panggil_perlu,panggil_perlu_pct,max_latensi_s,lebih_60s,alat_mentah_diurai,alat_mentah_gagal,error_darurat,janji_tanpa_aksi,median_latensi_s
+TOPK3,37/42,88.1,30.42,0,0,0,0,6,12.41
+TOPK5,42/42,100.0,28.48,0,0,0,0,3,13.5

@@ -1,0 +1,4 @@
+Query,Expected,Predicted,Match
+laptop baterai awet,P16,P16,True
+ada diskon laptop gaming,P04,P04,True
+install apa saja untuk laptop kuliah,P06,G03,False

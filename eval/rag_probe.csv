@@ -1,0 +1,21 @@
+no,kueri,kategori,profil_teratas,skor_kosinus,status_ambang,deteksi_benar
+1,kuliah informatika coding python dan web,in_domain,P06,0.5182,lolos,BENAR
+2,edit video 4k vlog youtube,in_domain,P03,0.5455,lolos,BENAR
+3,kasir toko kelontong minimarket,in_domain,P15,0.5046,lolos,BENAR
+4,arsitektur render sketchup 3d autocad,in_domain,P07,0.6138,lolos,BENAR
+5,baca berita resep masakan dan youtube pensiunan,in_domain,P11,0.5145,lolos,BENAR
+6,main game berat genshin impact dan cyberpunk,in_domain,P05,0.5217,lolos,BENAR
+7,desain grafis coreldraw photoshop spanduk percetakan,in_domain,P02,0.562,lolos,BENAR
+8,kantor excel spreadsheet ketik skripsi admin,in_domain,P01,0.5872,lolos,BENAR
+9,trading saham pantau chart kripto multi layar,in_domain,P10,0.6757,lolos,BENAR
+10,rekaman podcast mixing audio fl studio,in_domain,P09,0.5146,lolos,BENAR
+11,data science machine learning deep learning jupyter,in_domain,P13,0.6692,lolos,BENAR
+12,live streaming game obs vtuber,in_domain,P08,0.6386,lolos,BENAR
+13,belajar anak sd zoom dan canva sekolah,in_domain,P07,0.4984,lolos,BENAR
+14,pemrograman mobile android studio flutter emulator,in_domain,P06,0.5192,lolos,BENAR
+15,animasi 3d blender render eevee cycles,in_domain,P03,0.5182,lolos,BENAR
+16,kerja remote zoom meeting multitasking tab banyak,in_domain,P01,0.4853,lolos,BENAR
+17,aktivitas antariksa gravitasi nol planet mars,ood,P01,0.3015,ditolak,BENAR
+18,memasak kue bolu panggang oven dapur restoran,ood,P15,0.3819,ditolak,BENAR
+19,perjalanan wisata hiking gunung pulau terpencil,ood,P05,0.3081,ditolak,BENAR
+20,reparasi mesin motor balap bengkel knalpot,ood,P09,0.3836,ditolak,BENAR

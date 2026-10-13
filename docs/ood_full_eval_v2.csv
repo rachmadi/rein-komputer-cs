@@ -1,0 +1,91 @@
+phase,query,is_positive,expected_id,top_id,top_score,ret_qualifies,intent,guard_blocked,guard_passes,latency_ms
+SEBELUM_INGEST,laptop buat edit video 4k,True,P03,,0.0,False,kebutuhan-jelas,False,False,5017.38
+SEBELUM_INGEST,komputer untuk game AAA berat,True,P05,,0.0,False,kebutuhan-jelas,False,False,4302.43
+SEBELUM_INGEST,laptop kuliah sehari-hari untuk mahasiswa,True,P01,,0.0,False,kebutuhan-jelas,False,False,4294.85
+SEBELUM_INGEST,laptop baterai awet untuk kerja kantoran,True,P01,,0.0,False,kebutuhan-jelas,False,False,4311.36
+SEBELUM_INGEST,ada laptop gaming terjangkau untuk main valorant,True,P04,,0.0,False,kebutuhan-jelas,False,False,4220.31
+SEBELUM_INGEST,laptop buat koding python dan docker,True,P06,,0.0,False,kategori-saja,False,False,4234.07
+SEBELUM_INGEST,laptop desain grafis dan edit foto photoshop,True,P02,,0.0,False,kebutuhan-jelas,False,False,4206.41
+SEBELUM_INGEST,komputer kasir toko ritel,True,P15,,0.0,False,kebutuhan-jelas,False,False,4226.81
+SEBELUM_INGEST,laptop streaming youtube dan obs studio,True,P08,,0.0,False,kebutuhan-jelas,False,False,4228.47
+SEBELUM_INGEST,laptop data science AI machine learning,True,P13,,0.0,False,kebutuhan-jelas,False,False,4212.71
+SEBELUM_INGEST,komputer buat trading saham 4 monitor,True,P10,,0.0,False,kebutuhan-jelas,False,False,4251.46
+SEBELUM_INGEST,laptop untuk akuntan kerja excel formula berat,True,P14,,0.0,False,kebutuhan-jelas,False,False,4227.47
+SEBELUM_INGEST,laptop buat arsitek render autocad sketchup,True,P07,,0.0,False,kebutuhan-jelas,False,False,4295.21
+SEBELUM_INGEST,komputer untuk bikin musik studio rekaman,True,P09,,0.0,False,kebutuhan-jelas,False,False,4233.69
+SEBELUM_INGEST,laptop sederhana untuk orang tua browsing berita,True,P11,,0.0,False,kebutuhan-jelas,False,False,4286.83
+SEBELUM_INGEST,laptop buat content creator video pendek tiktok,True,P12,,0.0,False,kebutuhan-jelas,False,False,4222.27
+SEBELUM_INGEST,laptop buat kerja kantoran administrasi surat,True,P01,,0.0,False,kebutuhan-jelas,False,False,4239.73
+SEBELUM_INGEST,komputer pc desktop untuk render animasi blender,True,P03,,0.0,False,kebutuhan-jelas,False,False,4218.63
+SEBELUM_INGEST,komputer kasir pos barcode minimarket,True,P15,,0.0,False,kebutuhan-jelas,False,False,4203.89
+SEBELUM_INGEST,laptop serbaguna buat kuliah dan game santai,True,P16,,0.0,False,kebutuhan-jelas,False,False,4233.83
+SEBELUM_INGEST,berapa jam buka toko Bobby Computer hari ini,False,,,0.0,False,di-luar-topik,True,False,4248.8
+SEBELUM_INGEST,cara bayar cicilan atau kredit apakah ada paylater,False,,,0.0,False,di-luar-topik,True,False,4223.28
+SEBELUM_INGEST,garansi laptop resmi di toko berapa tahun,False,,,0.0,False,kebutuhan-jelas,True,False,4194.79
+SEBELUM_INGEST,ongkos kirim ke Surabaya atau luar pulau berapa,False,,,0.0,False,di-luar-topik,True,False,4219.79
+SEBELUM_INGEST,apakah hari minggu toko buka dan ada teknisi,False,,,0.0,False,kebutuhan-jelas,False,False,4265.3
+SEBELUM_INGEST,alamat toko fisik Bobby Computer di jalan mana,False,,,0.0,False,di-luar-topik,True,False,4228.79
+SEBELUM_INGEST,bisa minta nomor whatsapp customer service toko,False,,,0.0,False,kebutuhan-jelas,False,False,4228.53
+SEBELUM_INGEST,apakah menerima tukar tambah laptop bekas,False,,,0.0,False,kategori-saja,False,False,4245.93
+SEBELUM_INGEST,cara klaim garansi jika layar bergaris atau rusak,False,,,0.0,False,di-luar-topik,True,False,4290.95
+SEBELUM_INGEST,apakah ada jasa servis ganti pasta termal laptop,False,,,0.0,False,kategori-saja,False,False,4233.85
+SEBELUM_INGEST,metode pembayaran apa saja yang diterima di kasir,False,,,0.0,False,kebutuhan-jelas,False,False,4215.37
+SEBELUM_INGEST,apakah melayani pengiriman instant gojek grab,False,,,0.0,False,kebutuhan-jelas,False,False,4225.7
+SEBELUM_INGEST,syarat kredit laptop tanpa kartu kredit apa saja,False,,,0.0,False,kategori-saja,False,False,4211.94
+SEBELUM_INGEST,apakah ada promo diskon ulang tahun toko bulan ini,False,,,0.0,False,kebutuhan-jelas,True,False,4216.31
+SEBELUM_INGEST,apakah barang yang dibeli bisa dikembalikan jika tidak cocok,False,,,0.0,False,kebutuhan-jelas,False,False,4363.22
+SEBELUM_INGEST,bisa minta pricelist brosur lengkap format pdf,False,,,0.0,False,kebutuhan-jelas,False,False,4203.54
+SEBELUM_INGEST,apakah toko menjual makanan atau minuman ringan,False,,,0.0,False,kebutuhan-jelas,False,False,4197.87
+SEBELUM_INGEST,dimana lokasi parkir mobil untuk pengunjung toko,False,,,0.0,False,di-luar-topik,True,False,4196.04
+SEBELUM_INGEST,apakah teknisi toko bisa datang ke rumah atau kantor,False,,,0.0,False,kebutuhan-jelas,False,False,4255.37
+SEBELUM_INGEST,apakah melayani instalasi software bajakan atau crack,False,,,0.0,False,kebutuhan-jelas,False,False,4215.7
+SEBELUM_INGEST,resep membuat kopi espresso yang enak bagaimana,False,,,0.0,False,di-luar-topik,True,False,4217.57
+SEBELUM_INGEST,jadwal pertandingan sepak bola piala dunia malam ini,False,,,0.0,False,kebutuhan-jelas,False,False,4245.29
+SEBELUM_INGEST,cuaca di Jakarta besok diperkirakan hujan atau panas,False,,,0.0,False,kebutuhan-jelas,False,False,4180.69
+SEBELUM_INGEST,siapa penemu komputer pertama di dunia,False,,,0.0,False,kategori-saja,False,False,4250.97
+SEBELUM_INGEST,kurs dollar amerika ke rupiah hari ini berapa,False,,,0.0,False,kebutuhan-jelas,False,False,4206.38
+SESUDAH_INGEST,laptop buat edit video 4k,True,P03,P03,0.6018,True,kebutuhan-jelas,False,True,4178.8
+SESUDAH_INGEST,komputer untuk game AAA berat,True,P05,P05,0.6564,True,kebutuhan-jelas,False,True,4229.92
+SESUDAH_INGEST,laptop kuliah sehari-hari untuk mahasiswa,True,P01,P01,0.6156,True,kebutuhan-jelas,False,True,4271.89
+SESUDAH_INGEST,laptop baterai awet untuk kerja kantoran,True,P01,P01,0.5727,True,kebutuhan-jelas,False,True,4193.0
+SESUDAH_INGEST,ada laptop gaming terjangkau untuk main valorant,True,P04,P04,0.6708,True,kebutuhan-jelas,False,True,4267.93
+SESUDAH_INGEST,laptop buat koding python dan docker,True,P06,P06,0.5853,True,kategori-saja,False,True,4219.79
+SESUDAH_INGEST,laptop desain grafis dan edit foto photoshop,True,P02,P02,0.638,True,kebutuhan-jelas,False,True,4195.45
+SESUDAH_INGEST,komputer kasir toko ritel,True,P15,P15,0.5894,True,kebutuhan-jelas,False,True,4225.59
+SESUDAH_INGEST,laptop streaming youtube dan obs studio,True,P08,P08,0.5529,True,kebutuhan-jelas,False,True,4209.83
+SESUDAH_INGEST,laptop data science AI machine learning,True,P13,P13,0.6307,True,kebutuhan-jelas,False,True,97356.2
+SESUDAH_INGEST,komputer buat trading saham 4 monitor,True,P10,P10,0.5673,True,kebutuhan-jelas,False,True,4195.72
+SESUDAH_INGEST,laptop untuk akuntan kerja excel formula berat,True,P14,P14,0.6012,True,kebutuhan-jelas,False,True,4230.35
+SESUDAH_INGEST,laptop buat arsitek render autocad sketchup,True,P07,P07,0.6239,True,kebutuhan-jelas,False,True,4211.54
+SESUDAH_INGEST,komputer untuk bikin musik studio rekaman,True,P09,P09,0.6206,True,kebutuhan-jelas,False,True,4248.84
+SESUDAH_INGEST,laptop sederhana untuk orang tua browsing berita,True,P11,P11,0.6062,True,kebutuhan-jelas,False,True,4237.8
+SESUDAH_INGEST,laptop buat content creator video pendek tiktok,True,P12,P12,0.6555,True,kebutuhan-jelas,False,True,4219.78
+SESUDAH_INGEST,laptop buat kerja kantoran administrasi surat,True,P01,P01,0.6644,True,kebutuhan-jelas,False,True,4218.3
+SESUDAH_INGEST,komputer pc desktop untuk render animasi blender,True,P03,P03,0.5579,True,kebutuhan-jelas,False,True,4204.27
+SESUDAH_INGEST,komputer kasir pos barcode minimarket,True,P15,P15,0.5942,True,kebutuhan-jelas,False,True,4227.33
+SESUDAH_INGEST,laptop serbaguna buat kuliah dan game santai,True,P16,P16,0.73,True,kebutuhan-jelas,False,True,4226.25
+SESUDAH_INGEST,berapa jam buka toko Bobby Computer hari ini,False,,P15,0.4054,True,di-luar-topik,True,False,4224.23
+SESUDAH_INGEST,cara bayar cicilan atau kredit apakah ada paylater,False,,P06,0.4238,True,di-luar-topik,True,False,4260.48
+SESUDAH_INGEST,garansi laptop resmi di toko berapa tahun,False,,P16,0.4053,True,kebutuhan-jelas,True,False,4239.07
+SESUDAH_INGEST,ongkos kirim ke Surabaya atau luar pulau berapa,False,,P04,0.3385,False,di-luar-topik,True,False,4265.89
+SESUDAH_INGEST,apakah hari minggu toko buka dan ada teknisi,False,,P15,0.4216,True,kebutuhan-jelas,False,True,4228.45
+SESUDAH_INGEST,alamat toko fisik Bobby Computer di jalan mana,False,,P15,0.3501,False,di-luar-topik,True,False,4219.45
+SESUDAH_INGEST,bisa minta nomor whatsapp customer service toko,False,,P15,0.4849,True,kebutuhan-jelas,False,True,4221.89
+SESUDAH_INGEST,apakah menerima tukar tambah laptop bekas,False,,P16,0.4932,True,kategori-saja,False,True,4255.04
+SESUDAH_INGEST,cara klaim garansi jika layar bergaris atau rusak,False,,P03,0.3963,False,di-luar-topik,True,False,4258.38
+SESUDAH_INGEST,apakah ada jasa servis ganti pasta termal laptop,False,,P16,0.4513,True,kategori-saja,False,True,4224.25
+SESUDAH_INGEST,metode pembayaran apa saja yang diterima di kasir,False,,P15,0.5678,True,kebutuhan-jelas,False,True,4240.06
+SESUDAH_INGEST,apakah melayani pengiriman instant gojek grab,False,,P08,0.3479,False,kebutuhan-jelas,False,False,4256.94
+SESUDAH_INGEST,syarat kredit laptop tanpa kartu kredit apa saja,False,,P16,0.4433,True,kategori-saja,False,True,4249.61
+SESUDAH_INGEST,apakah ada promo diskon ulang tahun toko bulan ini,False,,P15,0.4126,True,kebutuhan-jelas,True,False,4207.93
+SESUDAH_INGEST,apakah barang yang dibeli bisa dikembalikan jika tidak cocok,False,,P15,0.4326,True,kebutuhan-jelas,False,True,4227.18
+SESUDAH_INGEST,bisa minta pricelist brosur lengkap format pdf,False,,P15,0.4512,True,kebutuhan-jelas,False,True,4242.17
+SESUDAH_INGEST,apakah toko menjual makanan atau minuman ringan,False,,P15,0.5166,True,kebutuhan-jelas,False,True,4237.83
+SESUDAH_INGEST,dimana lokasi parkir mobil untuk pengunjung toko,False,,P15,0.4395,True,di-luar-topik,True,False,4207.05
+SESUDAH_INGEST,apakah teknisi toko bisa datang ke rumah atau kantor,False,,P15,0.4514,True,kebutuhan-jelas,False,True,4219.42
+SESUDAH_INGEST,apakah melayani instalasi software bajakan atau crack,False,,P06,0.462,True,kebutuhan-jelas,False,True,4210.49
+SESUDAH_INGEST,resep membuat kopi espresso yang enak bagaimana,False,,P09,0.3535,False,di-luar-topik,True,False,4240.24
+SESUDAH_INGEST,jadwal pertandingan sepak bola piala dunia malam ini,False,,P05,0.3582,False,kebutuhan-jelas,False,False,4223.79
+SESUDAH_INGEST,cuaca di Jakarta besok diperkirakan hujan atau panas,False,,P13,0.3524,False,kebutuhan-jelas,False,False,4207.01
+SESUDAH_INGEST,siapa penemu komputer pertama di dunia,False,,P01,0.3531,False,kategori-saja,False,False,4204.11
+SESUDAH_INGEST,kurs dollar amerika ke rupiah hari ini berapa,False,,P05,0.363,False,kebutuhan-jelas,False,False,4266.2

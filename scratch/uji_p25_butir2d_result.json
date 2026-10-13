@@ -1,0 +1,26 @@
+[
+  {
+    "ulangan": 1,
+    "session_id": "uji_p25_b2d_rep1_1791813497",
+    "durasi_total_s": 316.9,
+    "latensi_jawab_s": 15.1,
+    "balasan_verbatim": "Mohon maaf Kak, tadi sepertinya ada gangguan koneksi ya. Saya Reni, Kak. Untuk Apple Mac mini M2 juga sama seperti mini PC lainnya, unitnya belum termasuk monitor ya. Jadi, Kakak tetap perlu membeli monitor secara terpisah.",
+    "tools_called": []
+  },
+  {
+    "ulangan": 2,
+    "session_id": "uji_p25_b2d_rep2_1791813814",
+    "durasi_total_s": 266.35,
+    "latensi_jawab_s": 15.04,
+    "balasan_verbatim": "Mohon maaf Kak, tadi ada sedikit kendala koneksi. Saya mau ingatkan lagi ya, untuk produk seperti Apple Mac mini M2, kebijakan toko kami adalah tidak termasuk monitor. Jadi, monitor harus Kakak siapkan atau beli terpisah ya. Ada lagi yang bisa saya bantu Kak?",
+    "tools_called": []
+  },
+  {
+    "ulangan": 3,
+    "session_id": "uji_p25_b2d_rep3_1791814081",
+    "durasi_total_s": 271.05,
+    "latensi_jawab_s": 17.19,
+    "balasan_verbatim": "Mohon maaf banget Kak, tadi ada gangguan koneksi sehingga jawaban saya tidak sampai. Mengenai Mac mini, kebijakan toko kami adalah paket desktop tidak termasuk monitor, kecuali jika hal tersebut disebutkan secara spesifik di nama atau spesifikasi produknya. Jadi, Kakak perlu menyiapkan monitor secara terpisah ya. Ada lagi yang bisa saya bantu Kak?",
+    "tools_called": []
+  }
+]

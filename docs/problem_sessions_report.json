@@ -1,0 +1,2952 @@
+{
+  "generated_at": "2026-10-09T17:53:36.920267",
+  "summary": {
+    "total_sessions_audited": 51,
+    "total_problem_sessions": 36,
+    "counts_by_category": {
+      "negative_feedback": 0,
+      "repeated_offerings": 172,
+      "invalid_checkmark": 0,
+      "customer_objection": 11
+    }
+  },
+  "sessions": [
+    {
+      "session_id": "web_1791276935603_6dbdcf",
+      "turn_count": 11,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "Nonton youtube juga",
+          "offered_products": [
+            "KB-L01",
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 5,
+          "user_text": "Emangnya bisa pake itu?",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 6,
+          "user_text": "Yang aku tanya yang ini nih",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 7,
+          "user_text": "Itu...nitro itu",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 8,
+          "user_text": "Emang bisa pake itu buat koding",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 9,
+          "user_text": "Dari tadi juga sudah ngomongin nitro ini",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 10,
+          "user_text": "Emang bisa pake yang ini?",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T16:14:02.275104",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Halo",
+          "bot_snippet": "Halo, Kak! Ada yang bisa saya bantu?..."
+        },
+        {
+          "turn": 1,
+          "user": "Laptop acer ada?",
+          "bot_snippet": "Ada, Kak! Laptop Acer mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 2,
+          "user": "Paling cuma browsing",
+          "bot_snippet": "Untuk penggunaan harian, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Aspire Lite 14** — Intel Processor N1..."
+        },
+        {
+          "turn": 3,
+          "user": "Nonton youtube juga",
+          "bot_snippet": "Tentu sangat lancar Kak! Untuk penggunaan aplikasi tersebut, browsing, maupun aplikasi berbasis web lainnya, **Acer Aspi..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_gemma_session",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "Emang layarnya enak dipake lama?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T16:32:34.379041",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Halo min, lagi cari laptop nih",
+          "bot_snippet": "Ada, Kak! Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 1,
+          "user": "Buat ngetik tugas sama nonton drakor",
+          "bot_snippet": "Untuk kerja/office dan penggunaan harian, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Aspire Lite 14** — I..."
+        },
+        {
+          "turn": 2,
+          "user": "Emang layarnya enak dipake lama?",
+          "bot_snippet": "- **Acer Aspire Lite 14**: Layar 14 inci WUXGA IPS\n- **Lenovo IdeaPad Slim 3 14**: Layar 14 inci FHD\n- **ASUS Vivobook 1..."
+        },
+        {
+          "turn": 3,
+          "user": "Menurut kamu worth it gak yang pertama itu?",
+          "bot_snippet": "Halo Kak! Selamat datang di Bobby Computer ya! Senang bisa ngobrol sama Kamu hari ini. Ada urusan khusus atau mau cari l..."
+        }
+      ]
+    },
+    {
+      "session_id": "debug_session",
+      "turn_count": 3,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "Emang layarnya enak dipake lama?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T16:33:38.850286",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Halo min, lagi cari laptop nih",
+          "bot_snippet": "Ada, Kak! Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 1,
+          "user": "Buat ngetik tugas sama nonton drakor",
+          "bot_snippet": "Untuk kerja/office dan penggunaan harian, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Aspire Lite 14** — I..."
+        },
+        {
+          "turn": 2,
+          "user": "Emang layarnya enak dipake lama?",
+          "bot_snippet": "- **Acer Aspire Lite 14**: Layar 14 inci WUXGA IPS\n- **Lenovo IdeaPad Slim 3 14**: Layar 14 inci FHD\n- **ASUS Vivobook 1..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_check_state",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "Emang layarnya enak dipake lama?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "Menurut kamu worth it gak yang pertama itu?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T16:34:16.464644",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Halo min, lagi cari laptop nih",
+          "bot_snippet": "Ada, Kak! Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 1,
+          "user": "Buat ngetik tugas sama nonton drakor",
+          "bot_snippet": "Untuk kerja/office dan penggunaan harian, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Aspire Lite 14** — I..."
+        },
+        {
+          "turn": 2,
+          "user": "Emang layarnya enak dipake lama?",
+          "bot_snippet": "- **Acer Aspire Lite 14**: Layar 14 inci WUXGA IPS\n- **Lenovo IdeaPad Slim 3 14**: Layar 14 inci FHD\n- **ASUS Vivobook 1..."
+        },
+        {
+          "turn": 3,
+          "user": "Menurut kamu worth it gak yang pertama itu?",
+          "bot_snippet": "- **Acer Aspire Lite 14**: Worth it, sih! Kalau buat belajar/kerja ringan, lumayan lah.\n- **Lenovo IdeaPad Slim 3 14**: ..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_acer_nitro",
+      "turn_count": 5,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "Nonton youtube juga",
+          "offered_products": [
+            "KB-L01",
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "Emangnya bisa pake itu?",
+          "offered_products": [
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T16:34:32.118706",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Laptop acer ada?",
+          "bot_snippet": "Ada, Kak! Laptop Acer mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 1,
+          "user": "Paling cuma browsing",
+          "bot_snippet": "Untuk penggunaan harian, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Aspire Lite 14** — Intel Processor N1..."
+        },
+        {
+          "turn": 2,
+          "user": "Nonton youtube juga",
+          "bot_snippet": "Tentu sangat lancar Kak! Untuk penggunaan aplikasi tersebut, browsing, maupun aplikasi berbasis web lainnya, **Acer Aspi..."
+        },
+        {
+          "turn": 3,
+          "user": "Tapi mau belajar koding juga",
+          "bot_snippet": "Untuk programming, ada satu rekomendasi yang sesuai di katalog kami:\n1. **Acer Nitro V 15** — Intel Core i5-13420H, 16 G..."
+        }
+      ]
+    },
+    {
+      "session_id": "tg_1095607605",
+      "turn_count": 142,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "Kok gak ada info ramnya berapa?",
+          "offered_products": [
+            "KB-L03",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L03', 'KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 4,
+          "matched_keyword": "Kok",
+          "user_text": "Kok gak ada info ramnya berapa?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'Kok'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 5,
+          "user_text": "Itu semua untuk kantoran?",
+          "offered_products": [
+            "KB-L03",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L03', 'KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 10,
+          "user_text": "Nitro cocok gak buat desain?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L08",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L08', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 11,
+          "user_text": "Ukuran layar berapa?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L08",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L08', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 12,
+          "user_text": "Merek lain yang setara apa?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L08",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L08', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 13,
+          "user_text": "Lebih mahal ya?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L08",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L08', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 14,
+          "user_text": "Kalo printer?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L08",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L08', 'KB-L10']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 15,
+          "matched_keyword": "bukan",
+          "user_text": "Ya bukan intel dong. Kan printer?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'bukan'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 16,
+          "user_text": "Harga di bawah 1 juta, pilihannya apa aja?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 17,
+          "user_text": "Pilihan lain ada?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 18,
+          "user_text": "Maksudku selain tipe ini",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 19,
+          "user_text": "Printer tipe lain",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 22,
+          "user_text": "Berwarna?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 23,
+          "user_text": "Wih..keren juga",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 24,
+          "user_text": "Kalo yang di atas itu?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 25,
+          "user_text": "Yang lebih mahal dikit",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 26,
+          "matched_keyword": "Kok",
+          "user_text": "Kok laptop?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'Kok'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 29,
+          "user_text": "Yang kelas di atas itu?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 30,
+          "user_text": "Berapaan?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 31,
+          "user_text": "Sama dong harganya dengan yang tadi?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 32,
+          "user_text": "Ya sama dengan epson ecotank",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 33,
+          "user_text": "Kan tadi aku tanya kelas di atasnya",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 36,
+          "user_text": "Buat mama sih",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 37,
+          "user_text": "Paling cari resep masakan",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 40,
+          "user_text": "Berapaan harganya?",
+          "offered_products": [
+            "KB-L01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 41,
+          "matched_keyword": "Lah",
+          "user_text": "Lah..kan itu gak bisa buat main game?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'Lah'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 42,
+          "user_text": "Cek yang bisa sekalian main game",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 45,
+          "user_text": "Buat mama sih",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 48,
+          "matched_keyword": "bukan",
+          "user_text": "Itu bukan 10 juta dong",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'bukan'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 50,
+          "user_text": "Tapi, mama maunya tanya resep sama Chatgpt juga",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 52,
+          "user_text": "Ram berapa itu emangnya?",
+          "offered_products": [
+            "KB-L01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 57,
+          "user_text": "Ada yang gpu nvidia gak?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 58,
+          "user_text": "Merek lain juga gak ada yang pake nvidia?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 61,
+          "user_text": "Tipe apa gpu-nya?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 62,
+          "user_text": "Wah, tanggung. Sayang banget. Kalo yang pake rtx 3050 ada?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 63,
+          "user_text": "Merek lain ada yang pake rtx 3050?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 64,
+          "user_text": "Produk laptop apa aja yang pake gpu?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 67,
+          "user_text": "Buat mama sih",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 68,
+          "user_text": "Tapi, kata mama yang bisa sekalian tanya resep ke chatgpt",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 69,
+          "user_text": "Emangnya yang pertama tadi gak bisa chatgpt?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 78,
+          "matched_keyword": "bukan",
+          "user_text": "RTX 3050 bukan geforce?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'bukan'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 82,
+          "user_text": "Buat mama sih",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 83,
+          "user_text": "Kata mama buat cari resep",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 89,
+          "user_text": "Papaku konsultan IT",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 90,
+          "user_text": "Ada yang core i7?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 91,
+          "user_text": "Papaku suka koding juga",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 92,
+          "user_text": "Kadang main LLM lokal juga",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 93,
+          "user_text": "Apa misalnya?",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 95,
+          "user_text": "Aku tanya spek",
+          "offered_products": [
+            "KB-L01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 96,
+          "user_text": "Lah...aku tanya spek kenapa mesti tanya budget dulu?",
+          "offered_products": [
+            "KB-L01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 96,
+          "matched_keyword": "Lah",
+          "user_text": "Lah...aku tanya spek kenapa mesti tanya budget dulu?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'Lah'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 99,
+          "user_text": "Laptop",
+          "offered_products": [
+            "KB-D01",
+            "KB-D02",
+            "KB-D03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D01', 'KB-D02', 'KB-D03']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 104,
+          "user_text": "Aku butuh yang bisa dipake koding",
+          "offered_products": [
+            "KB-L03",
+            "KB-L04",
+            "KB-L05"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L03', 'KB-L04', 'KB-L05']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 106,
+          "matched_keyword": "bukan",
+          "user_text": "Laptop, bukan desktop",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'bukan'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 107,
+          "user_text": "Ada apa?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L07",
+            "KB-L08"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L07', 'KB-L08']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 109,
+          "user_text": "Jangan terlalu mahal. Dananya cuma 14 juta",
+          "offered_products": [
+            "KB-L09",
+            "KB-L06",
+            "KB-L07"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L09', 'KB-L06', 'KB-L07']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 110,
+          "user_text": "Spek lengkapnya dong",
+          "offered_products": [
+            "KB-L09",
+            "KB-L06",
+            "KB-L07"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L09', 'KB-L06', 'KB-L07']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 112,
+          "user_text": "Malah kasih gambar desktop",
+          "offered_products": [
+            "KB-L07",
+            "KB-L03",
+            "KB-D02"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L03', 'KB-D02']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 113,
+          "user_text": "Kan cari laptop?",
+          "offered_products": [
+            "KB-L07",
+            "KB-L03",
+            "KB-D02"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L03', 'KB-D02']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 119,
+          "user_text": "Aku butuh yang bisa koding",
+          "offered_products": [
+            "KB-L03",
+            "KB-L04",
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L03', 'KB-L04', 'KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 120,
+          "user_text": "Tapi aku juga lagi eksplorasi LLM lokal",
+          "offered_products": [
+            "KB-L03",
+            "KB-L04",
+            "KB-L06"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L03', 'KB-L04', 'KB-L06']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 122,
+          "user_text": "Yang ketiga gak punya gpu?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L07",
+            "KB-L04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L07', 'KB-L04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 123,
+          "user_text": "Sudah tau butuh untuk LLM lokal",
+          "offered_products": [
+            "KB-L06",
+            "KB-L07",
+            "KB-L04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L07', 'KB-L04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 125,
+          "user_text": "Itu ada gpu. Kenapa dibilang gak cocok dengan LLM?",
+          "offered_products": [
+            "KB-L08",
+            "KB-L06",
+            "KB-L07"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L08', 'KB-L06', 'KB-L07']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 125,
+          "matched_keyword": "Kenapa",
+          "user_text": "Itu ada gpu. Kenapa dibilang gak cocok dengan LLM?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'Kenapa'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 126,
+          "user_text": "Tolong spek lenovo ini",
+          "offered_products": [
+            "KB-L08",
+            "KB-L06",
+            "KB-L07"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L08', 'KB-L06', 'KB-L07']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 127,
+          "user_text": "Baiklah. Aku mau sekalian printer warna",
+          "offered_products": [
+            "KB-L08",
+            "KB-L06",
+            "KB-L07"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L08', 'KB-L06', 'KB-L07']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 128,
+          "user_text": "Gak mesti untuk foto",
+          "offered_products": [
+            "KB-L08",
+            "KB-L06",
+            "KB-L07"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L08', 'KB-L06', 'KB-L07']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 130,
+          "user_text": "Wih..mahal juga ya? Ada yang 1 jutaan?",
+          "offered_products": [
+            "KB-P02",
+            "KB-P03",
+            "KB-P04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P02', 'KB-P03', 'KB-P04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 132,
+          "user_text": "Yang ink tank gak ada yang sekitar 1 juta?",
+          "offered_products": [
+            "KB-P03",
+            "KB-P02",
+            "KB-P04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P03', 'KB-P02', 'KB-P04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 133,
+          "user_text": "Aku juga butuh monitor eksternal",
+          "offered_products": [
+            "KB-P03",
+            "KB-P02",
+            "KB-P04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P03', 'KB-P02', 'KB-P04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 135,
+          "user_text": "Kan aku minta monitor, bukan desktop?",
+          "offered_products": [
+            "KB-D01",
+            "KB-D02",
+            "KB-D03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D01', 'KB-D02', 'KB-D03']"
+        },
+        {
+          "category": "customer_objection",
+          "turn_index": 135,
+          "matched_keyword": "bukan",
+          "user_text": "Kan aku minta monitor, bukan desktop?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'bukan'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 141,
+          "user_text": "Tapi, mama adalah interior designer",
+          "offered_products": [
+            "KB-L06",
+            "KB-L08",
+            "KB-L05"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L08', 'KB-L05']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T19:14:32.611568",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Bot",
+          "bot_snippet": "Halo Kak! Selamat datang di Bobby Computer ya? Senang bisa bantu sebisa saya hari ini. Ada yang butuh bantuan atau infor..."
+        },
+        {
+          "turn": 1,
+          "user": "Jual apa?",
+          "bot_snippet": "Di katalog Bobby Computer tersedia: laptop (10 produk), desktop (5 produk), printer (5 produk). Sedang mencari yang mana..."
+        },
+        {
+          "turn": 2,
+          "user": "Laptop asus ada?",
+          "bot_snippet": "Ada, Kak! Laptop Asus mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 3,
+          "user": "Untuk kerja",
+          "bot_snippet": "Untuk kerja/office, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **ASUS Vivobook 14 A1405** — Intel Core i5-1235U,..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_sim_gemma4_full",
+      "turn_count": 6,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "Pilihan lain ada?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "Maksudku selain tipe ini",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "Printer tipe lain",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 5,
+          "user_text": "Lebih mahal ya?",
+          "offered_products": [
+            "KB-P01"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T20:49:20.102841",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Kak",
+          "bot_snippet": "Halo, Kak! Ada yang bisa saya bantu?..."
+        },
+        {
+          "turn": 1,
+          "user": "ada printer dibawah 1 juta?",
+          "bot_snippet": "Untuk cetak/print dokumen, ada satu rekomendasi yang sesuai di katalog kami:\n1. **Canon PIXMA TS207** — Print Only, Inkj..."
+        },
+        {
+          "turn": 2,
+          "user": "Pilihan lain ada?",
+          "bot_snippet": "Untuk printer dengan budget di bawah Rp1 juta, di katalog kami hanya ada **Canon PIXMA TS207** (Rp699.000), Kak.\n\nNamun ..."
+        },
+        {
+          "turn": 3,
+          "user": "Maksudku selain tipe ini",
+          "bot_snippet": "Untuk printer dengan budget di bawah Rp1 juta, di katalog kami hanya ada **Canon PIXMA TS207** (Rp699.000), Kak.\n\nNamun ..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_session_opt1",
+      "turn_count": 3,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "Yang kelas di atas itu ada apa aja?",
+          "offered_products": [
+            "KB-P01",
+            "KB-P02",
+            "KB-P03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01', 'KB-P02', 'KB-P03']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T21:15:10.832974",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "ada printer dibawah 1 juta?",
+          "bot_snippet": "Untuk kebutuhan mencetak saja dengan budget di bawah Rp1 juta, kami ada **Canon PIXMA TS207** seharga Rp699.000 ya Kak. ..."
+        },
+        {
+          "turn": 1,
+          "user": "Yang kelas di atas itu ada apa aja?",
+          "bot_snippet": "Mohon maaf sebelumnya, Kak. Boleh tolong diperjelas maksud \"kelas di atas\" yang dimaksud? Apakah merujuk pada kategori p..."
+        },
+        {
+          "turn": 2,
+          "user": "Yang kelas di atas itu ada apa aja?",
+          "bot_snippet": "Mohon maaf sebelumnya, Kak, boleh tolong diperjelas maksud \"kelas di atas\" yang dimaksud? Apakah merujuk pada kategori p..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_opt1_live_session",
+      "turn_count": 6,
+      "issues": [
+        {
+          "category": "customer_objection",
+          "turn_index": 4,
+          "matched_keyword": "Kok",
+          "user_text": "Kok laptop?",
+          "detail": "Pelanggan menunjukkan kebingungan/keberatan dengan kata 'Kok'"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 5,
+          "user_text": "Kan tanya printer?",
+          "offered_products": [
+            "KB-P01",
+            "KB-P02",
+            "KB-P03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-P01', 'KB-P02', 'KB-P03']"
+        }
+      ],
+      "first_turn_at": "2026-10-06T21:17:06.351259",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "Kak",
+          "bot_snippet": "Ada yang bisa dibantu dengan kebutuhan komputer hari ini, Kak? Mau cari laptop, PC rakitan, monitor, atau mungkin juga p..."
+        },
+        {
+          "turn": 1,
+          "user": "ada printer dibawah 1 juta?",
+          "bot_snippet": "Untuk kategori printer di bawah Rp1.000.000, saat ini yang tersedia adalah **Canon PIXMA TS207** dengan harga **Rp699.00..."
+        },
+        {
+          "turn": 2,
+          "user": "Yang kelas di atas itu ada apa aja?",
+          "bot_snippet": "Kalau mau yang lebih tinggi dari Canon PIXMA TS207, kami punya beberapa pilihan printer tangki tinta (Ink Tank) canggih ..."
+        },
+        {
+          "turn": 3,
+          "user": "Berapaan harga yang Epson itu?",
+          "bot_snippet": "Kak, maksudnya printer Epson yang mana ya? Apakah yang **Epson EcoTank L3210** (fungsi Print, Scan, Copy) dengan harga R..."
+        }
+      ]
+    },
+    {
+      "session_id": "test_e2e_session_999",
+      "turn_count": 9,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "yang bisa dipake apa aja",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 6,
+          "user_text": "yang bisa dipake apa aja",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 8,
+          "user_text": "halo bang",
+          "offered_products": [
+            "KB-L10",
+            "KB-L06",
+            "KB-L08"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L10', 'KB-L06', 'KB-L08']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T10:14:51.272993",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Hai Kak! Untuk keperluan edit video 4K, memang butuh laptop dengan spesifikasi yang sangat kuat ya. Berdasarkan kebutuha..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Wah, kalau mau buat edit video 4K, berarti kebutuhan Anda memang untuk tugas berat ya, Kak!\n\nBerdasarkan kriteria Anda, ..."
+        },
+        {
+          "turn": 2,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Wah, tentu saja ada pilihan yang lebih ramah di kantong, Kak!\n\nSaya sudah coba carikan beberapa laptop dengan performa y..."
+        },
+        {
+          "turn": 3,
+          "user": "yang bisa dipake apa aja",
+          "bot_snippet": "Wah, Kakak mau yang super serbaguna ya? 😊\n\nMemang betul, laptop dengan performa tinggi untuk edit video 4K itu biasanya ..."
+        }
+      ]
+    },
+    {
+      "session_id": "S1",
+      "turn_count": 49,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L07",
+            "KB-L08"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L07', 'KB-L08']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L06",
+            "KB-L07",
+            "KB-L08"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L07', 'KB-L08']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 5,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-L06",
+            "KB-L07",
+            "KB-L08"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L06', 'KB-L07', 'KB-L08']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 15,
+          "user_text": "kebutuhan jelas: laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 19,
+          "user_text": "yang ASUS aja",
+          "offered_products": [
+            "TEST-GPU-NULL",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['TEST-GPU-NULL', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 22,
+          "user_text": "yang ASUS aja",
+          "offered_products": [
+            "TEST-GPU-NULL",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['TEST-GPU-NULL', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 41,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-D05",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 43,
+          "user_text": "kebutuhan jelas: laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 45,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-D05",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 48,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-D05",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-L07', 'KB-L09']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T10:42:38.047222",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Untuk kebutuhan edit video 4K, sebaiknya pilih laptop dengan performa grafis dan prosesor yang kuat ya, Kak. Saya sarank..."
+        },
+        {
+          "turn": 1,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Kalau mau opsi yang lebih terjangkau tapi masih oke buat kebutuhan umum, ada Lenovo IdeaPad Slim 5 atau HP 14s dengan ha..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Untuk editing video, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Nitro V 15** — Intel Core i5-13420H, 16 G..."
+        },
+        {
+          "turn": 3,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Pilihan tadi sudah yang paling hemat untuk kebutuhan tersebut di katalog kami, Kak...."
+        }
+      ]
+    },
+    {
+      "session_id": "S2",
+      "turn_count": 17,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 7,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 8,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 9,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 10,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 11,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 12,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 13,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 15,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 16,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T10:42:48.688661",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Mohon maaf Kak, untuk katalog laptop kami saat ini belum tersedia dengan pilihan RAM sebesar 128 GB ya. Apakah Kakak men..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Wah, kalau mencari laptop dengan spesifikasi RAM 128GB, saat ini di katalog kami belum ada produk yang menyediakan kapas..."
+        }
+      ]
+    },
+    {
+      "session_id": "S3",
+      "turn_count": 17,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "laptop Test Laptop Null VRAM",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 6,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 7,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 8,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 9,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 10,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T10:42:52.923585",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop Test Laptop Null VRAM",
+          "bot_snippet": "Mohon maaf Kak, untuk spesifikasi \"Null VRAM\" itu kurang familiar nih buat kami. Boleh tolong dijelaskan sedikit kebutuh..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop Test Laptop Null VRAM",
+          "bot_snippet": "Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop Test Laptop Null VRAM",
+          "bot_snippet": "Laptopnya mau dipakai untuk apa, Kak?..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop Test Laptop Null VRAM",
+          "bot_snippet": "Setelah saya cek di katalog, untuk kebutuhan laptop yang spesifik seperti \"Test Laptop Null VRAM\", saya menemukan bebera..."
+        }
+      ]
+    },
+    {
+      "session_id": "S4",
+      "turn_count": 6,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop buat main Cyberpunk tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-L01",
+            "KB-L02",
+            "KB-L03"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L01', 'KB-L02', 'KB-L03']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T10:42:57.345466",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat main Cyberpunk tapi juga buat kasir toko",
+          "bot_snippet": "Untuk kebutuhan nge-game berat seperti Cyberpunk sekaligus dipakai kerjaan ringan kayak kasir, paling pas itu laptop gam..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat main Cyberpunk tapi juga buat kasir toko",
+          "bot_snippet": "Untuk administrasi/kasir, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Acer Aspire Lite 14** — Intel Processor N..."
+        },
+        {
+          "turn": 2,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Untuk administrasi/kasir dan gaming, ada beberapa pilihan yang bisa dipertimbangkan:\n1. **Epson EcoTank L121** — Print O..."
+        },
+        {
+          "turn": 3,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Wah, Kakak cari komputer serbaguna ya! Harus kuat buat main game berat tapi juga andal buat kebutuhan bisnis kayak kasir..."
+        }
+      ]
+    },
+    {
+      "session_id": "S1_0",
+      "turn_count": 6,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 5,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:13:41.999148",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Berikut rekomendasi yang cocok:..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Untuk kebutuhan *video editing* 4K, Kak, performa CPU, GPU, dan\n\n\n1. **Lenovo Legion Pro 5 16** | Rp23,999,000\n  Spesifi..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 7..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Berdasarkan kebutuhan Anda untuk edit video 4K, saya telah merekomendasikan beberapa pilihan laptop dengan spesifikasi y..."
+        }
+      ]
+    },
+    {
+      "session_id": "S3_0",
+      "turn_count": 5,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:13:48.367213",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S4_0",
+      "turn_count": 5,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:13:54.625603",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 2,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Ketiga rekomendasi di atas adalah komputer yang memiliki performa kuat untuk kebutuhan gaming berat, dan sekaligus sanga..."
+        },
+        {
+          "turn": 3,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        }
+      ]
+    },
+    {
+      "session_id": "S6_0",
+      "turn_count": 5,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 4,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:13:54.633681",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S1_1",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:15:20.820402",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "1. **Lenovo Legion Pro 5 16** | Rp23,999,000\n  Spesifikasi: Intel Core i7-14650HX | NVIDIA GeForce RTX 4070 8 GB | 32 GB..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Apakah dari rekomendasi ini ada model yang menarik perhatian Kakak? Atau apakah ada kebutuhan lain yang ingin Kakak samp..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Ada beberapa pilihan laptop yang bisa Kakak pertimbangkan, tergantung *budget* dan performa yang diinginkan.\n\nSecara umu..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S3_1",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:15:27.105234",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S4_1",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:15:33.311888",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 2,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 3,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S6_1",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:15:33.316669",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S1_2",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:15:54.566244",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Dari hasil pencarian tadi, saya menemukan beberapa opsi laptop yang sangat cocok untuk kebutuhan edit video 4\n\n\n1. **Len..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Apakah ada model atau spesifikasi tertentu yang ingin Kakak ketahui lebih detail, atau apakah Kakak ingin membandingkan ..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 7..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S2_2",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-D05",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-L07', 'KB-L09']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-D05",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-L07', 'KB-L09']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:00.837405",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Apakah ada kategori atau spesifikasi tertentu yang Kakak cari? Kalau mau dicari yang lebih spesifik, boleh\n\n\n? Berikut r..."
+        },
+        {
+          "turn": 2,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 3,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S3_2",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:00.844932",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S4_2",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:07.052944",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 2,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 3,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S6_2",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:07.060628",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S1_3",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:13.265137",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Berikut rekomendasi yang cocok:..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 7..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Semoga rekomendasinya membantu, Kak! Apakah ada merek, spesifikasi, atau kisaran harga tertentu yang lebih Kakak inginka..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S2_3",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "ada yang lebih murah?",
+          "offered_products": [
+            "KB-D05",
+            "KB-L07",
+            "KB-L09"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-L07', 'KB-L09']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:19.483505",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Apakah ada produk atau kategori tertentu yang ingin Anda bandingkan atau cari rekomendasinya, Kak? 😊\n\n\n? Berikut rekomen..."
+        },
+        {
+          "turn": 2,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Mohon maaf, Kak. Untuk bisa merekomendasikan barang yang lebih murah, Kakak mau mencari produk apa ya? Apakah laptop, mo..."
+        },
+        {
+          "turn": 3,
+          "user": "ada yang lebih murah?",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S3_3",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:19.494104",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S4_3",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:25.747453",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 2,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 3,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S6_3",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:25.757110",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S1_4",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop buat edit video 4k",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:38.346450",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 7735HS | NVIDIA GeForce RTX 3050 6 GB | 16 GB..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 7..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Apakah ada pilihan di atas yang ingin Kakak ketahui lebih detail, atau apakah ada budget/spesifikasi lain yang ingin dis..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop buat edit video 4k",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S3_4",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop RAM 128GB",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:44.569278",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop RAM 128GB",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    },
+    {
+      "session_id": "S4_4",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "komputer buat game berat tapi juga buat kasir toko",
+          "offered_products": [
+            "KB-D05",
+            "KB-D03",
+            "KB-D04"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-D05', 'KB-D03', 'KB-D04']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:50.873848",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Berikut rekomendasi untuk Anda...."
+        },
+        {
+          "turn": 1,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 2,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS ROG Strix G16CHR** | Rp27,499,000\n  Spesifikasi: Intel Core i7-147..."
+        },
+        {
+          "turn": 3,
+          "user": "komputer buat game berat tapi juga buat kasir toko",
+          "bot_snippet": "Baik, ini rekomendasi dari sistem kami berdasarkan kebutuhan Anda:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **AS..."
+        }
+      ]
+    },
+    {
+      "session_id": "S6_4",
+      "turn_count": 4,
+      "issues": [
+        {
+          "category": "repeated_offerings",
+          "turn_index": 1,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 2,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        },
+        {
+          "category": "repeated_offerings",
+          "turn_index": 3,
+          "user_text": "laptop asus tuf",
+          "offered_products": [
+            "KB-L07",
+            "KB-L09",
+            "KB-L10"
+          ],
+          "detail": "Daftar produk persis sama berulang dengan giliran sebelumnya: ['KB-L07', 'KB-L09', 'KB-L10']"
+        }
+      ],
+      "first_turn_at": "2026-10-07T14:16:50.880268",
+      "dialog_sample": [
+        {
+          "turn": 0,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n1. **ASUS Vivobook Pro 15 OLED** | Rp13,499,000\n  Spesifikasi: AMD Ryzen 7 ..."
+        },
+        {
+          "turn": 1,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 2,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n? Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        },
+        {
+          "turn": 3,
+          "user": "laptop asus tuf",
+          "bot_snippet": "Berikut hasil pencarian dari katalog kami:\n\n\n✅ Berikut rekomendasi yang memenuhi syarat:\n1. **ASUS Vivobook Pro 15 OLED*..."
+        }
+      ]
+    }
+  ]
+}
