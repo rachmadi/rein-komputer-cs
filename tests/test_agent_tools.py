@@ -536,6 +536,50 @@ def test_putaran28_butir4_pencarian_kategori_fallback():
     assert res_murah["produk_di_kategori"][0]["kode"] == "KB-P07"
 
 
+def test_putaran28_butir1_katalog_segar_tanpa_restart():
+    """Menguji bahwa perubahan data produk di SQLite langsung terdeteksi tanpa restart (Putaran 28 Butir 1 & 7a)."""
+    import sqlite3
+    from services.catalog_service import (
+        get_active_catalog,
+        _get_catalog_db_path,
+        set_catalog_turn_id,
+        get_last_check_duration_ms,
+        get_last_reload_duration_ms
+    )
+
+    set_catalog_turn_id(None)
+    cat_awal = get_active_catalog(force_check=True)
+    db_path = _get_catalog_db_path()
+
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute("SELECT kode, nama FROM products WHERE kode='KB-P07'")
+    row = cur.fetchone()
+    assert row is not None
+    kode, nama_asli = row
+
+    try:
+        cur.execute("UPDATE products SET nama = ? WHERE kode = ?", (nama_asli + " EDISI KHUSUS P28", kode))
+        conn.commit()
+
+        # Panggil get_active_catalog, harus memuat ulang dan nama baru terbaca
+        cat_baru = get_active_catalog(force_check=True)
+        prod = cat_baru.by_code.get(kode)
+        assert prod is not None
+        assert "EDISI KHUSUS P28" in prod["nama"]
+
+        check_ms = get_last_check_duration_ms()
+        reload_ms = get_last_reload_duration_ms()
+        assert check_ms >= 0.0
+        assert reload_ms >= 0.0
+    finally:
+        cur.execute("UPDATE products SET nama = ? WHERE kode = ?", (nama_asli, kode))
+        conn.commit()
+        conn.close()
+        get_active_catalog(force_check=True)
+
+
+
 def test_pesan_tertunda_sisipan_catatan():
     """Menguji penyisipan catatan pesan tertunda pada 5 menit dan tidak pada 4 menit (Putaran 20 Butir 7)."""
     from unittest.mock import patch
