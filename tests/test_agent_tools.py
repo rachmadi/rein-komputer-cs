@@ -2131,3 +2131,87 @@ def test_katalog_fallback_tanpa_kategori_tidak_dump_produk():
     assert len(res.get("produk", [])) == 0
     assert len(res.get("produk_di_kategori", [])) == 0
 
+
+def test_auto_inject_kirim_foto_pada_spek_produk():
+    """Menguji bahwa permintaan spek produk spesifik secara otomatis menyertakan kirim_foto=True dan foto_tersedia."""
+    from unittest.mock import patch
+    from services.agentic_tool_engine import run_agentic_tool
+
+    # 1. Kasus A: Pelanggan meminta spek produk spesifik ("Spek lengkapnya dong")
+    # LLM hanya memanggil katalog({'kode_atau_nama': 'LG 24MP400-B'}) tanpa kirim_foto
+    call_a = 0
+    def mock_ollama_spek(messages, tools=None, **kwargs):
+        nonlocal call_a
+        call_a += 1
+        if call_a == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{
+                        "function": {
+                            "name": "katalog",
+                            "arguments": {"kode_atau_nama": "LG 24MP400-B"}
+                        }
+                    }]
+                }
+            }
+        return {
+            "message": {
+                "role": "assistant",
+                "content": "Ini spek lengkap LG 24MP400-B ya Kak: Layar 23.8 inch IPS 75Hz, port HDMI/D-Sub, harga Rp1.250.000."
+            }
+        }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_spek):
+        res = run_agentic_tool(
+            user_text="Spek lengkapnya dong",
+            history=[{"role": "user", "content": "Ada monitor LG?"}, {"role": "assistant", "content": "Ada LG 24MP400-B Kak."}],
+            kirim_foto_oleh_llm=True
+        )
+
+    # Argumen alat yang dieksekusi harus otomatis memiliki kirim_foto=True
+    assert len(res["tool_calls"]) == 1
+    assert res["tool_calls"][0]["argumen"].get("kirim_foto") is True
+    # foto_tersedia harus berisi kode produk KB-M01
+    assert "KB-M01" in res["foto_tersedia"]
+    # Produk yang disebut harus mencakup KB-M01
+    assert any(p.get("kode") == "KB-M01" for p in res["products"])
+
+    # 2. Kasus B: Pencarian umum katalog (bukan produk spesifik) TIDAK menginjeksi kirim_foto
+    call_b = 0
+    def mock_ollama_umum(messages, tools=None, **kwargs):
+        nonlocal call_b
+        call_b += 1
+        if call_b == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{
+                        "function": {
+                            "name": "katalog",
+                            "arguments": {"kategori": "monitor", "kata_kunci": "daily"}
+                        }
+                    }]
+                }
+            }
+        return {
+            "message": {
+                "role": "assistant",
+                "content": "Kami punya monitor LG 24MP400-B seharga Rp1.250.000."
+            }
+        }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_umum):
+        res_umum = run_agentic_tool(
+            user_text="Rekomendasi monitor untuk kantor",
+            history=[],
+            kirim_foto_oleh_llm=True
+        )
+
+    assert len(res_umum["tool_calls"]) == 1
+    assert res_umum["tool_calls"][0]["argumen"].get("kirim_foto") is not True
+    assert res_umum["foto_tersedia"] == []
+
+

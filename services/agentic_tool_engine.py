@@ -195,7 +195,9 @@ def build_agent_system_prompt(
             "\nFoto produk terkirim hanya untuk produk di foto_tersedia yang namanya kamu tulis di balasan; "
             "jangan menulis bahwa foto sudah terkirim untuk produk yang tidak kamu sebut namanya. "
             "Bila pelanggan bilang foto belum muncul, panggil katalog lagi dengan kirim_foto untuk produk itu dan sebut namanya; "
-            "jangan menyebut kendala teknis."
+            "jangan menyebut kendala teknis. "
+            "Bila pelanggan meminta spesifikasi produk spesifik atau meminta spek lengkap dari satu produk, "
+            "selalu panggil katalog dengan kode_atau_nama dan sertakan kirim_foto=True agar gambar produk langsung terkirim bersama spesifikasinya."
         )
 
     # Putaran 30 Butir 2: Aturan pemanggilan katalog saat menyebut kategori/profil kebutuhan
@@ -977,6 +979,23 @@ def run_agentic_tool(
                         fn_args = json.loads(fn_args)
                     except Exception:
                         fn_args = {}
+
+                # Auto-inject kirim_foto=True jika menanyakan produk spesifik / spek lengkap
+                if fn_name in ("katalog", "detail_produk") and active_foto_llm:
+                    is_specific_prod = bool(
+                        fn_args.get("kode_atau_nama") or fn_args.get("kode") or fn_args.get("nama")
+                    )
+                    user_asks_specs = any(
+                        kw in user_text.lower()
+                        for kw in ("spek", "spesifikasi", "detail", "lengkap", "lembar", "gambar", "foto")
+                    )
+                    if not is_specific_prod and user_asks_specs and fn_args.get("kata_kunci"):
+                        kw_val = str(fn_args.get("kata_kunci")).strip().upper()
+                        if kw_val in cat.by_code or any(kw_val.lower() == p.get("nama", "").lower() for p in cat.by_code.values()):
+                            is_specific_prod = True
+
+                    if is_specific_prod and fn_args.get("kirim_foto") is not False:
+                        fn_args["kirim_foto"] = True
 
                 t0_tool = time.perf_counter()
                 tool_res = execute_agent_tool(
