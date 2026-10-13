@@ -1,4 +1,4 @@
-# Bobby Computer — RAG & AI Sales Assistant
+# ReIn Komputer — RAG & AI Sales Assistant
 
 Sistem Chatbot Rekomendasi Komputer dan Laptop berbasis RAG (Retrieval-Augmented Generation) deterministik dan agentic tool execution.
 
