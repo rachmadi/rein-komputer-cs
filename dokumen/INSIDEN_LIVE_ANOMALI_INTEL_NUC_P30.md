@@ -95,3 +95,65 @@ Pada Giliran 4, pertanyaan `"Kenapa juga ditawari intel NUC?"` adalah pertanyaan
    Instruksi revisi harus menegaskan: *"Sertakan produk dari katalog HANYA jika benar-benar memenuhi kategori dan spesifikasi yang dicari pelanggan. Jangan menawarkan produk di luar kategori yang dibahas atau yang spesifikasinya tidak memadai."*
 4. **Pencegahan Pengaman pada Giliran Komplain / Klarifikasi**:
    Bila pesan pengguna terdeteksi sebagai pertanyaan alasan/komplain (misal pola `"kenapa..."`, `"kok..."`, `"mengapa..."`), pengaman katalog otomatis tidak boleh dipicu.
+
+---
+
+## 5. Insiden Berulang (19:43 – 19:44 WIB) & Analisis Akar Masalah Mendalam
+
+### A. Kronologi Insiden Berulang
+Saat pengujian langsung lanjutan di Telegram:
+1. **Pukul 19:43:25 WIB**:
+   * **Pengguna:** `"Tapi aku juga mau yang bisa coding dengan AI lokal"`
+   * **Eksekusi:** LLM memanggil `pengetahuan` (P13), lalu pada putaran 2 menghasilkan penjelasan spesifikasi GPU/VRAM yang baik dan memanggil `katalog(kategori='laptop', kata_kunci='ai_ml, programming')`.
+   * **Masalah:** Pada putaran 3, Ollama menghasilkan `content: ""` (string kosong). Fungsi `_execute_tool_rounds` langsung mengembalikan string kosong sehingga sistem memicu `FALLBACK_EMERGENCY_REPLY`:
+     > *"Mohon maaf Kak, sistem kami sedang mengalami kendala teknis sesaat. Boleh tolong ulangi pertanyaannya?"*
+2. **Pukul 19:44:23 WIB**:
+   * **Pengguna:** `"Masa gitu aja gak bisa jawab"`
+   * **Masalah:** Karena giliran sebelumnya gagal fallback, kategori sesi tidak tersimpan. Pesan ini memicu pengaman otomatis yang memanggil `katalog(kata_kunci='ai_ml, programming')` **tanpa kategori**.
+   * **Hasil Anomali:** Katalog mengembalikan 10 produk termurah dari seluruh toko (Printer HP DeskJet, Monitor LG, Printer Brother, dan Intel NUC). LLM kembali merekomendasikan **Monitor ASUS TUF VG27AQ** dan **Intel NUC 11 Essential**!
+
+### B. Temuan Akar Masalah Sistemik
+1. **`SessionManager` Menggunakan Kunci `text`, Bukan `content`**:
+   Di `agentic_tool_engine.py`, penelusuran riwayat membaca `h.get("content")`. Padahal `SessionManager` menyimpan pesan dengan kunci `text`. Akibatnya, penelusuran riwayat kategori selalu membaca string kosong.
+2. **Kategori Sesi Tidak Pernah Disimpan pada Mode `agentic_tool`**:
+   Di `services/chat_service.py`, cabang `agentic_tool` tidak pernah menyimpan `tool_res.get("category")` ke dalam `state["category"]`.
+3. **Kata Kunci Tag Pengetahuan Tidak Cocok dengan Data Produk**:
+   Tag `ai_ml` dan `programming` dari chunk P13 tidak ada di kolom teks produk laptop, sehingga pencarian menghasilkan 0 kecocokan.
+4. **Fallback Tanpa Kategori Membuang Produk Acak Lintas Kategori**:
+   Ketika `target_cat` bernilai `None` dan kata kunci tidak cocok, fungsi `katalog` memotong 10 produk termurah dari seluruh katalog toko (printer, monitor kasir, mini PC Intel NUC).
+5. **String Kosong pada Putaran Terakhir LLM Menggagalkan Percakapan**:
+   Jika LLM mengembalikan `content: ""` setelah pemanggilan alat, loop berhenti dan mengembalikan string kosong yang memicu pesan darurat.
+6. **Proses Python yang Sedang Berjalan Tidak Memuat Ulang Berkas**:
+   Proses `telegram_bot.py` yang sedang berjalan di terminal CMD pengguna diluncurkan sejak 18:50 WIB dan belum direstart, sehingga perubahan kode pada berkas `.py` belum dimuat ke memori proses Telegram.
+
+---
+
+## 6. Solusi & Implementasi Perbaikan Menyeluruh
+
+1. **Ekspansi Semantik Tag (`TAG_KEYWORD_EXPANSIONS`) di `services/agent_tools.py`**:
+   Menambahkan pemetaan kata kunci tag pengetahuan ke spesifikasi teknis riil:
+   * `ai_ml`, `ai`, `llm`, `machine_learning`: dipetakan ke `rtx`, `geforce`, `nvidia`, `rendering 3d`, `gaming`, `32 gb`, `16 gb`, `vram`.
+   * `cad`: dipetakan ke `rendering 3d`, `rtx`, `gaming`.
+   * `programming`: dipetakan ke `16 gb`, `8 gb`, `intel`, `ryzen`, `ssd`.
+2. **Proteksi Fallback Tanpa Kategori**:
+   Jika `target_cat is None` dan kata kunci tidak cocok, fungsi `katalog` mengembalikan `total_cocok = 0` dan `produk_di_kategori = []`. Tidak ada lagi pembuangan produk printer/monitor/Intel NUC.
+3. **Pendeteksian Kategori di Awal & Perbaikan Pembacaan Riwayat**:
+   `detected_cat` dideteksi di awal giliran dengan memeriksa `user_text`, `session_state`, dan `history` (membaca `h.get('content') or h.get('text')`).
+4. **Pengaman P30 Wajib Memiliki Kategori**:
+   Jika `detected_cat is None`, pengaman P30 otomatis dilewati (skip) agar tidak memanggil katalog tanpa kategori.
+5. **Penanganan Balasan Kosong & Sintesis Akhir Tanpa Alat**:
+   Jika LLM mengembalikan string kosong tanpa pemanggilan alat, eksekusi beralih ke blok sintesis akhir dengan prompt eksplisit (`tools=None`). Jika sintesis tetap kosong, sistem menggunakan teks asisten dari putaran sebelumnya.
+6. **Penyimpanan Kategori Sesi di `chat_service.py`**:
+   Menyimpan `state["category"] = tool_res.get("category")` agar kategori sesi (`laptop`) bertahan sepanjang sesi percakapan.
+7. **Perbaikan Bug Regex di `grounding_checker.py`**:
+   Memperbaiki `IndexError: no such group` pada pengambilan grup `m_peruntukan`.
+
+---
+
+## 7. Hasil Verifikasi Multi-Turn Test
+Uji simulasi 4 giliran (`scratch/test_multiturn_ai_coding.py`) berhasil 100%:
+* **Giliran 1 ("Ada laptop?")**: Kategori terkunci sebagai `laptop`.
+* **Giliran 2 ("Cari yang ram 16 gb")**: Menawarkan MSI Modern 14, Lenovo IdeaPad, HP Victus, ASUS TUF.
+* **Giliran 3 ("Tapi aku juga mau yang bisa coding dengan AI lokal")**: Menawarkan ASUS TUF (RTX 4050), MSI Cyborg (RTX 4060), ASUS ROG Strix (RTX 4070). Tidak ada emergency fallback dan tidak ada Celeron.
+* **Giliran 4 ("Masa gitu aja gak bisa jawab")**: Bot merespons secara sopan dan kontekstual, tetap dalam kategori `laptop`, tanpa penawaran Intel NUC atau Monitor ASUS TUF.
+

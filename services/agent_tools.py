@@ -255,6 +255,30 @@ def _search_kb_markdown_all(query: str) -> list[dict[str, Any]]:
 # 1. ALAT KATALOG (Pencarian & Lembar Spesifikasi)
 # =============================================================================
 
+TAG_KEYWORD_EXPANSIONS: dict[str, list[str]] = {
+    "ai_ml": ["rtx", "geforce", "nvidia", "rendering 3d", "gaming", "32 gb", "16 gb", "vram"],
+    "ai": ["rtx", "geforce", "nvidia", "rendering 3d", "gaming", "32 gb", "16 gb", "vram"],
+    "ml": ["rtx", "geforce", "nvidia", "rendering 3d", "gaming", "32 gb", "16 gb", "vram"],
+    "llm": ["rtx", "geforce", "nvidia", "rendering 3d", "gaming", "32 gb", "16 gb", "vram"],
+    "cad": ["rendering 3d", "rtx", "geforce", "nvidia", "gaming", "vram"],
+    "rendering_3d": ["rendering 3d", "gaming", "rtx", "geforce", "nvidia"],
+    "video_editing": ["editing video", "rendering 3d", "oled", "ips", "100% srgb"],
+    "gaming": ["gaming", "rtx", "geforce", "radeon"],
+    "design": ["editing video", "ips", "srgb", "oled", "100% srgb"],
+    "desain": ["editing video", "ips", "srgb", "oled", "100% srgb"],
+    "programming": ["16 gb", "8 gb", "intel", "ryzen", "ssd"],
+    "coding": ["16 gb", "8 gb", "intel", "ryzen", "ssd"],
+    "office": ["office", "kerja kantor", "kuliah"],
+    "kantor": ["office", "kerja kantor", "kuliah"],
+    "daily": ["penggunaan harian", "kuliah", "office"],
+    "harian": ["penggunaan harian", "kuliah", "office"],
+    "music": ["16 gb", "ssd 512", "office"],
+    "trading": ["ips", "16 gb", "office"],
+    "streaming": ["gaming", "rendering 3d", "rtx"],
+    "kasir": ["kasir"],
+}
+
+
 def katalog(
     kata_kunci: str | None = None,
     kategori: str | None = None,
@@ -805,6 +829,16 @@ def katalog(
                     tok_score = max(tok_score, 15)
                 if tok in specs_text:
                     tok_score = max(tok_score, 10)
+
+                # Cek kecocokan ekspansi tag / profil kebutuhan
+                if tok in TAG_KEYWORD_EXPANSIONS:
+                    exp_matches = 0
+                    for exp in TAG_KEYWORD_EXPANSIONS[tok]:
+                        if exp in specs_text or exp in usage_text or exp in raw_text or exp in name_text:
+                            exp_matches += 1
+                    if exp_matches > 0:
+                        tok_score = max(tok_score, min(exp_matches * 15, 60))
+
                 score += tok_score
 
             if score > 0:
@@ -814,6 +848,24 @@ def katalog(
         if pool and not scored_pool:
             kw_str = kata_kunci if kata_kunci is not None else " ".join(scoring_tokens)
             k_name = target_cat or (target_merek if target_merek else "kategori ini")
+
+            # Jangan pernah membuang produk acak lintas kategori jika kategori tidak ditentukan!
+            if not target_cat:
+                res_dict = {
+                    "status": "sukses",
+                    "total_cocok": 0,
+                    "catatan": (
+                        f"Kata kunci '{kw_str}' tidak cocok dengan produk mana pun di katalog. "
+                        "Silakan tentukan kategori spesifik (laptop, desktop, monitor, printer) untuk melihat produk yang tersedia."
+                    ),
+                    "produk": [],
+                    "produk_di_kategori": [],
+                    "urutan": urutan_norm or "termurah"
+                }
+                if is_kirim_foto:
+                    res_dict["foto_tersedia"] = []
+                    res_dict["foto_tidak_tersedia"] = []
+                return res_dict
 
             if urutan_norm == "termahal":
                 cat_products = sorted(pool, key=lambda p: -(p.get("harga") or p.get("harga_idr") or 0))

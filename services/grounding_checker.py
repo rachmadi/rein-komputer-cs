@@ -591,8 +591,8 @@ class GroundingChecker:
                     k_lower
                 )
                 if m_peruntukan and not is_pertanyaan:
-                    # Putaran 18e Butir 6: Jangan tandai jika frasa kegunaan memang tertulis di usage_text produk giliran itu
-                    per_str = m_peruntukan.group(1) or m_peruntukan.group(2) or m_peruntukan.group(3) or m_peruntukan.group(0)
+                    groups_matched = [g for g in m_peruntukan.groups() if g]
+                    per_str = groups_matched[0] if groups_matched else m_peruntukan.group(0)
                     claimed_acts = [act for act in AKTIVITAS_KW if re.search(rf"\b{act}\b", per_str)]
                     is_grounded_in_usage = False
                     if all_usage_texts:

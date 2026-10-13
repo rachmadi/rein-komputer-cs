@@ -378,6 +378,13 @@ def process_chat_message(
         if "mentioned_products" in tool_res:
             state["mentioned_products"] = tool_res["mentioned_products"]
 
+        cat_res = tool_res.get("category")
+        if not cat_res and prods:
+            cat_res = prods[0].get("kategori")
+        if cat_res:
+            state["category"] = cat_res
+            state["kategori"] = cat_res
+
         new_s = state
         sess["state"] = new_s
 

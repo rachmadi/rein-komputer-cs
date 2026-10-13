@@ -2105,3 +2105,29 @@ def test_putaran29_butir1_nama_field_foto_tersedia():
     with open("telegram_bot.py", "r", encoding="utf-8") as f:
         tg_code = f.read()
     assert 'res.get("foto_tersedia"' in tg_code
+
+
+def test_katalog_tag_expansion_ai_ml():
+    """Menguji bahwa kata kunci tag ai_ml/programming pada laptop mencocokkan laptop dengan GPU RTX / RAM tinggi."""
+    from services.agent_tools import katalog
+
+    res = katalog(kategori="laptop", kata_kunci="ai_ml, programming")
+    assert res.get("status") == "sukses"
+    assert res.get("total_cocok", 0) > 0
+    top_codes = [p["kode"] for p in res.get("produk", [])[:3]]
+    # Laptop yang cocok harus laptop performa tinggi/RTX, bukan Celeron KB-L14 atau N100 KB-L11
+    assert "KB-L14" not in top_codes
+    assert "KB-L11" not in top_codes
+    assert any(c in top_codes for c in ["KB-L24", "KB-L25", "KB-L27", "KB-L28", "KB-L29"])
+
+
+def test_katalog_fallback_tanpa_kategori_tidak_dump_produk():
+    """Menguji bahwa jika kata kunci tidak cocok dan kategori None, katalog tidak membuang 10 produk acak seluruh toko."""
+    from services.agent_tools import katalog
+
+    res = katalog(kata_kunci="kata_kunci_acak_yang_pasti_tidak_ada")
+    assert res.get("status") == "sukses"
+    assert res.get("total_cocok") == 0
+    assert len(res.get("produk", [])) == 0
+    assert len(res.get("produk_di_kategori", [])) == 0
+
