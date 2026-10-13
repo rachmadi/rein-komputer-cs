@@ -255,7 +255,7 @@ def katalog(
                 "detail": []
             }
             if is_kirim_foto:
-                res_dict["foto_akan_dikirim"] = []
+                res_dict["foto_tersedia"] = []
                 res_dict["foto_tidak_tersedia"] = []
             return res_dict
 
@@ -301,7 +301,7 @@ def katalog(
                     akan_kirim.append(c)
                 else:
                     tidak_ada.append(c)
-            res_dict["foto_akan_dikirim"] = akan_kirim
+            res_dict["foto_tersedia"] = akan_kirim
             res_dict["foto_tidak_tersedia"] = tidak_ada
         return res_dict
 
@@ -474,7 +474,7 @@ def katalog(
                     "urutan": urutan_norm
                 }
                 if is_kirim_foto:
-                    res_dict["foto_akan_dikirim"] = []
+                    res_dict["foto_tersedia"] = []
                     res_dict["foto_tidak_tersedia"] = []
                 return res_dict
 
@@ -541,7 +541,7 @@ def katalog(
                     "urutan": urutan_norm
                 }
                 if is_kirim_foto:
-                    res_dict["foto_akan_dikirim"] = []
+                    res_dict["foto_tersedia"] = []
                     res_dict["foto_tidak_tersedia"] = []
                 return res_dict
             pool = under_budget
@@ -635,7 +635,7 @@ def katalog(
                         akan_kirim.append(c)
                     else:
                         tidak_ada.append(c)
-                res_dict["foto_akan_dikirim"] = akan_kirim
+                res_dict["foto_tersedia"] = akan_kirim
                 res_dict["foto_tidak_tersedia"] = tidak_ada
             return res_dict
 
@@ -674,7 +674,7 @@ def katalog(
                 akan_kirim.append(c)
             else:
                 tidak_ada.append(c)
-        res_dict["foto_akan_dikirim"] = akan_kirim
+        res_dict["foto_tersedia"] = akan_kirim
         res_dict["foto_tidak_tersedia"] = tidak_ada
     return res_dict
 

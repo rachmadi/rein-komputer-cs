@@ -446,7 +446,8 @@ def process_chat_message(
             "hasil_alat_giliran": tool_res.get("hasil_alat_giliran", []),
             "error_darurat": tool_res.get("error_darurat"),
             "alat_mentah_events": tool_res.get("alat_mentah_events", []),
-            "foto_akan_dikirim": tool_res.get("foto_akan_dikirim", []),
+            "foto_tersedia": tool_res.get("foto_tersedia", tool_res.get("foto_akan_dikirim", [])),
+            "foto_akan_dikirim": tool_res.get("foto_tersedia", tool_res.get("foto_akan_dikirim", [])),
             "metrics": {
                 "latency_ms": latency_ms,
                 "tool_calls": tool_res.get("tool_calls", []),

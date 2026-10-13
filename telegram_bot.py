@@ -317,11 +317,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         is_photo_requested = False
 
         if KIRIM_FOTO_OLEH_LLM:
-            # Putaran 28 Butir 3: Foto diputuskan Reni, dengan irisan produk yang disebut di balasan akhir
-            foto_akan_dikirim_raw = res.get("foto_akan_dikirim", [])
+            # Putaran 28 Butir 3 & Putaran 29 Butir 1: Foto diputuskan Reni, dengan irisan produk yang disebut di balasan akhir
+            foto_tersedia_raw = res.get("foto_tersedia", res.get("foto_akan_dikirim", []))
             cat = get_active_catalog()
             final_photo_codes = pilih_foto_yang_akan_dikirim(
-                foto_akan_dikirim=foto_akan_dikirim_raw,
+                foto_tersedia=foto_tersedia_raw,
                 produk_disebut=products,
                 reply_text=reply_text,
                 catalog_by_code=cat.by_code

@@ -1369,31 +1369,33 @@ def test_putaran26_butir3_kirim_foto():
         == "Isi true bila pelanggan ingin melihat foto produk yang dicari, atau bila menurutmu foto membantu pelanggan; foto hanya terkirim untuk produk yang ada_foto-nya true."
     )
 
-    # 3. Saat kirim_foto_oleh_llm True: kirim_foto true untuk produk berfoto (KB-D10) -> foto_akan_dikirim berisi kode itu
+    # 3. Saat kirim_foto_oleh_llm True: kirim_foto true untuk produk berfoto (KB-D10) -> foto_tersedia berisi kode itu
     res_with_photo = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=True)
-    assert res_with_photo.get("foto_akan_dikirim") == ["KB-D10"]
+    assert res_with_photo.get("foto_tersedia") == ["KB-D10"]
     assert res_with_photo.get("foto_tidak_tersedia") == []
 
     # 4. produk tanpa foto -> masuk foto_tidak_tersedia (uji dengan mock is_file False)
     from unittest.mock import patch
     with patch("pathlib.Path.is_file", return_value=False):
         res_without_photo = katalog(kode_atau_nama="KB-D06", kirim_foto=True, kirim_foto_oleh_llm=True)
-        assert res_without_photo.get("foto_akan_dikirim") == []
+        assert res_without_photo.get("foto_tersedia") == []
         assert res_without_photo.get("foto_tidak_tersedia") == ["KB-D06"]
 
     # 5. kirim_foto tidak diisi menghasilkan tidak ada foto
     res_no_param = katalog(kode_atau_nama="KB-D10", kirim_foto_oleh_llm=True)
-    assert "foto_akan_dikirim" not in res_no_param
+    assert "foto_tersedia" not in res_no_param
     assert "foto_tidak_tersedia" not in res_no_param
 
     # 6. Uji lewat execute_agent_tool
     res_exec = execute_agent_tool("katalog", {"kode_atau_nama": "KB-D10", "kirim_foto": True}, kirim_foto_oleh_llm=True)
-    assert res_exec.get("foto_akan_dikirim") == ["KB-D10"]
+    assert res_exec.get("foto_tersedia") == ["KB-D10"]
 
-    # 7. Uji kalimat prompt Butir 3c
+    # 7. Uji kalimat prompt P29 Butir 1b
     kalimat_foto = (
-        "Foto produk hanya terkirim bila kamu memanggil katalog dengan kirim_foto bernilai true untuk produk itu; "
-        "jangan mengatakan foto terkirim atau tersedia bila tidak tertulis di foto_akan_dikirim."
+        "Foto produk terkirim hanya untuk produk di foto_tersedia yang namanya kamu tulis di balasan; "
+        "jangan menulis bahwa foto sudah terkirim untuk produk yang tidak kamu sebut namanya. "
+        "Bila pelanggan bilang foto belum muncul, panggil katalog lagi dengan kirim_foto untuk produk itu dan sebut namanya; "
+        "jangan menyebut kendala teknis."
     )
     prompt_mati = build_agent_system_prompt(kirim_foto_oleh_llm=False)
     assert kalimat_foto not in prompt_mati
@@ -1406,7 +1408,7 @@ def test_putaran26_butir3_kirim_foto():
 
 
 def test_putaran28_butir3_foto_diputuskan_reni():
-    """Menguji pemilihan foto sebagai irisan murni produk disebut dan foto_akan_dikirim (Putaran 28 Butir 3)."""
+    """Menguji pemilihan foto sebagai irisan murni produk disebut dan foto_tersedia (Putaran 28 Butir 3, diperbarui Putaran 29 Butir 1)."""
     from services.agentic_tool_engine import (
         KIRIM_FOTO_OLEH_LLM,
         pilih_foto_yang_akan_dikirim,
@@ -1419,13 +1421,13 @@ def test_putaran28_butir3_foto_diputuskan_reni():
     # 1. Irisan: hasil pencarian ada 2 foto (KB-D10, KB-D11), tapi balasan hanya menyebut KB-D10
     foto_raw = ["KB-D10", "KB-D11"]
     prods_disebut = [{"kode": "KB-D10", "nama": "HP Slim Desktop S01"}]
-    hasil = pilih_foto_yang_akan_dikirim(foto_raw, produk_disebut=prods_disebut)
+    hasil = pilih_foto_yang_akan_dikirim(foto_tersedia=foto_raw, produk_disebut=prods_disebut)
     assert hasil == ["KB-D10"], "Produk yang tidak disebut di balasan akhir tidak boleh dikirim fotonya"
 
     # 2. Irisan berbasis reply_text jika produk_disebut kosong
     reply_teks = "Kami menyarankan Lenovo ThinkCentre Neo 50s (KB-D10) untuk kebutuhan Anda."
     hasil_teks = pilih_foto_yang_akan_dikirim(
-        foto_raw,
+        foto_tersedia=foto_raw,
         produk_disebut=[],
         reply_text=reply_teks,
         catalog_by_code=cat.by_code
@@ -1435,15 +1437,15 @@ def test_putaran28_butir3_foto_diputuskan_reni():
     # 3. Produk hasil pencarian tidak disebut sama sekali -> 0 foto dikirim
     reply_kosong = "Maaf stok untuk spesifikasi tersebut saat ini sedang habis."
     hasil_nol = pilih_foto_yang_akan_dikirim(
-        foto_raw,
+        foto_tersedia=foto_raw,
         produk_disebut=[],
         reply_text=reply_kosong,
         catalog_by_code=cat.by_code
     )
     assert hasil_nol == []
 
-    # 4. foto_akan_dikirim kosong -> 0 foto dikirim
-    assert pilih_foto_yang_akan_dikirim([], produk_disebut=prods_disebut) == []
+    # 4. foto_tersedia kosong -> 0 foto dikirim
+    assert pilih_foto_yang_akan_dikirim(foto_tersedia=[], produk_disebut=prods_disebut) == []
 
 
 def test_putaran27_butir2_sembunyikan_kirim_foto():
@@ -1455,22 +1457,22 @@ def test_putaran27_butir2_sembunyikan_kirim_foto():
     katalog_schema_false = next(t for t in schema_false if t["function"]["name"] == "katalog")
     assert "kirim_foto" not in katalog_schema_false["function"]["parameters"]["properties"]
 
-    # 2. Saat False: hasil katalog tidak memuat foto_akan_dikirim / foto_tidak_tersedia meski kirim_foto=True
+    # 2. Saat False: hasil katalog tidak memuat foto_tersedia / foto_tidak_tersedia meski kirim_foto=True
     res_false = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=False)
-    assert "foto_akan_dikirim" not in res_false
+    assert "foto_tersedia" not in res_false
     assert "foto_tidak_tersedia" not in res_false
 
     res_search_false = katalog(kategori="laptop", kirim_foto=True, kirim_foto_oleh_llm=False)
-    assert "foto_akan_dikirim" not in res_search_false
+    assert "foto_tersedia" not in res_search_false
     assert "foto_tidak_tersedia" not in res_search_false
 
-    # 3. Saat True: skema memuat kirim_foto dan hasil memuat foto_akan_dikirim (perilaku P26 tetap)
+    # 3. Saat True: skema memuat kirim_foto dan hasil memuat foto_tersedia (perilaku P26 tetap)
     schema_true = get_agent_tools_schema(kirim_foto_oleh_llm=True)
     katalog_schema_true = next(t for t in schema_true if t["function"]["name"] == "katalog")
     assert "kirim_foto" in katalog_schema_true["function"]["parameters"]["properties"]
 
     res_true = katalog(kode_atau_nama="KB-D10", kirim_foto=True, kirim_foto_oleh_llm=True)
-    assert res_true.get("foto_akan_dikirim") == ["KB-D10"]
+    assert res_true.get("foto_tersedia") == ["KB-D10"]
     assert res_true.get("foto_tidak_tersedia") == []
 
 

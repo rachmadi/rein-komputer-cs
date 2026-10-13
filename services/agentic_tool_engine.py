@@ -192,8 +192,10 @@ def build_agent_system_prompt(
     )
     if active_foto_llm:
         sisa_text += (
-            "\nFoto produk hanya terkirim bila kamu memanggil katalog dengan kirim_foto bernilai true untuk produk itu; "
-            "jangan mengatakan foto terkirim atau tersedia bila tidak tertulis di foto_akan_dikirim."
+            "\nFoto produk terkirim hanya untuk produk di foto_tersedia yang namanya kamu tulis di balasan; "
+            "jangan menulis bahwa foto sudah terkirim untuk produk yang tidak kamu sebut namanya. "
+            "Bila pelanggan bilang foto belum muncul, panggil katalog lagi dengan kirim_foto untuk produk itu dan sebut namanya; "
+            "jangan menyebut kendala teknis."
         )
 
     # Putaran 28 Butir 6: Varian prompt layanan (F + G), flag ATURAN_LAYANAN_P28 (hanya uji A/B)
@@ -431,22 +433,24 @@ def is_product_mentioned_in_reply(product: dict, reply_text: str, catalog: Optio
 
 
 def pilih_foto_yang_akan_dikirim(
-    foto_akan_dikirim: list[str],
+    foto_tersedia: list[str] | None = None,
     produk_disebut: list[dict] | list[str] | None = None,
     reply_text: str = "",
     catalog_by_code: dict[str, dict] | None = None,
-    max_foto: int = 5
+    max_foto: int = 5,
+    foto_akan_dikirim: list[str] | None = None
 ) -> list[str]:
     """
-    Fungsi murni untuk menentukan daftar kode produk yang fotonya akan dikirim (Putaran 28 Butir 3).
-    Foto yang dikirim = irisan foto_akan_dikirim dengan produk yang disebut di balasan akhir
+    Fungsi murni untuk menentukan daftar kode produk yang fotonya akan dikirim (Putaran 28 Butir 3, diperbarui Putaran 29 Butir 1).
+    Foto yang dikirim = irisan foto_tersedia dengan produk yang disebut di balasan akhir
     (menggunakan pencocok yang sama dengan kartu produk).
     Produk hasil pencarian yang tidak disebut tidak dikirim fotonya.
     """
-    if not foto_akan_dikirim:
+    target_foto = foto_tersedia if foto_tersedia is not None else (foto_akan_dikirim or [])
+    if not target_foto:
         return []
 
-    foto_set = set(foto_akan_dikirim)
+    foto_set = set(target_foto)
     hasil: list[str] = []
     seen: set[str] = set()
 
@@ -469,7 +473,7 @@ def pilih_foto_yang_akan_dikirim(
             cat_map = get_active_catalog().by_code
 
         candidates = []
-        for c in foto_akan_dikirim:
+        for c in target_foto:
             if c not in seen and c in cat_map:
                 p = cat_map[c]
                 pos = get_product_mention_position(p, reply_text)
@@ -730,7 +734,7 @@ def run_agentic_tool(
     all_llm_calls_logged: list[dict[str, Any]] = []
     all_tools_products_returned: list[dict[str, Any]] = []
     this_turn_tool_summaries: list[dict[str, Any]] = []
-    foto_akan_dikirim_turn: list[str] = []
+    foto_tersedia_turn: list[str] = []
     seen_foto_turn: set[str] = set()
     is_emergency_fallback = False
     emergency_error = None
@@ -1003,11 +1007,12 @@ def run_agentic_tool(
                 this_turn_tool_summaries.append(tool_sum)
 
                 if active_foto_llm and isinstance(tool_res, dict):
-                    for fc in tool_res.get("foto_akan_dikirim", []):
+                    raw_fc = tool_res.get("foto_tersedia") or tool_res.get("foto_akan_dikirim") or []
+                    for fc in raw_fc:
                         if fc and fc not in seen_foto_turn:
                             seen_foto_turn.add(fc)
-                            foto_akan_dikirim_turn.append(fc)
-                            if len(foto_akan_dikirim_turn) >= 5:
+                            foto_tersedia_turn.append(fc)
+                            if len(foto_tersedia_turn) >= 5:
                                 break
 
                 ringkasan = summarize_tool_result(fn_name, tool_res)
@@ -1210,5 +1215,6 @@ def run_agentic_tool(
         "pemeriksaan_ulang": pemeriksaan_ulang_terpicu,
         "balasan_sebelum_periksa": balasan_sebelum_periksa,
         "alat_mentah_events": raw_tool_events,
-        "foto_akan_dikirim": foto_akan_dikirim_turn[:5],
+        "foto_tersedia": foto_tersedia_turn[:5],
+        "foto_akan_dikirim": foto_tersedia_turn[:5],
     }
