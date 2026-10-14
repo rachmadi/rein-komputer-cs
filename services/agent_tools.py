@@ -276,10 +276,20 @@ TAG_KEYWORD_EXPANSIONS: dict[str, list[str]] = {
     "trading": ["ips", "16 gb", "office"],
     "streaming": ["gaming", "rendering 3d", "rtx"],
     "kasir": ["kasir"],
-    "ecotank": ["ecotank", "l3210", "tangki tinta", "ink tank"],
-    "tangki": ["tangki tinta", "ink tank", "ecotank"],
+    "ecotank": ["ecotank", "l3210", "epson ecotank"],
+    "pixma": ["pixma", "g3020", "canon pixma"],
+    "tangki": ["tangki tinta", "ink tank", "ecotank", "canon pixma", "g3020"],
+    "ink_tank": ["tangki tinta", "ink tank", "inktank", "ecotank", "canon pixma", "g3020"],
+    "inktank": ["tangki tinta", "ink tank", "inktank", "ecotank", "canon pixma", "g3020"],
+    "ink tank": ["tangki tinta", "ink tank", "inktank", "ecotank", "canon pixma", "g3020"],
     "warna": ["warna", "cetak foto", "ipm warna", "ppm warna"],
     "laser": ["laser mono", "laser", "hl-l2365dw"],
+    "hitam_putih": ["laser mono", "mono", "hitam putih", "hl-l2365dw"],
+    "hitam putih": ["laser mono", "mono", "hitam putih", "hl-l2365dw"],
+    "monokrom": ["laser mono", "mono", "hitam putih", "hl-l2365dw"],
+    "mono": ["laser mono", "mono", "hitam putih", "hl-l2365dw"],
+    "bw": ["laser mono", "mono", "hitam putih", "hl-l2365dw"],
+    "b/w": ["laser mono", "mono", "hitam putih", "hl-l2365dw"],
 }
 
 
@@ -295,6 +305,7 @@ def katalog(
     ram_min_gb: int | float | None = None,
     ssd_min_gb: int | float | None = None,
     gpu_dedicated: bool | None = None,
+    gpu_vendor: str | None = None,
     vram_min_gb: int | float | None = None,
     layar_min_inci: int | float | None = None,
     layar_maks_inci: int | float | None = None,
@@ -460,9 +471,34 @@ def katalog(
         k_str = str(kategori).strip().lower()
         target_cat = cat_synonyms_map.get(k_str, k_str)
 
+    target_gpu_vendor = None
+    if gpu_vendor:
+        gv = str(gpu_vendor).strip().lower()
+        if gv in ("nvidia", "geforce", "rtx", "gtx"):
+            target_gpu_vendor = "nvidia"
+        elif gv in ("amd", "radeon"):
+            target_gpu_vendor = "amd"
+        elif gv in ("intel", "arc"):
+            target_gpu_vendor = "intel"
+        elif gv in ("apple",):
+            target_gpu_vendor = "apple"
+        else:
+            target_gpu_vendor = gv
+
     target_merek = None
     if merek:
-        target_merek = str(merek).strip().lower()
+        m_str = str(merek).strip().lower()
+        # Pemetaan otomatis bila LLM memasukkan nama GPU vendor ke parameter merek
+        if m_str in ("nvidia", "geforce", "rtx", "gtx"):
+            if not target_gpu_vendor:
+                target_gpu_vendor = "nvidia"
+            target_merek = None
+        elif m_str in ("radeon",):
+            if not target_gpu_vendor:
+                target_gpu_vendor = "amd"
+            target_merek = None
+        else:
+            target_merek = m_str
 
     kw_raw = str(kata_kunci).strip().lower() if kata_kunci else ""
     tokens = [w for w in re.findall(r"\w+", kw_raw) if len(w) >= 2]
@@ -481,7 +517,17 @@ def katalog(
                 target_merek = tok
                 break
 
-    # Himpunan kata filter kategori dan merek yang TIDAK ikut dinilai
+    # Ekstraksi otomatis filter GPU vendor jika belum diisi eksplisit
+    if not target_gpu_vendor:
+        for tok in tokens:
+            if tok in ("geforce", "nvidia", "rtx", "gtx"):
+                target_gpu_vendor = "nvidia"
+                break
+            elif tok in ("radeon",):
+                target_gpu_vendor = "amd"
+                break
+
+    # Himpunan kata filter kategori, merek, dan GPU vendor yang TIDAK ikut dinilai
     filter_words_to_exclude = set()
     if target_cat:
         for syn, main_cat in cat_synonyms_map.items():
@@ -489,6 +535,15 @@ def katalog(
                 filter_words_to_exclude.add(syn)
     if target_merek:
         filter_words_to_exclude.update([w for w in re.findall(r"\w+", target_merek) if len(w) >= 2])
+    if target_gpu_vendor:
+        if target_gpu_vendor == "nvidia":
+            filter_words_to_exclude.update(["nvidia", "geforce"])
+        elif target_gpu_vendor == "amd":
+            filter_words_to_exclude.update(["amd", "radeon"])
+        elif target_gpu_vendor == "intel":
+            filter_words_to_exclude.update(["intel", "arc"])
+        elif target_gpu_vendor == "apple":
+            filter_words_to_exclude.update(["apple"])
 
     urutan_norm: str | None = None
     if urutan:
@@ -575,6 +630,16 @@ def katalog(
                 where_specs.append("CAST(gpu_dedicated AS INTEGER) = 1")
             else:
                 where_specs.append("(gpu_dedicated = 0 OR gpu_dedicated IS NULL)")
+
+        if target_gpu_vendor:
+            if target_gpu_vendor == "nvidia":
+                where_specs.append("(LOWER(gpu) LIKE '%nvidia%' OR LOWER(gpu) LIKE '%geforce%')")
+            elif target_gpu_vendor == "amd":
+                where_specs.append("(LOWER(gpu) LIKE '%amd%' OR LOWER(gpu) LIKE '%radeon%')")
+            elif target_gpu_vendor == "intel":
+                where_specs.append("(LOWER(gpu) LIKE '%intel%' OR LOWER(gpu) LIKE '%arc%')")
+            elif target_gpu_vendor == "apple":
+                where_specs.append("LOWER(gpu) LIKE '%apple%'")
 
         if v_min is not None and v_min > 0:
             where_specs.append("CAST(vram_gb AS INTEGER) >= ?")
@@ -785,6 +850,24 @@ def katalog(
                     if target_merek in str(p.get("brand", "")).lower() or target_merek in str(p.get("nama", "")).lower()
                 ]
 
+        # Filter GPU Vendor
+        if target_gpu_vendor:
+            if target_gpu_vendor == "nvidia":
+                pool = [p for p in pool if "nvidia" in str(p.get("gpu", "")).lower() or "geforce" in str(p.get("gpu", "")).lower()]
+            elif target_gpu_vendor == "amd":
+                pool = [p for p in pool if "amd" in str(p.get("gpu", "")).lower() or "radeon" in str(p.get("gpu", "")).lower()]
+            elif target_gpu_vendor == "intel":
+                pool = [p for p in pool if "intel" in str(p.get("gpu", "")).lower() or "arc" in str(p.get("gpu", "")).lower()]
+            elif target_gpu_vendor == "apple":
+                pool = [p for p in pool if "apple" in str(p.get("gpu", "")).lower()]
+
+        # Filter GPU Dedicated
+        if g_ded is not None:
+            if g_ded:
+                pool = [p for p in pool if _parse_bool(p.get("gpu_dedicated"))]
+            else:
+                pool = [p for p in pool if not _parse_bool(p.get("gpu_dedicated"))]
+
         # Filter Budget Min
         if b_min is not None and b_min > 0:
             pool = [p for p in pool if (p.get("harga") or p.get("harga_idr") or 0) >= b_min]
@@ -820,6 +903,20 @@ def katalog(
     scoring_tokens = [w for w in tokens if w not in filter_words_to_exclude]
 
     if scoring_tokens:
+        scoring_phrase = " ".join(scoring_tokens)
+        scoring_phrase_under = scoring_phrase.replace(" ", "_")
+        is_ink_tank_query = (
+            ("ink" in scoring_tokens and "tank" in scoring_tokens)
+            or scoring_phrase in ("ink tank", "inktank")
+            or scoring_phrase_under in ("ink_tank", "inktank")
+        )
+        is_hitam_putih_query = (
+            ("hitam" in scoring_tokens and "putih" in scoring_tokens)
+            or scoring_phrase in ("hitam putih", "monokrom", "mono", "bw", "b/w")
+            or scoring_phrase_under in ("hitam_putih", "monokrom", "mono", "bw", "b/w")
+        )
+        SUBSTRING_EXCLUDED_TOKENS = {"ink", "tank"}
+
         scored_pool = []
         for p in pool:
             name_text = str(p.get("nama", "")).lower()
@@ -843,26 +940,68 @@ def katalog(
 
             score = 0
             # Cek kecocokan frasa gabungan sisa
-            scoring_phrase = " ".join(scoring_tokens)
-            if len(scoring_tokens) > 1 and scoring_phrase in name_text:
+            if len(scoring_tokens) > 1 and (scoring_phrase in name_text or scoring_phrase in raw_text):
                 score += 50
 
+            # Cek kecocokan ekspansi frasa (misal: "ink_tank" / "ink tank")
+            phrase_exp_keys = [k for k in (scoring_phrase, scoring_phrase_under) if k in TAG_KEYWORD_EXPANSIONS]
+            if phrase_exp_keys:
+                phrase_key = phrase_exp_keys[0]
+                exp_matches = 0
+                for exp in TAG_KEYWORD_EXPANSIONS[phrase_key]:
+                    if exp in specs_text or exp in usage_text or exp in raw_text or exp in name_text:
+                        exp_matches += 1
+                if exp_matches > 0:
+                    score += min(exp_matches * 20, 60)
+            elif is_ink_tank_query and "ink_tank" in TAG_KEYWORD_EXPANSIONS:
+                exp_matches = 0
+                for exp in TAG_KEYWORD_EXPANSIONS["ink_tank"]:
+                    if exp in specs_text or exp in usage_text or exp in raw_text or exp in name_text:
+                        exp_matches += 1
+                if exp_matches > 0:
+                    score += min(exp_matches * 20, 60)
+
             for tok in scoring_tokens:
+                # Bila sedang mencari konsep gabungan 'ink tank', jangan nilai token generik 'ink' atau 'tank'
+                # secara parsial agar printer kartrid (misal: DeskJet Ink Advantage) tidak ikut terjaring.
+                if is_ink_tank_query and tok in ("ink", "tank"):
+                    continue
+
+                # Bila sedang mencari printer 'hitam putih' / monokrom, jangan nilai token 'hitam' atau 'putih'
+                # secara terpisah agar printer warna (misal: HP DeskJet yang memuat 'ppm hitam' di raw_data) tidak ikut terjaring.
+                if is_hitam_putih_query and tok in ("hitam", "putih"):
+                    continue
+
                 tok_score = 0
-                if tok in name_text:
-                    tok_score = max(tok_score, 25)
+                if tok in SUBSTRING_EXCLUDED_TOKENS:
+                    # Token generik pendek tidak boleh mencocokkan lewat substring (misal: "ink" di "ThinkCentre" atau "sinkronisasi")
                     if re.search(rf"\b{re.escape(tok)}\b", name_text):
                         tok_score = max(tok_score, 35)
-                if tok in brand_text:
-                    tok_score = max(tok_score, 15)
-                if tok in raw_text:
-                    tok_score = max(tok_score, 20)
-                if tok in usage_text:
-                    tok_score = max(tok_score, 15)
-                if tok in tags_text:
-                    tok_score = max(tok_score, 15)
-                if tok in specs_text:
-                    tok_score = max(tok_score, 10)
+                    if re.search(rf"\b{re.escape(tok)}\b", brand_text):
+                        tok_score = max(tok_score, 15)
+                    if re.search(rf"\b{re.escape(tok)}\b", raw_text):
+                        tok_score = max(tok_score, 20)
+                    if re.search(rf"\b{re.escape(tok)}\b", usage_text):
+                        tok_score = max(tok_score, 15)
+                    if re.search(rf"\b{re.escape(tok)}\b", tags_text):
+                        tok_score = max(tok_score, 15)
+                    if re.search(rf"\b{re.escape(tok)}\b", specs_text):
+                        tok_score = max(tok_score, 10)
+                else:
+                    if tok in name_text:
+                        tok_score = max(tok_score, 25)
+                        if re.search(rf"\b{re.escape(tok)}\b", name_text):
+                            tok_score = max(tok_score, 35)
+                    if tok in brand_text:
+                        tok_score = max(tok_score, 15)
+                    if tok in raw_text:
+                        tok_score = max(tok_score, 20)
+                    if tok in usage_text:
+                        tok_score = max(tok_score, 15)
+                    if tok in tags_text:
+                        tok_score = max(tok_score, 15)
+                    if tok in specs_text:
+                        tok_score = max(tok_score, 10)
 
                 # Cek kecocokan ekspansi tag / profil kebutuhan
                 if tok in TAG_KEYWORD_EXPANSIONS:
@@ -1249,6 +1388,11 @@ AGENT_TOOLS_SCHEMA = [
                         "type": "boolean",
                         "description": "Isi true bila butuh GPU diskrit/dedicated (misal gaming/render), false untuk grafis terintegrasi"
                     },
+                    "gpu_vendor": {
+                        "type": "string",
+                        "enum": ["nvidia", "amd", "intel", "apple"],
+                        "description": "Vendor GPU/grafis: 'nvidia' (GeForce/RTX/GTX), 'amd' (Radeon), 'intel' (Arc/Iris/UHD), atau 'apple' (Apple GPU). Gunakan ini jika pelanggan mencari laptop/PC dengan GPU merek tertentu."
+                    },
                     "vram_min_gb": {
                         "type": "integer",
                         "description": "Kapasitas VRAM grafis minimal dalam GB (misal: 4, 6, 8)"
@@ -1337,6 +1481,7 @@ def execute_agent_tool(
             ram_min_gb=args.get("ram_min_gb"),
             ssd_min_gb=args.get("ssd_min_gb"),
             gpu_dedicated=args.get("gpu_dedicated"),
+            gpu_vendor=args.get("gpu_vendor"),
             vram_min_gb=args.get("vram_min_gb"),
             layar_min_inci=args.get("layar_min_inci"),
             layar_maks_inci=args.get("layar_maks_inci"),
@@ -1363,6 +1508,7 @@ def execute_agent_tool(
             ram_min_gb=args.get("ram_min_gb"),
             ssd_min_gb=args.get("ssd_min_gb"),
             gpu_dedicated=args.get("gpu_dedicated"),
+            gpu_vendor=args.get("gpu_vendor"),
             vram_min_gb=args.get("vram_min_gb"),
             layar_min_inci=args.get("layar_min_inci"),
             layar_maks_inci=args.get("layar_maks_inci"),

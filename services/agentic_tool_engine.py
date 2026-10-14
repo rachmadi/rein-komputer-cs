@@ -1290,8 +1290,27 @@ def run_agentic_tool(
     )
     is_evaluasi_fitur = ada_produk_aktif and bool(
         re.search(
-            r"\b(bisa|kuat|cocok|sanggup|mampu|ngangkat)\s+(untuk|buat|dipakai|pake|ngoding|render|game|gaming|editing|edit|kantor|sekolah|kuliah|ai)\b"
-            r"|\b(bisa|kuat|cocok|sanggup|mampu|ngangkat)\s+gak\b",
+            r"\b(bisa|kuat|cocok|sanggup|mampu|ngangkat)\s+(cetak|print|warna|foto|struk|scan|copy|duplex|untuk|buat|dipakai|pake|ngoding|render|game|gaming|editing|edit|kantor|sekolah|kuliah|ai)\b"
+            r"|\b(bisa|kuat|cocok|sanggup|mampu|ngangkat)\s+gak\b"
+            r"|\b(bisa|support|mendukung)\s+(cetak|print|scan|copy|duplex|warna|foto|struk)\b",
+            user_text.lower()
+        )
+    )
+
+    # Jangan picu pengaman otomatis jika pengguna menanyakan cara / prosedur operasional / perawatan
+    is_pertanyaan_operasional = bool(
+        re.search(
+            r"\b(ngisi|isi|mengisi|refill|isi ulang|ganti|pasang|lepas|membersihkan|konek|sambung)\s+(tinta|tintanya|toner|tonernya|kartrid|cartridge|kertas|kabel|wifi|driver)\b"
+            r"|\b(cara|tutorial)\s+(ngisi|isi|refill|ganti|pasang|konek|sambung|membersihkan)\b",
+            user_text.lower()
+        )
+    )
+
+    # Jangan picu pengaman otomatis jika pengguna menanyakan konsep/perbedaan teknis murni
+    is_pertanyaan_konsep = bool(
+        re.search(
+            r"\b(bedanya|perbedaan|apa itu|maksudnya|artinya)\b"
+            r"|\b(belum tentu|sama gak|bukan cuma)\b",
             user_text.lower()
         )
     )
@@ -1301,6 +1320,10 @@ def run_agentic_tool(
             logger.info("Pengaman P30 Butir 2 dilewati: pertanyaan kelengkapan/isi paket.")
         elif is_evaluasi_fitur:
             logger.info("Pengaman P30 Butir 2 dilewati: evaluasi fitur/kecocokan produk aktif.")
+        elif is_pertanyaan_operasional:
+            logger.info("Pengaman P30 Butir 2 dilewati: pertanyaan operasional/perawatan teknis.")
+        elif is_pertanyaan_konsep:
+            logger.info("Pengaman P30 Butir 2 dilewati: pertanyaan konsep/perbedaan teknis.")
 
     if (
         pengetahuan_calls_with_catatan
@@ -1309,6 +1332,8 @@ def run_agentic_tool(
         and not is_meta_or_complaint
         and not is_kelengkapan_paket
         and not is_evaluasi_fitur
+        and not is_pertanyaan_operasional
+        and not is_pertanyaan_konsep
         and final_reply
     ):
         # Ekstrak Tag katalog dari profil yang paling cocok di hasil pengetahuan

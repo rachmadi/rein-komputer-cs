@@ -2399,5 +2399,101 @@ def test_katalog_pencarian_printer_warna():
     assert "KB-P09" not in codes
 
 
+def test_katalog_ink_tank_dan_ecotank_eksklusif():
+    """Menguji bahwa query 'ink tank', 'ecotank', dan 'pixma' bekerja akurat dan tidak bocor ke produk lain lewat substring."""
+    from services.agent_tools import katalog
+
+    # 1. Query 'ink tank' hanya mengembalikan KB-P06 dan KB-P10 (TIDAK ADA produk lain)
+    res_ink_tank = katalog(kata_kunci="ink tank")
+    assert res_ink_tank.get("status") == "sukses"
+    codes_ink_tank = [p["kode"] for p in res_ink_tank.get("produk", [])]
+    assert set(codes_ink_tank) == {"KB-P06", "KB-P10"}
+    assert len(codes_ink_tank) == 2
+    # Pastikan tidak ada Lenovo ThinkCentre (KB-D06) atau monitor (sinkronisasi) atau HP DeskJet (KB-P07)
+    for forbidden in ["KB-D06", "KB-M01", "KB-M02", "KB-M03", "KB-M05", "KB-P07"]:
+        assert forbidden not in codes_ink_tank
+
+    # 2. Query 'ecotank' hanya Epson L3210 (KB-P06)
+    res_eco = katalog(kata_kunci="ecotank")
+    assert [p["kode"] for p in res_eco.get("produk", [])] == ["KB-P06"]
+
+    # 3. Query 'printer ecotank' hanya Epson L3210 (KB-P06)
+    res_p_eco = katalog(kata_kunci="printer ecotank")
+    assert [p["kode"] for p in res_p_eco.get("produk", [])] == ["KB-P06"]
+
+    # 4. Query 'pixma' hanya Canon PIXMA G3020 (KB-P10)
+    res_pix = katalog(kata_kunci="pixma")
+    assert [p["kode"] for p in res_pix.get("produk", [])] == ["KB-P10"]
+
+    # 5. Query 'tangki tinta' tepat mengembalikan KB-P06 dan KB-P10
+    res_tangki = katalog(kata_kunci="tangki tinta")
+    codes_tangki = [p["kode"] for p in res_tangki.get("produk", [])]
+    assert set(codes_tangki) == {"KB-P06", "KB-P10"}
+    assert len(codes_tangki) == 2
+
+
+def test_katalog_gpu_vendor_dan_merek_mapping():
+    """Menguji parameter gpu_vendor terstruktur, auto-mapping merek GPU, dan pemisahan dedicated vs integrated."""
+    from services.agent_tools import katalog, AGENT_TOOLS_SCHEMA
+
+    # 1. Skema memuat gpu_vendor
+    katalog_schema = next(t for t in AGENT_TOOLS_SCHEMA if t["function"]["name"] == "katalog")
+    props = katalog_schema["function"]["parameters"]["properties"]
+    assert "gpu_vendor" in props
+    assert set(props["gpu_vendor"]["enum"]) == {"nvidia", "amd", "intel", "apple"}
+
+    # 2. gpu_vendor='nvidia' kategori laptop -> tepat 6 produk (tanpa KB-L26)
+    res_nv = katalog(kategori="laptop", gpu_vendor="nvidia")
+    assert res_nv.get("total_cocok") == 6
+    codes_nv = [p["kode"] for p in res_nv.get("produk", [])]
+    assert set(codes_nv) == {"KB-L23", "KB-L24", "KB-L25", "KB-L27", "KB-L28", "KB-L29"}
+    assert "KB-L26" not in codes_nv
+
+    # 3. gpu_vendor='amd' + gpu_dedicated=True -> tepat 1 produk (KB-L26)
+    res_amd_ded = katalog(kategori="laptop", gpu_vendor="amd", gpu_dedicated=True)
+    assert res_amd_ded.get("total_cocok") == 1
+    codes_amd_ded = [p["kode"] for p in res_amd_ded.get("produk", [])]
+    assert codes_amd_ded == ["KB-L26"]
+    for igpu in ["KB-L12", "KB-L13", "KB-L18", "KB-L20"]:
+        assert igpu not in codes_amd_ded
+
+    # 4. gpu_vendor='amd' tanpa gpu_dedicated -> tepat 5 produk (1 dedicated + 4 integrated)
+    res_amd_all = katalog(kategori="laptop", gpu_vendor="amd")
+    assert res_amd_all.get("total_cocok") == 5
+    codes_amd_all = [p["kode"] for p in res_amd_all.get("produk", [])]
+    assert set(codes_amd_all) == {"KB-L12", "KB-L13", "KB-L18", "KB-L20", "KB-L26"}
+
+    # 5. Auto-mapping merek='geforce' -> gpu_vendor='nvidia'
+    res_m_gef = katalog(kategori="laptop", merek="geforce")
+    assert res_m_gef.get("total_cocok") == 6
+    assert set(p["kode"] for p in res_m_gef.get("produk", [])) == {"KB-L23", "KB-L24", "KB-L25", "KB-L27", "KB-L28", "KB-L29"}
+
+    # 6. Auto-mapping merek='radeon' -> gpu_vendor='amd'
+    res_m_rad = katalog(kategori="laptop", merek="radeon")
+    assert res_m_rad.get("total_cocok") == 5
+    assert set(p["kode"] for p in res_m_rad.get("produk", [])) == {"KB-L12", "KB-L13", "KB-L18", "KB-L20", "KB-L26"}
+
+
+def test_katalog_printer_hitam_putih_eksklusif():
+    """Menguji bahwa query printer 'hitam putih' dan 'monokrom' eksklusif mengembalikan KB-P08 (Brother laser mono)."""
+    from services.agent_tools import katalog
+
+    # 1. kata_kunci='hitam putih', kategori='printer' -> tepat KB-P08
+    res_hp = katalog(kata_kunci="hitam putih", kategori="printer")
+    assert res_hp.get("total_cocok") == 1
+    codes_hp = [p["kode"] for p in res_hp.get("produk", [])]
+    assert codes_hp == ["KB-P08"]
+    for color in ["KB-P06", "KB-P07", "KB-P10"]:
+        assert color not in codes_hp, f"Printer warna {color} tidak boleh lolos di filter hitam putih"
+
+    # 2. kata_kunci='printer hitam putih' (tanpa filter kategori)
+    res_php = katalog(kata_kunci="printer hitam putih")
+    assert res_php.get("total_cocok") == 1
+    assert [p["kode"] for p in res_php.get("produk", [])] == ["KB-P08"]
+
+    # 3. kata_kunci='monokrom', kategori='printer'
+    res_mono = katalog(kata_kunci="monokrom", kategori="printer")
+    assert res_mono.get("total_cocok") == 1
+    assert [p["kode"] for p in res_mono.get("produk", [])] == ["KB-P08"]
 
 
