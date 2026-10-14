@@ -327,6 +327,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 reply_text=reply_text,
                 catalog_by_code=cat.by_code
             )
+            # Cegah pengiriman foto berulang untuk produk yang sama dalam sesi,
+            # kecuali pelanggan meminta foto secara eksplisit di pesan terbarunya
+            user_text_lower = user_text.lower()
+            photo_phrases = (
+                "kirim foto", "minta foto", "tampilkan foto", "lihat foto", "mana foto", "coba foto", "ada foto",
+                "kirim gambar", "minta gambar", "tampilkan gambar", "lihat gambar", "mana gambar", "coba gambar", "ada gambar",
+                "lihat bentuk", "tampilkan fisik", "kirim pic", "minta pic", "lihat penampakan", "fotonya lagi", "gambarnya lagi"
+            )
+            is_explicit_photo_req = any(phrase in user_text_lower for phrase in photo_phrases) and "jangan" not in user_text_lower
+            if not is_explicit_photo_req:
+                final_photo_codes = [c for c in final_photo_codes if c not in sent_photos]
+
             is_photo_requested = bool(final_photo_codes)
             if final_photo_codes:
                 prods_to_send = [cat.by_code[c] for c in final_photo_codes if c in cat.by_code]

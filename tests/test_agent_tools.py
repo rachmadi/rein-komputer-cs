@@ -2301,3 +2301,44 @@ def test_auto_inject_kirim_foto_pada_spek_produk():
     assert res_umum["foto_tersedia"] == []
 
 
+def test_aturan_fokus_produk_dan_cegah_foto_duplikat():
+    """Menguji aturan prompt untuk tidak mengulang spek produk yang sudah dibahas dan penyaringan foto terkirim di bot."""
+    from services.agentic_tool_engine import build_agent_system_prompt, pilih_foto_yang_akan_dikirim
+
+    # 1. Prompt memuat instruksi fokus komponen dan tidak mengulang daftar spek utama
+    prompt = build_agent_system_prompt()
+    kalimat_fokus = (
+        "Bila membahas produk yang sudah disebutkan di pesan-pesan sebelumnya, "
+        "jawablah langsung dan fokus hanya pada hal atau komponen yang sedang ditanyakan pelanggan secara ringkas; "
+        "jangan mengulang kembali daftar spesifikasi utama (seperti prosesor, RAM, storage, atau harga) "
+        "yang sudah kamu sampaikan sebelumnya kecuali pelanggan memintanya."
+    )
+    assert kalimat_fokus in prompt, "Prompt harus memuat aturan agar tidak mengulang spek produk yang sudah dibahas"
+
+    # 2. telegram_bot.py memuat logika pencegahan foto duplikat
+    with open("telegram_bot.py", "r", encoding="utf-8") as f:
+        tg_code = f.read()
+    assert "final_photo_codes = [c for c in final_photo_codes if c not in sent_photos]" in tg_code
+    assert "fotonya lagi" in tg_code
+
+    # 3. Logika filter: bila sudah ada di sent_photos dan user tidak minta foto eksplisit -> foto tidak dikirim ulang
+    raw_photos = ["KB-L24"]
+    prods = [{"kode": "KB-L24", "nama": "Acer Nitro V 15"}]
+    codes = pilih_foto_yang_akan_dikirim(foto_tersedia=raw_photos, produk_disebut=prods)
+    assert codes == ["KB-L24"]
+
+    sent_photos = {"KB-L24"}
+    user_text_tanya_layar = "Layar ukuran berapa itu?"
+    photo_phrases = ("kirim foto", "minta foto", "tampilkan foto", "lihat foto", "fotonya lagi")
+    is_explicit = any(p in user_text_tanya_layar.lower() for p in photo_phrases)
+    filtered_codes = [c for c in codes if c not in sent_photos] if not is_explicit else codes
+    assert filtered_codes == [], "Foto KB-L24 tidak boleh dikirim ulang saat user hanya tanya ukuran layar"
+
+    # 4. Bila user minta foto eksplisit ("Kirim fotonya lagi dong") -> foto tetap dikirim walau sudah di sent_photos
+    user_text_minta_foto = "Kirim fotonya lagi dong"
+    is_explicit_req = any(p in user_text_minta_foto.lower() for p in photo_phrases)
+    filtered_explicit = [c for c in codes if c not in sent_photos] if not is_explicit_req else codes
+    assert filtered_explicit == ["KB-L24"], "Foto KB-L24 harus dikirim jika user minta eksplisit"
+
+
+

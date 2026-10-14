@@ -206,7 +206,11 @@ def build_agent_system_prompt(
             "\nBila jawabanmu menyebut kategori atau profil kebutuhan produk, "
             "kamu wajib memanggil katalog pada giliran yang sama sebelum menjawab, "
             "memakai kata kunci atau tag kategori dari profil yang cocok. "
-            "Jangan menjawab rekomendasi produk hanya dari panduan tanpa memeriksa katalog."
+            "Jangan menjawab rekomendasi produk hanya dari panduan tanpa memeriksa katalog. "
+            "Bila membahas produk yang sudah disebutkan di pesan-pesan sebelumnya, "
+            "jawablah langsung dan fokus hanya pada hal atau komponen yang sedang ditanyakan pelanggan secara ringkas; "
+            "jangan mengulang kembali daftar spesifikasi utama (seperti prosesor, RAM, storage, atau harga) "
+            "yang sudah kamu sampaikan sebelumnya kecuali pelanggan memintanya."
         )
 
     # Putaran 28 Butir 6: Varian prompt layanan (F + G), flag ATURAN_LAYANAN_P28 (hanya uji A/B)
