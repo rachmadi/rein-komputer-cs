@@ -2341,4 +2341,63 @@ def test_aturan_fokus_produk_dan_cegah_foto_duplikat():
     assert filtered_explicit == ["KB-L24"], "Foto KB-L24 harus dikirim jika user minta eksplisit"
 
 
+def test_katalog_query_intel_processor_dan_gpu_dedicated():
+    """Menguji bahwa query laptop Intel atau prosesor Intel dengan dedicated GPU menemukan produk laptop yang tepat."""
+    from services.agent_tools import katalog
+
+    # 1. katalog(kategori='laptop', kata_kunci='Intel', gpu_dedicated=True)
+    res_kw = katalog(kategori="laptop", kata_kunci="Intel", gpu_dedicated=True)
+    assert res_kw.get("status") == "sukses"
+    assert res_kw.get("total_cocok") == 5
+    codes_kw = [p["kode"] for p in res_kw.get("produk", [])]
+    assert set(codes_kw) == {"KB-L23", "KB-L24", "KB-L27", "KB-L28", "KB-L29"}
+
+    # 2. katalog(kategori='laptop', merek='Intel', gpu_dedicated=True)
+    res_merek = katalog(kategori="laptop", merek="Intel", gpu_dedicated=True)
+    assert res_merek.get("status") == "sukses"
+    assert res_merek.get("total_cocok") == 5
+
+    # 3. katalog(kata_kunci='laptop intel')
+    res_lap_intel = katalog(kata_kunci="laptop intel")
+    assert res_lap_intel.get("status") == "sukses"
+    assert res_lap_intel.get("total_cocok") == 13
+
+
+def test_katalog_kode_atau_nama_ekstraksi_kode_dan_ecotank():
+    """Menguji bahwa kode_atau_nama berhasil mengekstrak kode produk saat digabung dengan nama produk."""
+    from services.agent_tools import katalog
+
+    # 1. Kasus gabungan kode dan nama (kasus live EcoTank)
+    res_combo = katalog(kode_atau_nama="KB-P06 Epson EcoTank L3210")
+    assert res_combo.get("status") == "sukses"
+    assert res_combo.get("total_cocok") == 1
+    assert res_combo.get("detail")[0]["kode"] == "KB-P06"
+
+    # 2. Kasus nama lengkap
+    res_nama = katalog(kode_atau_nama="Epson EcoTank L3210")
+    assert res_nama.get("status") == "sukses"
+    assert res_nama.get("total_cocok") == 1
+    assert res_nama.get("detail")[0]["kode"] == "KB-P06"
+
+    # 3. Kasus multi kode
+    res_multi = katalog(kode_atau_nama="KB-L14, KB-P06")
+    assert res_multi.get("status") == "sukses"
+    assert res_multi.get("total_cocok") == 2
+
+
+def test_katalog_pencarian_printer_warna():
+    """Menguji bahwa pencarian printer warna menyaring tepat printer warna (HP, Epson EcoTank, Canon) dan mengecualikan printer mono/thermal."""
+    from services.agent_tools import katalog
+
+    res = katalog(kategori="printer", kata_kunci="warna")
+    assert res.get("status") == "sukses"
+    assert res.get("total_cocok") == 3
+    codes = [p["kode"] for p in res.get("produk", [])]
+    assert set(codes) == {"KB-P06", "KB-P07", "KB-P10"}
+    # Pastikan laser mono (KB-P08) dan thermal (KB-P09) tidak masuk
+    assert "KB-P08" not in codes
+    assert "KB-P09" not in codes
+
+
+
 

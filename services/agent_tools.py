@@ -276,6 +276,10 @@ TAG_KEYWORD_EXPANSIONS: dict[str, list[str]] = {
     "trading": ["ips", "16 gb", "office"],
     "streaming": ["gaming", "rendering 3d", "rtx"],
     "kasir": ["kasir"],
+    "ecotank": ["ecotank", "l3210", "tangki tinta", "ink tank"],
+    "tangki": ["tangki tinta", "ink tank", "ecotank"],
+    "warna": ["warna", "cetak foto", "ipm warna", "ppm warna"],
+    "laser": ["laser mono", "laser", "hl-l2365dw"],
 }
 
 
@@ -338,6 +342,19 @@ def katalog(
         matched_results = []
         found_codes = set()
         for q in queries:
+            # 1. Ekstrak langsung jika memuat pola kode produk toko (misal: 'KB-P06 Epson EcoTank L3210')
+            code_matches = re.findall(r"\b(KB-[LDMP]\d{2})\b", q, re.IGNORECASE)
+            if code_matches:
+                has_any = False
+                for cm in code_matches:
+                    c_code = cm.upper()
+                    if c_code in cat_inst.by_code and c_code not in found_codes:
+                        found_codes.add(c_code)
+                        matched_results.append(cat_inst.by_code[c_code])
+                        has_any = True
+                if has_any:
+                    continue
+
             q_upper = q.upper()
             if q_upper in cat_inst.by_code:
                 p = cat_inst.by_code[q_upper]
@@ -349,7 +366,8 @@ def katalog(
             q_low = q.lower()
             matched = False
             for p in all_products:
-                if p["kode"].upper() == q_upper or q_low == str(p.get("nama", "")).lower():
+                p_name_low = str(p.get("nama", "")).lower()
+                if p["kode"].upper() == q_upper or q_low == p_name_low or q_low in p_name_low or p_name_low in q_low:
                     if p["kode"] not in found_codes:
                         found_codes.add(p["kode"])
                         matched_results.append(p)
@@ -357,7 +375,8 @@ def katalog(
                     break
             if not matched:
                 for p in all_products:
-                    if q_low in str(p.get("nama", "")).lower():
+                    p_name_low = str(p.get("nama", "")).lower()
+                    if q_low in p_name_low or p_name_low in q_low:
                         if p["kode"] not in found_codes:
                             found_codes.add(p["kode"])
                             matched_results.append(p)
@@ -528,9 +547,13 @@ def katalog(
                 params_base.append(f"%{target_cat}%")
 
         if target_merek:
-            where_base.append("(LOWER(brand) LIKE ? OR LOWER(nama) LIKE ?)")
-            params_base.append(f"%{target_merek}%")
-            params_base.append(f"%{target_merek}%")
+            if target_merek in ("intel", "amd"):
+                where_base.append("(LOWER(brand) LIKE ? OR LOWER(nama) LIKE ? OR LOWER(cpu) LIKE ? OR LOWER(cpu_vendor) = ?)")
+                params_base.extend([f"%{target_merek}%", f"%{target_merek}%", f"%{target_merek}%", target_merek])
+            else:
+                where_base.append("(LOWER(brand) LIKE ? OR LOWER(nama) LIKE ?)")
+                params_base.append(f"%{target_merek}%")
+                params_base.append(f"%{target_merek}%")
 
         if b_min is not None and b_min > 0:
             where_base.append("CAST(harga_idr AS INTEGER) >= ?")
@@ -746,10 +769,21 @@ def katalog(
 
         # Filter Merek
         if target_merek:
-            pool = [
-                p for p in pool
-                if target_merek in str(p.get("brand", "")).lower() or target_merek in str(p.get("nama", "")).lower()
-            ]
+            if target_merek in ("intel", "amd"):
+                pool = [
+                    p for p in pool
+                    if (
+                        target_merek in str(p.get("brand", "")).lower()
+                        or target_merek in str(p.get("nama", "")).lower()
+                        or target_merek in str(p.get("cpu", "")).lower()
+                        or target_merek == str(p.get("cpu_vendor", "")).lower()
+                    )
+                ]
+            else:
+                pool = [
+                    p for p in pool
+                    if target_merek in str(p.get("brand", "")).lower() or target_merek in str(p.get("nama", "")).lower()
+                ]
 
         # Filter Budget Min
         if b_min is not None and b_min > 0:
@@ -1180,7 +1214,7 @@ AGENT_TOOLS_SCHEMA = [
                 "properties": {
                     "kata_kunci": {
                         "type": "string",
-                        "description": "Kata kunci pencarian spesifik, model, prosesor, GPU, atau fitur (misal: 'oled', 'ecotank', 'rtx 4060', 'mini', 'struk', 'intel nuc')"
+                        "description": "Kata kunci pencarian spesifik, model, prosesor, GPU, atau fitur (misal: 'oled', 'ecotank', 'rtx 4060', 'intel', 'ryzen', 'mini', 'struk', 'warna')"
                     },
                     "kategori": {
                         "type": "string",
@@ -1188,7 +1222,7 @@ AGENT_TOOLS_SCHEMA = [
                     },
                     "merek": {
                         "type": "string",
-                        "description": "Merek produk (misal: Asus, Acer, Lenovo, HP, Apple, MSI, Epson, Canon, Brother)"
+                        "description": "Merek produk (misal: Asus, Acer, Lenovo, HP, Apple, MSI, Epson, Canon, Brother). Untuk prosesor seperti Intel atau AMD/Ryzen, sistem otomatis mencocokkannya ke spesifikasi prosesor."
                     },
                     "budget_min": {
                         "type": "integer",
@@ -1233,7 +1267,7 @@ AGENT_TOOLS_SCHEMA = [
                     },
                     "kode_atau_nama": {
                         "type": "string",
-                        "description": "Kode produk (misal 'KB-L14', 'KB-D11') atau nama produk spesifik untuk melihat lembar spesifikasi lengkap dan raw_data"
+                        "description": "Kode produk (misal 'KB-L14', 'KB-P06', 'KB-D11') atau nama produk spesifik (misal 'Epson EcoTank L3210') untuk melihat lembar spesifikasi lengkap dan raw_data"
                     },
                     "kirim_foto": {
                         "type": "boolean",
