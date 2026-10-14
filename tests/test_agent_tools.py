@@ -2130,6 +2130,137 @@ def test_putaran30_pengaman_katalog_otomatis():
     auto_guard_calls_f = [tc for tc in tool_calls_f if tc.get("pengaman_otomatis") is True]
     assert len(auto_guard_calls_f) == 0, "Pengaman tidak boleh terpicu pada evaluasi fitur produk yang sedang dibahas!"
 
+    # 7. Kasus G: Pertanyaan operasional/perawatan (misal: "Gimana cara ngisi tinta printer ini?")
+    # Pengaman TIDAK BOLEH memanggil katalog otomatis
+    llm_call_count_g = 0
+    def mock_ollama_operasional(messages, **kwargs):
+        nonlocal llm_call_count_g
+        llm_call_count_g += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_g == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "cara pengisian tinta printer"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Buka tutup botol tinta, buka katup tangki printer, lalu tuangkan perlahan tanpa menekan botol."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_operasional):
+        res_g = run_agentic_tool(
+            user_text="Gimana cara ngisi tinta printer ini?",
+            history=[],
+            session_state={"category": "printer"},
+        )
+
+    tool_calls_g = res_g.get("tool_calls", [])
+    auto_guard_calls_g = [tc for tc in tool_calls_g if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_g) == 0, "Pengaman tidak boleh terpicu pada pertanyaan operasional/perawatan!"
+
+    # 8. Kasus H: Pertanyaan konsep/perbedaan teknis murni (misal: "Bedanya ink tank dan laser apa?")
+    # Pengaman TIDAK BOLEH memanggil katalog otomatis
+    llm_call_count_h = 0
+    def mock_ollama_konsep(messages, **kwargs):
+        nonlocal llm_call_count_h
+        llm_call_count_h += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_h == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "perbedaan ink tank dan laser"}
+                            }
+                        }
+                    ]
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Ink tank memakai tinta cair untuk volume tinggi, sedangkan laser memakai serbuk toner untuk cetak cepat."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_konsep):
+        res_h = run_agentic_tool(
+            user_text="Bedanya ink tank dan laser apa?",
+            history=[],
+            session_state={"category": "printer"},
+        )
+
+    tool_calls_h = res_h.get("tool_calls", [])
+    auto_guard_calls_h = [tc for tc in tool_calls_h if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_h) == 0, "Pengaman tidak boleh terpicu pada pertanyaan konsep/perbedaan teknis!"
+
+    # 9. Kasus I: Kontrol Belanja (misal: "laptop buat kuliah gimana ya?")
+    # Pengaman WAJIB TETAP TERPICU (auto_guard_calls == 1)
+    llm_call_count_i = 0
+    def mock_ollama_kontrol_belanja(messages, **kwargs):
+        nonlocal llm_call_count_i
+        llm_call_count_i += 1
+        tools = kwargs.get("tools")
+        if tools and llm_call_count_i == 1:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "pengetahuan",
+                                "arguments": {"pertanyaan": "laptop buat kuliah"}
+                            }
+                        }
+                    ]
+                }
+            }
+        elif tools and llm_call_count_i == 2:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Untuk kuliah disarankan laptop ringan dengan RAM minimal 8GB."
+                }
+            }
+        else:
+            return {
+                "message": {
+                    "role": "assistant",
+                    "content": "Rekomendasi laptop kuliah kami adalah Lenovo IdeaPad Slim 1."
+                }
+            }
+
+    with patch("services.agentic_tool_engine.call_ollama_chat_raw", side_effect=mock_ollama_kontrol_belanja):
+        res_i = run_agentic_tool(
+            user_text="laptop buat kuliah gimana ya?",
+            history=[],
+            session_state={"category": "laptop"},
+        )
+
+    tool_calls_i = res_i.get("tool_calls", [])
+    auto_guard_calls_i = [tc for tc in tool_calls_i if tc.get("pengaman_otomatis") is True]
+    assert len(auto_guard_calls_i) == 1, "Pengaman WAJIB tetap aktif untuk pertanyaan rekomendasi belanja!"
+    assert auto_guard_calls_i[0]["argumen"].get("kategori") == "laptop"
+
 
 
 
